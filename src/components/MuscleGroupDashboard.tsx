@@ -3,6 +3,7 @@ import { Play, Users, Calendar } from 'lucide-react';
 import { Routine, MuscleGroup, User } from '../types';
 import { MUSCLE_GROUPS, getRoutinesByMuscleGroup } from '../utils/muscleGroups';
 import { MuscleGroupSelector } from './MuscleGroupSelector';
+import { MuscleGroupIcon } from './MuscleGroupIcon';
 
 interface MuscleGroupSectionProps {
   muscleGroup: MuscleGroup;
@@ -36,7 +37,11 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
             className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base"
             style={{ backgroundColor: groupInfo.color }}
           >
-            {groupInfo.icon}
+            <MuscleGroupIcon
+              muscleGroup={muscleGroup}
+              size={16}
+              color="white"
+            />
           </div>
           <div className="min-w-0 flex-1">
             <h3 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2">

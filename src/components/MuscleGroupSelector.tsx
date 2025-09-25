@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Edit3, Check, X } from 'lucide-react';
 import { MuscleGroup } from '../types';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
+import { MuscleGroupIcon } from './MuscleGroupIcon';
 
 interface MuscleGroupSelectorProps {
   currentGroup: MuscleGroup;
@@ -31,7 +32,7 @@ export const MuscleGroupSelector: React.FC<MuscleGroupSelectorProps> = ({
     const groupInfo = MUSCLE_GROUPS[currentGroup];
     return (
       <div className="flex items-center space-x-2 text-gray-400">
-        <span>{groupInfo.icon}</span>
+        <MuscleGroupIcon muscleGroup={currentGroup} size={14} />
         <span className="text-sm">{groupInfo.name}</span>
       </div>
     );
@@ -41,7 +42,7 @@ export const MuscleGroupSelector: React.FC<MuscleGroupSelectorProps> = ({
     const groupInfo = MUSCLE_GROUPS[currentGroup];
     return (
       <div className="flex items-center space-x-1 sm:space-x-2">
-        <span className="text-sm">{groupInfo.icon}</span>
+        <MuscleGroupIcon muscleGroup={currentGroup} size={14} />
         <span className="text-xs sm:text-sm text-gray-300 truncate">{groupInfo.name}</span>
         <button
           onClick={() => setIsEditing(true)}
@@ -63,7 +64,7 @@ export const MuscleGroupSelector: React.FC<MuscleGroupSelectorProps> = ({
       >
         {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
           <option key={key} value={key}>
-            {group.icon} {group.name}
+            {group.name}
           </option>
         ))}
       </select>

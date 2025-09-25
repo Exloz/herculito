@@ -107,7 +107,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               >
                 {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
                   <option key={key} value={key}>
-                    {group.icon} {group.name}
+                    {group.name}
                   </option>
                 ))}
               </select>

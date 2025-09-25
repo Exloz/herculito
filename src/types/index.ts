@@ -10,7 +10,6 @@ export type MuscleGroup = 'pecho' | 'espalda' | 'piernas' | 'hombros' | 'brazos'
 
 export interface MuscleGroupInfo {
   name: string;
-  icon: string; // emoji o icono
   color: string; // color hex para el calendario
 }
 

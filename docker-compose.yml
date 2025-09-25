@@ -1,0 +1,48 @@
+services:
+  herculito-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: herculito-app
+    restart: unless-stopped
+    expose:
+      - "8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - proxy
+    labels:
+      # Habilitar Traefik
+      - traefik.enable=true
+      
+      # Configuración del router HTTPS
+      - traefik.http.routers.beybladex.rule=Host(`herculito.exloz.site`)
+      - traefik.http.routers.beybladex.entrypoints=websecure
+      - traefik.http.routers.beybladex.tls=true
+      - traefik.http.routers.beybladex.tls.certresolver=letsencrypt
+      
+      # Router HTTP para redirección
+      - traefik.http.routers.beybladex-http.rule=Host(`herculito.exloz.site`)
+      - traefik.http.routers.beybladex-http.entrypoints=web
+      - traefik.http.routers.beybladex-http.middlewares=beybladex-https-redirect
+      - traefik.http.middlewares.beybladex-https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.beybladex-https-redirect.redirectscheme.permanent=true
+      
+      # Configuración del servicio
+      - traefik.http.services.beybladex.loadbalancer.server.port=8080
+      
+      # Middleware adicional para SPA (manejo de headers)
+      - traefik.http.routers.beybladex.middlewares=beybladex-headers
+      - traefik.http.middlewares.beybladex-headers.headers.customRequestHeaders.X-Forwarded-Proto=https
+      - traefik.http.middlewares.beybladex-headers.headers.customRequestHeaders.X-Forwarded-For=
+      
+      # Red específica
+      - traefik.docker.network=proxy
+
+networks:
+  proxy:
+    external: true

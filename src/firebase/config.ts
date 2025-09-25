@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 // Validación de variables de entorno requeridas
 const requiredEnvVars = {
@@ -32,6 +33,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
+
+// Configurar opciones adicionales para el provider de Google
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Para desarrollo local, puedes descomentar esto si tienes el emulador de Firestore corriendo
 // if (location.hostname === 'localhost') {

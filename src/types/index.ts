@@ -1,6 +1,8 @@
 export interface User {
-  id: 'A' | 'B';
+  id: string;
+  email: string;
   name: string;
+  photoURL?: string;
 }
 
 export interface Exercise {
@@ -20,11 +22,44 @@ export interface WorkoutSet {
 
 export interface ExerciseLog {
   exerciseId: string;
-  userId: 'A' | 'B';
+  userId: string;
   sets: WorkoutSet[];
   date: string; // YYYY-MM-DD format
 }
 
+// Nuevos tipos para el sistema mejorado
+export interface Routine {
+  id: string;
+  name: string;
+  description?: string;
+  exercises: Exercise[];
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string;
+}
+
+export interface WorkoutSession {
+  id: string;
+  routineId: string;
+  routineName: string;
+  userId: string;
+  startedAt: Date;
+  completedAt?: Date;
+  exercises: ExerciseLog[];
+  totalDuration?: number; // en minutos
+  notes?: string;
+}
+
+export interface ExerciseHistory {
+  exerciseId: string;
+  exerciseName: string;
+  userId: string;
+  lastWeight: number[];
+  lastDate: string;
+  personalRecord: number;
+}
+
+// Tipos legacy (mantener por compatibilidad)
 export interface Workout {
   id: string;
   day: string; // 'monday', 'tuesday', etc.

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Check, Clock, Weight } from 'lucide-react';
 import { Exercise, ExerciseLog, WorkoutSet } from '../types';
 
 interface ExerciseCardProps {
   exercise: Exercise;
   log: ExerciseLog | undefined;
-  userId: 'A' | 'B';
+  userId: string;
   onUpdateLog: (log: ExerciseLog) => void;
   onStartTimer: (seconds: number) => void;
 }
@@ -17,7 +17,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   onUpdateLog,
   onStartTimer
 }) => {
-  const [expandedSets, setExpandedSets] = useState<number[]>([]);
 
   const initializeSets = (): WorkoutSet[] => {
     const sets: WorkoutSet[] = [];

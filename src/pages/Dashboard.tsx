@@ -1,42 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Dumbbell } from 'lucide-react';
-import { UserSelector } from '../components/UserSelector';
-import { ExerciseCard } from '../components/ExerciseCard';
+import { useState } from 'react';
+import { Calendar, Dumbbell, CheckCircle, ArrowLeft } from 'lucide-react';
+import { EnhancedExerciseCard } from '../components/EnhancedExerciseCard';
+import { RoutineSelector } from '../components/RoutineSelector';
 import { Timer } from '../components/Timer';
-import { useWorkouts, useExerciseLogs } from '../hooks/useWorkouts';
+import { UserProfile } from '../components/UserProfile';
+import { useRoutines, useWorkoutSessions, useExerciseHistory } from '../hooks/useRoutines';
+import { User, Routine, WorkoutSet } from '../types';
+import { getCurrentDateString, formatDateString } from '../utils/dateUtils';
 
-export const Dashboard: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<'A' | 'B'>('A');
+interface DashboardProps {
+  user: User;
+  onLogout: () => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const [showTimer, setShowTimer] = useState(false);
-  const [currentDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [currentDate] = useState(() => getCurrentDateString());
+  const [selectedRoutine, setSelectedRoutine] = useState<Routine | null>(null);
+  const [currentSession, setCurrentSession] = useState<string | null>(null);
+  const [exerciseSets, setExerciseSets] = useState<{ [exerciseId: string]: WorkoutSet[] }>({});
   
-  const { workouts, loading: workoutsLoading } = useWorkouts();
-  const { logs, updateExerciseLog, getLogForExercise } = useExerciseLogs(currentDate);
+  const { routines, loading: routinesLoading, initializeDefaultRoutines } = useRoutines(user.id);
+  const { startWorkoutSession, completeWorkoutSession } = useWorkoutSessions(user.id);
+  const { updateExerciseHistory, getExerciseHistory } = useExerciseHistory(user.id);
 
-  // Obtener el día de la semana actual
-  const getDayOfWeek = () => {
-    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    return days[new Date().getDay()];
+
+  // Inicializar rutinas por defecto si no hay ninguna
+  useState(() => {
+    if (!routinesLoading && routines.length === 0) {
+      initializeDefaultRoutines();
+    }
+  });
+
+  const formatDate = (dateString: string) => formatDateString(dateString);
+
+  const handleSelectRoutine = async (routine: Routine) => {
+    try {
+      const sessionId = await startWorkoutSession(routine);
+      setSelectedRoutine(routine);
+      setCurrentSession(sessionId);
+      
+      // Inicializar sets con historial
+      const initialSets: { [exerciseId: string]: WorkoutSet[] } = {};
+      routine.exercises.forEach(exercise => {
+        const history = getExerciseHistory(exercise.id);
+        const sets: WorkoutSet[] = [];
+        for (let i = 1; i <= exercise.sets; i++) {
+          sets.push({
+            setNumber: i,
+            weight: history?.lastWeight[i - 1] || 0,
+            completed: false
+          });
+        }
+        initialSets[exercise.id] = sets;
+      });
+      setExerciseSets(initialSets);
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+    }
   };
 
-  const currentDay = getDayOfWeek();
-  const todaysWorkout = workouts.find(w => w.day === currentDay);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const handleUpdateSets = (exerciseId: string, sets: WorkoutSet[]) => {
+    setExerciseSets(prev => ({
+      ...prev,
+      [exerciseId]: sets
+    }));
   };
 
-  const handleStartTimer = (seconds: number) => {
+  const handleStartTimer = () => {
     setShowTimer(true);
   };
 
-  if (workoutsLoading) {
+  const handleCompleteWorkout = async () => {
+    if (!currentSession || !selectedRoutine) return;
+
+    try {
+      // Actualizar historial de ejercicios
+      for (const exercise of selectedRoutine.exercises) {
+        const sets = exerciseSets[exercise.id] || [];
+        const weights = sets.map(s => s.weight);
+        await updateExerciseHistory(exercise.id, exercise.name, weights);
+      }
+
+      // Completar sesión
+      await completeWorkoutSession(currentSession, Object.entries(exerciseSets).map(([exerciseId, sets]) => ({
+        exerciseId,
+        userId: user.id,
+        sets,
+        date: currentDate
+      })));
+
+      // Resetear estado
+      setSelectedRoutine(null);
+      setCurrentSession(null);
+      setExerciseSets({});
+    } catch (error) {
+      console.error('Error al completar entrenamiento:', error);
+    }
+  };
+
+  const handleBackToSelection = () => {
+    setSelectedRoutine(null);
+    setCurrentSession(null);
+    setExerciseSets({});
+  };
+
+  if (routinesLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -49,58 +118,71 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900 pb-20">
-      <div className="max-w-md mx-auto px-4 py-6">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center space-x-2 mb-2">
-            <Calendar className="text-blue-400" size={24} />
-            <h1 className="text-xl font-bold text-white">
-              {formatDate(currentDate)}
-            </h1>
+      <div className="max-w-md mx-auto">
+        {/* Perfil de Usuario */}
+        <UserProfile user={user} onLogout={onLogout} />
+        
+        <div className="px-4 py-6">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <Calendar className="text-blue-400" size={24} />
+              <h1 className="text-xl font-bold text-white">
+                {formatDate(currentDate)}
+              </h1>
+            </div>
           </div>
+
+          {/* Mostrar selector de rutina o entrenamiento activo */}
+          {!selectedRoutine ? (
+            <RoutineSelector 
+              routines={routines}
+              onSelectRoutine={handleSelectRoutine}
+              loading={routinesLoading}
+            />
+          ) : (
+            <div>
+              {/* Header del entrenamiento */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={handleBackToSelection}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="text-center flex-1">
+                  <h2 className="text-lg font-semibold text-white">{selectedRoutine.name}</h2>
+                  <p className="text-sm text-gray-400">{selectedRoutine.exercises.length} ejercicios</p>
+                </div>
+                <div className="w-10" /> {/* Spacer */}
+              </div>
+
+              {/* Lista de ejercicios */}
+              <div className="space-y-4 mb-6">
+                {selectedRoutine.exercises.map(exercise => (
+                  <EnhancedExerciseCard
+                    key={exercise.id}
+                    exercise={exercise}
+                    exerciseHistory={getExerciseHistory(exercise.id)}
+                    onUpdateSets={handleUpdateSets}
+                    onStartTimer={handleStartTimer}
+                  />
+                ))}
+              </div>
+
+              {/* Botón completar entrenamiento */}
+              <div className="sticky bottom-24 bg-gray-900 py-4">
+                <button
+                  onClick={handleCompleteWorkout}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                >
+                  <CheckCircle size={20} />
+                  <span>Completar Entrenamiento</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Selector de Usuario */}
-        <UserSelector currentUser={currentUser} onUserChange={setCurrentUser} />
-
-        {/* Entrenamiento del día */}
-        {todaysWorkout ? (
-          <div>
-            <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
-              <h2 className="text-lg font-semibold text-white mb-2 flex items-center">
-                <Dumbbell className="mr-2 text-blue-400" size={20} />
-                {todaysWorkout.name}
-              </h2>
-              <p className="text-gray-400 text-sm">
-                {todaysWorkout.exercises.length} ejercicio{todaysWorkout.exercises.length !== 1 ? 's' : ''} programado{todaysWorkout.exercises.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-
-            {/* Lista de ejercicios */}
-            <div className="space-y-4">
-              {todaysWorkout.exercises.map(exercise => (
-                <ExerciseCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  log={getLogForExercise(exercise.id, currentUser)}
-                  userId={currentUser}
-                  onUpdateLog={updateExerciseLog}
-                  onStartTimer={handleStartTimer}
-                />
-              ))}
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <Dumbbell className="mx-auto mb-4 text-gray-600" size={48} />
-            <h3 className="text-lg font-medium text-gray-400 mb-2">
-              Sin entrenamiento hoy
-            </h3>
-            <p className="text-gray-500 text-sm">
-              ¡Día de descanso! Ve a Rutinas para configurar entrenamientos.
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Timer flotante */}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, doc, getDocs, setDoc, updateDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { Workout, ExerciseLog, User } from '../types';
+import { Workout, ExerciseLog } from '../types';
 
 export const useWorkouts = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -75,7 +75,8 @@ export const useWorkouts = () => {
 
   const updateWorkout = async (workout: Workout) => {
     try {
-      await updateDoc(doc(db, 'workouts', workout.id), workout);
+      const { id, ...workoutData } = workout;
+      await updateDoc(doc(db, 'workouts', workout.id), workoutData);
       setWorkouts(prev => prev.map(w => w.id === workout.id ? workout : w));
     } catch (err) {
       setError('Error al actualizar entrenamiento');
@@ -95,10 +96,7 @@ export const useExerciseLogs = (date: string) => {
     const q = query(logsRef, where('date', '==', date));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const logsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as ExerciseLog[];
+      const logsData = snapshot.docs.map(doc => doc.data() as ExerciseLog);
       
       setLogs(logsData);
       setLoading(false);
@@ -116,7 +114,7 @@ export const useExerciseLogs = (date: string) => {
     }
   };
 
-  const getLogForExercise = (exerciseId: string, userId: 'A' | 'B') => {
+  const getLogForExercise = (exerciseId: string, userId: string) => {
     return logs.find(log => log.exerciseId === exerciseId && log.userId === userId);
   };
 

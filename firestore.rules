@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Permitir a usuarios autenticados acceder solo a sus datos
+    match /routines/{routineId} {
+      allow read, write, delete: if request.auth != null 
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+
+    match /workoutSessions/{sessionId} {
+      allow read, write, delete: if request.auth != null 
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+
+    match /exerciseHistory/{historyId} {
+      allow read, write, delete: if request.auth != null 
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+
+    match /exerciseLogs/{logId} {
+      allow read, write, delete: if request.auth != null 
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Reglas simplificadas para ejercicios
+    match /exerciseTemplates/{templateId} {
+      // Cualquier usuario autenticado puede leer todos los ejercicios
+      allow read: if request.auth != null;
+      
+      // Cualquier usuario autenticado puede crear ejercicios
+      allow create: if request.auth != null;
+      
+      // Cualquier usuario autenticado puede actualizar ejercicios (para timesUsed)
+      allow update: if request.auth != null;
+      
+      // Solo el creador puede eliminar
+      allow delete: if request.auth != null 
+        && request.auth.uid == resource.data.createdBy;
+    }
+  }
+}

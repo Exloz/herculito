@@ -1,0 +1,17 @@
+# Configuración para Dockploy
+# Este archivo define las variables necesarias para el despliegue
+
+# Puerto interno del contenedor
+EXPOSE_PORT=8080
+
+# Variables de entorno de producción
+NODE_ENV=production
+
+# Comando de build (usado por Dockploy si se detecta)
+BUILD_COMMAND=npm run build
+
+# Comando de inicio (se sobrescribe por el Dockerfile)
+START_COMMAND=nginx -g "daemon off;"
+
+# Healthcheck URL
+HEALTH_CHECK_PATH=/health

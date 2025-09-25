@@ -2,20 +2,16 @@
 # Etapa 1: Build de la aplicación
 FROM node:20-alpine AS builder
 
-# Instalar dependencias del sistema necesarias para builds nativos
-RUN apk add --no-cache python3 make g++
-
 # Configurar directorio de trabajo
 WORKDIR /app
 
-# Copiar archivos de dependencias
+# Copiar package files para instalar dependencias
 COPY package*.json ./
 
-# Instalar dependencias con cache optimizado
-RUN npm ci --only=production --silent && \
-    npm cache clean --force
+# Instalar dependencias (incluyendo devDependencies para el build)
+RUN npm ci --silent
 
-# Copiar código fuente
+# Copiar todo el código fuente
 COPY . .
 
 # Build de la aplicación

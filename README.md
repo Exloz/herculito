@@ -1,4 +1,4 @@
-# CityGym - App de Seguimiento de Entrenamientos
+# HERCULITO - App de Seguimiento de Entrenamientos
 
 Una aplicación React moderna para trackear entrenamientos en el gimnasio con autenticación Google y sincronización en tiempo real.
 

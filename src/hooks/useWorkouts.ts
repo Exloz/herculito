@@ -13,19 +13,18 @@ export const useWorkouts = () => {
       try {
         // Crear rutina por defecto si no existe
         await initializeDefaultRoutine();
-        
+
         const workoutsRef = collection(db, 'workouts');
         const snapshot = await getDocs(workoutsRef);
-        
+
         const workoutsData = snapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         })) as Workout[];
-        
+
         setWorkouts(workoutsData);
-      } catch (err) {
+      } catch {
         setError('Error al cargar entrenamientos');
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -75,12 +74,12 @@ export const useWorkouts = () => {
 
   const updateWorkout = async (workout: Workout) => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, ...workoutData } = workout;
       await updateDoc(doc(db, 'workouts', workout.id), workoutData);
       setWorkouts(prev => prev.map(w => w.id === workout.id ? workout : w));
-    } catch (err) {
+    } catch {
       setError('Error al actualizar entrenamiento');
-      console.error(err);
     }
   };
 
@@ -94,10 +93,10 @@ export const useExerciseLogs = (date: string) => {
   useEffect(() => {
     const logsRef = collection(db, 'exerciseLogs');
     const q = query(logsRef, where('date', '==', date));
-    
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const logsData = snapshot.docs.map(doc => doc.data() as ExerciseLog);
-      
+
       setLogs(logsData);
       setLoading(false);
     });
@@ -109,8 +108,8 @@ export const useExerciseLogs = (date: string) => {
     try {
       const logId = `${log.exerciseId}_${log.userId}_${log.date}`;
       await setDoc(doc(db, 'exerciseLogs', logId), log, { merge: true });
-    } catch (err) {
-      console.error('Error al actualizar log:', err);
+    } catch {
+      // Error silencioso para logs
     }
   };
 

@@ -14,14 +14,14 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onCancel
 }) => {
   const { user } = useAuth();
-  
-  const { 
-    exercises, 
-    loading, 
-    createExerciseTemplate, 
-    incrementUsage, 
-    getCategories, 
-    searchExercises 
+
+  const {
+    exercises,
+    loading,
+    createExerciseTemplate,
+    incrementUsage,
+    getCategories,
+    searchExercises
   } = useExerciseTemplates(user?.id || '');
 
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -30,7 +30,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [creatingExercise, setCreatingExercise] = useState(false);
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
-  
+
   // Estado para ejercicio personalizado
   const [customExercise, setCustomExercise] = useState({
     name: '',
@@ -74,7 +74,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     setCreatingExercise(true);
     setError(''); // Limpiar errores previos
     setSuccessMessage('');
-    
+
     try {
       // Crear el template en la base de datos
       const templateId = await createExerciseTemplate(
@@ -110,9 +110,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       });
 
       onSelectExercise(exercise);
-      
-    } catch (error) {
-      console.error('Error en handleCustomExercise:', error);
+
+    } catch {
       setError('Error al crear el ejercicio. Por favor, intenta de nuevo.');
     } finally {
       setCreatingExercise(false);
@@ -167,11 +166,10 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setError('');
                 setSuccessMessage('');
               }}
-              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${
-                !showCustomForm 
-                  ? 'bg-blue-600 text-white' 
+              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${!showCustomForm
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+                }`}
             >
               Ejercicios ({exercises.length})
             </button>
@@ -182,11 +180,10 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setError('');
                 setSuccessMessage('');
               }}
-              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${
-                showCustomForm 
-                  ? 'bg-blue-600 text-white' 
+              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${showCustomForm
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              }`}
+                }`}
             >
               Crear Nuevo
             </button>
@@ -274,7 +271,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     type="text"
                     value={customExercise.name}
                     onChange={(e) => {
-                      setCustomExercise({...customExercise, name: e.target.value});
+                      setCustomExercise({ ...customExercise, name: e.target.value });
                       if (error) setError(''); // Limpiar error cuando el usuario empieza a escribir
                       if (successMessage) setSuccessMessage(''); // Limpiar mensaje de éxito
                     }}
@@ -301,7 +298,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   <input
                     type="text"
                     value={customExercise.category}
-                    onChange={(e) => setCustomExercise({...customExercise, category: e.target.value})}
+                    onChange={(e) => setCustomExercise({ ...customExercise, category: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                     placeholder="Ej: Pecho, Espalda, Piernas..."
                     list="categories"
@@ -317,20 +314,20 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   <label className="block text-sm text-gray-300 mb-1">Descripción (opcional)</label>
                   <textarea
                     value={customExercise.description}
-                    onChange={(e) => setCustomExercise({...customExercise, description: e.target.value})}
+                    onChange={(e) => setCustomExercise({ ...customExercise, description: e.target.value })}
                     className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                     placeholder="Describe cómo hacer el ejercicio..."
                     rows={2}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="block text-sm text-gray-300 mb-1">Series</label>
                     <input
                       type="number"
                       value={customExercise.sets}
-                      onChange={(e) => setCustomExercise({...customExercise, sets: parseInt(e.target.value) || 1})}
+                      onChange={(e) => setCustomExercise({ ...customExercise, sets: parseInt(e.target.value) || 1 })}
                       className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                       min="1"
                     />
@@ -340,7 +337,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     <input
                       type="number"
                       value={customExercise.reps}
-                      onChange={(e) => setCustomExercise({...customExercise, reps: parseInt(e.target.value) || 1})}
+                      onChange={(e) => setCustomExercise({ ...customExercise, reps: parseInt(e.target.value) || 1 })}
                       className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                       min="1"
                     />
@@ -350,7 +347,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     <input
                       type="number"
                       value={customExercise.restTime}
-                      onChange={(e) => setCustomExercise({...customExercise, restTime: parseInt(e.target.value) || 30})}
+                      onChange={(e) => setCustomExercise({ ...customExercise, restTime: parseInt(e.target.value) || 30 })}
                       className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                       min="30"
                       step="30"
@@ -377,7 +374,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   >
                     Cancelar
                   </button>
-                  
+
                   <button
                     onClick={handleCustomExercise}
                     disabled={!customExercise.name.trim() || creatingExercise}

@@ -25,15 +25,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     getWorkoutStats
   } = useWorkoutSessions(user);
 
-  // Debug logs
-  console.log('Dashboard Debug:', {
-    user,
-    routinesLoading,
-    sessionsLoading,
-    routinesCount: routines.length,
-    sessionsCount: sessions.length
-  });
-
   // Obtener recomendación de grupo muscular
   const recentSessions = getRecentSessions(7); // Últimos 7 días
   const recommendedGroup = getRecommendedMuscleGroup(recentSessions);
@@ -46,12 +37,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       const session = await startWorkoutSession(routineId);
       // Aquí podrías navegar a una página de entrenamiento activo
       // o abrir un modal con los ejercicios
-      console.log('Sesión iniciada:', session);
-
       // Por ahora, solo mostraremos un mensaje
       alert(`¡Entrenamiento iniciado! Sesión: ${session.id}`);
-    } catch (error) {
-      console.error('Error al iniciar entrenamiento:', error);
+    } catch {
       alert('Error al iniciar el entrenamiento. Inténtalo de nuevo.');
     }
   };
@@ -59,15 +47,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const handleRoutineMuscleGroupChange = async (routineId: string, newMuscleGroup: MuscleGroup) => {
     try {
       await updateRoutine(routineId, { primaryMuscleGroup: newMuscleGroup });
-      console.log(`Grupo muscular cambiado para rutina ${routineId}: ${newMuscleGroup}`);
-    } catch (error) {
-      console.error('Error al cambiar grupo muscular:', error);
+    } catch {
       alert('Error al cambiar el grupo muscular. Inténtalo de nuevo.');
     }
   };
 
-  const handleDayClick = (date: string) => {
-    console.log('Día seleccionado:', date);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleDayClick = (_date: string) => {
     // Aquí podrías mostrar detalles del entrenamiento de ese día
   };
 

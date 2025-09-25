@@ -20,7 +20,6 @@ export const useWorkoutSessions = (user: User) => {
     // Configurar un timeout para evitar carga infinita
     const loadingTimeout = setTimeout(() => {
       if (loading) {
-        console.log('Timeout alcanzado, configurando estado vacío para workoutSessions');
         setSessions([]);
         setLoading(false);
         setError('No se pudieron cargar las sesiones de entrenamiento');
@@ -57,16 +56,14 @@ export const useWorkoutSessions = (user: User) => {
             setSessions(sessionsData);
             setLoading(false);
             setError(null);
-          } catch (error) {
-            console.error('Error procesando sesiones:', error);
+          } catch {
             clearTimeout(loadingTimeout);
             setSessions([]);
             setLoading(false);
             setError('Error al procesar las sesiones');
           }
         },
-        (error) => {
-          console.error('Error en snapshot de workoutSessions:', error);
+        () => {
           clearTimeout(loadingTimeout);
           // Si hay error de permisos, simplemente no cargar sesiones pero continuar
           setSessions([]);
@@ -79,8 +76,7 @@ export const useWorkoutSessions = (user: User) => {
         clearTimeout(loadingTimeout);
         unsubscribe();
       };
-    } catch (error) {
-      console.error('Error configurando listener de workoutSessions:', error);
+    } catch {
       clearTimeout(loadingTimeout);
       setSessions([]);
       setLoading(false);

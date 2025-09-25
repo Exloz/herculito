@@ -152,47 +152,7 @@ export const getRecommendedMuscleGroup = (recentWorkouts: WorkoutSession[]): Mus
 
     // Retornar un grupo no entrenado aleatoriamente
     return untrainedGroups[Math.floor(Math.random() * untrainedGroups.length)];
-  } catch (error) {
-    console.error('Error en getRecommendedMuscleGroup:', error);
+  } catch {
     return null;
-  }
-};
-
-// Función para actualizar rutinas existentes con grupos musculares
-export const updateRoutinesWithMuscleGroups = async (): Promise<void> => {
-  try {
-    const { db } = await import('../firebase/config');
-    const { collection, getDocs, doc, updateDoc } = await import('firebase/firestore');
-
-    console.log('Obteniendo rutinas existentes...');
-    const routinesSnapshot = await getDocs(collection(db, 'routines'));
-
-    const updatePromises = routinesSnapshot.docs.map(async (routineDoc) => {
-      const routineData = routineDoc.data() as Routine;
-
-      // Solo actualizar si no tiene grupo muscular definido
-      if (!routineData.primaryMuscleGroup) {
-        const primaryMuscleGroup = getRoutinePrimaryMuscleGroup(routineData);
-
-        // Actualizar ejercicios con sus grupos musculares
-        const updatedExercises = routineData.exercises.map(exercise => ({
-          ...exercise,
-          muscleGroup: exercise.muscleGroup || detectMuscleGroup(exercise.name)
-        }));
-
-        console.log(`Actualizando rutina "${routineData.name}" con grupo muscular: ${primaryMuscleGroup}`);
-
-        return updateDoc(doc(db, 'routines', routineDoc.id), {
-          primaryMuscleGroup,
-          exercises: updatedExercises
-        });
-      }
-    });
-
-    await Promise.all(updatePromises.filter(Boolean));
-    console.log('¡Actualización de rutinas completada!');
-  } catch (error) {
-    console.error('Error actualizando rutinas:', error);
-    throw error;
   }
 };

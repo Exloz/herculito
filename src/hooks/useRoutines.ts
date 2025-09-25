@@ -22,11 +22,8 @@ export const useRoutines = (userId: string) => {
     const q = query(routinesRef);
 
     const unsubscribeRoutines = onSnapshot(q, (snapshot) => {
-      console.log('Firebase snapshot recibido, docs:', snapshot.docs.length);
-
       const allRoutinesData = snapshot.docs.map(doc => {
         const data = doc.data();
-        console.log('Rutina encontrada:', doc.id, data);
         return {
           id: doc.id,
           ...data,
@@ -34,8 +31,6 @@ export const useRoutines = (userId: string) => {
           updatedAt: data.updatedAt?.toDate(),
         };
       }) as Routine[];
-
-      console.log('Total rutinas antes de filtrar:', allRoutinesData.length);
 
       // Filtrar rutinas: para compatibilidad con rutinas existentes
       const filteredRoutines = allRoutinesData.filter(routine => {
@@ -47,12 +42,9 @@ export const useRoutines = (userId: string) => {
         const isUserRoutine = !routine.createdBy || routine.createdBy === userId || routine.userId === userId;
 
         const shouldShow = isPublicRoutine || isUserRoutine;
-        console.log(`Rutina ${routine.name}: isPublic=${routine.isPublic}, createdBy=${routine.createdBy}, userId=${routine.userId}, shouldShow=${shouldShow}`);
 
         return shouldShow;
       });
-
-      console.log('Rutinas después de filtrar:', filteredRoutines.length);
 
       // Ordenar: primero las del usuario, luego por fecha
       filteredRoutines.sort((a, b) => {
@@ -77,11 +69,9 @@ export const useRoutines = (userId: string) => {
         !r.createdBy || r.createdBy === userId || r.userId === userId
       );
       if (userRoutines.length === 0 && !loading) {
-        console.log('No hay rutinas del usuario, inicializando rutinas por defecto');
         setTimeout(() => initializeDefaultRoutines(), 100);
       }
     }, (err) => {
-      console.error('Error en snapshot de rutinas:', err);
       setError('Error al cargar rutinas: ' + err.message);
       setLoading(false);
     });

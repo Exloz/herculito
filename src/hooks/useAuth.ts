@@ -30,8 +30,7 @@ export function useAuth() {
     try {
       setLoading(true);
       await signInWithPopup(auth, googleProvider);
-    } catch (error: any) {
-      console.error('Error al iniciar sesión:', error);
+    } catch {
       setLoading(false);
     }
   };
@@ -39,8 +38,8 @@ export function useAuth() {
   const logout = async () => {
     try {
       await signOut(auth);
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+    } catch {
+      // Error silencioso para logout
     }
   };
 

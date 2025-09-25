@@ -53,6 +53,12 @@ export const useWorkoutSessions = (user: User) => {
               })
               .slice(0, 30) as WorkoutSession[]; // Limitamos a 30
 
+            console.log('Loaded workout sessions:', {
+              total: sessionsData.length,
+              completed: sessionsData.filter(s => s.completedAt).length,
+              sessions: sessionsData
+            });
+
             setSessions(sessionsData);
             setLoading(false);
             setError(null);
@@ -100,27 +106,47 @@ export const useWorkoutSessions = (user: User) => {
       exercises: []
     };
 
+    console.log('Starting workout session:', {
+      sessionId: session.id,
+      routineName: routine.name,
+      userId: user.id,
+      startedAt: session.startedAt
+    });
+
     await setDoc(doc(db, 'workoutSessions', session.id), {
       ...session,
       startedAt: session.startedAt,
       completedAt: null
     });
 
+    console.log('Workout session started successfully');
     return session;
   };
 
   const completeWorkoutSession = async (sessionId: string, exercises: ExerciseLog[]) => {
     const session = sessions.find(s => s.id === sessionId);
-    if (!session) return;
+    if (!session) {
+      console.error('Session not found:', sessionId);
+      return;
+    }
 
     const completedAt = new Date();
     const totalDuration = Math.round((completedAt.getTime() - session.startedAt.getTime()) / (1000 * 60)); // en minutos
+
+    console.log('Completing workout session:', {
+      sessionId,
+      completedAt,
+      totalDuration,
+      exerciseCount: exercises.length
+    });
 
     await setDoc(doc(db, 'workoutSessions', sessionId), {
       completedAt,
       exercises,
       totalDuration
     }, { merge: true });
+
+    console.log('Workout session completed successfully');
   };
 
   const updateSessionProgress = async (sessionId: string, exercises: ExerciseLog[]) => {
@@ -146,12 +172,20 @@ export const useWorkoutSessions = (user: User) => {
     const thisWeek = getRecentSessions(7);
     const thisMonth = getRecentSessions(30);
 
-    return {
+    const stats = {
       totalWorkouts: completed.length,
       thisWeekWorkouts: thisWeek.length,
       thisMonthWorkouts: thisMonth.length,
       currentStreak: calculateWorkoutStreak()
     };
+
+    console.log('Workout stats calculated:', {
+      totalSessions: sessions.length,
+      completedSessions: completed.length,
+      stats
+    });
+
+    return stats;
   };
 
   const calculateWorkoutStreak = (): number => {
@@ -182,6 +216,38 @@ export const useWorkoutSessions = (user: User) => {
     return streak;
   };
 
+  // Obtener los últimos pesos utilizados para cada ejercicio de una rutina específica
+  const getLastWeightsForRoutine = (routineId: string): Record<string, number[]> => {
+    // Encontrar la sesión más reciente completada de esta rutina
+    const lastCompletedSession = sessions
+      .filter(s => s.routineId === routineId && s.completedAt && s.exercises && s.exercises.length > 0)
+      .sort((a, b) => b.completedAt!.getTime() - a.completedAt!.getTime())[0];
+
+    if (!lastCompletedSession || !lastCompletedSession.exercises) {
+      console.log('No previous session found for routine:', routineId);
+      return {};
+    }
+
+    const lastWeights: Record<string, number[]> = {};
+
+    // Extraer los pesos de cada ejercicio de la última sesión
+    lastCompletedSession.exercises.forEach(exerciseLog => {
+      if (exerciseLog.sets && exerciseLog.sets.length > 0) {
+        // Obtener los pesos de todos los sets completados
+        const weights = exerciseLog.sets
+          .filter(set => set.completed && set.weight > 0)
+          .map(set => set.weight);
+
+        if (weights.length > 0) {
+          lastWeights[exerciseLog.exerciseId] = weights;
+        }
+      }
+    });
+
+    console.log('Last weights for routine', routineId, ':', lastWeights);
+    return lastWeights;
+  };
+
   return {
     sessions,
     loading,
@@ -190,6 +256,7 @@ export const useWorkoutSessions = (user: User) => {
     completeWorkoutSession,
     updateSessionProgress,
     getRecentSessions,
-    getWorkoutStats
+    getWorkoutStats,
+    getLastWeightsForRoutine
   };
 };

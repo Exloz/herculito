@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Calendar, TrendingUp, Award, Clock, LogOut, Dumbbell } from 'lucide-react';
-import { User, MuscleGroup } from '../types';
+import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../types';
 import { useRoutines } from '../hooks/useRoutines';
 import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { WorkoutCalendar } from '../components/WorkoutCalendar';
+import { ActiveWorkout } from '../components/ActiveWorkout';
 import { getRecommendedMuscleGroup } from '../utils/muscleGroups';
 
 interface DashboardProps {
@@ -15,12 +16,17 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
+  const [activeWorkout, setActiveWorkout] = useState<{
+    routine: Routine;
+    session: WorkoutSession;
+  } | null>(null);
 
   const { routines, loading: routinesLoading, updateRoutine } = useRoutines(user.id);
   const {
     sessions,
     loading: sessionsLoading,
     startWorkoutSession,
+    completeWorkoutSession,
     getRecentSessions,
     getWorkoutStats
   } = useWorkoutSessions(user);
@@ -35,10 +41,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const handleStartWorkout = async (routineId: string) => {
     try {
       const session = await startWorkoutSession(routineId);
-      // Aquí podrías navegar a una página de entrenamiento activo
-      // o abrir un modal con los ejercicios
-      // Por ahora, solo mostraremos un mensaje
-      alert(`¡Entrenamiento iniciado! Sesión: ${session.id}`);
+      const routine = routines.find(r => r.id === routineId);
+
+      if (routine) {
+        setActiveWorkout({ routine, session });
+      } else {
+        alert('Rutina no encontrada');
+      }
     } catch {
       alert('Error al iniciar el entrenamiento. Inténtalo de nuevo.');
     }
@@ -57,6 +66,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     // Aquí podrías mostrar detalles del entrenamiento de ese día
   };
 
+  const handleBackToDashboard = () => {
+    setActiveWorkout(null);
+  };
+
+  const handleCompleteWorkout = async (exerciseLogs: ExerciseLog[]) => {
+    if (!activeWorkout) return;
+
+    console.log('Completing workout with logs:', exerciseLogs);
+
+    try {
+      await completeWorkoutSession(activeWorkout.session.id, exerciseLogs);
+      setActiveWorkout(null);
+      alert('¡Entrenamiento completado! 🎉');
+    } catch (error) {
+      console.error('Error completing workout:', error);
+      alert('Error al completar el entrenamiento. Inténtalo de nuevo.');
+    }
+  };
+
+  // Si hay un entrenamiento activo, mostrar la vista de entrenamiento
+  if (activeWorkout) {
+    return (
+      <ActiveWorkout
+        user={user}
+        routine={activeWorkout.routine}
+        session={activeWorkout.session}
+        onBackToDashboard={handleBackToDashboard}
+        onCompleteWorkout={handleCompleteWorkout}
+      />
+    );
+  }
+
   if (routinesLoading || sessionsLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
@@ -69,7 +110,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-900 pb-20">
       {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700 px-4 py-4 sm:py-6">
         <div className="max-w-7xl mx-auto">

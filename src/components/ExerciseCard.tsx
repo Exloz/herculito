@@ -4,10 +4,11 @@ import { Exercise, ExerciseLog, WorkoutSet } from '../types';
 
 interface ExerciseCardProps {
   exercise: Exercise;
-  log: ExerciseLog | undefined;
+  log: ExerciseLog;
   userId: string;
   onUpdateLog: (log: ExerciseLog) => void;
   onStartTimer: (seconds: number) => void;
+  previousWeights?: number[]; // Pesos de la sesión anterior
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = ({
@@ -15,23 +16,33 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
   log,
   userId,
   onUpdateLog,
-  onStartTimer
+  onStartTimer,
+  previousWeights
 }) => {
 
   const initializeSets = (): WorkoutSet[] => {
     const sets: WorkoutSet[] = [];
     for (let i = 1; i <= exercise.sets; i++) {
-      const existingSet = log?.sets.find(s => s.setNumber === i);
-      sets.push(existingSet || {
-        setNumber: i,
-        weight: 0,
-        completed: false
-      });
+      const existingSet = log.sets.find(s => s.setNumber === i);
+      if (existingSet) {
+        sets.push(existingSet);
+      } else {
+        // Usar el peso anterior si está disponible, sino usar 0
+        const previousWeight = previousWeights && previousWeights[i - 1] !== undefined
+          ? previousWeights[i - 1]
+          : 0;
+
+        sets.push({
+          setNumber: i,
+          weight: previousWeight,
+          completed: false
+        });
+      }
     }
     return sets;
   };
 
-  const currentSets = log?.sets || initializeSets();
+  const currentSets = log.sets.length > 0 ? log.sets : initializeSets();
   const completedSets = currentSets.filter(s => s.completed).length;
   const progressPercentage = (completedSets / exercise.sets) * 100;
 
@@ -55,9 +66,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
     if (!currentSet) return;
 
     const wasCompleted = currentSet.completed;
-    
+
     const updatedSets = currentSets.map(set =>
-      set.setNumber === setNumber 
+      set.setNumber === setNumber
         ? { ...set, completed: !set.completed, completedAt: !set.completed ? new Date() : undefined }
         : set
     );
@@ -88,16 +99,22 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
             <span>{exercise.sets} × {exercise.reps}</span>
           </div>
         </div>
-        
+
         {/* Barra de progreso */}
         <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-          <div 
+          <div
             className="bg-green-500 h-2 rounded-full transition-all duration-300"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
         <div className="text-sm text-gray-400">
           {completedSets} de {exercise.sets} series completadas
+          {/* Información sobre pesos anteriores */}
+          {previousWeights && previousWeights.length > 0 && (
+            <span className="ml-2 text-blue-400">
+              • Pesos precargados de la sesión anterior
+            </span>
+          )}
         </div>
       </div>
 
@@ -110,33 +127,37 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           const weight = currentSet?.weight || 0;
 
           return (
-            <div 
+            <div
               key={setNumber}
-              className={`flex items-center space-x-3 p-3 rounded-lg border transition-all duration-200 ${
-                isCompleted 
-                  ? 'bg-green-900/30 border-green-600' 
-                  : 'bg-gray-700 border-gray-600 hover:border-gray-500'
-              }`}
+              className={`flex items-center space-x-3 p-3 rounded-lg border transition-all duration-200 ${isCompleted
+                ? 'bg-green-900/30 border-green-600'
+                : 'bg-gray-700 border-gray-600 hover:border-gray-500'
+                }`}
             >
               {/* Número de serie */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                isCompleted ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'
-              }`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${isCompleted ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'
+                }`}>
                 {setNumber}
               </div>
 
               {/* Campo de peso */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2">
-                  <input
-                    type="number"
-                    value={weight || ''}
-                    onChange={(e) => updateSetWeight(setNumber, parseFloat(e.target.value) || 0)}
-                    className="w-20 px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-500 focus:outline-none text-center"
-                    placeholder="0"
-                    step="0.5"
-                    min="0"
-                  />
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={weight || ''}
+                      onChange={(e) => updateSetWeight(setNumber, parseFloat(e.target.value) || 0)}
+                      className="w-20 px-2 py-1 bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-500 focus:outline-none text-center"
+                      placeholder="0"
+                      step="0.5"
+                      min="0"
+                    />
+                    {/* Indicador de peso anterior */}
+                    {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (
+                      <div className="absolute -top-2 -right-2 w-3 h-3 bg-blue-500 rounded-full" title="Peso de la sesión anterior" />
+                    )}
+                  </div>
                   <span className="text-gray-400 text-sm">kg × {exercise.reps}</span>
                 </div>
               </div>
@@ -144,11 +165,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
               {/* Botón de completar */}
               <button
                 onClick={() => toggleSetCompleted(setNumber)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${
-                  isCompleted
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
-                }`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${isCompleted
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+                  }`}
               >
                 <Check size={20} />
               </button>

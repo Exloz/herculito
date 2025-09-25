@@ -1,0 +1,98 @@
+/* Optimizaciones específicas para móviles */
+
+/* Mejoras de touch targets para dispositivos móviles */
+@media (max-width: 768px) {
+  /* Asegurar que los botones tengan tamaño mínimo de 44px para touch */
+  button {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Botones más pequeños específicos */
+  button.p-1,
+  button.p-1\.5,
+  button.p-2 {
+    min-height: 36px;
+    min-width: 36px;
+  }
+  
+  /* Prevenir zoom en inputs en iOS */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  
+  /* Mejorar scroll en contenedores */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Reducir motion para usuarios que lo prefieran */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Mejoras de performance */
+.transition-colors,
+.transition-all,
+.transition-transform {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  /* Los colores ya están optimizados en Tailwind, 
+     pero asegurar que no haya flash de contenido blanco */
+  html {
+    background-color: #111827; /* bg-gray-900 */
+  }
+}
+
+/* Accesibilidad mejorada */
+.focus\:ring-2:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+}
+
+/* Estados de loading mejorados para móvil */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Mejorar selección de texto en móvil */
+::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Ocultar scrollbars en webkit para mejor experiencia móvil */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

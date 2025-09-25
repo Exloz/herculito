@@ -1,30 +1,33 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, X } from 'lucide-react';
-import { Routine, Exercise } from '../types';
+import { Routine, Exercise, MuscleGroup } from '../types';
 import { ExerciseSelector } from './ExerciseSelector';
+import { MUSCLE_GROUPS } from '../utils/muscleGroups';
 
 interface RoutineEditorProps {
   routine?: Routine;
-  onSave: (name: string, description: string, exercises: Exercise[]) => void;
+  onSave: (name: string, description: string, exercises: Exercise[], isPublic?: boolean, primaryMuscleGroup?: MuscleGroup) => void;
   onCancel: () => void;
   loading?: boolean;
 }
 
-export const RoutineEditor: React.FC<RoutineEditorProps> = ({ 
-  routine, 
-  onSave, 
-  onCancel, 
-  loading = false 
+export const RoutineEditor: React.FC<RoutineEditorProps> = ({
+  routine,
+  onSave,
+  onCancel,
+  loading = false
 }) => {
   const [name, setName] = useState(routine?.name || '');
   const [description, setDescription] = useState(routine?.description || '');
   const [exercises, setExercises] = useState<Exercise[]>(routine?.exercises || []);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
+  const [isPublic, setIsPublic] = useState(routine?.isPublic ?? true);
+  const [primaryMuscleGroup, setPrimaryMuscleGroup] = useState<MuscleGroup>(routine?.primaryMuscleGroup || 'fullbody');
 
   const handleAddExercise = (exercise: Exercise) => {
     const newExercises = [...exercises, exercise];
     setExercises(newExercises);
-    
+
     // Usar setTimeout para cerrar el selector después de que se complete la operación
     setTimeout(() => {
       setShowExerciseSelector(false);
@@ -36,7 +39,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   };
 
   const handleUpdateExercise = (exerciseId: string, updates: Partial<Exercise>) => {
-    setExercises(exercises.map(e => 
+    setExercises(exercises.map(e =>
       e.id === exerciseId ? { ...e, ...updates } : e
     ));
   };
@@ -44,7 +47,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || exercises.length === 0) return;
-    onSave(name, description, exercises);
+    onSave(name, description, exercises, isPublic, primaryMuscleGroup);
   };
 
   return (
@@ -78,7 +81,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Descripción (opcional)
@@ -90,6 +93,38 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 placeholder="Describe tu rutina..."
                 rows={3}
               />
+            </div>
+
+            {/* Grupo muscular */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Grupo muscular principal
+              </label>
+              <select
+                value={primaryMuscleGroup}
+                onChange={(e) => setPrimaryMuscleGroup(e.target.value as MuscleGroup)}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+              >
+                {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
+                  <option key={key} value={key}>
+                    {group.icon} {group.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Visibilidad */}
+            <div className="flex items-center space-x-3">
+              <input
+                type="checkbox"
+                id="isPublic"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="isPublic" className="text-sm text-gray-300">
+                Hacer esta rutina pública (otros usuarios podrán usarla)
+              </label>
             </div>
           </div>
 

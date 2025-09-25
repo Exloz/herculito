@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { collection, doc, setDoc, addDoc, updateDoc, onSnapshot, query, where, orderBy, deleteDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { Routine, WorkoutSession, ExerciseHistory, Exercise, MuscleGroup } from '../types';
+import { Routine, WorkoutSession, ExerciseHistory, Exercise } from '../types';
 
 export const useRoutines = (userId: string) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -44,10 +44,10 @@ export const useRoutines = (userId: string) => {
 
         // Si la rutina no tiene createdBy (rutinas viejas), asumimos que es del usuario actual
         // También incluir si tiene userId (rutinas viejas) que coincida con el usuario actual
-        const isUserRoutine = !routine.createdBy || routine.createdBy === userId || routine.userId === userId;
+        const isUserRoutine = !routine.createdBy || routine.createdBy === userId || (routine as any).userId === userId;
 
         const shouldShow = isPublicRoutine || isUserRoutine;
-        console.log(`Rutina ${routine.name}: isPublic=${routine.isPublic}, createdBy=${routine.createdBy}, userId=${routine.userId}, shouldShow=${shouldShow}`);
+        console.log(`Rutina ${routine.name}: isPublic=${routine.isPublic}, createdBy=${routine.createdBy}, userId=${(routine as any).userId}, shouldShow=${shouldShow}`);
 
         return shouldShow;
       });
@@ -57,8 +57,8 @@ export const useRoutines = (userId: string) => {
       // Ordenar: primero las del usuario, luego por fecha
       filteredRoutines.sort((a, b) => {
         // Priorizar las del usuario actual (incluyendo rutinas sin createdBy o con userId)
-        const aIsUser = !a.createdBy || a.createdBy === userId || a.userId === userId;
-        const bIsUser = !b.createdBy || b.createdBy === userId || b.userId === userId;
+        const aIsUser = !a.createdBy || a.createdBy === userId || (a as any).userId === userId;
+        const bIsUser = !b.createdBy || b.createdBy === userId || (b as any).userId === userId;
 
         if (aIsUser && !bIsUser) return -1;
         if (bIsUser && !aIsUser) return 1;
@@ -74,7 +74,7 @@ export const useRoutines = (userId: string) => {
 
       // Inicializar rutinas por defecto si el usuario no tiene ninguna propia
       const userRoutines = filteredRoutines.filter(r =>
-        !r.createdBy || r.createdBy === userId || r.userId === userId
+        !r.createdBy || r.createdBy === userId || (r as any).userId === userId
       );
       if (userRoutines.length === 0 && !loading) {
         console.log('No hay rutinas del usuario, inicializando rutinas por defecto');
@@ -89,10 +89,9 @@ export const useRoutines = (userId: string) => {
     return () => {
       unsubscribeRoutines();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const createRoutine = async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true, primaryMuscleGroup?: MuscleGroup) => {
+  const createRoutine = async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true) => {
     const routine: Omit<Routine, 'id'> = {
       name,
       description,
@@ -103,7 +102,6 @@ export const useRoutines = (userId: string) => {
       timesUsed: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
-      primaryMuscleGroup
     };
 
     const routinesRef = collection(db, 'routines');
@@ -136,21 +134,21 @@ export const useRoutines = (userId: string) => {
   // Verificar si el usuario actual es el creador de la rutina
   const canEditRoutine = (routine: Routine): boolean => {
     // Si no tiene createdBy (rutinas viejas), verificar userId o asumimos que es del usuario actual
-    return !routine.createdBy || routine.createdBy === userId || routine.userId === userId;
+    return !routine.createdBy || routine.createdBy === userId || (routine as any).userId === userId;
   };
 
   // Obtener rutinas públicas vs propias
   const getPublicRoutines = (): Routine[] => {
     return routines.filter(r => {
       const isPublic = r.isPublic !== false; // true si es undefined o true
-      const isFromOtherUser = r.createdBy && r.createdBy !== userId && r.userId !== userId;
+      const isFromOtherUser = r.createdBy && r.createdBy !== userId && (r as any).userId !== userId;
       return isPublic && isFromOtherUser;
     });
   };
 
   const getUserRoutines = (): Routine[] => {
     return routines.filter(r =>
-      !r.createdBy || r.createdBy === userId || r.userId === userId
+      !r.createdBy || r.createdBy === userId || (r as any).userId === userId
     );
   };
 
@@ -301,7 +299,7 @@ export const useExerciseHistory = (userId: string) => {
       const historyData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-      })) as unknown as ExerciseHistory[];
+      })) as ExerciseHistory[];
 
       setHistory(historyData);
     });

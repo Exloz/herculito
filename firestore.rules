@@ -1,12 +1,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Permitir a usuarios autenticados acceder solo a sus datos
+    // Rutinas compartidas: lectura para todos, escritura para creador
     match /routines/{routineId} {
-      allow read, write, delete: if request.auth != null 
-        && request.auth.uid == resource.data.userId;
+      // Todos los usuarios autenticados pueden leer rutinas públicas o rutinas sin el campo isPublic (compatibilidad)
+      allow read: if request.auth != null 
+        && (
+          resource.data.isPublic == true 
+          || !('isPublic' in resource.data) // rutinas existentes sin isPublic
+          || request.auth.uid == resource.data.createdBy 
+          || request.auth.uid == resource.data.userId // compatibilidad con rutinas viejas
+        );
+      
+      // Permitir crear rutinas con createdBy
+      allow create: if request.auth != null 
+        && request.auth.uid == request.resource.data.createdBy;
+      
+      // Permitir crear rutinas con userId (compatibilidad)
       allow create: if request.auth != null 
         && request.auth.uid == request.resource.data.userId;
+      
+      // Solo el creador puede editar o eliminar (usar createdBy o userId)
+      allow update, delete: if request.auth != null 
+        && (
+          request.auth.uid == resource.data.createdBy 
+          || request.auth.uid == resource.data.userId
+        );
+        
+      // Permitir incrementar timesUsed a cualquier usuario autenticado
+      allow update: if request.auth != null 
+        && request.resource.data.diff(resource.data).affectedKeys() == ['timesUsed'].toSet();
     }
 
     match /workoutSessions/{sessionId} {

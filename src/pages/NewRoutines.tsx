@@ -47,7 +47,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         });
       } else {
         // Crear nueva rutina
-        await createRoutine(name, description, exercises, isPublic, primaryMuscleGroup);
+        await createRoutine(name, description, exercises, isPublic, primaryMuscleGroup, user.name);
       }
       setShowEditor(false);
       setEditingRoutine(undefined);

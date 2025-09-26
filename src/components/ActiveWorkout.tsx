@@ -5,6 +5,36 @@ import { useExerciseLogs } from '../hooks/useWorkouts';
 import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
 import { ExerciseCard } from './ExerciseCard';
 
+const PROGRESS_KEY = 'activeWorkoutProgress';
+const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours
+
+const saveProgressToStorage = (sessionId: string, exerciseLogs: ExerciseLog[]) => {
+  const data = {
+    sessionId,
+    exerciseLogs,
+    timestamp: Date.now(),
+  };
+  localStorage.setItem(`${PROGRESS_KEY}_${sessionId}`, JSON.stringify(data));
+};
+
+const loadProgressFromStorage = (sessionId: string): ExerciseLog[] | null => {
+  const stored = localStorage.getItem(`${PROGRESS_KEY}_${sessionId}`);
+  if (!stored) return null;
+
+  try {
+    const data = JSON.parse(stored);
+    const now = Date.now();
+    if (now - data.timestamp > EXPIRATION_TIME) {
+      localStorage.removeItem(`${PROGRESS_KEY}_${sessionId}`);
+      return null;
+    }
+    return data.exerciseLogs;
+  } catch {
+    localStorage.removeItem(`${PROGRESS_KEY}_${sessionId}`);
+    return null;
+  }
+};
+
 interface ActiveWorkoutProps {
   user: User;
   routine: Routine;
@@ -16,6 +46,7 @@ interface ActiveWorkoutProps {
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   user,
   routine,
+  session,
   onBackToDashboard,
   onCompleteWorkout
 }) => {
@@ -24,9 +55,32 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const { getLastWeightsForRoutine } = useWorkoutSessions(user);
 
   const [workoutTime, setWorkoutTime] = useState(0);
+  const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
+
+  // Load progress from localStorage on mount
+  useEffect(() => {
+    const storedLogs = loadProgressFromStorage(session.id);
+    if (storedLogs) {
+      setExerciseLogs(storedLogs);
+    }
+  }, [session.id]);
+
+  // Save progress to localStorage whenever exerciseLogs change
+  useEffect(() => {
+    if (exerciseLogs.length > 0) {
+      saveProgressToStorage(session.id, exerciseLogs);
+    }
+  }, [exerciseLogs, session.id]);
 
   // Obtener los últimos pesos para esta rutina
   const lastWeights = getLastWeightsForRoutine(routine.id);
+
+  // Función personalizada para obtener logs, priorizando localStorage
+  const getLogForExerciseCustom = (exerciseId: string, userId: string): ExerciseLog | undefined => {
+    const localLog = exerciseLogs.find(l => l.exerciseId === exerciseId);
+    if (localLog) return localLog;
+    return getLogForExercise(exerciseId, userId);
+  };
 
   // Timer del entrenamiento
   useEffect(() => {
@@ -38,31 +92,40 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   }, []);
 
   const handleUpdateLog = (log: ExerciseLog) => {
+    // Actualizar en Firestore
     updateExerciseLog(log);
+    // Actualizar en localStorage
+    const updatedLogs = exerciseLogs.map(l => l.exerciseId === log.exerciseId ? log : l);
+    if (!updatedLogs.find(l => l.exerciseId === log.exerciseId)) {
+      updatedLogs.push(log);
+    }
+    setExerciseLogs(updatedLogs);
   };
 
   const handleStartRestTimer = () => {
     // Implementar lógica de timer de descanso si es necesario
   };
 
-  const handleCompleteWorkout = () => {
-    // Recopilar todos los logs de ejercicios
-    const exerciseLogs = routine.exercises.map(exercise => {
-      const log = getLogForExercise(exercise.id, user.id);
-      return log || {
-        exerciseId: exercise.id,
-        userId: user.id,
-        date: new Date().toISOString().split('T')[0],
-        sets: []
-      };
-    }); // Incluir todos los ejercicios, incluso sin sets completados
+   const handleCompleteWorkout = () => {
+     // Recopilar todos los logs de ejercicios desde localStorage
+     const exerciseLogs = routine.exercises.map(exercise => {
+       const log = getLogForExerciseCustom(exercise.id, user.id) || {
+         exerciseId: exercise.id,
+         userId: user.id,
+         date: new Date().toISOString().split('T')[0],
+         sets: []
+       };
+       return log;
+     }); // Incluir todos los ejercicios, incluso sin sets completados
 
-    console.log('Active workout completing with exercise logs:', exerciseLogs);
-    onCompleteWorkout(exerciseLogs);
-  };
+     console.log('Active workout completing with exercise logs:', exerciseLogs);
+     onCompleteWorkout(exerciseLogs);
+     // Limpiar localStorage después de completar
+     localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
+   };
 
   const completedExercises = routine.exercises.filter(exercise => {
-    const log = getLogForExercise(exercise.id, user.id);
+    const log = getLogForExerciseCustom(exercise.id, user.id);
     return log && log.sets.length > 0 && log.sets.every(set => set.completed);
   }).length;
 
@@ -143,9 +206,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       <main className="max-w-4xl mx-auto px-4 py-6">
         {/* Lista de ejercicios */}
         <div className="space-y-4">
-          {routine.exercises.map((exercise, index) => {
-            const log = getLogForExercise(exercise.id, user.id);
-            const isCompleted = log && log.sets.length > 0 && log.sets.every(set => set.completed);
+           {routine.exercises.map((exercise, index) => {
+             const log = getLogForExerciseCustom(exercise.id, user.id) || {
+               exerciseId: exercise.id,
+               userId: user.id,
+               date: new Date().toISOString().split('T')[0],
+               sets: []
+             };
+             const isCompleted = log.sets.length > 0 && log.sets.every(set => set.completed);
 
             return (
               <div

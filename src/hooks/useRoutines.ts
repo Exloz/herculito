@@ -82,13 +82,13 @@ export const useRoutines = (userId: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const createRoutine = async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true, primaryMuscleGroup?: MuscleGroup) => {
+  const createRoutine = async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true, primaryMuscleGroup?: MuscleGroup, createdByName?: string) => {
     const routine: Omit<Routine, 'id'> = {
       name,
       description,
       exercises,
       createdBy: userId,
-      createdByName: 'Usuario', // Podrías obtener el nombre real del usuario
+      createdByName: createdByName || 'Usuario',
       isPublic,
       timesUsed: 0,
       createdAt: new Date(),
@@ -196,7 +196,7 @@ export const useRoutines = (userId: string) => {
 
     try {
       for (const routine of defaultRoutines) {
-        await createRoutine(routine.name, routine.description, routine.exercises, true); // Públicas por defecto
+        await createRoutine(routine.name, routine.description, routine.exercises, true, undefined, 'Sistema'); // Públicas por defecto
       }
     } catch {
       // Error silenciado para inicialización por defecto

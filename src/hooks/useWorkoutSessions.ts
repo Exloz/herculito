@@ -51,15 +51,9 @@ export const useWorkoutSessions = (user: User) => {
                 const bTime = b.startedAt ? b.startedAt.getTime() : 0;
                 return bTime - aTime;
               })
-              .slice(0, 30) as WorkoutSession[]; // Limitamos a 30
+               .slice(0, 30) as WorkoutSession[]; // Limitamos a 30
 
-            console.log('Loaded workout sessions:', {
-              total: sessionsData.length,
-              completed: sessionsData.filter(s => s.completedAt).length,
-              sessions: sessionsData
-            });
-
-            setSessions(sessionsData);
+             setSessions(sessionsData);
             setLoading(false);
             setError(null);
           } catch {
@@ -104,23 +98,15 @@ export const useWorkoutSessions = (user: User) => {
       primaryMuscleGroup: routine.primaryMuscleGroup || getRoutinePrimaryMuscleGroup(routine),
       startedAt: new Date(),
       exercises: []
-    };
+     };
 
-    console.log('Starting workout session:', {
-      sessionId: session.id,
-      routineName: routine.name,
-      userId: user.id,
-      startedAt: session.startedAt
-    });
-
-    await setDoc(doc(db, 'workoutSessions', session.id), {
+     await setDoc(doc(db, 'workoutSessions', session.id), {
       ...session,
       startedAt: session.startedAt,
       completedAt: null
-    });
+     });
 
-    console.log('Workout session started successfully');
-    return session;
+     return session;
   };
 
   const completeWorkoutSession = async (sessionId: string, exercises: ExerciseLog[]) => {
@@ -131,22 +117,13 @@ export const useWorkoutSessions = (user: User) => {
     }
 
     const completedAt = new Date();
-    const totalDuration = Math.round((completedAt.getTime() - session.startedAt.getTime()) / (1000 * 60)); // en minutos
+     const totalDuration = Math.round((completedAt.getTime() - session.startedAt.getTime()) / (1000 * 60)); // en minutos
 
-    console.log('Completing workout session:', {
-      sessionId,
-      completedAt,
-      totalDuration,
-      exerciseCount: exercises.length
-    });
-
-    await setDoc(doc(db, 'workoutSessions', sessionId), {
+     await setDoc(doc(db, 'workoutSessions', sessionId), {
       completedAt,
       exercises,
       totalDuration
-    }, { merge: true });
-
-    console.log('Workout session completed successfully');
+     }, { merge: true });
   };
 
   const updateSessionProgress = async (sessionId: string, exercises: ExerciseLog[]) => {
@@ -177,15 +154,9 @@ export const useWorkoutSessions = (user: User) => {
       thisWeekWorkouts: thisWeek.length,
       thisMonthWorkouts: thisMonth.length,
       currentStreak: calculateWorkoutStreak()
-    };
+     };
 
-    console.log('Workout stats calculated:', {
-      totalSessions: sessions.length,
-      completedSessions: completed.length,
-      stats
-    });
-
-    return stats;
+     return stats;
   };
 
   const calculateWorkoutStreak = (): number => {
@@ -223,10 +194,9 @@ export const useWorkoutSessions = (user: User) => {
       .filter(s => s.routineId === routineId && s.completedAt && s.exercises && s.exercises.length > 0)
       .sort((a, b) => b.completedAt!.getTime() - a.completedAt!.getTime())[0];
 
-    if (!lastCompletedSession || !lastCompletedSession.exercises) {
-      console.log('No previous session found for routine:', routineId);
-      return {};
-    }
+     if (!lastCompletedSession || !lastCompletedSession.exercises) {
+       return {};
+     }
 
     const lastWeights: Record<string, number[]> = {};
 
@@ -242,10 +212,9 @@ export const useWorkoutSessions = (user: User) => {
           lastWeights[exerciseLog.exerciseId] = weights;
         }
       }
-    });
+     });
 
-    console.log('Last weights for routine', routineId, ':', lastWeights);
-    return lastWeights;
+     return lastWeights;
   };
 
   return {

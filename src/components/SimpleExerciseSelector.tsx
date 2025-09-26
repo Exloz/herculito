@@ -32,7 +32,7 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     { id: 'peso-muerto', name: 'Peso Muerto', category: 'Espalda', sets: 3, reps: 8, restTime: 180 },
   ];
 
-  const handleSelectDefault = (defaultEx: any) => {
+  const handleSelectDefault = (defaultEx: { id: string; name: string; category: string; sets: number; reps: number; restTime: number }) => {
     const exercise: Exercise = {
       id: `${defaultEx.id}_${Date.now()}`,
       name: defaultEx.name,

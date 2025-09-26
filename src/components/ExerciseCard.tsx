@@ -11,7 +11,7 @@ interface ExerciseCardProps {
   previousWeights?: number[]; // Pesos de la sesión anterior
 }
 
-export const ExerciseCard: React.FC<ExerciseCardProps> = ({
+export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   exercise,
   log,
   userId,
@@ -184,6 +184,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = ({
           <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
         </div>
       )}
-    </div>
-  );
-};
+     </div>
+   );
+});

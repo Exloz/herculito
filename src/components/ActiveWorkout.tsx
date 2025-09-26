@@ -43,7 +43,7 @@ interface ActiveWorkoutProps {
   onCompleteWorkout: (exerciseLogs: ExerciseLog[]) => void;
 }
 
-export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
+export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   user,
   routine,
   session,
@@ -116,10 +116,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
          sets: []
        };
        return log;
-     }); // Incluir todos los ejercicios, incluso sin sets completados
+      }); // Incluir todos los ejercicios, incluso sin sets completados
 
-     console.log('Active workout completing with exercise logs:', exerciseLogs);
-     onCompleteWorkout(exerciseLogs);
+      onCompleteWorkout(exerciseLogs);
      // Limpiar localStorage después de completar
      localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
    };
@@ -256,6 +255,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           </div>
         )}
       </main>
-    </div>
-  );
-};
+     </div>
+   );
+});

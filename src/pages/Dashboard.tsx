@@ -114,12 +114,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
      saveActiveWorkoutToStorage(null);
    };
 
-  const handleCompleteWorkout = async (exerciseLogs: ExerciseLog[]) => {
-    if (!activeWorkout) return;
+   const handleCompleteWorkout = async (exerciseLogs: ExerciseLog[]) => {
+     if (!activeWorkout) return;
 
-    console.log('Completing workout with logs:', exerciseLogs);
-
-     try {
+      try {
        await completeWorkoutSession(activeWorkout.session.id, exerciseLogs);
        setActiveWorkout(null);
        saveActiveWorkoutToStorage(null);

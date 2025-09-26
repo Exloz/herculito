@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Calendar, Dumbbell, Save } from 'lucide-react';
+ import { Plus, Edit, Trash2, Calendar, Save } from 'lucide-react';
 import { useWorkouts } from '../hooks/useWorkouts';
 import { Exercise, Workout } from '../types';
 

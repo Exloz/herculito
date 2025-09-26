@@ -110,9 +110,9 @@ export const useExerciseTemplates = (userId: string) => {
       await updateDoc(exerciseRef, {
         timesUsed: increment(1)
       });
-    } catch (error) {
-      // Error silenciado para incremento de uso
-    }
+     } catch {
+       // Error silenciado para incremento de uso
+     }
   };
 
   const getCategories = (): string[] => {
@@ -172,9 +172,9 @@ export const useExerciseTemplates = (userId: string) => {
           true // Público
         );
       }
-    } catch (error) {
-      // Error silenciado para ejercicios básicos
-    }
+     } catch {
+       // Error silenciado para ejercicios básicos
+     }
   };
 
   return {

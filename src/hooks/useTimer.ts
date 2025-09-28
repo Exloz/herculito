@@ -20,29 +20,64 @@ const requestNotificationPermission = async (): Promise<boolean> => {
     return false;
   }
 
-  const permission = await NotificationAPI.requestPermission();
-  return permission === 'granted';
+  try {
+    const permission = await NotificationAPI.requestPermission();
+    return permission === 'granted';
+  } catch (error) {
+    console.warn('Failed to request notification permission:', error);
+    return false;
+  }
 };
 
-// Show notification
+// Show notification with mobile fallback
 const showNotification = (title: string, body: string) => {
   if (typeof window === 'undefined' || !('Notification' in window)) {
+    console.warn('Notifications not supported');
     return;
   }
 
   const NotificationAPI = window.Notification;
   if (!NotificationAPI || NotificationAPI.permission !== 'granted') {
+    console.warn('Notification permission not granted');
     return;
   }
 
-  new NotificationAPI(title, {
-    body,
-    icon: '/app-logo.png', // You can change this to your app icon
-    badge: '/app-logo.png',
-    tag: 'rest-timer',
-    requireInteraction: false,
-    silent: false
-  });
+  // Check if we're on a mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  try {
+    if (isMobile) {
+      // On mobile, try to use vibration as fallback and show a simple notification
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]); // Vibrate pattern
+      }
+      // Still try to show notification, but catch any errors
+      new NotificationAPI(title, {
+        body,
+        icon: '/app-logo.png',
+        badge: '/app-logo.png',
+        tag: 'rest-timer',
+        requireInteraction: false,
+        silent: false
+      });
+    } else {
+      // Desktop notification
+      new NotificationAPI(title, {
+        body,
+        icon: '/app-logo.png',
+        badge: '/app-logo.png',
+        tag: 'rest-timer',
+        requireInteraction: false,
+        silent: false
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to show notification:', error);
+    // Fallback to alert on error
+    if (typeof window !== 'undefined' && window.alert) {
+      window.alert(`${title}: ${body}`);
+    }
+  }
 };
 
 const TIMER_STORAGE_KEY = 'workoutTimerState';

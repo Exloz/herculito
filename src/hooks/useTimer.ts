@@ -10,6 +10,11 @@ declare const window: Window & {
   };
 };
 
+// Detect if running on mobile device
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+};
+
 // Request notification permission
 const requestNotificationPermission = async (): Promise<boolean> => {
   if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -143,6 +148,7 @@ export const useTimer = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [workerReady, setWorkerReady] = useState(false);
   const workerRef = useRef<Worker | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load state on mount
   useEffect(() => {
@@ -184,9 +190,12 @@ export const useTimer = () => {
     saveTimerState(state);
   }, [timeLeft, isActive, initialTime, startTime, hasNotified]);
 
-  // Initialize Web Worker
+  // Initialize Web Worker or fallback for mobile
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'Worker' in window) {
+    const mobile = isMobileDevice();
+
+    if (!mobile && typeof window !== 'undefined' && 'Worker' in window) {
+      // Use Web Worker on desktop
       workerRef.current = new Worker('/timer-worker.js');
 
       workerRef.current.onmessage = (e) => {
@@ -223,6 +232,9 @@ export const useTimer = () => {
 
       // Send a message to the worker to indicate it's ready
       workerRef.current.postMessage({ type: 'INIT' });
+    } else {
+      // Fallback for mobile: use setInterval in main thread
+      setWorkerReady(true);
     }
 
     return () => {
@@ -230,12 +242,51 @@ export const useTimer = () => {
         workerRef.current.terminate();
         workerRef.current = null;
       }
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
       setWorkerReady(false);
     };
   }, [isInitialized, hasNotified]);
 
+  // Mobile fallback timer
+  useEffect(() => {
+    const mobile = isMobileDevice();
+
+    if (mobile && isInitialized && workerReady && isActive && timeLeft > 0) {
+      intervalRef.current = setInterval(() => {
+        setTimeLeft(time => {
+          if (time <= 1) {
+            setIsActive(false);
+            setStartTime(null);
+            if (!hasNotified) {
+              setHasNotified(true);
+              // Trigger notification when timer reaches 0
+              showNotification(
+                '¡Tiempo de descanso terminado!',
+                'Tu descanso ha finalizado. ¡Es hora de continuar con tu entrenamiento!'
+              );
+            }
+            return 0;
+          }
+          return time - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [isActive, timeLeft, hasNotified, startTime, isInitialized, workerReady]);
+
   const startTimer = useCallback(async (seconds: number) => {
-    if (seconds <= 0 || !workerRef.current || !workerReady) {
+    const mobile = isMobileDevice();
+
+    if (seconds <= 0 || !workerReady) {
       return;
     }
 
@@ -249,26 +300,32 @@ export const useTimer = () => {
     setStartTime(now);
     setHasNotified(false);
 
-    // Send start message to Web Worker
-    workerRef.current.postMessage({
-      type: 'START_TIMER',
-      seconds
-    });
+    if (!mobile && workerRef.current) {
+      // Send start message to Web Worker on desktop
+      workerRef.current.postMessage({
+        type: 'START_TIMER',
+        seconds
+      });
+    }
 
     // Request notification permission when starting timer
     await requestNotificationPermission();
   }, [workerReady]);
 
   const pauseTimer = useCallback(() => {
-    if (workerRef.current && workerReady) {
+    const mobile = isMobileDevice();
+
+    if (!mobile && workerRef.current && workerReady) {
       workerRef.current.postMessage({ action: 'PAUSE' });
     }
     setIsActive(false);
   }, [workerReady]);
 
   const resetTimer = useCallback(() => {
+    const mobile = isMobileDevice();
+
     localStorage.removeItem(TIMER_STORAGE_KEY);
-    if (workerRef.current && workerReady) {
+    if (!mobile && workerRef.current && workerReady) {
       workerRef.current.postMessage({ action: 'RESET' });
     }
     setIsActive(false);

@@ -48,7 +48,7 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
    const [currentMonth, setCurrentMonth] = useState(new Date());
-   const [showCalendar, setShowCalendar] = useState(false);
+   const [showCalendar, setShowCalendar] = useState(true);
    const [activeWorkout, setActiveWorkout] = useState<{
      routine: Routine;
      session: WorkoutSession;

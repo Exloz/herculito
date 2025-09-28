@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // Extend Window interface to include alert and Notification
 declare const window: Window & {
@@ -141,6 +141,7 @@ export const useTimer = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const workerRef = useRef<Worker | null>(null);
 
   // Load state on mount
   useEffect(() => {
@@ -152,6 +153,19 @@ export const useTimer = () => {
       setInitialTime(savedState.initialTime);
       setStartTime(savedState.startTime);
       setHasNotified(false); // Don't restore notification state
+
+      // If there's a saved active timer, restart it in the Web Worker
+      if (workerRef.current && savedState.startTime) {
+        const now = Date.now();
+        const elapsed = Math.floor((now - savedState.startTime) / 1000);
+        const remainingTime = Math.max(0, savedState.initialTime - elapsed);
+        if (remainingTime > 0) {
+          workerRef.current.postMessage({
+            type: 'START_TIMER',
+            seconds: remainingTime
+          });
+        }
+      }
     } else {
       // Reset to clean state if no valid saved state
       setTimeLeft(0);
@@ -169,40 +183,52 @@ export const useTimer = () => {
     saveTimerState(state);
   }, [timeLeft, isActive, initialTime, startTime, hasNotified]);
 
+  // Initialize Web Worker
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
+    if (typeof window !== 'undefined' && 'Worker' in window) {
+      workerRef.current = new Worker('/timer-worker.js');
 
-    // Only run timer logic after initialization
-    if (isInitialized) {
-      if (isActive && timeLeft > 0) {
-        interval = setInterval(() => {
-          setTimeLeft(time => {
-            if (time <= 1) {
-              setIsActive(false);
-              setStartTime(null);
-              if (!hasNotified) {
-                setHasNotified(true);
-                // Trigger notification when timer reaches 0
-                showNotification(
-                  '¡Tiempo de descanso terminado!',
-                  'Tu descanso ha finalizado. ¡Es hora de continuar con tu entrenamiento!'
-                );
-              }
-              return 0;
-            }
-            return time - 1;
-          });
-        }, 1000);
-      }
+      workerRef.current.onmessage = (e) => {
+        const { type, timeLeft: newTimeLeft, isActive: newIsActive } = e.data;
+
+        if (type === 'TIME_UPDATE') {
+          setTimeLeft(newTimeLeft);
+          setIsActive(newIsActive);
+        } else if (type === 'TIMER_FINISHED') {
+          setIsActive(false);
+          setStartTime(null);
+          if (!hasNotified) {
+            setHasNotified(true);
+            // Trigger notification when timer reaches 0
+            showNotification(
+              '¡Tiempo de descanso terminado!',
+              'Tu descanso ha finalizado. ¡Es hora de continuar con tu entrenamiento!'
+            );
+          }
+        } else if (type === 'RESET_COMPLETE') {
+          setTimeLeft(0);
+          setIsActive(false);
+          setInitialTime(0);
+          setStartTime(null);
+          setHasNotified(false);
+        }
+      };
+
+      workerRef.current.onerror = (error) => {
+        console.error('Web Worker error:', error);
+      };
     }
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (workerRef.current) {
+        workerRef.current.terminate();
+        workerRef.current = null;
+      }
     };
-  }, [isActive, timeLeft, hasNotified, startTime, isInitialized]);
+  }, [isInitialized, hasNotified]);
 
   const startTimer = useCallback(async (seconds: number) => {
-    if (seconds <= 0) {
+    if (seconds <= 0 || !workerRef.current) {
       return;
     }
 
@@ -216,16 +242,28 @@ export const useTimer = () => {
     setStartTime(now);
     setHasNotified(false);
 
+    // Send start message to Web Worker
+    workerRef.current.postMessage({
+      type: 'START_TIMER',
+      seconds
+    });
+
     // Request notification permission when starting timer
     await requestNotificationPermission();
   }, []);
 
   const pauseTimer = useCallback(() => {
+    if (workerRef.current) {
+      workerRef.current.postMessage({ action: 'PAUSE' });
+    }
     setIsActive(false);
   }, []);
 
   const resetTimer = useCallback(() => {
     localStorage.removeItem(TIMER_STORAGE_KEY);
+    if (workerRef.current) {
+      workerRef.current.postMessage({ action: 'RESET' });
+    }
     setIsActive(false);
     setTimeLeft(0);
     setInitialTime(0);

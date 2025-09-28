@@ -9,7 +9,10 @@ let isActive = false;
 self.onmessage = function(e) {
   const { type, seconds, action } = e.data;
 
-  if (type === 'START_TIMER' && seconds > 0) {
+  if (type === 'INIT') {
+    // Worker is ready, send confirmation
+    self.postMessage({ type: 'WORKER_READY' });
+  } else if (type === 'START_TIMER' && seconds > 0) {
     initialTime = seconds;
     timeLeft = seconds;
     startTime = Date.now();

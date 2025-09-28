@@ -18,16 +18,12 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
     }
   }, [initialSeconds]);
 
-  // Start timer with initial seconds when component mounts
-  useEffect(() => {
-    console.log('Timer: useEffect triggered with initialSeconds:', initialSeconds);
-    if (initialSeconds && initialSeconds > 0) {
-      console.log('Timer: Starting timer with', initialSeconds, 'seconds');
-      startTimer(initialSeconds);
-    } else {
-      console.log('Timer: Not starting timer, initialSeconds invalid:', initialSeconds);
-    }
-  }, [initialSeconds, startTimer]);
+   // Start timer with initial seconds when component mounts
+   useEffect(() => {
+     if (initialSeconds && initialSeconds > 0) {
+       startTimer(initialSeconds);
+     }
+   }, [initialSeconds, startTimer]);
 
   // Close timer when it finishes
   useEffect(() => {

@@ -141,6 +141,7 @@ export const useTimer = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [workerReady, setWorkerReady] = useState(false);
   const workerRef = useRef<Worker | null>(null);
 
   // Load state on mount
@@ -191,7 +192,9 @@ export const useTimer = () => {
       workerRef.current.onmessage = (e) => {
         const { type, timeLeft: newTimeLeft, isActive: newIsActive } = e.data;
 
-        if (type === 'TIME_UPDATE') {
+        if (type === 'WORKER_READY') {
+          setWorkerReady(true);
+        } else if (type === 'TIME_UPDATE') {
           setTimeLeft(newTimeLeft);
           setIsActive(newIsActive);
         } else if (type === 'TIMER_FINISHED') {
@@ -217,6 +220,9 @@ export const useTimer = () => {
       workerRef.current.onerror = (error) => {
         console.error('Web Worker error:', error);
       };
+
+      // Send a message to the worker to indicate it's ready
+      workerRef.current.postMessage({ type: 'INIT' });
     }
 
     return () => {
@@ -224,11 +230,12 @@ export const useTimer = () => {
         workerRef.current.terminate();
         workerRef.current = null;
       }
+      setWorkerReady(false);
     };
   }, [isInitialized, hasNotified]);
 
   const startTimer = useCallback(async (seconds: number) => {
-    if (seconds <= 0 || !workerRef.current) {
+    if (seconds <= 0 || !workerRef.current || !workerReady) {
       return;
     }
 
@@ -250,18 +257,18 @@ export const useTimer = () => {
 
     // Request notification permission when starting timer
     await requestNotificationPermission();
-  }, []);
+  }, [workerReady]);
 
   const pauseTimer = useCallback(() => {
-    if (workerRef.current) {
+    if (workerRef.current && workerReady) {
       workerRef.current.postMessage({ action: 'PAUSE' });
     }
     setIsActive(false);
-  }, []);
+  }, [workerReady]);
 
   const resetTimer = useCallback(() => {
     localStorage.removeItem(TIMER_STORAGE_KEY);
-    if (workerRef.current) {
+    if (workerRef.current && workerReady) {
       workerRef.current.postMessage({ action: 'RESET' });
     }
     setIsActive(false);
@@ -269,7 +276,7 @@ export const useTimer = () => {
     setInitialTime(0);
     setStartTime(null);
     setHasNotified(false);
-  }, []);
+  }, [workerReady]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);

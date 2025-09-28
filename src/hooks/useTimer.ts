@@ -147,8 +147,11 @@ export const useTimer = () => {
   const [hasNotified, setHasNotified] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [workerReady, setWorkerReady] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const workerRef = useRef<Worker | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timerStartTimeRef = useRef<number | null>(null);
 
   // Load state on mount
   useEffect(() => {
@@ -189,6 +192,19 @@ export const useTimer = () => {
     const state: TimerState = { timeLeft, isActive, initialTime, startTime, hasNotified };
     saveTimerState(state);
   }, [timeLeft, isActive, initialTime, startTime, hasNotified]);
+
+  // Page Visibility API
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsVisible(!document.hidden);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // Initialize Web Worker or fallback for mobile
   useEffect(() => {
@@ -233,7 +249,7 @@ export const useTimer = () => {
       // Send a message to the worker to indicate it's ready
       workerRef.current.postMessage({ type: 'INIT' });
     } else {
-      // Fallback for mobile: use setInterval in main thread
+      // Fallback for mobile: use accurate timing with setTimeout
       setWorkerReady(true);
     }
 
@@ -246,33 +262,45 @@ export const useTimer = () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       setWorkerReady(false);
     };
   }, [isInitialized, hasNotified]);
 
-  // Mobile fallback timer
+  // Mobile fallback timer with accurate timing
   useEffect(() => {
     const mobile = isMobileDevice();
 
-    if (mobile && isInitialized && workerReady && isActive && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(time => {
-          if (time <= 1) {
-            setIsActive(false);
-            setStartTime(null);
-            if (!hasNotified) {
-              setHasNotified(true);
-              // Trigger notification when timer reaches 0
-              showNotification(
-                '¡Tiempo de descanso terminado!',
-                'Tu descanso ha finalizado. ¡Es hora de continuar con tu entrenamiento!'
-              );
-            }
-            return 0;
-          }
-          return time - 1;
-        });
-      }, 1000);
+    if (mobile && isInitialized && workerReady && isActive && timeLeft > 0 && timerStartTimeRef.current) {
+      const remainingTime = timeLeft * 1000; // Convert to milliseconds
+
+      // Set a timeout for the exact end time
+      timeoutRef.current = setTimeout(() => {
+        setIsActive(false);
+        setStartTime(null);
+        setTimeLeft(0);
+        if (!hasNotified) {
+          setHasNotified(true);
+          // Trigger notification when timer reaches 0
+          showNotification(
+            '¡Tiempo de descanso terminado!',
+            'Tu descanso ha finalizado. ¡Es hora de continuar con tu entrenamiento!'
+          );
+        }
+      }, remainingTime);
+
+      // Update display every second while visible
+      if (isVisible) {
+        intervalRef.current = setInterval(() => {
+          const now = Date.now();
+          const elapsed = Math.floor((now - timerStartTimeRef.current!) / 1000);
+          const newTimeLeft = Math.max(0, initialTime - elapsed);
+          setTimeLeft(newTimeLeft);
+        }, 1000);
+      }
     }
 
     return () => {
@@ -280,8 +308,12 @@ export const useTimer = () => {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
-  }, [isActive, timeLeft, hasNotified, startTime, isInitialized, workerReady]);
+  }, [isActive, timeLeft, hasNotified, startTime, isInitialized, workerReady, isVisible, initialTime]);
 
   const startTimer = useCallback(async (seconds: number) => {
     const mobile = isMobileDevice();
@@ -299,6 +331,7 @@ export const useTimer = () => {
     setIsActive(true);
     setStartTime(now);
     setHasNotified(false);
+    timerStartTimeRef.current = now;
 
     if (!mobile && workerRef.current) {
       // Send start message to Web Worker on desktop
@@ -319,6 +352,14 @@ export const useTimer = () => {
       workerRef.current.postMessage({ action: 'PAUSE' });
     }
     setIsActive(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, [workerReady]);
 
   const resetTimer = useCallback(() => {
@@ -333,6 +374,15 @@ export const useTimer = () => {
     setInitialTime(0);
     setStartTime(null);
     setHasNotified(false);
+    timerStartTimeRef.current = null;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
   }, [workerReady]);
 
   const formatTime = useCallback((seconds: number) => {

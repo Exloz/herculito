@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
-import { Routine, User, WorkoutSession, ExerciseLog } from '../types';
-import { useExerciseLogs } from '../hooks/useWorkouts';
-import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
-import { ExerciseCard } from './ExerciseCard';
+ import React, { useState, useEffect } from 'react';
+ import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
+ import { Routine, User, WorkoutSession, ExerciseLog } from '../types';
+ import { useExerciseLogs } from '../hooks/useWorkouts';
+ import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
+ import { ExerciseCard } from './ExerciseCard';
+ import { Timer } from './Timer';
 
 const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours
@@ -55,13 +56,30 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const { getLastWeightsForRoutine } = useWorkoutSessions(user);
 
   const [workoutTime, setWorkoutTime] = useState(0);
+  const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
+  const [showTimer, setShowTimer] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
 
   // Load progress from localStorage on mount
   useEffect(() => {
     const storedLogs = loadProgressFromStorage(session.id);
     if (storedLogs) {
       setExerciseLogs(storedLogs);
+    }
+
+    // Load workout start time
+    const storedStartTime = localStorage.getItem(`workoutStartTime_${session.id}`);
+    if (storedStartTime) {
+      const startTime = parseInt(storedStartTime, 10);
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setWorkoutTime(elapsed);
+      setWorkoutStartTime(startTime);
+    } else {
+      // Start new workout timer
+      const now = Date.now();
+      setWorkoutStartTime(now);
+      localStorage.setItem(`workoutStartTime_${session.id}`, now.toString());
     }
   }, [session.id]);
 
@@ -82,14 +100,17 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     return getLogForExercise(exerciseId, userId);
   };
 
-  // Timer del entrenamiento
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setWorkoutTime(prev => prev + 1);
-    }, 1000);
+   // Timer del entrenamiento
+   useEffect(() => {
+     if (!workoutStartTime) return;
 
-    return () => clearInterval(interval);
-  }, []);
+     const interval = setInterval(() => {
+       const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
+       setWorkoutTime(elapsed);
+     }, 1000);
+
+     return () => clearInterval(interval);
+   }, [workoutStartTime]);
 
   const handleUpdateLog = (log: ExerciseLog) => {
     // Actualizar en Firestore
@@ -102,26 +123,35 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     setExerciseLogs(updatedLogs);
   };
 
-  const handleStartRestTimer = () => {
-    // Implementar lógica de timer de descanso si es necesario
-  };
+   const handleStartRestTimer = (seconds: number) => {
+     if (seconds > 0) {
+       setTimerSeconds(seconds);
+       setShowTimer(true);
+     }
+   };
+
+   const handleBackToDashboard = () => {
+     // Keep workout data in localStorage when going back to dashboard
+     onBackToDashboard();
+   };
 
    const handleCompleteWorkout = () => {
-     // Recopilar todos los logs de ejercicios desde localStorage
-     const exerciseLogs = routine.exercises.map(exercise => {
-       const log = getLogForExerciseCustom(exercise.id, user.id) || {
-         exerciseId: exercise.id,
-         userId: user.id,
-         date: new Date().toISOString().split('T')[0],
-         sets: []
-       };
-       return log;
-      }); // Incluir todos los ejercicios, incluso sin sets completados
+      // Recopilar todos los logs de ejercicios desde localStorage
+      const exerciseLogs = routine.exercises.map(exercise => {
+        const log = getLogForExerciseCustom(exercise.id, user.id) || {
+          exerciseId: exercise.id,
+          userId: user.id,
+          date: new Date().toISOString().split('T')[0],
+          sets: []
+        };
+        return log;
+       }); // Incluir todos los ejercicios, incluso sin sets completados
 
-      onCompleteWorkout(exerciseLogs);
-     // Limpiar localStorage después de completar
-     localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
-   };
+       onCompleteWorkout(exerciseLogs);
+      // Limpiar localStorage después de completar
+      localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
+      localStorage.removeItem(`workoutStartTime_${session.id}`);
+    };
 
   const completedExercises = routine.exercises.filter(exercise => {
     const log = getLogForExerciseCustom(exercise.id, user.id);
@@ -148,10 +178,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       <header className="bg-gray-800 border-b border-gray-700 px-4 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
-            <button
-              onClick={onBackToDashboard}
-              className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
-            >
+             <button
+               onClick={handleBackToDashboard}
+               className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+             >
               <ArrowLeft size={20} />
               <span className="font-medium">Volver</span>
             </button>
@@ -254,7 +284,15 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
             </button>
           </div>
         )}
-      </main>
-     </div>
-   );
-});
+       </main>
+
+       {/* Timer de descanso */}
+       {showTimer && (
+         <Timer
+           onClose={() => setShowTimer(false)}
+           initialSeconds={timerSeconds}
+         />
+       )}
+      </div>
+    );
+  });

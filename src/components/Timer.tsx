@@ -1,42 +1,44 @@
-import React from 'react';
+ import React, { useEffect, useRef } from 'react';
 import { Timer as TimerIcon, X, Pause, Play } from 'lucide-react';
 import { useTimer } from '../hooks/useTimer';
 
 interface TimerProps {
   onClose: () => void;
+  initialSeconds?: number;
 }
 
-export const Timer: React.FC<TimerProps> = ({ onClose }) => {
+export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
   const { timeLeft, isActive, progress, startTimer, pauseTimer, resetTimer, formatTime } = useTimer();
+  const startTimeRef = useRef<number | null>(null);
 
-  const quickTimerButtons = [60, 90, 120, 180];
+  // Track when timer was started
+  useEffect(() => {
+    if (initialSeconds && initialSeconds > 0 && !startTimeRef.current) {
+      startTimeRef.current = Date.now();
+    }
+  }, [initialSeconds]);
 
-  if (timeLeft === 0 && !isActive) {
-    return (
-      <div className="fixed bottom-4 left-4 right-4 bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700 z-50">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <TimerIcon className="text-blue-400" size={20} />
-            <span className="text-white font-medium">Temporizador de Descanso</span>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X size={20} />
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {quickTimerButtons.map(seconds => (
-            <button
-              key={seconds}
-              onClick={() => startTimer(seconds)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md transition-colors text-sm font-medium"
-            >
-              {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // Start timer with initial seconds when component mounts
+  useEffect(() => {
+    console.log('Timer: useEffect triggered with initialSeconds:', initialSeconds);
+    if (initialSeconds && initialSeconds > 0) {
+      console.log('Timer: Starting timer with', initialSeconds, 'seconds');
+      startTimer(initialSeconds);
+    } else {
+      console.log('Timer: Not starting timer, initialSeconds invalid:', initialSeconds);
+    }
+  }, [initialSeconds, startTimer]);
+
+  // Close timer when it finishes
+  useEffect(() => {
+    // Only close if timer has actually finished and has been running for at least 1 second
+    if (timeLeft === 0 && !isActive && startTimeRef.current) {
+      const elapsed = Date.now() - startTimeRef.current;
+      if (elapsed > 1000) { // At least 1 second has passed
+        onClose();
+      }
+    }
+  }, [timeLeft, isActive, onClose]);
 
   return (
     <div className="fixed bottom-4 left-4 right-4 bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700 z-50">

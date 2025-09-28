@@ -82,10 +82,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
     onUpdateLog(updatedLog);
 
-    // Si se completó la serie y hay tiempo de descanso, iniciar temporizador
-    if (!wasCompleted && exercise.restTime) {
-      onStartTimer(exercise.restTime);
-    }
+     // Si se completó la serie y hay tiempo de descanso, iniciar temporizador
+     if (!wasCompleted && exercise.restTime && exercise.restTime > 0) {
+       onStartTimer(exercise.restTime);
+     }
   };
 
   return (

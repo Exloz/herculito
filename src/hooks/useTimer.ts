@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 
+// Extend Window interface to include alert and Notification
+declare const window: Window & {
+  alert: (message?: string) => void;
+  Notification: {
+    new (title: string, options?: NotificationOptions): Notification;
+    permission: NotificationPermission;
+    requestPermission(): Promise<NotificationPermission>;
+  };
+};
+
 // Request notification permission
 const requestNotificationPermission = async (): Promise<boolean> => {
   if (typeof window === 'undefined' || !('Notification' in window)) {
@@ -29,54 +39,60 @@ const requestNotificationPermission = async (): Promise<boolean> => {
   }
 };
 
-// Show notification with mobile fallback
+// Show notification using service worker
 const showNotification = (title: string, body: string) => {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
-    console.warn('Notifications not supported');
+  if (typeof window === 'undefined') {
     return;
   }
 
-  const NotificationAPI = window.Notification;
-  if (!NotificationAPI || NotificationAPI.permission !== 'granted') {
-    console.warn('Notification permission not granted');
-    return;
-  }
-
-  // Check if we're on a mobile device
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-  try {
-    if (isMobile) {
-      // On mobile, try to use vibration as fallback and show a simple notification
-      if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]); // Vibrate pattern
+  // Check if service worker is available
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    // Send message to service worker to show notification
+    navigator.serviceWorker.controller.postMessage({
+      type: 'SHOW_NOTIFICATION',
+      title,
+      body,
+      icon: '/app-logo.png',
+      badge: '/app-logo.png'
+    });
+  } else {
+    // Fallback to browser notification if service worker not available
+    if ('Notification' in window) {
+      const NotificationAPI = window.Notification;
+      if (NotificationAPI && NotificationAPI.permission === 'granted') {
+        try {
+          new NotificationAPI(title, {
+            body,
+            icon: '/app-logo.png',
+            badge: '/app-logo.png',
+            tag: 'rest-timer',
+            requireInteraction: false,
+            silent: false
+          });
+        } catch (error) {
+          console.warn('Failed to show notification:', error);
+          // Final fallback to alert
+          if (typeof window !== 'undefined') {
+            (window as Window & { alert: (message?: string) => void }).alert(`${title}: ${body}`);
+          }
+        }
+      } else {
+        // Fallback to alert if no permission
+        if (typeof window !== 'undefined') {
+          (window as Window & { alert: (message?: string) => void }).alert(`${title}: ${body}`);
+        }
       }
-      // Still try to show notification, but catch any errors
-      new NotificationAPI(title, {
-        body,
-        icon: '/app-logo.png',
-        badge: '/app-logo.png',
-        tag: 'rest-timer',
-        requireInteraction: false,
-        silent: false
-      });
     } else {
-      // Desktop notification
-      new NotificationAPI(title, {
-        body,
-        icon: '/app-logo.png',
-        badge: '/app-logo.png',
-        tag: 'rest-timer',
-        requireInteraction: false,
-        silent: false
-      });
+      // Fallback to alert if notifications not supported
+      if (typeof window !== 'undefined') {
+        (window as Window & { alert: (message?: string) => void }).alert(`${title}: ${body}`);
+      }
     }
-  } catch (error) {
-    console.warn('Failed to show notification:', error);
-    // Fallback to alert on error
-    if (typeof window !== 'undefined' && window.alert) {
-      window.alert(`${title}: ${body}`);
-    }
+  }
+
+  // Also vibrate on mobile if supported
+  if ('vibrate' in navigator) {
+    navigator.vibrate([200, 100, 200]);
   }
 };
 

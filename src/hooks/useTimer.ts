@@ -14,6 +14,12 @@ const isMobileDevice = (): boolean => {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || /iPad|iPhone|iPod/.test(navigator.userAgent);
 };
 
+const showAlertFallback = (title: string, body: string): void => {
+  if (typeof globalThis !== 'undefined' && typeof globalThis.alert === 'function') {
+    globalThis.alert(`${title}: ${body}`);
+  }
+};
+
 const requestNotificationPermission = async (): Promise<boolean> => {
   if (typeof window === 'undefined' || !('Notification' in window)) {
     console.warn('Notifications not supported');
@@ -35,32 +41,51 @@ const requestNotificationPermission = async (): Promise<boolean> => {
   }
 };
 
-const showLocalNotification = (title: string, body: string): void => {
+const showTimerNotification = async (title: string, body: string): Promise<void> => {
   if (typeof window === 'undefined') return;
 
-  if ('Notification' in window && Notification.permission === 'granted') {
+  if (!('Notification' in window)) {
+    showAlertFallback(title, body);
+    return;
+  }
+
+  if (Notification.permission !== 'granted') {
+    showAlertFallback(title, body);
+    return;
+  }
+
+  const options: NotificationOptions = {
+    body,
+    icon: '/app-logo.png',
+    badge: '/app-logo.png',
+    tag: 'rest-timer',
+    requireInteraction: false,
+    silent: false
+  };
+
+  if ('serviceWorker' in navigator) {
     try {
-      const notification = new Notification(title, {
-        body,
-        icon: '/app-logo.png',
-        badge: '/app-logo.png',
-        tag: 'rest-timer',
-        requireInteraction: false,
-        silent: false
-      });
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification(title, options);
 
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
-      };
-
-      console.log('Notification shown');
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200, 100, 200]);
+      }
+      return;
     } catch (error) {
-      console.warn('Notification failed:', error);
-      window.alert(`${title}: ${body}`);
+      console.warn('Service worker notification failed:', error);
     }
-  } else {
-    window.alert(`${title}: ${body}`);
+  }
+
+  try {
+    const notification = new Notification(title, options);
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+    };
+  } catch (error) {
+    console.warn('Notification failed:', error);
+    showAlertFallback(title, body);
   }
 
   if ('vibrate' in navigator) {
@@ -224,7 +249,7 @@ export const useTimer = () => {
 
         if (!hasNotified) {
           setHasNotified(true);
-          showLocalNotification(
+          void showTimerNotification(
             '¡Tiempo de descanso terminado!',
             'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
           );
@@ -242,6 +267,10 @@ export const useTimer = () => {
     };
   }, [isActive, hasNotified, initialTime, acquireWakeLock, startAudioContext, releaseWakeLock]);
 
+  const requestPermission = useCallback(async () => {
+    return requestNotificationPermission();
+  }, []);
+
   const startTimer = useCallback(async (seconds: number) => {
     if (seconds <= 0) return;
 
@@ -253,7 +282,11 @@ export const useTimer = () => {
     setStartTime(Date.now());
     setHasNotified(false);
 
-    await requestNotificationPermission();
+    if (typeof navigator !== 'undefined' && 'userActivation' in navigator) {
+      if ((navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive) {
+        await requestNotificationPermission();
+      }
+    }
   }, []);
 
   const pauseTimer = useCallback(() => {
@@ -297,6 +330,7 @@ export const useTimer = () => {
     startTimer,
     pauseTimer,
     resetTimer,
-    formatTime: () => formatTime(timeLeft)
+    formatTime: () => formatTime(timeLeft),
+    requestPermission
   };
 };

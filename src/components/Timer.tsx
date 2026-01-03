@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Timer as TimerIcon, X, Pause, Play } from 'lucide-react';
 import { useTimer } from '../hooks/useTimer';
 
@@ -8,9 +8,21 @@ interface TimerProps {
 }
 
 export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
-  const { timeLeft, isActive, progress, startTimer, pauseTimer, resetTimer, formatTime } = useTimer();
+  const { timeLeft, isActive, progress, startTimer, pauseTimer, resetTimer, formatTime, requestPermission } = useTimer();
   const startTimeRef = useRef<number | null>(null);
   const hasAutoClosed = useRef(false);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      return 'unsupported';
+    }
+    return Notification.permission;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  }, []);
 
   useEffect(() => {
     if (initialSeconds && initialSeconds > 0 && !startTimeRef.current) {
@@ -35,6 +47,13 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
       }
     }
   }, [timeLeft, isActive, onClose]);
+
+  const handleEnableNotifications = async () => {
+    await requestPermission();
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+  };
 
   return (
     <div className="fixed bottom-4 left-4 right-4 bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700 z-50">
@@ -79,6 +98,23 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
           Reiniciar
         </button>
       </div>
+
+      {notificationPermission === 'default' && (
+        <div className="mt-3 text-center">
+          <button
+            onClick={handleEnableNotifications}
+            className="text-sm text-blue-400 hover:text-blue-300 underline"
+          >
+            Activar notificaciones
+          </button>
+        </div>
+      )}
+
+      {notificationPermission === 'denied' && (
+        <div className="mt-3 text-center text-xs text-gray-400">
+          Notificaciones bloqueadas. Habilitalas en el navegador.
+        </div>
+      )}
     </div>
   );
 };

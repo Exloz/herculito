@@ -62,12 +62,7 @@ const showNotification = (title: string, body: string): void => {
         window.focus();
         notification.close();
       };
-
-      notification.onerror = () => {
-        console.warn('Notification error, falling back to alert');
-      };
     } catch {
-      console.warn('Notification failed, using alert fallback');
       window.alert(`${title}: ${body}`);
     }
   } else {
@@ -118,16 +113,17 @@ export const useTimer = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
 
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const timerStartTimeRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const hasNotifiedRef = useRef(false);
+  const initialTimeRef = useRef(0);
 
   const acquireWakeLock = useCallback(async () => {
     if ('wakeLock' in navigator && !isMobileDevice()) {
       try {
         wakeLockRef.current = await navigator.wakeLock.request('screen');
-        console.log('Wake lock acquired');
       } catch {
         console.warn('Wake lock failed');
       }
@@ -170,12 +166,14 @@ export const useTimer = () => {
       setInitialTime(savedState.initialTime);
       setStartTime(savedState.startTime);
       setHasNotified(false);
+      hasNotifiedRef.current = false;
     } else {
       setTimeLeft(0);
       setIsActive(false);
       setInitialTime(0);
       setStartTime(null);
       setHasNotified(false);
+      hasNotifiedRef.current = false;
     }
   }, []);
 
@@ -201,65 +199,60 @@ export const useTimer = () => {
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
       if (audioContextRef.current) audioContextRef.current.close();
       releaseWakeLock();
     };
   }, [releaseWakeLock]);
 
   useEffect(() => {
-    if (!isActive || timeLeft <= 0) return;
+    if (!isActive) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      releaseWakeLock();
+      return;
+    }
 
     startAudioContext();
     acquireWakeLock();
 
     const now = Date.now();
     timerStartTimeRef.current = now;
+    hasNotifiedRef.current = hasNotified;
+    initialTimeRef.current = initialTime;
 
-    const tickInterval = setInterval(() => {
-      if (timerStartTimeRef.current) {
-        const elapsed = Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
-        const newTimeLeft = Math.max(0, initialTime - elapsed);
-        setTimeLeft(newTimeLeft);
+    intervalRef.current = setInterval(() => {
+      if (!timerStartTimeRef.current) return;
 
-        if (newTimeLeft === 0) {
-          setIsActive(false);
-          setStartTime(null);
-          setTimeLeft(0);
+      const elapsed = Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
+      const newTimeLeft = Math.max(0, initialTimeRef.current - elapsed);
+      setTimeLeft(newTimeLeft);
 
-          if (!hasNotified) {
-            setHasNotified(true);
-            showNotification(
-              '¡Tiempo de descanso terminado!',
-              'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
-            );
-          }
-
-          clearInterval(tickInterval);
-        }
+      if (newTimeLeft === 0 && !hasNotifiedRef.current) {
+        hasNotifiedRef.current = true;
+        setHasNotified(true);
+        showNotification(
+          '¡Tiempo de descanso terminado!',
+          'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
+        );
+        setIsActive(false);
+        setStartTime(null);
+        timerStartTimeRef.current = null;
+        clearInterval(intervalRef.current!);
+        intervalRef.current = null;
+        releaseWakeLock();
       }
     }, 100);
 
-    timeoutRef.current = setTimeout(() => {
-      if (isActive) {
-        setIsActive(false);
-        setStartTime(null);
-
-        if (!hasNotified) {
-          setHasNotified(true);
-          showNotification(
-            '¡Tiempo de descanso terminado!',
-            'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
-          );
-        }
-      }
-      clearInterval(tickInterval);
-    }, timeLeft * 1000);
-
     return () => {
-      clearInterval(tickInterval);
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [isActive, timeLeft, initialTime, hasNotified, acquireWakeLock, startAudioContext]);
+  }, [isActive, hasNotified, acquireWakeLock, startAudioContext, releaseWakeLock]);
 
   const startTimer = useCallback(async (seconds: number) => {
     if (seconds <= 0) return;
@@ -267,10 +260,12 @@ export const useTimer = () => {
     localStorage.removeItem(TIMER_STORAGE_KEY);
 
     setInitialTime(seconds);
+    initialTimeRef.current = seconds;
     setTimeLeft(seconds);
     setIsActive(true);
     setStartTime(Date.now());
     setHasNotified(false);
+    hasNotifiedRef.current = false;
     timerStartTimeRef.current = Date.now();
 
     await requestNotificationPermission();
@@ -278,9 +273,9 @@ export const useTimer = () => {
 
   const pauseTimer = useCallback(() => {
     setIsActive(false);
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
     releaseWakeLock();
   }, [releaseWakeLock]);
@@ -292,11 +287,13 @@ export const useTimer = () => {
     setInitialTime(0);
     setStartTime(null);
     setHasNotified(false);
+    hasNotifiedRef.current = false;
     timerStartTimeRef.current = null;
+    initialTimeRef.current = 0;
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
     releaseWakeLock();
   }, [releaseWakeLock]);

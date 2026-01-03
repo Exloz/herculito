@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-// Extend Window interface to include alert and Notification
 declare const window: Window & {
   alert: (message?: string) => void;
   Notification: {
@@ -8,97 +7,6 @@ declare const window: Window & {
     permission: NotificationPermission;
     requestPermission(): Promise<NotificationPermission>;
   };
-};
-
-// Detect if running on mobile device
-const isMobileDevice = (): boolean => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-};
-
-// Request notification permission
-const requestNotificationPermission = async (): Promise<boolean> => {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
-    console.warn('This browser does not support notifications');
-    return false;
-  }
-
-  const NotificationAPI = window.Notification;
-  if (!NotificationAPI) {
-    return false;
-  }
-
-  if (NotificationAPI.permission === 'granted') {
-    return true;
-  }
-
-  if (NotificationAPI.permission === 'denied') {
-    return false;
-  }
-
-  try {
-    const permission = await NotificationAPI.requestPermission();
-    return permission === 'granted';
-  } catch (error) {
-    console.warn('Failed to request notification permission:', error);
-    return false;
-  }
-};
-
-// Show notification using service worker
-const showNotification = (title: string, body: string) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  // Check if service worker is available
-  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    // Send message to service worker to show notification
-    navigator.serviceWorker.controller.postMessage({
-      type: 'SHOW_NOTIFICATION',
-      title,
-      body,
-      icon: '/app-logo.png',
-      badge: '/app-logo.png'
-    });
-  } else {
-    // Fallback to browser notification if service worker not available
-    if ('Notification' in window) {
-      const NotificationAPI = window.Notification;
-      if (NotificationAPI && NotificationAPI.permission === 'granted') {
-        try {
-          new NotificationAPI(title, {
-            body,
-            icon: '/app-logo.png',
-            badge: '/app-logo.png',
-            tag: 'rest-timer',
-            requireInteraction: false,
-            silent: false
-          });
-        } catch (error) {
-          console.warn('Failed to show notification:', error);
-          // Final fallback to alert
-          if (typeof window !== 'undefined') {
-            (window as Window & { alert: (message?: string) => void }).alert(`${title}: ${body}`);
-          }
-        }
-      } else {
-        // Fallback to alert if no permission
-        if (typeof window !== 'undefined') {
-          (window as Window & { alert: (message?: string) => void }).alert(`${title}: ${body}`);
-        }
-      }
-    } else {
-      // Fallback to alert if notifications not supported
-      if (typeof window !== 'undefined') {
-        (window as Window & { alert: (message?: string) => void }).alert(`${title}: ${body}`);
-      }
-    }
-  }
-
-  // Also vibrate on mobile if supported
-  if ('vibrate' in navigator) {
-    navigator.vibrate([200, 100, 200]);
-  }
 };
 
 const TIMER_STORAGE_KEY = 'workoutTimerState';
@@ -111,11 +19,71 @@ interface TimerState {
   hasNotified: boolean;
 }
 
-const saveTimerState = (state: TimerState) => {
+const isMobileDevice = (): boolean => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || /iPad|iPhone|iPod/.test(navigator.userAgent);
+};
+
+const requestNotificationPermission = async (): Promise<boolean> => {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    console.warn('Notifications not supported');
+    return false;
+  }
+
+  const NotificationAPI = window.Notification;
+  if (!NotificationAPI) return false;
+
+  if (NotificationAPI.permission === 'granted') return true;
+  if (NotificationAPI.permission === 'denied') return false;
+
+  try {
+    const permission = await NotificationAPI.requestPermission();
+    return permission === 'granted';
+  } catch {
+    console.warn('Failed to request notification permission');
+    return false;
+  }
+};
+
+const showNotification = (title: string, body: string): void => {
+  if (typeof window === 'undefined') return;
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try {
+      const notification = new Notification(title, {
+        body,
+        icon: '/app-logo.png',
+        badge: '/app-logo.png',
+        tag: 'rest-timer',
+        requireInteraction: false,
+        silent: false
+      });
+
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+
+      notification.onerror = () => {
+        console.warn('Notification error, falling back to alert');
+      };
+    } catch {
+      console.warn('Notification failed, using alert fallback');
+      window.alert(`${title}: ${body}`);
+    }
+  } else {
+    window.alert(`${title}: ${body}`);
+  }
+
+  if ('vibrate' in navigator) {
+    navigator.vibrate([200, 100, 200, 100, 200]);
+  }
+};
+
+const saveTimerState = (state: TimerState): void => {
   try {
     localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state));
-  } catch (error) {
-    console.warn('Failed to save timer state to localStorage:', error);
+  } catch {
+    console.warn('Failed to save timer state');
   }
 };
 
@@ -123,18 +91,22 @@ const loadTimerState = (): TimerState | null => {
   try {
     const stored = localStorage.getItem(TIMER_STORAGE_KEY);
     if (!stored) return null;
-    const state = JSON.parse(stored);
+
+    const state = JSON.parse(stored) as TimerState;
     const now = Date.now();
+
     if (state.isActive && state.startTime) {
       const elapsed = Math.floor((now - state.startTime) / 1000);
       state.timeLeft = Math.max(0, state.initialTime - elapsed);
+
       if (state.timeLeft === 0) {
         state.isActive = false;
       }
     }
+
     return state;
-  } catch (error) {
-    console.warn('Failed to load timer state from localStorage:', error);
+  } catch {
+    console.warn('Failed to load timer state');
     return null;
   }
 };
@@ -145,245 +117,189 @@ export const useTimer = () => {
   const [initialTime, setInitialTime] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [workerReady, setWorkerReady] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const workerRef = useRef<Worker | null>(null);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const timerStartTimeRef = useRef<number | null>(null);
 
-  // Load state on mount
-  useEffect(() => {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const timerStartTimeRef = useRef<number | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const acquireWakeLock = useCallback(async () => {
+    if ('wakeLock' in navigator && !isMobileDevice()) {
+      try {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        console.log('Wake lock acquired');
+      } catch {
+        console.warn('Wake lock failed');
+      }
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(() => {
+    if (wakeLockRef.current) {
+      wakeLockRef.current.release();
+      wakeLockRef.current = null;
+    }
+  }, []);
+
+  const startAudioContext = useCallback(() => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as Window & { webkitAudioContext?: AudioContext }).webkitAudioContext)();
+      }
+
+      if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+
+      if (isMobileDevice()) {
+        const oscillator = audioContextRef.current.createOscillator();
+        oscillator.connect(audioContextRef.current.destination);
+        oscillator.start();
+        oscillator.stop();
+      }
+    } catch {
+      console.warn('Audio context error');
+    }
+  }, []);
+
+  const loadState = useCallback(() => {
     const savedState = loadTimerState();
     if (savedState && savedState.isActive && savedState.timeLeft > 0) {
-      // Only restore if timer was active and has time left
       setTimeLeft(savedState.timeLeft);
       setIsActive(savedState.isActive);
       setInitialTime(savedState.initialTime);
       setStartTime(savedState.startTime);
-      setHasNotified(false); // Don't restore notification state
-
-      // If there's a saved active timer, restart it in the Web Worker
-      if (workerRef.current && savedState.startTime) {
-        const now = Date.now();
-        const elapsed = Math.floor((now - savedState.startTime) / 1000);
-        const remainingTime = Math.max(0, savedState.initialTime - elapsed);
-        if (remainingTime > 0) {
-          workerRef.current.postMessage({
-            type: 'START_TIMER',
-            seconds: remainingTime
-          });
-        }
-      }
+      setHasNotified(false);
     } else {
-      // Reset to clean state if no valid saved state
       setTimeLeft(0);
       setIsActive(false);
       setInitialTime(0);
       setStartTime(null);
       setHasNotified(false);
     }
-    setIsInitialized(true);
   }, []);
 
-  // Save state whenever it changes
+  useEffect(() => {
+    loadState();
+  }, [loadState]);
+
   useEffect(() => {
     const state: TimerState = { timeLeft, isActive, initialTime, startTime, hasNotified };
     saveTimerState(state);
   }, [timeLeft, isActive, initialTime, startTime, hasNotified]);
 
-  // Page Visibility API
   useEffect(() => {
     const handleVisibilityChange = () => {
-      setIsVisible(!document.hidden);
+      if (!document.hidden) {
+        loadState();
+      }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [loadState]);
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  // Initialize Web Worker or fallback for mobile
   useEffect(() => {
-    const mobile = isMobileDevice();
-
-    if (!mobile && typeof window !== 'undefined' && 'Worker' in window) {
-      // Use Web Worker on desktop
-      workerRef.current = new Worker('/timer-worker.js');
-
-      workerRef.current.onmessage = (e) => {
-        const { type, timeLeft: newTimeLeft, isActive: newIsActive } = e.data;
-
-        if (type === 'WORKER_READY') {
-          setWorkerReady(true);
-        } else if (type === 'TIME_UPDATE') {
-          setTimeLeft(newTimeLeft);
-          setIsActive(newIsActive);
-        } else if (type === 'TIMER_FINISHED') {
-          setIsActive(false);
-          setStartTime(null);
-          if (!hasNotified) {
-            setHasNotified(true);
-            // Trigger notification when timer reaches 0
-            showNotification(
-              '¡Tiempo de descanso terminado!',
-              'Tu descanso ha finalizado. ¡Es hora de continuar con tu entrenamiento!'
-            );
-          }
-        } else if (type === 'RESET_COMPLETE') {
-          setTimeLeft(0);
-          setIsActive(false);
-          setInitialTime(0);
-          setStartTime(null);
-          setHasNotified(false);
-        }
-      };
-
-      workerRef.current.onerror = (error) => {
-        console.error('Web Worker error:', error);
-      };
-
-      // Send a message to the worker to indicate it's ready
-      workerRef.current.postMessage({ type: 'INIT' });
-    } else {
-      // Fallback for mobile: use accurate timing with setTimeout
-      setWorkerReady(true);
-    }
-
     return () => {
-      if (workerRef.current) {
-        workerRef.current.terminate();
-        workerRef.current = null;
-      }
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      setWorkerReady(false);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (audioContextRef.current) audioContextRef.current.close();
+      releaseWakeLock();
     };
-  }, [isInitialized, hasNotified]);
+  }, [releaseWakeLock]);
 
-  // Mobile fallback timer with accurate timing
   useEffect(() => {
-    const mobile = isMobileDevice();
+    if (!isActive || timeLeft <= 0) return;
 
-    if (mobile && isInitialized && workerReady && isActive && timeLeft > 0 && timerStartTimeRef.current) {
-      const remainingTime = timeLeft * 1000; // Convert to milliseconds
-
-      // Set a timeout for the exact end time
-      timeoutRef.current = setTimeout(() => {
-        setIsActive(false);
-        setStartTime(null);
-        setTimeLeft(0);
-        if (!hasNotified) {
-          setHasNotified(true);
-          // Trigger notification when timer reaches 0
-          showNotification(
-            '¡Tiempo de descanso terminado!',
-            'Tu descanso ha finalizado. ¡Es hora de continuar con tu entrenamiento!'
-          );
-        }
-      }, remainingTime);
-
-      // Update display every second while visible
-      if (isVisible) {
-        intervalRef.current = setInterval(() => {
-          const now = Date.now();
-          const elapsed = Math.floor((now - timerStartTimeRef.current!) / 1000);
-          const newTimeLeft = Math.max(0, initialTime - elapsed);
-          setTimeLeft(newTimeLeft);
-        }, 1000);
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, [isActive, timeLeft, hasNotified, startTime, isInitialized, workerReady, isVisible, initialTime]);
-
-  const startTimer = useCallback(async (seconds: number) => {
-    const mobile = isMobileDevice();
-
-    if (seconds <= 0 || !workerReady) {
-      return;
-    }
+    startAudioContext();
+    acquireWakeLock();
 
     const now = Date.now();
-    // Clear any existing timer state before starting new one
+    timerStartTimeRef.current = now;
+
+    const tickInterval = setInterval(() => {
+      if (timerStartTimeRef.current) {
+        const elapsed = Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
+        const newTimeLeft = Math.max(0, initialTime - elapsed);
+        setTimeLeft(newTimeLeft);
+
+        if (newTimeLeft === 0) {
+          setIsActive(false);
+          setStartTime(null);
+          setTimeLeft(0);
+
+          if (!hasNotified) {
+            setHasNotified(true);
+            showNotification(
+              '¡Tiempo de descanso terminado!',
+              'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
+            );
+          }
+
+          clearInterval(tickInterval);
+        }
+      }
+    }, 100);
+
+    timeoutRef.current = setTimeout(() => {
+      if (isActive) {
+        setIsActive(false);
+        setStartTime(null);
+
+        if (!hasNotified) {
+          setHasNotified(true);
+          showNotification(
+            '¡Tiempo de descanso terminado!',
+            'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
+          );
+        }
+      }
+      clearInterval(tickInterval);
+    }, timeLeft * 1000);
+
+    return () => {
+      clearInterval(tickInterval);
+    };
+  }, [isActive, timeLeft, initialTime, hasNotified, acquireWakeLock, startAudioContext]);
+
+  const startTimer = useCallback(async (seconds: number) => {
+    if (seconds <= 0) return;
+
     localStorage.removeItem(TIMER_STORAGE_KEY);
 
     setInitialTime(seconds);
     setTimeLeft(seconds);
     setIsActive(true);
-    setStartTime(now);
+    setStartTime(Date.now());
     setHasNotified(false);
-    timerStartTimeRef.current = now;
+    timerStartTimeRef.current = Date.now();
 
-    if (!mobile && workerRef.current) {
-      // Send start message to Web Worker on desktop
-      workerRef.current.postMessage({
-        type: 'START_TIMER',
-        seconds
-      });
-    }
-
-    // Request notification permission when starting timer
     await requestNotificationPermission();
-  }, [workerReady]);
+  }, []);
 
   const pauseTimer = useCallback(() => {
-    const mobile = isMobileDevice();
-
-    if (!mobile && workerRef.current && workerReady) {
-      workerRef.current.postMessage({ action: 'PAUSE' });
-    }
     setIsActive(false);
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, [workerReady]);
+    releaseWakeLock();
+  }, [releaseWakeLock]);
 
   const resetTimer = useCallback(() => {
-    const mobile = isMobileDevice();
-
     localStorage.removeItem(TIMER_STORAGE_KEY);
-    if (!mobile && workerRef.current && workerReady) {
-      workerRef.current.postMessage({ action: 'RESET' });
-    }
     setIsActive(false);
     setTimeLeft(0);
     setInitialTime(0);
     setStartTime(null);
     setHasNotified(false);
     timerStartTimeRef.current = null;
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, [workerReady]);
+    releaseWakeLock();
+  }, [releaseWakeLock]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);

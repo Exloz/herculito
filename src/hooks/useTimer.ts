@@ -1,14 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-declare const window: Window & {
-  alert: (message?: string) => void;
-  Notification: {
-    new (title: string, options?: NotificationOptions): Notification;
-    permission: NotificationPermission;
-    requestPermission(): Promise<NotificationPermission>;
-  };
-};
-
 const TIMER_STORAGE_KEY = 'workoutTimerState';
 
 interface TimerState {
@@ -44,7 +35,7 @@ const requestNotificationPermission = async (): Promise<boolean> => {
   }
 };
 
-const showNotification = (title: string, body: string): void => {
+const showLocalNotification = (title: string, body: string): void => {
   if (typeof window === 'undefined') return;
 
   if ('Notification' in window && Notification.permission === 'granted') {
@@ -62,7 +53,10 @@ const showNotification = (title: string, body: string): void => {
         window.focus();
         notification.close();
       };
-    } catch {
+
+      console.log('Notification shown');
+    } catch (error) {
+      console.warn('Notification failed:', error);
       window.alert(`${title}: ${body}`);
     }
   } else {
@@ -113,12 +107,11 @@ export const useTimer = () => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const timerStartTimeRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-  const hasNotifiedRef = useRef(false);
-  const initialTimeRef = useRef(0);
+  const endTimeRef = useRef<number | null>(null);
 
   const acquireWakeLock = useCallback(async () => {
     if ('wakeLock' in navigator && !isMobileDevice()) {
@@ -139,19 +132,15 @@ export const useTimer = () => {
 
   const startAudioContext = useCallback(() => {
     try {
+      const AudioContextClass = (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
+
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as Window & { webkitAudioContext?: AudioContext }).webkitAudioContext)();
+        audioContextRef.current = new AudioContextClass();
       }
 
       if (audioContextRef.current.state === 'suspended') {
         audioContextRef.current.resume();
-      }
-
-      if (isMobileDevice()) {
-        const oscillator = audioContextRef.current.createOscillator();
-        oscillator.connect(audioContextRef.current.destination);
-        oscillator.start();
-        oscillator.stop();
       }
     } catch {
       console.warn('Audio context error');
@@ -166,14 +155,12 @@ export const useTimer = () => {
       setInitialTime(savedState.initialTime);
       setStartTime(savedState.startTime);
       setHasNotified(false);
-      hasNotifiedRef.current = false;
     } else {
       setTimeLeft(0);
       setIsActive(false);
       setInitialTime(0);
       setStartTime(null);
       setHasNotified(false);
-      hasNotifiedRef.current = false;
     }
   }, []);
 
@@ -220,28 +207,29 @@ export const useTimer = () => {
 
     const now = Date.now();
     timerStartTimeRef.current = now;
-    hasNotifiedRef.current = hasNotified;
-    initialTimeRef.current = initialTime;
+    endTimeRef.current = now + (initialTime * 1000);
 
     intervalRef.current = setInterval(() => {
-      if (!timerStartTimeRef.current) return;
+      if (!endTimeRef.current) return;
 
-      const elapsed = Math.floor((Date.now() - timerStartTimeRef.current) / 1000);
-      const newTimeLeft = Math.max(0, initialTimeRef.current - elapsed);
-      setTimeLeft(newTimeLeft);
+      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      setTimeLeft(remaining);
 
-      if (newTimeLeft === 0 && !hasNotifiedRef.current) {
-        hasNotifiedRef.current = true;
-        setHasNotified(true);
-        showNotification(
-          '¡Tiempo de descanso terminado!',
-          'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
-        );
-        setIsActive(false);
-        setStartTime(null);
-        timerStartTimeRef.current = null;
+      if (remaining === 0) {
         clearInterval(intervalRef.current!);
         intervalRef.current = null;
+        setIsActive(false);
+        setStartTime(null);
+        endTimeRef.current = null;
+
+        if (!hasNotified) {
+          setHasNotified(true);
+          showLocalNotification(
+            '¡Tiempo de descanso terminado!',
+            'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
+          );
+        }
+
         releaseWakeLock();
       }
     }, 100);
@@ -252,7 +240,7 @@ export const useTimer = () => {
         intervalRef.current = null;
       }
     };
-  }, [isActive, hasNotified, acquireWakeLock, startAudioContext, releaseWakeLock]);
+  }, [isActive, hasNotified, initialTime, acquireWakeLock, startAudioContext, releaseWakeLock]);
 
   const startTimer = useCallback(async (seconds: number) => {
     if (seconds <= 0) return;
@@ -260,13 +248,10 @@ export const useTimer = () => {
     localStorage.removeItem(TIMER_STORAGE_KEY);
 
     setInitialTime(seconds);
-    initialTimeRef.current = seconds;
     setTimeLeft(seconds);
     setIsActive(true);
     setStartTime(Date.now());
     setHasNotified(false);
-    hasNotifiedRef.current = false;
-    timerStartTimeRef.current = Date.now();
 
     await requestNotificationPermission();
   }, []);
@@ -287,9 +272,8 @@ export const useTimer = () => {
     setInitialTime(0);
     setStartTime(null);
     setHasNotified(false);
-    hasNotifiedRef.current = false;
     timerStartTimeRef.current = null;
-    initialTimeRef.current = 0;
+    endTimeRef.current = null;
 
     if (intervalRef.current) {
       clearInterval(intervalRef.current);

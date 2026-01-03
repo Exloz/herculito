@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { collection, doc, setDoc, addDoc, updateDoc, onSnapshot, query, where, orderBy, deleteDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Routine, WorkoutSession, ExerciseHistory, Exercise, MuscleGroup } from '../types';
+import { getCurrentDateString } from '../utils/dateUtils';
 
 export const useRoutines = (userId: string) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -312,7 +313,7 @@ export const useExerciseHistory = (userId: string) => {
         exerciseName,
         userId,
         lastWeight: weights,
-        lastDate: new Date().toISOString().split('T')[0],
+        lastDate: getCurrentDateString(),
         personalRecord,
       }, { merge: true });
     } catch {

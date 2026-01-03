@@ -1,13 +1,14 @@
- import React, { useState, useEffect } from 'react';
- import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
- import { Routine, User, WorkoutSession, ExerciseLog } from '../types';
- import { useExerciseLogs } from '../hooks/useWorkouts';
- import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
- import { ExerciseCard } from './ExerciseCard';
- import { Timer } from './Timer';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
+import { Routine, User, WorkoutSession, ExerciseLog } from '../types';
+import { useExerciseLogs } from '../hooks/useWorkouts';
+import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
+import { ExerciseCard } from './ExerciseCard';
+import { Timer } from './Timer';
+import { getCurrentDateString } from '../utils/dateUtils';
 
 const PROGRESS_KEY = 'activeWorkoutProgress';
-const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours
+const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 
 const saveProgressToStorage = (sessionId: string, exerciseLogs: ExerciseLog[]) => {
   const data = {
@@ -51,7 +52,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   onBackToDashboard,
   onCompleteWorkout
 }) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCurrentDateString();
   const { updateExerciseLog, getLogForExercise } = useExerciseLogs(today, user.id);
   const { getLastWeightsForRoutine } = useWorkoutSessions(user);
 
@@ -61,14 +62,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
 
-  // Load progress from localStorage on mount
   useEffect(() => {
     const storedLogs = loadProgressFromStorage(session.id);
     if (storedLogs) {
       setExerciseLogs(storedLogs);
     }
 
-    // Load workout start time
     const storedStartTime = localStorage.getItem(`workoutStartTime_${session.id}`);
     if (storedStartTime) {
       const startTime = parseInt(storedStartTime, 10);
@@ -76,46 +75,39 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       setWorkoutTime(elapsed);
       setWorkoutStartTime(startTime);
     } else {
-      // Start new workout timer
       const now = Date.now();
       setWorkoutStartTime(now);
       localStorage.setItem(`workoutStartTime_${session.id}`, now.toString());
     }
   }, [session.id]);
 
-  // Save progress to localStorage whenever exerciseLogs change
   useEffect(() => {
     if (exerciseLogs.length > 0) {
       saveProgressToStorage(session.id, exerciseLogs);
     }
   }, [exerciseLogs, session.id]);
 
-  // Obtener los últimos pesos para esta rutina
   const lastWeights = getLastWeightsForRoutine(routine.id);
 
-  // Función personalizada para obtener logs, priorizando localStorage
   const getLogForExerciseCustom = (exerciseId: string, userId: string): ExerciseLog | undefined => {
     const localLog = exerciseLogs.find(l => l.exerciseId === exerciseId);
     if (localLog) return localLog;
     return getLogForExercise(exerciseId, userId);
   };
 
-   // Timer del entrenamiento
-   useEffect(() => {
-     if (!workoutStartTime) return;
+  useEffect(() => {
+    if (!workoutStartTime) return;
 
-     const interval = setInterval(() => {
-       const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
-       setWorkoutTime(elapsed);
-     }, 1000);
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
+      setWorkoutTime(elapsed);
+    }, 1000);
 
-     return () => clearInterval(interval);
-   }, [workoutStartTime]);
+    return () => clearInterval(interval);
+  }, [workoutStartTime]);
 
   const handleUpdateLog = (log: ExerciseLog) => {
-    // Actualizar en Firestore
     updateExerciseLog(log);
-    // Actualizar en localStorage
     const updatedLogs = exerciseLogs.map(l => l.exerciseId === log.exerciseId ? log : l);
     if (!updatedLogs.find(l => l.exerciseId === log.exerciseId)) {
       updatedLogs.push(log);
@@ -123,35 +115,32 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     setExerciseLogs(updatedLogs);
   };
 
-   const handleStartRestTimer = (seconds: number) => {
-     if (seconds > 0) {
-       setTimerSeconds(seconds);
-       setShowTimer(true);
-     }
-   };
+  const handleStartRestTimer = (seconds: number) => {
+    if (seconds > 0) {
+      setTimerSeconds(seconds);
+      setShowTimer(true);
+    }
+  };
 
-   const handleBackToDashboard = () => {
-     // Keep workout data in localStorage when going back to dashboard
-     onBackToDashboard();
-   };
+  const handleBackToDashboard = () => {
+    onBackToDashboard();
+  };
 
-   const handleCompleteWorkout = () => {
-      // Recopilar todos los logs de ejercicios desde localStorage
-      const exerciseLogs = routine.exercises.map(exercise => {
-        const log = getLogForExerciseCustom(exercise.id, user.id) || {
-          exerciseId: exercise.id,
-          userId: user.id,
-          date: new Date().toISOString().split('T')[0],
-          sets: []
-        };
-        return log;
-       }); // Incluir todos los ejercicios, incluso sin sets completados
+  const handleCompleteWorkout = () => {
+    const exerciseLogs = routine.exercises.map(exercise => {
+      const log = getLogForExerciseCustom(exercise.id, user.id) || {
+        exerciseId: exercise.id,
+        userId: user.id,
+        date: getCurrentDateString(),
+        sets: []
+      };
+      return log;
+    });
 
-       onCompleteWorkout(exerciseLogs);
-      // Limpiar localStorage después de completar
-      localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
-      localStorage.removeItem(`workoutStartTime_${session.id}`);
-    };
+    onCompleteWorkout(exerciseLogs);
+    localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
+    localStorage.removeItem(`workoutStartTime_${session.id}`);
+  };
 
   const completedExercises = routine.exercises.filter(exercise => {
     const log = getLogForExerciseCustom(exercise.id, user.id);
@@ -174,14 +163,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
   return (
     <div className="min-h-screen bg-gray-900 pb-20">
-      {/* Header */}
       <header className="bg-gray-800 border-b border-gray-700 px-4 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
-             <button
-               onClick={handleBackToDashboard}
-               className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
-             >
+            <button
+              onClick={handleBackToDashboard}
+              className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+            >
               <ArrowLeft size={20} />
               <span className="font-medium">Volver</span>
             </button>
@@ -199,14 +187,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
             </div>
           </div>
 
-          {/* Título de la rutina y progreso */}
           <div className="mt-4">
             <h1 className="text-xl font-bold text-white flex items-center space-x-2">
               <Dumbbell size={24} className="text-blue-400" />
               <span>{routine.name}</span>
             </h1>
 
-            {/* Barra de progreso */}
             <div className="mt-3">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-400">Progreso del entrenamiento</span>
@@ -219,7 +205,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
                 />
               </div>
 
-              {/* Mensaje de pesos anteriores */}
               {Object.keys(lastWeights).length > 0 && (
                 <div className="mt-2 text-xs text-blue-400 flex items-center space-x-1">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -231,24 +216,21 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         </div>
       </header>
 
-      {/* Contenido principal */}
       <main className="max-w-4xl mx-auto px-4 py-6">
-        {/* Lista de ejercicios */}
         <div className="space-y-4">
-           {routine.exercises.map((exercise, index) => {
-             const log = getLogForExerciseCustom(exercise.id, user.id) || {
-               exerciseId: exercise.id,
-               userId: user.id,
-               date: new Date().toISOString().split('T')[0],
-               sets: []
-             };
-             const isCompleted = log.sets.length > 0 && log.sets.every(set => set.completed);
+          {routine.exercises.map((exercise, index) => {
+            const log = getLogForExerciseCustom(exercise.id, user.id) || {
+              exerciseId: exercise.id,
+              userId: user.id,
+              date: getCurrentDateString(),
+              sets: []
+            };
+            const isCompleted = log.sets.length > 0 && log.sets.every(set => set.completed);
 
             return (
               <div
                 key={exercise.id}
-                className={`transition-all duration-200 ${isCompleted ? 'opacity-75' : ''
-                  }`}
+                className={`transition-all duration-200 ${isCompleted ? 'opacity-75' : ''}`}
               >
                 <div className="flex items-center space-x-2 mb-2">
                   {isCompleted && (
@@ -272,7 +254,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
           })}
         </div>
 
-        {/* Botón de completar entrenamiento */}
         {workoutProgress === 100 && (
           <div className="mt-8 text-center">
             <button
@@ -284,15 +265,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
             </button>
           </div>
         )}
-       </main>
+      </main>
 
-       {/* Timer de descanso */}
-       {showTimer && (
-         <Timer
-           onClose={() => setShowTimer(false)}
-           initialSeconds={timerSeconds}
-         />
-       )}
-      </div>
-    );
-  });
+      {showTimer && (
+        <Timer
+          onClose={() => setShowTimer(false)}
+          initialSeconds={timerSeconds}
+        />
+      )}
+    </div>
+  );
+});

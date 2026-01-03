@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { WorkoutSession, WorkoutCalendarDay } from '../types';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
+import { getCurrentDateString } from '../utils/dateUtils';
 
 interface WorkoutCalendarProps {
   sessions: WorkoutSession[];
@@ -16,34 +17,30 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   onMonthChange,
   onDayClick
 }) => {
-  const today = new Date();
+  const todayStr = getCurrentDateString();
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
-  // Obtener días del mes
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
   const firstDayWeekday = firstDayOfMonth.getDay();
   const daysInMonth = lastDayOfMonth.getDate();
 
-  // Crear array de días del mes
   const days: WorkoutCalendarDay[] = [];
 
-  // Días vacíos al inicio (para alineación de la semana)
   for (let i = 0; i < firstDayWeekday; i++) {
     const emptyDate = new Date(year, month, -firstDayWeekday + i + 1);
+    const dateStr = `${emptyDate.getFullYear()}-${String(emptyDate.getMonth() + 1).padStart(2, '0')}-${String(emptyDate.getDate()).padStart(2, '0')}`;
     days.push({
-      date: emptyDate.toISOString().split('T')[0],
+      date: dateStr,
       workouts: []
     });
   }
 
-  // Días del mes actual
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-    // Encontrar entrenamientos de este día
     const dayWorkouts = sessions
       .filter(session => {
         if (!session.completedAt) return false;
@@ -80,17 +77,16 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   };
 
   const isToday = (dateStr: string) => {
-    return dateStr === today.toISOString().split('T')[0];
+    return dateStr === todayStr;
   };
 
   const isCurrentMonth = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = new Date(dateStr + 'T12:00:00');
     return date.getMonth() === month && date.getFullYear() === year;
   };
 
   return (
     <div className="bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-700">
-      {/* Header del calendario */}
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
           onClick={() => navigateMonth('prev')}
@@ -111,7 +107,6 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
         </button>
       </div>
 
-      {/* Días de la semana */}
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
         {weekDays.map(day => (
           <div key={day} className="text-center text-xs font-medium text-gray-400 py-1 sm:py-2">
@@ -120,10 +115,9 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
         ))}
       </div>
 
-      {/* Días del mes */}
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {days.map((day, index) => {
-          const dayNumber = new Date(day.date).getDate();
+          const dayNumber = new Date(day.date + 'T12:00:00').getDate();
           const hasWorkout = day.workouts.length > 0;
           const isCurrentDay = isToday(day.date);
           const isInCurrentMonth = isCurrentMonth(day.date);
@@ -147,7 +141,6 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                 {dayNumber}
               </div>
 
-              {/* Indicadores de entrenamientos */}
               {hasWorkout && (
                 <div className="absolute bottom-0.5 sm:bottom-1 left-0.5 sm:left-1 right-0.5 sm:right-1">
                   <div className="flex justify-center space-x-0.5">
@@ -173,7 +166,6 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
         })}
       </div>
 
-      {/* Leyenda de colores */}
       <div className="mt-4 pt-3 border-t border-gray-700">
         <div className="text-xs text-gray-400 mb-2">Grupos musculares:</div>
         <div className="grid grid-cols-4 gap-2">

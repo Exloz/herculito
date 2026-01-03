@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check, Clock, Weight } from 'lucide-react';
 import { Exercise, ExerciseLog, WorkoutSet } from '../types';
+import { getCurrentDateString } from '../utils/dateUtils';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -54,7 +55,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     const updatedLog: ExerciseLog = {
       exerciseId: exercise.id,
       userId,
-      date: new Date().toISOString().split('T')[0],
+      date: getCurrentDateString(),
       sets: updatedSets
     };
 
@@ -76,7 +77,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     const updatedLog: ExerciseLog = {
       exerciseId: exercise.id,
       userId,
-      date: new Date().toISOString().split('T')[0],
+      date: getCurrentDateString(),
       sets: updatedSets
     };
 

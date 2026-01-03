@@ -2,14 +2,17 @@
 # Etapa 1: Build de la aplicación
 FROM node:20-alpine AS builder
 
+# Instalar pnpm
+RUN npm install -g pnpm
+
 # Configurar directorio de trabajo
 WORKDIR /app
 
-# Copiar package files para instalar dependencias
-COPY package*.json ./
+# Copiar archivos de pnpm
+COPY pnpm-lock.yaml package.json ./
 
-# Instalar dependencias (incluyendo devDependencies para el build)
-RUN npm ci --silent
+# Instalar dependencias
+RUN pnpm install --frozen-lockfile
 
 # Definir argumentos de build para variables de entorno
 ARG VITE_FIREBASE_API_KEY
@@ -31,7 +34,7 @@ ENV VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID
 COPY . .
 
 # Build de la aplicación
-RUN npm run build
+RUN pnpm build
 
 # Etapa 2: Imagen de producción
 FROM nginx:1.25-alpine

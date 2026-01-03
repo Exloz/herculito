@@ -1,72 +1,107 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Rutinas compartidas: lectura para todos, escritura para creador
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isValidString(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    function isValidExerciseTemplate() {
+      return request.resource.data.keys().hasAll(['name', 'muscleGroup'])
+        && isValidString(request.resource.data.name, 100)
+        && isValidString(request.resource.data.muscleGroup, 50)
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.sets >= 1 && request.resource.data.sets <= 20
+        && request.resource.data.reps >= 1 && request.resource.data.reps <= 100;
+    }
+
     match /routines/{routineId} {
-      // Todos los usuarios autenticados pueden leer rutinas públicas o rutinas sin el campo isPublic (compatibilidad)
-      allow read: if request.auth != null 
+      allow read: if isAuthenticated()
         && (
-          resource.data.isPublic == true 
-          || !('isPublic' in resource.data) // rutinas existentes sin isPublic
-          || request.auth.uid == resource.data.createdBy 
-          || request.auth.uid == resource.data.userId // compatibilidad con rutinas viejas
+          resource.data.isPublic == true
+          || !('isPublic' in resource.data)
+          || isOwner(resource.data.createdBy)
+          || isOwner(resource.data.userId)
         );
-      
-      // Permitir crear rutinas con createdBy
-      allow create: if request.auth != null 
-        && request.auth.uid == request.resource.data.createdBy;
-      
-      // Permitir crear rutinas con userId (compatibilidad)
-      allow create: if request.auth != null 
-        && request.auth.uid == request.resource.data.userId;
-      
-      // Solo el creador puede editar o eliminar (usar createdBy o userId)
-      allow update, delete: if request.auth != null 
+
+      allow create: if isAuthenticated()
+        && (isOwner(request.resource.data.createdBy) || isOwner(request.resource.data.userId))
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.exercises.size() <= 50;
+
+      allow update: if isAuthenticated()
         && (
-          request.auth.uid == resource.data.createdBy 
-          || request.auth.uid == resource.data.userId
-        );
-        
-      // Permitir incrementar timesUsed a cualquier usuario autenticado
-      allow update: if request.auth != null 
-        && request.resource.data.diff(resource.data).affectedKeys() == ['timesUsed'].toSet();
+          isOwner(resource.data.createdBy)
+          || isOwner(resource.data.userId)
+        )
+        && request.resource.data.name.size() <= 100;
+
+      allow delete: if isAuthenticated()
+        && (isOwner(resource.data.createdBy) || isOwner(resource.data.userId));
+
+      allow update: if isAuthenticated()
+        && resource.data.diff(resource.data).affectedKeys().hasOnly(['timesUsed'])
+        && request.resource.data.timesUsed >= resource.data.timesUsed;
+    }
+
+    match /userRoutines/{userRoutineId} {
+      allow read, write: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
     }
 
     match /workoutSessions/{sessionId} {
-      allow read, write, delete: if request.auth != null 
-        && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null 
-        && request.auth.uid == request.resource.data.userId;
+      allow read, write, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId)
+        && request.resource.data.exercises.size() <= 100;
     }
 
     match /exerciseHistory/{historyId} {
-      allow read, write, delete: if request.auth != null 
-        && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null 
-        && request.auth.uid == request.resource.data.userId;
+      allow read, write, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
     }
 
     match /exerciseLogs/{logId} {
-      allow read, write, delete: if request.auth != null 
-        && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null 
-        && request.auth.uid == request.resource.data.userId;
+      allow read, write, delete: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId)
+        && request.resource.data.sets.size() <= 20;
     }
 
-    // Reglas simplificadas para ejercicios
     match /exerciseTemplates/{templateId} {
-      // Cualquier usuario autenticado puede leer todos los ejercicios
-      allow read: if request.auth != null;
-      
-      // Cualquier usuario autenticado puede crear ejercicios
-      allow create: if request.auth != null;
-      
-      // Cualquier usuario autenticado puede actualizar ejercicios (para timesUsed)
-      allow update: if request.auth != null;
-      
-      // Solo el creador puede eliminar
-      allow delete: if request.auth != null 
-        && request.auth.uid == resource.data.createdBy;
+      allow read: if isAuthenticated();
+
+      allow create: if isAuthenticated()
+        && isValidExerciseTemplate();
+
+      allow update: if isAuthenticated()
+        && (
+          isOwner(resource.data.createdBy)
+          || (
+            !('createdBy' in resource.data)
+            && isOwner(request.resource.data.createdBy)
+          )
+        )
+        && isValidExerciseTemplate();
+
+      allow delete: if isAuthenticated()
+        && (
+          isOwner(resource.data.createdBy)
+          || !('createdBy' in resource.data)
+        );
+    }
+
+    match /workouts/{workoutId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isOwner(resource.data.createdBy);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.createdBy);
     }
   }
 }

@@ -12,6 +12,7 @@ Una aplicación React moderna para trackear entrenamientos en el gimnasio con au
 - **📈 Historial de Progreso**: Ve tu progreso y récords personales
 - **📱 Diseño Responsive**: Optimizado para móviles y desktop
 - **🌙 Tema Oscuro**: Interface moderna y cómoda para los ojos
+- **PWA en produccion**: Service worker y soporte offline basico en builds
 - **💾 Sesiones de Entrenamiento**: Registra cada sesión con fecha, duración y notas
 
 ## 🔧 Configuración de Firebase
@@ -79,14 +80,14 @@ service cloud.firestore {
 
 2. **Instala las dependencias**:
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Configura las variables de entorno** (ver sección anterior)
 
 4. **Inicia el servidor de desarrollo**:
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
 5. **Abre tu navegador** en `http://localhost:5173`
@@ -121,7 +122,7 @@ service cloud.firestore {
 ## 🏗️ Arquitectura Técnica
 
 - **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS con tema oscuro
+- **Styling**: Tailwind CSS con sistema visual personalizado (app-*, mint/amber)
 - **Backend**: Firebase Firestore (NoSQL)
 - **Auth**: Firebase Authentication con Google Provider
 - **Icons**: Lucide React
@@ -137,7 +138,7 @@ service cloud.firestore {
 
 Para producción:
 1. Configura las variables de entorno en tu plataforma de deployment
-2. Ejecuta `npm run build` para generar la versión optimizada
+2. Ejecuta `pnpm build` para generar la versión optimizada
 3. Despliega la carpeta `dist` en tu hosting preferido
 
 ## 🤝 Contribución
@@ -169,3 +170,8 @@ Si recibes errores sobre variables de entorno faltantes:
 - Verifica que las reglas de Firestore permitan las operaciones necesarias
 - Asegúrate de que el proyecto Firebase tenga Firestore habilitado
 - Revisa la consola del navegador para errores específicos
+
+### Problemas con service worker en desarrollo
+- Si aparecen errores de carga de modulos, limpia el service worker: DevTools > Application > Service Workers > Unregister
+- Luego usa "Clear site data" y recarga con Cmd+Shift+R
+- Reinicia Vite con `pnpm dev -- --force` si el problema persiste

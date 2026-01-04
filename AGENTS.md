@@ -58,9 +58,11 @@ pnpm preview      # Preview production build
 - Initialize default data when collections are empty
 
 ### Styling (Tailwind CSS)
-- Dark theme: `bg-gray-900`, `text-white`, `border-gray-700`
-- Accent color: `blue-400` for active states
-- Component style: `rounded-lg`, `shadow-xl`, `border`
+- Use the design system utilities: `app-shell`, `app-header`, `app-surface`, `app-card`
+- Buttons: `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-danger`
+- Inputs: `input`, `input-sm`; chips: `chip`, `chip-warm`
+- Palette: `ink/charcoal/graphite` surfaces with `mint` and `amberGlow` accents
+- Typography: use `font-display` for headings; body uses default
 - Mobile-first responsive design
 
 ### State Management
@@ -86,3 +88,4 @@ pnpm preview      # Preview production build
 2. Test changes with `pnpm dev`
 3. Build with `pnpm build` to verify production readiness
 4. Follow the existing hook pattern for new features
+5. Service worker is production-only; dev unregisters it to avoid stale caches

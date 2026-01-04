@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, TrendingUp, Award, Clock, LogOut, Dumbbell } from 'lucide-react';
+import { Calendar, TrendingUp, Award, Clock, LogOut, Dumbbell, Bell } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../types';
 import { useRoutines } from '../hooks/useRoutines';
 import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
@@ -15,7 +15,17 @@ interface DashboardProps {
 
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
 const ACTIVE_WORKOUT_PROGRESS_KEY = 'activeWorkoutProgress';
+const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in ms
+
+const isIOSDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const isAppleMobile = /iPad|iPhone|iPod/.test(ua);
+  const isIPadOS = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  return isAppleMobile || isIPadOS;
+};
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
   if (activeWorkout) {
@@ -90,6 +100,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     session: WorkoutSession;
   } | null>(null);
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
+  const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
 
 
    // Restore active workout from localStorage on mount
@@ -98,6 +109,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     if (stored) {
       setActiveWorkout(stored);
       setShowActiveWorkout(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isIOSDevice()) return;
+    try {
+      const seen = localStorage.getItem(IOS_NOTIFICATION_GUIDE_KEY);
+      if (!seen) {
+        localStorage.setItem(IOS_NOTIFICATION_GUIDE_KEY, 'true');
+        setShowIosNotificationGuide(true);
+      }
+    } catch {
+      setShowIosNotificationGuide(false);
     }
   }, []);
 
@@ -158,6 +182,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       setActiveWorkout(null);
       saveActiveWorkoutToStorage(null);
     }
+  };
+
+  const handleCancelActiveWorkout = () => {
+    if (!activeWorkout) return;
+    const sessionId = activeWorkout.session?.id;
+    if (sessionId) {
+      localStorage.removeItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
+    }
+    setActiveWorkout(null);
+    setShowActiveWorkout(false);
+    saveActiveWorkoutToStorage(null);
+  };
+
+  const handleDismissIosGuide = () => {
+    setShowIosNotificationGuide(false);
   };
 
 
@@ -296,11 +335,44 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   {activeWorkout.routine.name}
                 </div>
               </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  onClick={() => setShowActiveWorkout(true)}
+                  className="btn-primary"
+                >
+                  Reanudar
+                </button>
+                <button
+                  onClick={handleCancelActiveWorkout}
+                  className="btn-secondary text-crimson border-crimson/40 hover:text-crimson hover:border-crimson/60"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showIosNotificationGuide && (
+          <div className="mb-6">
+            <div className="app-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-mint/15 text-mint">
+                  <Bell size={18} />
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">Notificaciones en iOS</div>
+                  <p className="text-sm text-slate-300">
+                    En iOS las notificaciones de descanso solo funcionan si instalas la app en Pantalla de inicio.
+                    Cuando el teléfono está bloqueado o la app en segundo plano, los timers no pueden alertar.
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={() => setShowActiveWorkout(true)}
-                className="btn-primary"
+                onClick={handleDismissIosGuide}
+                className="btn-secondary self-start"
               >
-                Reanudar
+                Entendido
               </button>
             </div>
           </div>

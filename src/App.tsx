@@ -2,10 +2,14 @@ import { useState, Suspense, lazy } from 'react';
 import { Login } from './pages/Login';
 import { Navigation } from './components/Navigation';
 import { useAuth } from './hooks/useAuth';
+import { ScrollToTop } from './components/ScrollToTop';
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => import('./pages/NewRoutines').then(module => ({ default: module.Routines })));
+
+// Prevent scroll restoration issues with Suspense lazy loading
+window.history.scrollRestoration = 'manual';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'routines'>('dashboard');
@@ -28,7 +32,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <Suspense fallback={
+        <Suspense fallback={
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
@@ -36,6 +40,7 @@ function App() {
           </div>
         </div>
       }>
+        <ScrollToTop />
         {currentPage === 'dashboard' && <Dashboard user={user} onLogout={logout} />}
         {currentPage === 'routines' && <Routines user={user} />}
       </Suspense>

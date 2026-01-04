@@ -1,4 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind:wght@400;500;600&family=Khand:wght@400;500;600;700&display=swap');
 @import './mobile-optimizations.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    font-family: 'Hind', system-ui, sans-serif;
+    color: #eef3f7;
+    background:
+      radial-gradient(1200px circle at 12% -20%, rgba(72, 229, 163, 0.18), transparent 55%),
+      radial-gradient(900px circle at 100% 0%, rgba(245, 158, 11, 0.12), transparent 45%),
+      #0b0f14;
+    background-attachment: fixed;
+  }
+
+  #root {
+    min-height: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: 'Khand', system-ui, sans-serif;
+    letter-spacing: 0.2px;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(72, 229, 163, 0.6);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen text-slate-100;
+  }
+
+  .app-header {
+    @apply bg-charcoal/80 border-b border-mist/60 backdrop-blur;
+  }
+
+  .app-surface {
+    @apply bg-graphite border border-mist/60 rounded-2xl shadow-soft;
+  }
+
+  .app-surface-muted {
+    @apply bg-slateDeep border border-mist/40 rounded-2xl;
+  }
+
+  .app-card {
+    @apply bg-graphite border border-mist/60 rounded-2xl shadow-lift;
+  }
+
+  .app-card-hover {
+    @apply hover:border-mint/40 hover:shadow-soft transition-colors;
+  }
+
+  .app-divider {
+    @apply border-t border-mist/50;
+  }
+
+  .btn-primary {
+    @apply bg-mint text-ink font-semibold rounded-xl px-4 py-2.5 shadow-lift transition-all;
+  }
+
+  .btn-primary:hover {
+    @apply bg-mintDeep;
+  }
+
+  .btn-secondary {
+    @apply bg-slateDeep text-slate-100 border border-mist/60 rounded-xl px-4 py-2.5 transition-colors;
+  }
+
+  .btn-secondary:hover {
+    @apply border-mint/40 text-white;
+  }
+
+  .btn-ghost {
+    @apply text-slate-200 rounded-xl px-3 py-2 transition-colors;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-slateDeep/70 text-white;
+  }
+
+  .btn-danger {
+    @apply bg-crimson text-ink font-semibold rounded-xl px-4 py-2.5 transition-colors;
+  }
+
+  .btn-danger:hover {
+    @apply bg-red-500;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-mint/15 text-mint px-2 py-0.5 text-xs font-semibold;
+  }
+
+  .chip-warm {
+    @apply bg-amberGlow/15 text-amberGlow;
+  }
+
+  .input {
+    @apply w-full px-3 py-2.5 bg-slateDeep border border-mist/60 rounded-xl text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-mint/40 focus:border-mint/60;
+  }
+
+  .input-sm {
+    @apply px-2 py-1.5 text-sm rounded-lg;
+  }
+
+  .section-title {
+    @apply font-display text-lg sm:text-xl text-white;
+  }
+
+  .section-subtitle {
+    @apply text-sm sm:text-base text-slate-300;
+  }
+}

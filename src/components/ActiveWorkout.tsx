@@ -170,52 +170,52 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 pb-20">
-      <header className="bg-gray-800 border-b border-gray-700 px-4 py-4 sticky top-0 z-10">
+    <div className="app-shell pb-28">
+      <header className="app-header px-4 py-4 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <button
               onClick={handleBackToDashboard}
-              className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
+              className="btn-ghost flex items-center gap-2"
             >
               <ArrowLeft size={20} />
               <span className="font-medium">Volver</span>
             </button>
 
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-blue-400">
-                <Clock size={16} />
-                <span className="font-mono text-sm">{formatTime(workoutTime)}</span>
+            <div className="flex items-center gap-3">
+              <div className="chip">
+                <Clock size={14} />
+                <span className="font-mono text-xs">{formatTime(workoutTime)}</span>
               </div>
 
-              <div className="flex items-center space-x-2 text-green-400">
-                <Target size={16} />
-                <span className="text-sm">{completedExercises}/{totalExercises}</span>
+              <div className="chip chip-warm">
+                <Target size={14} />
+                <span className="text-xs">{completedExercises}/{totalExercises}</span>
               </div>
             </div>
           </div>
 
           <div className="mt-4">
-            <h1 className="text-xl font-bold text-white flex items-center space-x-2">
-              <Dumbbell size={24} className="text-blue-400" />
+            <h1 className="text-2xl font-display text-white flex items-center gap-2">
+              <Dumbbell size={24} className="text-mint" />
               <span>{routine.name}</span>
             </h1>
 
             <div className="mt-3">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Progreso del entrenamiento</span>
-                <span className="text-sm font-medium text-blue-400">{Math.round(workoutProgress)}%</span>
+                <span className="text-sm text-slate-300">Progreso del entrenamiento</span>
+                <span className="text-sm font-semibold text-mint">{Math.round(workoutProgress)}%</span>
               </div>
-              <div className="w-full bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-slateDeep rounded-full h-2">
                 <div
-                  className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-mint to-amberGlow h-2 rounded-full transition-all duration-300"
                   style={{ width: `${workoutProgress}%` }}
                 />
               </div>
 
               {Object.keys(lastWeights).length > 0 && (
-                <div className="mt-2 text-xs text-blue-400 flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="mt-2 text-xs text-mint flex items-center gap-2">
+                  <div className="w-2 h-2 bg-mint rounded-full"></div>
                   <span>Se han cargado los pesos de tu última sesión</span>
                 </div>
               )}
@@ -224,7 +224,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
         <div className="space-y-4">
           {routine.exercises.map((exercise, index) => {
             const log = getLogForExerciseCustom(exercise.id, user.id) || {
@@ -242,7 +242,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
               >
                 <div className="flex items-center space-x-2 mb-2">
                   {isCompleted && (
-                    <CheckCircle size={20} className="text-green-400" />
+                    <CheckCircle size={20} className="text-mint" />
                   )}
                   <h3 className="text-lg font-semibold text-white">
                     {index + 1}. {exercise.name}
@@ -266,7 +266,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
           <div className="mt-8 text-center">
             <button
               onClick={handleCompleteWorkout}
-              className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors flex items-center space-x-2 mx-auto"
+              className="btn-primary inline-flex items-center gap-2 px-8"
             >
               <CheckCircle size={20} />
               <span>Completar Entrenamiento</span>

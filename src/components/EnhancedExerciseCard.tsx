@@ -63,12 +63,12 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
   const progressPercentage = (completedSets / exercise.sets) * 100;
 
   return (
-    <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+    <div className="app-card rounded-lg p-4 border border-mist/60">
       {/* Header del ejercicio */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-white mb-1">{exercise.name}</h3>
-          <div className="flex items-center space-x-4 text-sm text-gray-400">
+          <div className="flex items-center space-x-4 text-sm text-slate-400">
             <span>{exercise.sets} series × {exercise.reps} reps</span>
             {exercise.restTime && (
               <div className="flex items-center">
@@ -80,11 +80,11 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
           
           {/* Información del historial */}
           {exerciseHistory && (
-            <div className="mt-2 text-xs text-blue-400 flex items-center">
+            <div className="mt-2 text-xs text-mint flex items-center">
               <TrendingUp size={12} className="mr-1" />
               <span>Última vez: {exerciseHistory.lastWeight.join(', ')} kg</span>
               {exerciseHistory.personalRecord > 0 && (
-                <span className="ml-2 text-green-400">
+                <span className="ml-2 text-mint">
                   • PR: {exerciseHistory.personalRecord} kg
                 </span>
               )}
@@ -96,9 +96,9 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
           <div className="text-sm font-medium text-white">
             {completedSets}/{exercise.sets}
           </div>
-          <div className="w-16 h-2 bg-gray-700 rounded-full mt-1">
+          <div className="w-16 h-2 bg-slateDeep rounded-full mt-1">
             <div
-              className="h-full bg-blue-400 rounded-full transition-all duration-300"
+              className="h-full bg-mint rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
@@ -111,17 +111,17 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
           <div key={set.setNumber}>
             <div className="flex items-center space-x-3">
               {/* Número de serie */}
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-medium text-gray-300">
+              <div className="w-8 h-8 rounded-full bg-slateDeep flex items-center justify-center text-sm font-medium text-slate-300">
                 {set.setNumber}
               </div>
 
               {/* Peso */}
               <div className="flex items-center space-x-2 flex-1">
-                <Weight size={16} className="text-gray-400" />
+                <Weight size={16} className="text-slate-400" />
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => adjustWeight(set.setNumber, -2.5)}
-                    className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+                    className="p-1 rounded hover:bg-slateDeep text-slate-400 hover:text-white"
                   >
                     <Minus size={14} />
                   </button>
@@ -129,14 +129,14 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
                     type="number"
                     value={set.weight}
                     onChange={(e) => updateSetWeight(set.setNumber, parseFloat(e.target.value) || 0)}
-                    className="w-16 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-center text-white text-sm"
+                    className="w-16 px-2 py-1 bg-slateDeep border border-mist/50 rounded text-center text-white text-sm"
                     step="0.5"
                     min="0"
                   />
-                  <span className="text-xs text-gray-400">kg</span>
+                  <span className="text-xs text-slate-400">kg</span>
                   <button
                     onClick={() => adjustWeight(set.setNumber, 2.5)}
-                    className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
+                    className="p-1 rounded hover:bg-slateDeep text-slate-400 hover:text-white"
                   >
                     <Plus size={14} />
                   </button>
@@ -144,7 +144,7 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
               </div>
 
               {/* Repeticiones objetivo */}
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-slate-400">
                 × {exercise.reps}
               </div>
 
@@ -153,8 +153,8 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
                 onClick={() => toggleSetCompletion(set.setNumber)}
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 ${
                   set.completed
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-700 text-gray-400 hover:bg-green-600 hover:text-white'
+                    ? 'bg-mint text-ink'
+                    : 'bg-slateDeep text-slate-400 hover:bg-mint hover:text-ink'
                 }`}
               >
                 <Check size={16} />

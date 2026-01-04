@@ -11,8 +11,8 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
   if (loading) {
     return (
       <div className="text-center py-12">
-        <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-400">Cargando rutinas...</p>
+        <div className="w-12 h-12 border-4 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-slate-400">Cargando rutinas...</p>
       </div>
     );
   }
@@ -20,14 +20,14 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
   if (routines.length === 0) {
     return (
       <div className="text-center py-12">
-        <Target className="mx-auto mb-4 text-gray-600" size={48} />
-        <h3 className="text-lg font-medium text-gray-400 mb-2">
+        <Target className="mx-auto mb-4 text-slate-500" size={48} />
+        <h3 className="text-lg font-medium text-slate-400 mb-2">
           No se encontraron rutinas
         </h3>
-        <p className="text-gray-500 text-sm mb-4">
+        <p className="text-slate-500 text-sm mb-4">
           Se están inicializando las rutinas por defecto...
         </p>
-        <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <div className="w-8 h-8 border-2 border-mint border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
         <h2 className="text-2xl font-bold text-white mb-2">
           ¿Qué rutina quieres hacer hoy?
         </h2>
-        <p className="text-gray-400">
+        <p className="text-slate-400">
           Selecciona una rutina para comenzar tu entrenamiento
         </p>
       </div>
@@ -46,7 +46,7 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
       {routines.map((routine) => (
         <div
           key={routine.id}
-          className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden hover:border-blue-500 transition-colors duration-200"
+          className="app-card overflow-hidden app-card-hover"
         >
           <div className="p-4">
             <div className="flex items-start justify-between mb-3">
@@ -55,7 +55,7 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
                   {routine.name}
                 </h3>
                 {routine.description && (
-                  <p className="text-gray-400 text-sm mb-2">
+                  <p className="text-slate-400 text-sm mb-2">
                     {routine.description}
                   </p>
                 )}
@@ -63,7 +63,7 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
             </div>
 
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4 text-sm text-gray-400">
+              <div className="flex items-center space-x-4 text-sm text-slate-400">
                 <div className="flex items-center">
                   <Target size={16} className="mr-1" />
                   <span>{routine.exercises.length} ejercicios</span>
@@ -84,18 +84,18 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
 
             {/* Preview de ejercicios */}
             <div className="mb-4">
-              <div className="text-xs text-gray-500 mb-2">Ejercicios:</div>
+              <div className="text-xs text-slate-500 mb-2">Ejercicios:</div>
               <div className="space-y-1">
                 {routine.exercises.slice(0, 3).map((exercise) => (
-                  <div key={exercise.id} className="text-sm text-gray-300 flex justify-between">
+                  <div key={exercise.id} className="text-sm text-slate-300 flex justify-between">
                     <span>{exercise.name}</span>
-                    <span className="text-gray-500">
+                    <span className="text-slate-500">
                       {exercise.sets} × {exercise.reps}
                     </span>
                   </div>
                 ))}
                 {routine.exercises.length > 3 && (
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-slate-500">
                     +{routine.exercises.length - 3} ejercicios más
                   </div>
                 )}
@@ -104,7 +104,7 @@ export function RoutineSelector({ routines, onSelectRoutine, loading }: RoutineS
 
             <button
               onClick={() => onSelectRoutine(routine)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+              className="btn-primary w-full flex items-center justify-center gap-2"
             >
               <Play size={18} />
               <span>Comenzar Rutina</span>

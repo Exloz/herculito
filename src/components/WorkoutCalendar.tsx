@@ -86,13 +86,13 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-700">
+    <div className="app-card p-3 sm:p-4">
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
           onClick={() => navigateMonth('prev')}
-          className="p-1.5 sm:p-2 hover:bg-gray-700 rounded-lg transition-colors touch-manipulation"
+          className="btn-ghost p-2 touch-manipulation"
         >
-          <ChevronLeft size={18} className="text-gray-300" />
+          <ChevronLeft size={18} className="text-slate-300" />
         </button>
 
         <h3 className="text-base sm:text-lg font-semibold text-white text-center">
@@ -101,15 +101,15 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
         <button
           onClick={() => navigateMonth('next')}
-          className="p-1.5 sm:p-2 hover:bg-gray-700 rounded-lg transition-colors touch-manipulation"
+          className="btn-ghost p-2 touch-manipulation"
         >
-          <ChevronRight size={18} className="text-gray-300" />
+          <ChevronRight size={18} className="text-slate-300" />
         </button>
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1 mb-2">
         {weekDays.map(day => (
-          <div key={day} className="text-center text-xs font-medium text-gray-400 py-1 sm:py-2">
+          <div key={day} className="text-center text-xs font-medium text-slate-400 py-1 sm:py-2">
             {day}
           </div>
         ))}
@@ -129,12 +129,12 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
               className={`
                 relative aspect-square p-0.5 sm:p-1 rounded-lg cursor-pointer transition-colors touch-manipulation
                 ${isCurrentDay
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-mint text-ink'
                   : isInCurrentMonth
-                    ? 'hover:bg-gray-700 text-gray-300'
-                    : 'text-gray-600 hover:bg-gray-800'
+                    ? 'hover:bg-slateDeep text-slate-200'
+                    : 'text-slate-600 hover:bg-charcoal'
                 }
-                ${hasWorkout ? 'ring-1 sm:ring-2 ring-green-500' : ''}
+                ${hasWorkout ? 'ring-1 sm:ring-2 ring-mint/60' : ''}
               `}
             >
               <div className="text-xs font-medium text-center leading-tight">
@@ -156,7 +156,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                       );
                     })}
                     {day.workouts.length > 3 && (
-                      <div className="text-xs text-gray-400">+</div>
+                      <div className="text-xs text-slate-400">+</div>
                     )}
                   </div>
                 </div>
@@ -166,8 +166,8 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
         })}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-gray-700">
-        <div className="text-xs text-gray-400 mb-2">Grupos musculares:</div>
+      <div className="mt-4 pt-3 border-t border-mist/60">
+        <div className="text-xs text-slate-400 mb-2">Grupos musculares:</div>
         <div className="grid grid-cols-4 gap-2">
           {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
             <div key={key} className="flex items-center space-x-1">
@@ -175,7 +175,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: group.color }}
               />
-              <span className="text-xs text-gray-400 truncate">{group.name}</span>
+              <span className="text-xs text-slate-400 truncate">{group.name}</span>
             </div>
           ))}
         </div>

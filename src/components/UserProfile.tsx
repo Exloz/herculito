@@ -8,8 +8,8 @@ interface UserProfileProps {
 
 export function UserProfile({ user, onLogout }: UserProfileProps) {
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
-      <div className="flex items-center space-x-3">
+    <div className="flex items-center justify-between p-4 app-header">
+      <div className="flex items-center gap-3">
         {user.photoURL ? (
           <img
             src={user.photoURL}
@@ -17,18 +17,18 @@ export function UserProfile({ user, onLogout }: UserProfileProps) {
             className="w-10 h-10 rounded-full"
           />
         ) : (
-          <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-            <UserIcon size={20} className="text-white" />
+          <div className="w-10 h-10 bg-mint rounded-full flex items-center justify-center">
+            <UserIcon size={20} className="text-ink" />
           </div>
         )}
         <div>
           <p className="text-white font-medium">{user.name}</p>
-          <p className="text-gray-400 text-sm">{user.email}</p>
+          <p className="text-slate-400 text-sm">{user.email}</p>
         </div>
       </div>
       <button
         onClick={onLogout}
-        className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors duration-200"
+        className="btn-ghost"
         title="Cerrar sesión"
       >
         <LogOut size={20} />

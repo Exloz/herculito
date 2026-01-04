@@ -250,8 +250,8 @@ export const useTimer = () => {
         if (!hasNotified) {
           setHasNotified(true);
           void showTimerNotification(
-            '¡Tiempo de descanso terminado!',
-            'Tu descanso ha finalizado. Es hora de continuar con tu entrenamiento!'
+            '¡Descanso terminado!',
+            'Continúa con tu entrenamiento basura!'
           );
         }
 

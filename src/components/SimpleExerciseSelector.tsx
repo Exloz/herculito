@@ -79,8 +79,8 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-lg w-full max-w-md max-h-[80vh] overflow-hidden">
-        <div className="p-4 border-b border-gray-700">
+      <div className="app-card w-full max-w-md max-h-[80vh] overflow-hidden">
+        <div className="p-4 border-b border-mist/60">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-white">Añadir Ejercicio (Simple)</h3>
             <button
@@ -88,7 +88,7 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               onClick={() => {
                 onCancel();
               }}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="btn-ghost"
             >
               <X size={20} />
             </button>
@@ -102,10 +102,10 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setShowCustomForm(false);
                 setError('');
               }}
-              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${
+              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
                 !showCustomForm 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-mint/15 text-mint' 
+                  : 'bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
               Predeterminados
@@ -116,10 +116,10 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setShowCustomForm(true);
                 setError('');
               }}
-              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${
+              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
                 showCustomForm 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  ? 'bg-mint/15 text-mint' 
+                  : 'bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
               Crear Nuevo
@@ -136,16 +136,16 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     key={exercise.id}
                     type="button"
                     onClick={() => handleSelectDefault(exercise)}
-                    className="w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-md text-left transition-colors"
+                    className="w-full p-3 bg-slateDeep hover:bg-charcoal rounded-xl text-left transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-white text-sm font-medium">{exercise.name}</h4>
-                        <div className="flex items-center text-xs text-gray-400 space-x-2">
+                        <div className="flex items-center text-xs text-slate-400 space-x-2">
                           <span>{exercise.category}</span>
                         </div>
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-slate-400">
                         {exercise.sets} x {exercise.reps}
                       </div>
                     </div>
@@ -157,7 +157,7 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             <div className="p-4">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Nombre del ejercicio *</label>
+                  <label className="block text-sm text-slate-300 mb-1">Nombre del ejercicio *</label>
                   <input
                     type="text"
                     value={customExercise.name}
@@ -165,7 +165,7 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                       setCustomExercise({...customExercise, name: e.target.value});
                       if (error) setError('');
                     }}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                    className="input text-sm"
                     placeholder="Ej: Press de banca"
                     autoFocus
                   />
@@ -179,32 +179,32 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Sets</label>
+                    <label className="block text-sm text-slate-300 mb-1">Sets</label>
                     <input
                       type="number"
                       value={customExercise.sets}
                       onChange={(e) => setCustomExercise({...customExercise, sets: parseInt(e.target.value) || 1})}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                      className="input input-sm text-sm"
                       min="1"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Reps</label>
+                    <label className="block text-sm text-slate-300 mb-1">Reps</label>
                     <input
                       type="number"
                       value={customExercise.reps}
                       onChange={(e) => setCustomExercise({...customExercise, reps: parseInt(e.target.value) || 1})}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                      className="input input-sm text-sm"
                       min="1"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Descanso (seg)</label>
+                    <label className="block text-sm text-slate-300 mb-1">Descanso (seg)</label>
                     <input
                       type="number"
                       value={customExercise.restTime}
                       onChange={(e) => setCustomExercise({...customExercise, restTime: parseInt(e.target.value) || 30})}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                      className="input input-sm text-sm"
                       min="30"
                       step="30"
                     />
@@ -226,7 +226,7 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                         description: ''
                       });
                     }}
-                    className="flex-1 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+                    className="btn-secondary flex-1"
                   >
                     Cancelar
                   </button>
@@ -235,7 +235,7 @@ export const SimpleExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     type="button"
                     onClick={handleCustomExercise}
                     disabled={!customExercise.name.trim() || creatingExercise}
-                    className="flex-2 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-md transition-colors flex items-center justify-center space-x-2"
+                    className="btn-primary flex-[2] flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     {creatingExercise ? (
                       <>

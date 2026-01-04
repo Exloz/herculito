@@ -75,8 +75,8 @@ export const Routines: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Cargando rutinas...</div>
+      <div className="app-shell flex items-center justify-center">
+        <div className="text-slate-100">Cargando rutinas...</div>
       </div>
     );
   }
@@ -84,63 +84,63 @@ export const Routines: React.FC = () => {
   // Modal de edición de ejercicio
   if (editingExercise) {
     return (
-      <div className="min-h-screen bg-gray-900 px-4 py-6">
+      <div className="app-shell px-4 py-6">
         <div className="max-w-md mx-auto">
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
+          <div className="app-card rounded-lg p-6 border border-mist/60">
             <h2 className="text-lg font-semibold text-white mb-4">
               {editingExercise.id.includes('exercise_') ? 'Nuevo Ejercicio' : 'Editar Ejercicio'}
             </h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   Nombre del ejercicio
                 </label>
                 <input
                   type="text"
                   value={editingExercise.name}
                   onChange={(e) => setEditingExercise({ ...editingExercise, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  className="input"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
                     Series
                   </label>
                   <input
                     type="number"
                     value={editingExercise.sets}
                     onChange={(e) => setEditingExercise({ ...editingExercise, sets: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                    className="input"
                     min="1"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-slate-300 mb-1">
                     Repeticiones
                   </label>
                   <input
                     type="number"
                     value={editingExercise.reps}
                     onChange={(e) => setEditingExercise({ ...editingExercise, reps: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                    className="input"
                     min="1"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-slate-300 mb-1">
                   Descanso (segundos)
                 </label>
                 <input
                   type="number"
                   value={editingExercise.restTime || 0}
                   onChange={(e) => setEditingExercise({ ...editingExercise, restTime: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  className="input"
                   min="0"
                   step="10"
                 />
@@ -150,14 +150,14 @@ export const Routines: React.FC = () => {
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={handleSaveExercise}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 <Save size={16} />
                 <span>Guardar</span>
               </button>
               <button
                 onClick={() => setEditingExercise(null)}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                className="btn-secondary px-4"
               >
                 Cancelar
               </button>
@@ -171,22 +171,22 @@ export const Routines: React.FC = () => {
   // Modal de edición de entrenamiento
   if (editingWorkout) {
     return (
-      <div className="min-h-screen bg-gray-900 px-4 py-6 pb-20">
+      <div className="app-shell px-4 py-6 pb-20">
         <div className="max-w-md mx-auto">
-          <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 mb-4">
+          <div className="app-card rounded-lg p-6 border border-mist/60 mb-4">
             <h2 className="text-lg font-semibold text-white mb-4">
               Editar {daysOfWeek.find(d => d.key === editingWorkout.day)?.name}
             </h2>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1">
                 Nombre del entrenamiento
               </label>
               <input
                 type="text"
                 value={editingWorkout.name}
                 onChange={(e) => setEditingWorkout({ ...editingWorkout, name: e.target.value })}
-                className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                className="input"
               />
             </div>
 
@@ -194,7 +194,7 @@ export const Routines: React.FC = () => {
               <h3 className="text-md font-medium text-white">Ejercicios</h3>
               <button
                 onClick={handleAddExercise}
-                className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
+                className="btn-secondary p-2"
               >
                 <Plus size={16} />
               </button>
@@ -202,11 +202,11 @@ export const Routines: React.FC = () => {
 
             <div className="space-y-3 mb-6">
               {editingWorkout.exercises.map(exercise => (
-                <div key={exercise.id} className="bg-gray-700 rounded-lg p-3 border border-gray-600">
+                <div key={exercise.id} className="bg-slateDeep rounded-lg p-3 border border-mist/50">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="font-medium text-white">{exercise.name}</div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-slate-400">
                         {exercise.sets} × {exercise.reps} 
                         {exercise.restTime && ` • ${exercise.restTime}s descanso`}
                       </div>
@@ -214,7 +214,7 @@ export const Routines: React.FC = () => {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => setEditingExercise(exercise)}
-                        className="text-blue-400 hover:text-blue-300"
+                        className="text-mint hover:text-mintDeep"
                       >
                         <Edit size={16} />
                       </button>
@@ -230,7 +230,7 @@ export const Routines: React.FC = () => {
               ))}
               
               {editingWorkout.exercises.length === 0 && (
-                <div className="text-center py-6 text-gray-500">
+                <div className="text-center py-6 text-slate-500">
                   No hay ejercicios. Agrega uno usando el botón +
                 </div>
               )}
@@ -239,14 +239,14 @@ export const Routines: React.FC = () => {
             <div className="flex space-x-3">
               <button
                 onClick={handleSaveWorkout}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                className="btn-primary flex-1 flex items-center justify-center gap-2"
               >
                 <Save size={16} />
                 <span>Guardar Entrenamiento</span>
               </button>
               <button
                 onClick={() => setEditingWorkout(null)}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors"
+                className="btn-secondary px-4"
               >
                 Cancelar
               </button>
@@ -259,11 +259,11 @@ export const Routines: React.FC = () => {
 
   // Vista principal de rutinas
   return (
-    <div className="min-h-screen bg-gray-900 px-4 py-6 pb-20">
+    <div className="app-shell px-4 py-6 pb-28">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-white mb-2">Gestión de Rutinas</h1>
-          <p className="text-gray-400">Configura tus entrenamientos semanales</p>
+          <h1 className="text-2xl sm:text-3xl font-display text-white mb-2">Gestion de Rutinas</h1>
+          <p className="text-slate-400">Configura tus entrenamientos semanales</p>
         </div>
 
         <div className="space-y-4">
@@ -271,18 +271,18 @@ export const Routines: React.FC = () => {
             const workout = getWorkoutForDay(day.key);
             
             return (
-              <div key={day.key} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <div key={day.key} className="app-card rounded-lg p-4 border border-mist/60">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Calendar className="text-blue-400" size={20} />
+                    <Calendar className="text-mint" size={20} />
                     <div>
                       <div className="font-medium text-white">{day.name}</div>
                       {workout ? (
-                        <div className="text-sm text-gray-400">
+                        <div className="text-sm text-slate-400">
                           {workout.name} • {workout.exercises.length} ejercicio{workout.exercises.length !== 1 ? 's' : ''}
                         </div>
                       ) : (
-                        <div className="text-sm text-gray-500">Sin entrenamiento</div>
+                        <div className="text-sm text-slate-500">Sin entrenamiento</div>
                       )}
                     </div>
                   </div>
@@ -291,14 +291,14 @@ export const Routines: React.FC = () => {
                     {workout ? (
                       <button
                         onClick={() => setEditingWorkout(workout)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors"
+                        className="btn-secondary p-2"
                       >
                         <Edit size={16} />
                       </button>
                     ) : (
                       <button
                         onClick={() => handleCreateWorkout(day.key, day.name)}
-                        className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors"
+                        className="btn-primary p-2"
                       >
                         <Plus size={16} />
                       </button>

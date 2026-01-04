@@ -28,8 +28,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
   if (groupRoutines.length === 0) return null;
 
   return (
-    <div className={`bg-gray-800 rounded-lg p-3 sm:p-4 border border-gray-700 ${isRecommended ? 'ring-2 ring-blue-500' : ''
-      }`}>
+    <div className={`app-card p-3 sm:p-5 ${isRecommended ? 'ring-2 ring-mint/60' : ''}`}>
       {/* Header del grupo muscular */}
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <div className="flex items-center space-x-2 sm:space-x-3">
@@ -47,12 +46,12 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
             <h3 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2">
               <span className="truncate">{groupInfo.name}</span>
               {isRecommended && (
-                <span className="text-xs bg-blue-600 px-2 py-1 rounded-full whitespace-nowrap">
+                <span className="chip whitespace-nowrap">
                   Recomendado
                 </span>
               )}
             </h3>
-            <p className="text-xs sm:text-sm text-gray-400 truncate">
+            <p className="text-xs sm:text-sm text-slate-300 truncate">
               {groupRoutines.length} rutina{groupRoutines.length !== 1 ? 's' : ''} disponible{groupRoutines.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -64,14 +63,14 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
         {groupRoutines.map((routine) => (
           <div
             key={routine.id}
-            className="bg-gray-750 rounded-lg p-3 sm:p-4 border border-gray-600 hover:border-gray-500 transition-colors"
+            className="app-surface-muted rounded-xl p-3 sm:p-4 app-card-hover"
           >
             <div className="flex items-start justify-between mb-2">
               <h4 className="font-medium text-white truncate pr-2 text-sm sm:text-base">
                 {routine.name}
               </h4>
               {routine.isPublic && (
-                <div className="flex items-center space-x-1 text-xs text-gray-400 shrink-0">
+                <div className="flex items-center space-x-1 text-xs text-slate-400 shrink-0">
                   <Users size={12} />
                 </div>
               )}
@@ -87,19 +86,19 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
             </div>
 
             <div className="space-y-2 mb-3">
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-slate-400">
                 {routine.exercises.length} ejercicio{routine.exercises.length !== 1 ? 's' : ''}
               </div>
 
               {routine.timesUsed && routine.timesUsed > 0 && (
-                <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <div className="flex items-center space-x-1 text-xs text-slate-500">
                   <Calendar size={12} />
                   <span>Usado {routine.timesUsed} veces</span>
                 </div>
               )}
 
                {routine.createdBy && routine.createdBy !== (currentUser as unknown as string) && (
-                 <div className="text-xs text-gray-500">
+                 <div className="text-xs text-slate-500">
                    Por {routine.createdByName || 'Otro usuario'}
                  </div>
                )}
@@ -107,15 +106,15 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
 
             {/* Ejercicios principales */}
             <div className="mb-3">
-              <div className="text-xs text-gray-400 mb-1">Ejercicios:</div>
-              <div className="text-xs text-gray-300 space-y-1">
+              <div className="text-xs text-slate-400 mb-1">Ejercicios:</div>
+              <div className="text-xs text-slate-300 space-y-1">
                 {routine.exercises.slice(0, 3).map((exercise, idx) => (
                   <div key={idx} className="truncate">
                     • {exercise.name} ({exercise.sets}×{exercise.reps})
                   </div>
                 ))}
                 {routine.exercises.length > 3 && (
-                  <div className="text-gray-500">
+                  <div className="text-slate-500">
                     +{routine.exercises.length - 3} más
                   </div>
                 )}
@@ -125,8 +124,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
             {/* Botón de iniciar */}
             <button
               onClick={() => onStartWorkout(routine.id)}
-              className="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-3 py-2.5 sm:py-2 rounded-lg 
-                       transition-colors flex items-center justify-center space-x-2 text-sm font-medium touch-manipulation"
+              className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
             >
               <Play size={16} />
               <span className="hidden sm:inline">Iniciar Entrenamiento</span>
@@ -168,20 +166,20 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
     <div className="space-y-6">
       {/* Información de recomendación */}
       {recommendedGroup && (
-        <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4">
-          <div className="flex items-center space-x-2 mb-2">
-            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-            <h3 className="text-blue-400 font-medium">Grupo muscular recomendado</h3>
+        <div className="app-surface p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="chip">Recomendado hoy</span>
           </div>
-          <p className="text-gray-300 text-sm">
+          <p className="text-slate-300 text-sm">
             Basado en tu historial de entrenamientos, te recomendamos entrenar{' '}
-            <span className="font-semibold text-blue-400">
+            <span className="font-semibold text-mint">
               {MUSCLE_GROUPS[recommendedGroup].name}
             </span>{' '}
             hoy.
           </p>
         </div>
       )}
+
 
       {/* Secciones de grupos musculares */}
       {orderedGroups.map((muscleGroup) => (

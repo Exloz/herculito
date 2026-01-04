@@ -8,13 +8,13 @@ interface UserSelectorProps {
 
 export const UserSelector: React.FC<UserSelectorProps> = ({ currentUser, onUserChange }) => {
   return (
-    <div className="flex items-center justify-center space-x-1 bg-gray-800 rounded-lg p-1 mb-6">
+    <div className="flex items-center justify-center gap-1 app-surface p-1 mb-6">
       <button
         onClick={() => onUserChange('A')}
-        className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all duration-200 ${
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
           currentUser === 'A'
-            ? 'bg-blue-600 text-white shadow-lg'
-            : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            ? 'bg-mint/15 text-mint shadow-lift'
+            : 'text-slate-300 hover:text-white hover:bg-slateDeep'
         }`}
       >
         <User size={18} />
@@ -22,10 +22,10 @@ export const UserSelector: React.FC<UserSelectorProps> = ({ currentUser, onUserC
       </button>
       <button
         onClick={() => onUserChange('B')}
-        className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-all duration-200 ${
+        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200 ${
           currentUser === 'B'
-            ? 'bg-blue-600 text-white shadow-lg'
-            : 'text-gray-400 hover:text-white hover:bg-gray-700'
+            ? 'bg-mint/15 text-mint shadow-lift'
+            : 'text-slate-300 hover:text-white hover:bg-slateDeep'
         }`}
       >
         <User size={18} />

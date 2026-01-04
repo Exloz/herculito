@@ -56,15 +56,15 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 bg-gray-800 rounded-lg p-4 shadow-xl border border-gray-700 z-50">
+    <div className="fixed bottom-4 left-4 right-4 app-card p-4 z-50">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <TimerIcon className="text-green-400" size={20} />
+        <div className="flex items-center gap-2">
+          <TimerIcon className="text-mint" size={20} />
           <span className="text-white font-medium">Descanso</span>
         </div>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-white transition-colors"
+          className="btn-ghost"
           aria-label="Cerrar temporizador"
         >
           <X size={20} />
@@ -73,18 +73,18 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
 
       <div className="text-center mb-3">
         <div className="text-3xl font-bold text-white font-mono">{formatTime()}</div>
-        <div className="w-full bg-gray-700 rounded-full h-2 mt-2">
+        <div className="w-full bg-slateDeep rounded-full h-2 mt-2">
           <div
-            className="bg-green-500 h-2 rounded-full transition-all duration-200"
+            className="bg-mint h-2 rounded-full transition-all duration-200"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      <div className="flex space-x-2 justify-center">
+      <div className="flex gap-2 justify-center">
         <button
           onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
-          className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors touch-manipulation"
+          className="btn-primary flex items-center gap-2 touch-manipulation"
           aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
         >
           {isActive ? <Pause size={18} /> : <Play size={18} />}
@@ -92,7 +92,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
         </button>
         <button
           onClick={resetTimer}
-          className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md transition-colors touch-manipulation"
+          className="btn-secondary touch-manipulation"
           aria-label="Reiniciar temporizador"
         >
           Reiniciar
@@ -103,7 +103,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
         <div className="mt-3 text-center">
           <button
             onClick={handleEnableNotifications}
-            className="text-sm text-blue-400 hover:text-blue-300 underline"
+            className="text-sm text-mint hover:text-mintDeep underline"
           >
             Activar notificaciones
           </button>
@@ -111,7 +111,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
       )}
 
       {notificationPermission === 'denied' && (
-        <div className="mt-3 text-center text-xs text-gray-400">
+        <div className="mt-3 text-center text-xs text-slate-400">
           Notificaciones bloqueadas. Habilitalas en el navegador.
         </div>
       )}

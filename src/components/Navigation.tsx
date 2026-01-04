@@ -11,30 +11,30 @@ export const Navigation: React.FC<NavigationProps> = ({
   onPageChange,
 }) => {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 px-4 py-0.5 z-40">
-      <div className="flex justify-around max-w-md mx-auto">
+    <nav className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-mist/60 bg-charcoal/85 px-2 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] shadow-soft backdrop-blur">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => onPageChange("dashboard")}
-          className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
+          className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
             currentPage === "dashboard"
-              ? "text-blue-400 bg-blue-900/20"
-              : "text-gray-400 hover:text-white hover:bg-gray-700"
+              ? "bg-mint/15 text-mint"
+              : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
           }`}
         >
-          <Home size={24} />
-          <span className="text-xs font-medium">Inicio</span>
+          <Home size={22} />
+          <span className="text-xs font-semibold">Inicio</span>
         </button>
 
         <button
           onClick={() => onPageChange("routines")}
-          className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors ${
+          className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
             currentPage === "routines"
-              ? "text-blue-400 bg-blue-900/20"
-              : "text-gray-400 hover:text-white hover:bg-gray-700"
+              ? "bg-mint/15 text-mint"
+              : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
           }`}
         >
-          <Settings size={24} />
-          <span className="text-xs font-medium">Rutinas</span>
+          <Settings size={22} />
+          <span className="text-xs font-semibold">Rutinas</span>
         </button>
       </div>
     </nav>

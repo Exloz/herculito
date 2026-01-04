@@ -121,8 +121,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   if (!user?.id) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-gray-800 rounded-lg p-6 text-center">
-          <Loader className="animate-spin mx-auto mb-4 text-blue-400" size={32} />
+        <div className="app-card p-6 text-center">
+          <Loader className="animate-spin mx-auto mb-4 text-mint" size={32} />
           <p className="text-white">Verificando autenticación...</p>
         </div>
       </div>
@@ -132,8 +132,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-gray-800 rounded-lg p-6 text-center">
-          <Loader className="animate-spin mx-auto mb-4 text-blue-400" size={32} />
+        <div className="app-card p-6 text-center">
+          <Loader className="animate-spin mx-auto mb-4 text-mint" size={32} />
           <p className="text-white">Cargando ejercicios...</p>
         </div>
       </div>
@@ -142,8 +142,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-gray-800 rounded-lg w-full max-w-md max-h-[80vh] overflow-hidden">
-        <div className="p-4 border-b border-gray-700">
+      <div className="app-card w-full max-w-md max-h-[80vh] overflow-hidden">
+        <div className="p-4 border-b border-mist/60">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-white">Añadir Ejercicio</h3>
             <button
@@ -151,7 +151,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               onClick={() => {
                 onCancel();
               }}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="btn-ghost"
             >
               <X size={20} />
             </button>
@@ -166,9 +166,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setError('');
                 setSuccessMessage('');
               }}
-              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${!showCustomForm
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${!showCustomForm
+                  ? 'bg-mint/15 text-mint'
+                  : 'bg-slateDeep text-slate-300 hover:text-white'
                 }`}
             >
               Ejercicios ({exercises.length})
@@ -180,9 +180,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setError('');
                 setSuccessMessage('');
               }}
-              className={`flex-1 py-2 px-3 rounded-md text-sm transition-colors ${showCustomForm
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${showCustomForm
+                  ? 'bg-mint/15 text-mint'
+                  : 'bg-slateDeep text-slate-300 hover:text-white'
                 }`}
             >
               Crear Nuevo
@@ -197,13 +197,13 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               <div className="space-y-3 mb-4">
                 {/* Buscador */}
                 <div className="relative">
-                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
                     placeholder="Buscar ejercicios..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                    className="input pl-10 text-sm"
                   />
                 </div>
 
@@ -212,7 +212,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 appearance-none cursor-pointer"
+                    className="input text-sm appearance-none cursor-pointer"
                   >
                     <option value="">Todas las categorías</option>
                     {categories.map(category => (
@@ -221,7 +221,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 pointer-events-none" />
                 </div>
               </div>
 
@@ -231,12 +231,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   <button
                     key={exercise.id}
                     onClick={() => handleSelectTemplate(exercise)}
-                    className="w-full p-3 bg-gray-700 hover:bg-gray-600 rounded-md text-left transition-colors"
+                    className="w-full p-3 bg-slateDeep hover:bg-charcoal rounded-xl text-left transition-colors"
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="text-white text-sm font-medium">{exercise.name}</h4>
-                        <div className="flex items-center text-xs text-gray-400 space-x-2">
+                        <div className="flex items-center text-xs text-slate-400 space-x-2">
                           <span>{exercise.category}</span>
                           {exercise.timesUsed > 0 && (
                             <>
@@ -246,7 +246,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                           )}
                         </div>
                       </div>
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-slate-400">
                         {exercise.sets} x {exercise.reps}
                       </div>
                     </div>
@@ -254,7 +254,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 ))}
 
                 {filteredExercises.length === 0 && !loading && (
-                  <div className="text-center py-8 text-gray-400">
+                  <div className="text-center py-8 text-slate-400">
                     <p>No se encontraron ejercicios</p>
                     <p className="text-xs mt-1">Crea uno nuevo usando la pestaña "Crear Nuevo"</p>
                   </div>
@@ -266,16 +266,16 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             <div className="p-4">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Nombre del ejercicio *</label>
+                  <label className="block text-sm text-slate-300 mb-1">Nombre del ejercicio *</label>
                   <input
                     type="text"
                     value={customExercise.name}
                     onChange={(e) => {
                       setCustomExercise({ ...customExercise, name: e.target.value });
                       if (error) setError(''); // Limpiar error cuando el usuario empieza a escribir
-                      if (successMessage) setSuccessMessage(''); // Limpiar mensaje de éxito
+                      if (successMessage) setSuccessMessage(''); // Limpiar mensaje de exito
                     }}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                    className="input text-sm"
                     placeholder="Ej: Press de banca"
                     autoFocus
                   />
@@ -288,18 +288,18 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 )}
 
                 {successMessage && (
-                  <div className="bg-green-900/50 border border-green-500 rounded-md p-3 text-green-200 text-sm">
+                  <div className="bg-mint/10 border border-mint rounded-md p-3 text-mint text-sm">
                     {successMessage}
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Categoría</label>
+                  <label className="block text-sm text-slate-300 mb-1">Categoría</label>
                   <input
                     type="text"
                     value={customExercise.category}
                     onChange={(e) => setCustomExercise({ ...customExercise, category: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                    className="input text-sm"
                     placeholder="Ej: Pecho, Espalda, Piernas..."
                     list="categories"
                   />
@@ -311,44 +311,44 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-sm text-gray-300 mb-1">Descripción (opcional)</label>
+                  <label className="block text-sm text-slate-300 mb-1">Descripción (opcional)</label>
                   <textarea
                     value={customExercise.description}
                     onChange={(e) => setCustomExercise({ ...customExercise, description: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-                    placeholder="Describe cómo hacer el ejercicio..."
+                    className="input text-sm"
+                    placeholder="Describe como hacer el ejercicio..."
                     rows={2}
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Series</label>
+                    <label className="block text-sm text-slate-300 mb-1">Series</label>
                     <input
                       type="number"
                       value={customExercise.sets}
                       onChange={(e) => setCustomExercise({ ...customExercise, sets: parseInt(e.target.value) || 1 })}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                      className="input input-sm text-sm"
                       min="1"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Reps</label>
+                    <label className="block text-sm text-slate-300 mb-1">Reps</label>
                     <input
                       type="number"
                       value={customExercise.reps}
                       onChange={(e) => setCustomExercise({ ...customExercise, reps: parseInt(e.target.value) || 1 })}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                      className="input input-sm text-sm"
                       min="1"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-300 mb-1">Descanso (seg)</label>
+                    <label className="block text-sm text-slate-300 mb-1">Descanso (seg)</label>
                     <input
                       type="number"
                       value={customExercise.restTime}
                       onChange={(e) => setCustomExercise({ ...customExercise, restTime: parseInt(e.target.value) || 30 })}
-                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                      className="input input-sm text-sm"
                       min="30"
                       step="30"
                     />
@@ -370,7 +370,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                         description: ''
                       });
                     }}
-                    className="flex-1 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+                    className="btn-secondary flex-1"
                   >
                     Cancelar
                   </button>
@@ -378,7 +378,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   <button
                     onClick={handleCustomExercise}
                     disabled={!customExercise.name.trim() || creatingExercise}
-                    className="flex-2 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white rounded-md transition-colors flex items-center justify-center space-x-2"
+                    className="btn-primary flex-[2] flex items-center justify-center gap-2 disabled:opacity-60"
                   >
                     {creatingExercise ? (
                       <>

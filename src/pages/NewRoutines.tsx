@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Dumbbell, Target, Users, User as UserIcon, Eye, Lock } from 'lucide-react';
+import { Plus, Edit, Trash2, Dumbbell, Target, User as UserIcon, Eye } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { RoutineEditor } from '../components/RoutineEditor';
 import { User, Routine, Exercise, MuscleGroup } from '../types';
@@ -75,48 +75,48 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="app-shell flex items-center justify-center">
         <div className="text-center">
-          <Dumbbell className="mx-auto mb-4 text-blue-400 animate-bounce" size={48} />
-          <div className="text-white text-lg">Cargando rutinas...</div>
+          <Dumbbell className="mx-auto mb-4 text-mint animate-bounce" size={48} />
+          <div className="text-slate-100 text-lg">Cargando rutinas...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 pb-20">
-      <div className="max-w-md mx-auto px-4 py-6">
+    <div className="app-shell pb-28">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Rutinas</h1>
-            <p className="text-gray-400 text-sm">Gestiona tus entrenamientos</p>
+            <h1 className="text-2xl sm:text-3xl font-display text-white">Rutinas</h1>
+            <p className="text-slate-300 text-sm">Gestiona tus entrenamientos</p>
           </div>
           <button
             onClick={handleCreateRoutine}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors duration-200"
+            className="btn-primary"
           >
-            <Plus size={20} />
+            <Plus size={18} />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg mb-6">
+        <div className="app-surface p-1 mb-6 flex gap-1">
           <button
             onClick={() => setActiveTab('my')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeTab === 'my'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-400 hover:text-white'
+            className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'my'
+              ? 'bg-mint/15 text-mint'
+              : 'text-slate-300 hover:text-white'
               }`}
           >
             Mis Rutinas ({myRoutines.length})
           </button>
           <button
             onClick={() => setActiveTab('public')}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors ${activeTab === 'public'
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-400 hover:text-white'
+            className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'public'
+              ? 'bg-mint/15 text-mint'
+              : 'text-slate-300 hover:text-white'
               }`}
           >
             Públicas ({publicRoutines.length})
@@ -126,11 +126,11 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         {/* Lista de rutinas */}
         {displayedRoutines.length === 0 ? (
           <div className="text-center py-12">
-            <Target className="mx-auto mb-4 text-gray-600" size={48} />
-            <h3 className="text-lg font-medium text-gray-400 mb-2">
+            <Target className="mx-auto mb-4 text-slate-500" size={48} />
+            <h3 className="text-lg font-semibold text-slate-300 mb-2">
               {activeTab === 'my' ? 'No tienes rutinas' : 'No hay rutinas públicas'}
             </h3>
-            <p className="text-gray-500 text-sm mb-4">
+            <p className="text-slate-400 text-sm mb-4">
               {activeTab === 'my'
                 ? 'Crea tu primera rutina de entrenamiento'
                 : 'Sé el primero en crear una rutina pública'
@@ -139,7 +139,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             {activeTab === 'my' && (
               <button
                 onClick={handleCreateRoutine}
-                className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors duration-200"
+                className="btn-primary"
               >
                 Crear Rutina
               </button>
@@ -150,27 +150,27 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             {displayedRoutines.map((routine) => (
               <div
                 key={routine.id}
-                className="bg-gray-800 rounded-lg p-4 border border-gray-700"
+                className="app-card p-4 sm:p-5"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-semibold text-white">
+                      <h3 className="text-lg font-display text-white">
                         {routine.name}
                       </h3>
                       {!routine.isPublic && (
-                        <Lock size={14} className="text-gray-400" />
+                        <span className="chip">Privada</span>
                       )}
                       {routine.createdBy !== user.id && (
-                        <Users size={14} className="text-blue-400" />
+                        <span className="chip-warm">Comunidad</span>
                       )}
                     </div>
                     {routine.description && (
-                      <p className="text-gray-400 text-sm mb-2">
+                      <p className="text-slate-300 text-sm mb-2">
                         {routine.description}
                       </p>
                     )}
-                    <div className="flex items-center text-sm text-gray-400 flex-wrap gap-x-3 gap-y-1">
+                    <div className="flex items-center text-sm text-slate-400 flex-wrap gap-x-3 gap-y-1">
                       <div className="flex items-center">
                         <Target size={14} className="mr-1" />
                         <span>{routine.exercises.length} ejercicios</span>
@@ -191,18 +191,20 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                     </div>
                   </div>
 
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     {canEditRoutine(routine) && (
                       <>
                         <button
                           onClick={() => handleEditRoutine(routine)}
-                          className="p-2 text-gray-400 hover:text-blue-400 hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                          className="btn-ghost"
+                          title="Editar rutina"
                         >
                           <Edit size={16} />
                         </button>
                         <button
                           onClick={() => handleDeleteRoutine(routine.id)}
-                          className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors duration-200"
+                          className="btn-ghost text-crimson hover:text-red-400"
+                          title="Eliminar rutina"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -213,20 +215,20 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
 
                 {/* Preview de ejercicios */}
                 {routine.exercises.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-700">
-                    <p className="text-xs text-gray-500 mb-2">Ejercicios:</p>
+                  <div className="mt-3 pt-3 app-divider">
+                    <p className="text-xs text-slate-400 mb-2">Ejercicios:</p>
                     <div className="space-y-1">
                       {routine.exercises.slice(0, 3).map((exercise) => (
-                        <div key={exercise.id} className="text-sm text-gray-300 flex items-center justify-between">
+                        <div key={exercise.id} className="text-sm text-slate-200 flex items-center justify-between">
                           <span>• {exercise.name}</span>
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-slate-500">
                             {exercise.sets} x {exercise.reps}
                           </span>
                         </div>
                       ))}
                       {routine.exercises.length > 3 && (
-                        <div className="text-xs text-gray-500">
-                          ... y {routine.exercises.length - 3} más
+                        <div className="text-xs text-slate-500">
+                          ... y {routine.exercises.length - 3} mas
                         </div>
                       )}
                     </div>

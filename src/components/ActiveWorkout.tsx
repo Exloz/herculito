@@ -41,9 +41,10 @@ interface ActiveWorkoutProps {
   user: User;
   routine: Routine;
   session: WorkoutSession;
-  onBackToDashboard: () => void;
+  onBackToDashboard: (hasProgress: boolean) => void;
   onCompleteWorkout: (exerciseLogs: ExerciseLog[]) => void;
 }
+
 
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   user,
@@ -61,6 +62,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
+  const hasProgress = exerciseLogs.some(log => log.sets?.some(set => set.completed));
 
   useEffect(() => {
     const storedLogs = loadProgressFromStorage(session.id);
@@ -82,10 +84,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   }, [session.id]);
 
   useEffect(() => {
-    if (exerciseLogs.length > 0) {
+    if (hasProgress) {
       saveProgressToStorage(session.id, exerciseLogs);
+    } else {
+      localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
     }
-  }, [exerciseLogs, session.id]);
+  }, [exerciseLogs, session.id, hasProgress]);
 
   const lastWeights = getLastWeightsForRoutine(routine.id);
 
@@ -123,7 +127,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   };
 
   const handleBackToDashboard = () => {
-    onBackToDashboard();
+    if (!hasProgress) {
+      localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
+      localStorage.removeItem(`workoutStartTime_${session.id}`);
+    }
+    onBackToDashboard(hasProgress);
   };
 
   const handleCompleteWorkout = () => {

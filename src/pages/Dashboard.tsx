@@ -14,6 +14,7 @@ interface DashboardProps {
 }
 
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
+const ACTIVE_WORKOUT_PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in ms
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
@@ -28,6 +29,29 @@ const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: 
   }
 };
 
+const hasCompletedSets = (exerciseLogs: ExerciseLog[] | null): boolean => {
+  if (!exerciseLogs) return false;
+  return exerciseLogs.some(log => log.sets?.some(set => set.completed));
+};
+
+const loadProgressFromStorage = (sessionId: string): ExerciseLog[] | null => {
+  const stored = localStorage.getItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
+  if (!stored) return null;
+
+  try {
+    const data = JSON.parse(stored);
+    const now = Date.now();
+    if (now - data.timestamp > EXPIRATION_TIME) {
+      localStorage.removeItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
+      return null;
+    }
+    return data.exerciseLogs as ExerciseLog[];
+  } catch {
+    localStorage.removeItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
+    return null;
+  }
+};
+
 const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSession } | null => {
   const stored = localStorage.getItem(ACTIVE_WORKOUT_KEY);
   if (!stored) return null;
@@ -39,6 +63,18 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
       localStorage.removeItem(ACTIVE_WORKOUT_KEY);
       return null;
     }
+
+    if (!data?.session?.id || !data?.routine) {
+      localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+      return null;
+    }
+
+    const progressLogs = loadProgressFromStorage(data.session.id);
+    if (!hasCompletedSets(progressLogs)) {
+      localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+      return null;
+    }
+
     return data;
   } catch {
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
@@ -49,18 +85,22 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
    const [currentMonth, setCurrentMonth] = useState(new Date());
    const [showCalendar, setShowCalendar] = useState(true);
-   const [activeWorkout, setActiveWorkout] = useState<{
-     routine: Routine;
-     session: WorkoutSession;
-   } | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<{
+    routine: Routine;
+    session: WorkoutSession;
+  } | null>(null);
+  const [showActiveWorkout, setShowActiveWorkout] = useState(false);
+
 
    // Restore active workout from localStorage on mount
-   useEffect(() => {
-     const stored = loadActiveWorkoutFromStorage();
-     if (stored) {
-       setActiveWorkout(stored);
-     }
-   }, []);
+  useEffect(() => {
+    const stored = loadActiveWorkoutFromStorage();
+    if (stored) {
+      setActiveWorkout(stored);
+      setShowActiveWorkout(false);
+    }
+  }, []);
+
 
    const { routines, loading: routinesLoading, updateRoutine } = useRoutines(user.id);
   const {
@@ -84,13 +124,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
        const routine = routines.find(r => r.id === routineId);
  
 
-       if (routine) {
-         const newActiveWorkout = { routine, session };
-         setActiveWorkout(newActiveWorkout);
-         saveActiveWorkoutToStorage(newActiveWorkout);
-       } else {
-         alert('Rutina no encontrada');
-       }
+      if (routine) {
+        const newActiveWorkout = { routine, session };
+        setActiveWorkout(newActiveWorkout);
+        setShowActiveWorkout(true);
+      } else {
+        alert('Rutina no encontrada');
+      }
+
      } catch {
        alert('Error al iniciar el entrenamiento. Inténtalo de nuevo.');
      }
@@ -109,19 +150,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     // Aquí podrías mostrar detalles del entrenamiento de ese día
   };
 
-   const handleBackToDashboard = () => {
-     setActiveWorkout(null);
-     saveActiveWorkoutToStorage(null);
-   };
+  const handleBackToDashboard = (hasProgress: boolean) => {
+    setShowActiveWorkout(false);
+    if (hasProgress && activeWorkout) {
+      saveActiveWorkoutToStorage(activeWorkout);
+    } else {
+      setActiveWorkout(null);
+      saveActiveWorkoutToStorage(null);
+    }
+  };
+
 
    const handleCompleteWorkout = async (exerciseLogs: ExerciseLog[]) => {
      if (!activeWorkout) return;
 
       try {
-       await completeWorkoutSession(activeWorkout.session.id, exerciseLogs);
-       setActiveWorkout(null);
-       saveActiveWorkoutToStorage(null);
-       alert('¡Entrenamiento completado! 🎉');
+      await completeWorkoutSession(activeWorkout.session.id, exerciseLogs);
+      setActiveWorkout(null);
+      setShowActiveWorkout(false);
+      saveActiveWorkoutToStorage(null);
+      alert('¡Entrenamiento completado! 🎉');
+
      } catch (error) {
        console.error('Error completing workout:', error);
        alert('Error al completar el entrenamiento. Inténtalo de nuevo.');
@@ -129,7 +178,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   };
 
   // Si hay un entrenamiento activo, mostrar la vista de entrenamiento
-  if (activeWorkout) {
+  if (activeWorkout && showActiveWorkout) {
     return (
       <ActiveWorkout
         user={user}
@@ -238,18 +287,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       </div>
 
        {/* Main Content */}
-       <main className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
-         {/* Calendario al inicio */}
-         {showCalendar && (
-           <div className="mb-6">
-             <WorkoutCalendar
-               sessions={sessions}
-               currentMonth={currentMonth}
-               onMonthChange={setCurrentMonth}
-               onDayClick={handleDayClick}
-             />
-           </div>
-         )}
+      <main className="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+        {activeWorkout && (
+          <div className="mb-6">
+            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="text-sm text-gray-400">Entrenamiento en progreso</div>
+                <div className="text-lg font-semibold text-white">
+                  {activeWorkout.routine.name}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowActiveWorkout(true)}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                Reanudar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Calendario al inicio */}
+        {showCalendar && (
+          <div className="mb-6">
+            <WorkoutCalendar
+              sessions={sessions}
+              currentMonth={currentMonth}
+              onMonthChange={setCurrentMonth}
+              onDayClick={handleDayClick}
+            />
+          </div>
+        )}
+
 
          <div className="space-y-6 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
            {/* Rutinas por grupo muscular - Columna principal */}

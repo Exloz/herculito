@@ -2,7 +2,7 @@ import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { WorkoutSession, WorkoutCalendarDay } from '../types';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
-import { getCurrentDateString } from '../utils/dateUtils';
+import { getCurrentDateString, getDateStringInAppTimeZone } from '../utils/dateUtils';
 
 interface WorkoutCalendarProps {
   sessions: WorkoutSession[];
@@ -44,7 +44,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
     const dayWorkouts = sessions
       .filter(session => {
         if (!session.completedAt) return false;
-        const sessionDate = session.completedAt.toISOString().split('T')[0];
+        const sessionDate = getDateStringInAppTimeZone(session.completedAt);
         return sessionDate === dateStr;
       })
       .map(session => ({

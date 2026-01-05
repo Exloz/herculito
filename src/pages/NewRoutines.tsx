@@ -4,6 +4,7 @@ import { useRoutines } from '../hooks/useRoutines';
 import { RoutineEditor } from '../components/RoutineEditor';
 import { User, Routine, Exercise, MuscleGroup } from '../types';
 import { useUI } from '../contexts/ui-context';
+import { formatDateInAppTimeZone } from '../utils/dateUtils';
 
 interface RoutinesProps {
   user: User;
@@ -199,7 +200,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                           <span>Por {routine.createdByName || 'Otro usuario'}</span>
                         </div>
                       )}
-                      <span>Creada {routine.createdAt?.toLocaleDateString('es-ES')}</span>
+                      <span>Creada {routine.createdAt ? formatDateInAppTimeZone(routine.createdAt, 'es-CO') : ''}</span>
                     </div>
                   </div>
 

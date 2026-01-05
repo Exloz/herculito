@@ -8,6 +8,7 @@ import { WorkoutCalendar } from '../components/WorkoutCalendar';
 import { ActiveWorkout } from '../components/ActiveWorkout';
 import { getRecommendedMuscleGroup } from '../utils/muscleGroups';
 import { useUI } from '../contexts/ui-context';
+import { formatDateInAppTimeZone } from '../utils/dateUtils';
 
 interface DashboardProps {
   user: User;
@@ -483,7 +484,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                           </h4>
                           {session.completedAt && (
                             <span className="text-xs text-slate-400">
-                              {session.completedAt.toLocaleDateString()}
+                              {formatDateInAppTimeZone(session.completedAt)}
                             </span>
                           )}
                         </div>

@@ -291,7 +291,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   return (
     <div className="app-shell pb-28">
       {/* Header */}
-      <header className="app-header px-4 py-5 sm:py-6">
+      <header className="app-header px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:pb-6 sm:pt-[calc(1.5rem+env(safe-area-inset-top))]">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">

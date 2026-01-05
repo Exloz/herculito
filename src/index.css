@@ -50,10 +50,6 @@
 @layer components {
   .app-shell {
     @apply min-h-screen text-slate-100;
-    padding-top: var(--safe-top);
-    padding-bottom: var(--safe-bottom);
-    padding-left: var(--safe-left);
-    padding-right: var(--safe-right);
   }
 
   .app-header {

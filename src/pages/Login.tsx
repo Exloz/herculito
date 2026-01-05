@@ -5,7 +5,7 @@ interface LoginProps {
 
 export function Login({ onGoogleLogin, loading }: LoginProps) {
   return (
-    <div className="app-shell flex items-center justify-center p-5">
+    <div className="app-shell flex items-center justify-center p-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       <div className="app-card relative w-full max-w-md overflow-hidden p-8">
         <div className="absolute -top-20 -right-16 h-40 w-40 rounded-full bg-mint/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-16 h-40 w-40 rounded-full bg-amberGlow/20 blur-3xl" />

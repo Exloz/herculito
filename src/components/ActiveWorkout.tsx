@@ -185,7 +185,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
   return (
     <div className="app-shell pb-28">
-      <header className="app-header px-4 py-4 sticky top-[var(--safe-top)] z-10">
+      <header className="app-header px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sticky top-0 z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <button

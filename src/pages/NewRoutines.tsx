@@ -98,7 +98,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
 
   return (
     <div className="app-shell pb-28">
-      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+      <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>

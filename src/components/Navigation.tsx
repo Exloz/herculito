@@ -39,7 +39,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-mist/60 bg-charcoal/85 px-2 py-2 shadow-soft backdrop-blur">
+    <nav className="fixed bottom-0 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-mist/60 bg-charcoal/85 px-2 pt-2 pb-[calc(0.25rem+env(safe-area-inset-bottom))] shadow-soft backdrop-blur">
       <div className={`grid ${hasActiveWorkout ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
         <button
           onClick={() => onPageChange("dashboard")}

@@ -54,7 +54,7 @@ export const useWorkoutSessions = (user: User) => {
                 const bTime = b.startedAt ? b.startedAt.getTime() : 0;
                 return bTime - aTime;
               })
-              .slice(0, 30) as WorkoutSession[]; // Limitamos a 30
+              .slice(0, 500) as WorkoutSession[];
 
             setSessions(sessionsData);
             setLoading(false);

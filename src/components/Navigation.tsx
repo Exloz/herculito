@@ -39,46 +39,48 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-mist/60 bg-charcoal/85 px-2 pt-2 pb-[calc(0.25rem+env(safe-area-inset-bottom))] shadow-soft backdrop-blur">
-      <div className={`grid ${hasActiveWorkout ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
-        <button
-          onClick={() => onPageChange("dashboard")}
-          className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
-            currentPage === "dashboard"
-              ? "bg-mint/15 text-mint"
-              : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
-          }`}
-          aria-label="Ir a Inicio"
-        >
-          <Home size={22} />
-          <span className="text-xs font-semibold">Inicio</span>
-        </button>
-
-        {hasActiveWorkout && (
+    <div className="fixed bottom-0 left-0 right-0 z-40 flex w-full justify-center pb-[env(safe-area-inset-bottom)] pointer-events-none">
+      <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal/85 px-2 py-2 shadow-soft backdrop-blur">
+        <div className={`grid ${hasActiveWorkout ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
           <button
-            onClick={handleResumeClick}
-            className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors text-amberGlow hover:text-amberGlow/80 hover:bg-amberGlow/10"
-            aria-label="Reanudar entrenamiento activo"
+            onClick={() => onPageChange("dashboard")}
+            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
+              currentPage === "dashboard"
+                ? "bg-mint/15 text-mint"
+                : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
+            }`}
+            aria-label="Ir a Inicio"
           >
-            <PlayCircle size={22} className="animate-pulse" />
-            <span className="text-xs font-semibold">Entrenando</span>
+            <Home size={22} />
+            <span className="text-xs font-semibold">Inicio</span>
           </button>
-        )}
 
-        <button
-          onClick={() => onPageChange("routines")}
-          className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
-            currentPage === "routines"
-              ? "bg-mint/15 text-mint"
-              : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
-          }`}
-          aria-label="Ir a Rutinas"
-        >
-          <Settings size={22} />
-          <span className="text-xs font-semibold">Rutinas</span>
-        </button>
-      </div>
-    </nav>
+          {hasActiveWorkout && (
+            <button
+              onClick={handleResumeClick}
+              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors text-amberGlow hover:text-amberGlow/80 hover:bg-amberGlow/10"
+              aria-label="Reanudar entrenamiento activo"
+            >
+              <PlayCircle size={22} className="animate-pulse" />
+              <span className="text-xs font-semibold">Entrenando</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => onPageChange("routines")}
+            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
+              currentPage === "routines"
+                ? "bg-mint/15 text-mint"
+                : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
+            }`}
+            aria-label="Ir a Rutinas"
+          >
+            <Settings size={22} />
+            <span className="text-xs font-semibold">Rutinas</span>
+          </button>
+        </div>
+      </nav>
+    </div>
   );
 };
 

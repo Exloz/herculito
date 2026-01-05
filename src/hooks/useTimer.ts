@@ -274,17 +274,7 @@ export const useTimer = () => {
   }, [isActive, hasNotified, initialTime, acquireWakeLock, startAudioContext, releaseWakeLock]);
 
   const requestPermission = useCallback(async () => {
-    const granted = await requestNotificationPermission();
-
-    if (granted && shouldUseBackgroundRestPush()) {
-      try {
-        await ensureIosBackgroundPushReady();
-      } catch {
-        console.warn('Failed to prepare iOS background push');
-      }
-    }
-
-    return granted;
+    return requestNotificationPermission();
   }, []);
 
   const startTimer = useCallback(async (seconds: number) => {

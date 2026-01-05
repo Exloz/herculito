@@ -105,13 +105,30 @@ const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
   return data;
 };
 
+let cachedVapidPublicKey: string | null = null;
+let vapidPublicKeyPromise: Promise<string> | null = null;
+let pushSubscriptionPromise: Promise<PushSubscription> | null = null;
+
 export const getVapidPublicKey = async (): Promise<string> => {
-  const origin = getPushApiOrigin();
-  const data = await fetchJson<{ vapidPublicKey: unknown }>(`${origin}/v1/push/vapidPublicKey`);
-  if (typeof data.vapidPublicKey !== 'string' || !data.vapidPublicKey.trim()) {
-    throw new Error('Invalid VAPID key');
+  if (cachedVapidPublicKey) return cachedVapidPublicKey;
+  if (vapidPublicKeyPromise) return vapidPublicKeyPromise;
+
+  vapidPublicKeyPromise = (async () => {
+    const origin = getPushApiOrigin();
+    const data = await fetchJson<{ vapidPublicKey: unknown }>(`${origin}/v1/push/vapidPublicKey`);
+    if (typeof data.vapidPublicKey !== 'string' || !data.vapidPublicKey.trim()) {
+      throw new Error('Invalid VAPID key');
+    }
+
+    cachedVapidPublicKey = data.vapidPublicKey;
+    return data.vapidPublicKey;
+  })();
+
+  try {
+    return await vapidPublicKeyPromise;
+  } finally {
+    vapidPublicKeyPromise = null;
   }
-  return data.vapidPublicKey;
 };
 
 const getExistingPushSubscription = async (): Promise<PushSubscription | null> => {
@@ -120,15 +137,28 @@ const getExistingPushSubscription = async (): Promise<PushSubscription | null> =
 };
 
 export const ensurePushSubscription = async (): Promise<PushSubscription> => {
-  const registration = await navigator.serviceWorker.ready;
-  const existing = await registration.pushManager.getSubscription();
+  const existing = await getExistingPushSubscription();
   if (existing) return existing;
 
-  const vapidPublicKey = await getVapidPublicKey();
-  return registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToArrayBuffer(vapidPublicKey)
-  });
+  if (pushSubscriptionPromise) return pushSubscriptionPromise;
+
+  pushSubscriptionPromise = (async () => {
+    const registration = await navigator.serviceWorker.ready;
+    const existingSubscription = await registration.pushManager.getSubscription();
+    if (existingSubscription) return existingSubscription;
+
+    const vapidPublicKey = await getVapidPublicKey();
+    return registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToArrayBuffer(vapidPublicKey)
+    });
+  })();
+
+  try {
+    return await pushSubscriptionPromise;
+  } finally {
+    pushSubscriptionPromise = null;
+  }
 };
 
 export const registerSubscriptionInApi = async (deviceId: string, subscription: PushSubscription): Promise<void> => {

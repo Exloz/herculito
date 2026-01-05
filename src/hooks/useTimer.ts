@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { cancelRestPush, ensureIosBackgroundPushReady, scheduleRestPush, shouldUseBackgroundRestPush } from '../utils/pushApi';
 
 const TIMER_STORAGE_KEY = 'workoutTimerState';
 
@@ -249,6 +250,11 @@ export const useTimer = () => {
 
         if (!hasNotified) {
           setHasNotified(true);
+
+          void cancelRestPush().catch(() => {
+            console.warn('Failed to cancel iOS background push');
+          });
+
           void showTimerNotification(
             '¡Descanso terminado!',
             'Continúa con tu entrenamiento.'
@@ -268,7 +274,17 @@ export const useTimer = () => {
   }, [isActive, hasNotified, initialTime, acquireWakeLock, startAudioContext, releaseWakeLock]);
 
   const requestPermission = useCallback(async () => {
-    return requestNotificationPermission();
+    const granted = await requestNotificationPermission();
+
+    if (granted && shouldUseBackgroundRestPush()) {
+      try {
+        await ensureIosBackgroundPushReady();
+      } catch {
+        console.warn('Failed to prepare iOS background push');
+      }
+    }
+
+    return granted;
   }, []);
 
   const startTimer = useCallback(async (seconds: number) => {
@@ -284,10 +300,22 @@ export const useTimer = () => {
 
     if (typeof navigator !== 'undefined' && 'userActivation' in navigator) {
       if ((navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive) {
-        await requestNotificationPermission();
+        await requestPermission();
       }
     }
-  }, []);
+
+    if (shouldUseBackgroundRestPush()) {
+      void (async () => {
+        try {
+          const ready = await ensureIosBackgroundPushReady();
+          if (!ready) return;
+          await scheduleRestPush(seconds);
+        } catch {
+          console.warn('Failed to schedule iOS background push');
+        }
+      })();
+    }
+  }, [requestPermission]);
 
   const pauseTimer = useCallback(() => {
     setIsActive(false);
@@ -295,6 +323,11 @@ export const useTimer = () => {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+
+    void cancelRestPush().catch(() => {
+      console.warn('Failed to cancel iOS background push');
+    });
+
     releaseWakeLock();
   }, [releaseWakeLock]);
 
@@ -312,6 +345,11 @@ export const useTimer = () => {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+
+    void cancelRestPush().catch(() => {
+      console.warn('Failed to cancel iOS background push');
+    });
+
     releaseWakeLock();
   }, [releaseWakeLock]);
 

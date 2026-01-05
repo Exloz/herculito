@@ -151,11 +151,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center bg-slateDeep rounded-lg border border-mist/60 overflow-hidden">
-                    <button
-                      onClick={() => adjustWeight(setNumber, -2.5)}
-                      className="px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
-                      aria-label="Reducir peso 2.5kg"
-                    >
+                      <button
+                        onClick={() => adjustWeight(setNumber, -2.5)}
+                        className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
+                        aria-label="Reducir peso 2.5kg"
+                      >
                       <Minus size={14} />
                     </button>
                     <div className="relative">
@@ -173,11 +173,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                         <div className="absolute top-0 right-0 w-2 h-2 bg-mint rounded-full translate-x-1/2 -translate-y-1/2" title="Peso anterior" />
                       )}
                     </div>
-                    <button
-                      onClick={() => adjustWeight(setNumber, 2.5)}
-                      className="px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
-                      aria-label="Aumentar peso 2.5kg"
-                    >
+                      <button
+                        onClick={() => adjustWeight(setNumber, 2.5)}
+                        className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
+                        aria-label="Aumentar peso 2.5kg"
+                      >
                       <Plus size={14} />
                     </button>
                   </div>

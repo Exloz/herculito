@@ -121,7 +121,7 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
                 <div className="flex items-center space-x-1">
                   <button
                     onClick={() => adjustWeight(set.setNumber, -2.5)}
-                    className="p-1 rounded hover:bg-slateDeep text-slate-400 hover:text-white"
+                    className="flex items-center justify-center p-1 rounded hover:bg-slateDeep text-slate-400 hover:text-white"
                   >
                     <Minus size={14} />
                   </button>
@@ -136,7 +136,7 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
                   <span className="text-xs text-slate-400">kg</span>
                   <button
                     onClick={() => adjustWeight(set.setNumber, 2.5)}
-                    className="p-1 rounded hover:bg-slateDeep text-slate-400 hover:text-white"
+                    className="flex items-center justify-center p-1 rounded hover:bg-slateDeep text-slate-400 hover:text-white"
                   >
                     <Plus size={14} />
                   </button>

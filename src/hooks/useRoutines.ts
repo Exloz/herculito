@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { collection, doc, setDoc, addDoc, updateDoc, onSnapshot, query, where, orderBy, deleteDoc, increment } from 'firebase/firestore';
+import { useState, useEffect, useCallback } from 'react';
+import { collection, doc, setDoc, addDoc, updateDoc, onSnapshot, query, where, deleteDoc, increment } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { Routine, WorkoutSession, ExerciseHistory, Exercise, MuscleGroup } from '../types';
+import { Routine, ExerciseHistory, Exercise, MuscleGroup } from '../types';
 import { getCurrentDateString } from '../utils/dateUtils';
 
 export const useRoutines = (userId: string) => {
@@ -83,7 +83,7 @@ export const useRoutines = (userId: string) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const createRoutine = async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true, primaryMuscleGroup?: MuscleGroup, createdByName?: string) => {
+  const createRoutine = useCallback(async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true, primaryMuscleGroup?: MuscleGroup, createdByName?: string) => {
     const routine: Omit<Routine, 'id'> = {
       name,
       description,
@@ -101,15 +101,15 @@ export const useRoutines = (userId: string) => {
     const docRef = await addDoc(routinesRef, routine);
 
     return docRef.id;
-  };
+  }, [userId]);
 
-  const updateRoutine = async (routineId: string, updates: Partial<Routine>) => {
+  const updateRoutine = useCallback(async (routineId: string, updates: Partial<Routine>) => {
     const routineRef = doc(db, 'routines', routineId);
     await updateDoc(routineRef, {
       ...updates,
       updatedAt: new Date(),
     });
-  };
+  }, []);
 
   const deleteRoutine = async (routineId: string) => {
     const routineRef = doc(db, 'routines', routineId);
@@ -219,65 +219,6 @@ export const useRoutines = (userId: string) => {
   };
 };
 
-export const useWorkoutSessions = (userId: string) => {
-  const [sessions, setSessions] = useState<WorkoutSession[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const sessionsRef = collection(db, 'workoutSessions');
-    const q = query(sessionsRef, where('userId', '==', userId), orderBy('startedAt', 'desc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const sessionsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        startedAt: doc.data().startedAt?.toDate(),
-        completedAt: doc.data().completedAt?.toDate(),
-      })) as WorkoutSession[];
-
-      setSessions(sessionsData);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [userId]);
-
-  const startWorkoutSession = async (routine: Routine) => {
-    const session: Omit<WorkoutSession, 'id'> = {
-      routineId: routine.id,
-      routineName: routine.name,
-      userId,
-      startedAt: new Date(),
-      exercises: [],
-    };
-
-    const docRef = doc(collection(db, 'workoutSessions'));
-    await setDoc(docRef, session);
-    return docRef.id;
-  };
-
-  const completeWorkoutSession = async (sessionId: string, exercises: Exercise[], notes?: string) => {
-    const sessionRef = doc(db, 'workoutSessions', sessionId);
-    const startTime = sessions.find(s => s.id === sessionId)?.startedAt;
-    const duration = startTime ? Math.round((new Date().getTime() - startTime.getTime()) / 1000 / 60) : 0;
-
-    await updateDoc(sessionRef, {
-      completedAt: new Date(),
-      exercises,
-      totalDuration: duration,
-      notes: notes || '',
-    });
-  };
-
-  return {
-    sessions,
-    loading,
-    startWorkoutSession,
-    completeWorkoutSession
-  };
-};
 
 export const useExerciseHistory = (userId: string) => {
   const [history, setHistory] = useState<ExerciseHistory[]>([]);

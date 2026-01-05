@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Clock, Weight } from 'lucide-react';
+import { Check, Clock, Weight, Plus, Minus } from 'lucide-react';
 import { Exercise, ExerciseLog, WorkoutSet } from '../types';
 import { getCurrentDateString } from '../utils/dateUtils';
 
@@ -60,6 +60,13 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     };
 
     onUpdateLog(updatedLog);
+  };
+
+  const adjustWeight = (setNumber: number, delta: number) => {
+    const set = currentSets.find(s => s.setNumber === setNumber);
+    const currentWeight = set?.weight || 0;
+    const newWeight = Math.max(0, currentWeight + delta);
+    updateSetWeight(setNumber, Number(newWeight.toFixed(1)));
   };
 
   const toggleSetCompleted = (setNumber: number) => {
@@ -141,35 +148,50 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 {setNumber}
               </div>
 
-              {/* Campo de peso */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={weight || ''}
-                      onChange={(e) => updateSetWeight(setNumber, parseFloat(e.target.value) || 0)}
-                      className="input input-sm w-20 text-center"
-                      placeholder="0"
-                      step="0.5"
-                      min="0"
-                    />
-                    {/* Indicador de peso anterior */}
-                    {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (
-                      <div className="absolute -top-2 -right-2 w-3 h-3 bg-mint rounded-full" title="Peso de la sesión anterior" />
-                    )}
+                  <div className="flex items-center bg-slateDeep rounded-lg border border-mist/60 overflow-hidden">
+                    <button
+                      onClick={() => adjustWeight(setNumber, -2.5)}
+                      className="px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
+                      aria-label="Reducir peso 2.5kg"
+                    >
+                      <Minus size={14} />
+                    </button>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={weight || ''}
+                        onChange={(e) => updateSetWeight(setNumber, parseFloat(e.target.value) || 0)}
+                        className="w-16 bg-transparent text-center text-sm font-medium focus:outline-none py-1"
+                        placeholder="0"
+                        step="0.5"
+                        min="0"
+                        aria-label={`Peso para serie ${setNumber}`}
+                      />
+                       {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (
+                        <div className="absolute top-0 right-0 w-2 h-2 bg-mint rounded-full translate-x-1/2 -translate-y-1/2" title="Peso anterior" />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => adjustWeight(setNumber, 2.5)}
+                      className="px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
+                      aria-label="Aumentar peso 2.5kg"
+                    >
+                      <Plus size={14} />
+                    </button>
                   </div>
-                  <span className="text-slate-400 text-sm">kg × {exercise.reps}</span>
+                  <span className="text-slate-400 text-xs sm:text-sm whitespace-nowrap">kg × {exercise.reps}</span>
                 </div>
               </div>
 
-              {/* Boton de completar */}
               <button
                 onClick={() => toggleSetCompleted(setNumber)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 ${isCompleted
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 ${isCompleted
                   ? 'bg-mint text-ink hover:bg-mintDeep'
-                  : 'bg-charcoal text-slate-300 hover:bg-slateDeep'
+                  : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
                   }`}
+                aria-label={isCompleted ? "Marcar serie como incompleta" : "Marcar serie como completada"}
               >
                 <Check size={20} />
               </button>

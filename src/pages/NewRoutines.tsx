@@ -3,12 +3,14 @@ import { Plus, Edit, Trash2, Dumbbell, Target, User as UserIcon, Eye } from 'luc
 import { useRoutines } from '../hooks/useRoutines';
 import { RoutineEditor } from '../components/RoutineEditor';
 import { User, Routine, Exercise, MuscleGroup } from '../types';
+import { useUI } from '../contexts/ui-context';
 
 interface RoutinesProps {
   user: User;
 }
 
 export const Routines: React.FC<RoutinesProps> = ({ user }) => {
+  const { showToast, confirm } = useUI();
   const {
     loading,
     createRoutine,
@@ -51,21 +53,30 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
       }
       setShowEditor(false);
       setEditingRoutine(undefined);
+      showToast('Rutina guardada correctamente', 'success');
     } catch {
-      alert('Error guardando la rutina');
+      showToast('Error guardando la rutina', 'error');
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteRoutine = async (routineId: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta rutina?')) {
-      try {
-        await deleteRoutine(routineId);
-      } catch {
-        alert('Error eliminando la rutina');
+    confirm({
+      title: 'Eliminar rutina',
+      message: '¿Estás seguro de que quieres eliminar esta rutina? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      isDanger: true,
+      onConfirm: async () => {
+        try {
+          await deleteRoutine(routineId);
+          showToast('Rutina eliminada', 'success');
+        } catch {
+          showToast('Error eliminando la rutina', 'error');
+        }
       }
-    }
+    });
   };
 
   // Funciones para filtrar rutinas
@@ -96,6 +107,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
           <button
             onClick={handleCreateRoutine}
             className="btn-primary"
+            aria-label="Crear nueva rutina"
           >
             <Plus size={18} />
           </button>
@@ -198,6 +210,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                           onClick={() => handleEditRoutine(routine)}
                           className="btn-ghost"
                           title="Editar rutina"
+                          aria-label={`Editar rutina ${routine.name}`}
                         >
                           <Edit size={16} />
                         </button>
@@ -205,6 +218,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                           onClick={() => handleDeleteRoutine(routine.id)}
                           className="btn-ghost text-crimson hover:text-red-400"
                           title="Eliminar rutina"
+                          aria-label={`Eliminar rutina ${routine.name}`}
                         >
                           <Trash2 size={16} />
                         </button>

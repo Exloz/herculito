@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { collection, doc, setDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { WorkoutSession, User, ExerciseLog } from '../types';
@@ -12,18 +12,21 @@ export const useWorkoutSessions = (user: User) => {
   const { routines } = useRoutines(user.id);
 
   useEffect(() => {
-    if (!user || !user.id) {
+    const userId = user?.id;
+    if (!userId) {
+      setSessions([]);
       setLoading(false);
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
     // Configurar un timeout para evitar carga infinita
     const loadingTimeout = setTimeout(() => {
-      if (loading) {
-        setSessions([]);
-        setLoading(false);
-        setError('No se pudieron cargar las sesiones de entrenamiento');
-      }
+      setSessions([]);
+      setLoading(false);
+      setError('No se pudieron cargar las sesiones de entrenamiento');
     }, 5000);
 
     try {
@@ -31,7 +34,7 @@ export const useWorkoutSessions = (user: User) => {
       // Consulta más simple para evitar problemas de índice/permisos
       const q = query(
         sessionsRef,
-        where('userId', '==', user.id)
+        where('userId', '==', userId)
       );
 
       const unsubscribe = onSnapshot(q,
@@ -39,11 +42,11 @@ export const useWorkoutSessions = (user: User) => {
           try {
             clearTimeout(loadingTimeout);
             const sessionsData = snapshot.docs
-              .map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                startedAt: doc.data().startedAt?.toDate(),
-                completedAt: doc.data().completedAt?.toDate()
+              .map(docSnap => ({
+                id: docSnap.id,
+                ...docSnap.data(),
+                startedAt: docSnap.data().startedAt?.toDate(),
+                completedAt: docSnap.data().completedAt?.toDate()
               }))
               .sort((a, b) => {
                 // Ordenamos en el cliente
@@ -51,9 +54,9 @@ export const useWorkoutSessions = (user: User) => {
                 const bTime = b.startedAt ? b.startedAt.getTime() : 0;
                 return bTime - aTime;
               })
-               .slice(0, 30) as WorkoutSession[]; // Limitamos a 30
+              .slice(0, 30) as WorkoutSession[]; // Limitamos a 30
 
-             setSessions(sessionsData);
+            setSessions(sessionsData);
             setLoading(false);
             setError(null);
           } catch {
@@ -81,10 +84,13 @@ export const useWorkoutSessions = (user: User) => {
       setSessions([]);
       setLoading(false);
       setError('Error de configuración');
+      return () => {
+        clearTimeout(loadingTimeout);
+      };
     }
-  }, [user, loading]);
+  }, [user.id]);
 
-  const startWorkoutSession = async (routineId: string): Promise<WorkoutSession> => {
+  const startWorkoutSession = useCallback(async (routineId: string): Promise<WorkoutSession> => {
     const routine = routines.find(r => r.id === routineId);
     if (!routine) {
       throw new Error('Routine not found');
@@ -98,18 +104,18 @@ export const useWorkoutSessions = (user: User) => {
       primaryMuscleGroup: routine.primaryMuscleGroup || getRoutinePrimaryMuscleGroup(routine),
       startedAt: new Date(),
       exercises: []
-     };
+    };
 
-     await setDoc(doc(db, 'workoutSessions', session.id), {
+    await setDoc(doc(db, 'workoutSessions', session.id), {
       ...session,
       startedAt: session.startedAt,
       completedAt: null
-     });
+    });
 
-     return session;
-  };
+    return session;
+  }, [routines, user.id]);
 
-  const completeWorkoutSession = async (sessionId: string, exercises: ExerciseLog[]) => {
+  const completeWorkoutSession = useCallback(async (sessionId: string, exercises: ExerciseLog[]) => {
     const session = sessions.find(s => s.id === sessionId);
     if (!session) {
       console.error('Session not found:', sessionId);
@@ -117,49 +123,33 @@ export const useWorkoutSessions = (user: User) => {
     }
 
     const completedAt = new Date();
-     const totalDuration = Math.round((completedAt.getTime() - session.startedAt.getTime()) / (1000 * 60)); // en minutos
+    const totalDuration = Math.round((completedAt.getTime() - session.startedAt.getTime()) / (1000 * 60)); // en minutos
 
-     await setDoc(doc(db, 'workoutSessions', sessionId), {
+    await setDoc(doc(db, 'workoutSessions', sessionId), {
       completedAt,
       exercises,
       totalDuration
-     }, { merge: true });
-  };
+    }, { merge: true });
+  }, [sessions]);
 
-  const updateSessionProgress = async (sessionId: string, exercises: ExerciseLog[]) => {
+  const updateSessionProgress = useCallback(async (sessionId: string, exercises: ExerciseLog[]) => {
     await setDoc(doc(db, 'workoutSessions', sessionId), {
       exercises,
       lastUpdated: new Date()
     }, { merge: true });
-  };
+  }, []);
 
   // Obtener sesiones de los últimos N días
-  const getRecentSessions = (days: number = 7): WorkoutSession[] => {
+  const getRecentSessions = useCallback((days: number = 7): WorkoutSession[] => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - days);
 
     return sessions.filter(session =>
       session.completedAt && session.completedAt >= cutoffDate
     );
-  };
+  }, [sessions]);
 
-  // Obtener estadísticas de entrenamientos
-  const getWorkoutStats = () => {
-    const completed = sessions.filter(s => s.completedAt);
-    const thisWeek = getRecentSessions(7);
-    const thisMonth = getRecentSessions(30);
-
-    const stats = {
-      totalWorkouts: completed.length,
-      thisWeekWorkouts: thisWeek.length,
-      thisMonthWorkouts: thisMonth.length,
-      currentStreak: calculateWorkoutStreak()
-     };
-
-     return stats;
-  };
-
-  const calculateWorkoutStreak = (): number => {
+  const calculateWorkoutStreak = useCallback((): number => {
     const completedSessions = sessions
       .filter(s => s.completedAt)
       .sort((a, b) => b.completedAt!.getTime() - a.completedAt!.getTime());
@@ -185,18 +175,34 @@ export const useWorkoutSessions = (user: User) => {
     }
 
     return streak;
-  };
+  }, [sessions]);
+
+  // Obtener estadísticas de entrenamientos
+  const getWorkoutStats = useCallback(() => {
+    const completed = sessions.filter(s => s.completedAt);
+    const thisWeek = getRecentSessions(7);
+    const thisMonth = getRecentSessions(30);
+
+    const stats = {
+      totalWorkouts: completed.length,
+      thisWeekWorkouts: thisWeek.length,
+      thisMonthWorkouts: thisMonth.length,
+      currentStreak: calculateWorkoutStreak()
+    };
+
+    return stats;
+  }, [sessions, getRecentSessions, calculateWorkoutStreak]);
 
   // Obtener los últimos pesos utilizados para cada ejercicio de una rutina específica
-  const getLastWeightsForRoutine = (routineId: string): Record<string, number[]> => {
+  const getLastWeightsForRoutine = useCallback((routineId: string): Record<string, number[]> => {
     // Encontrar la sesión más reciente completada de esta rutina
     const lastCompletedSession = sessions
       .filter(s => s.routineId === routineId && s.completedAt && s.exercises && s.exercises.length > 0)
       .sort((a, b) => b.completedAt!.getTime() - a.completedAt!.getTime())[0];
 
-     if (!lastCompletedSession || !lastCompletedSession.exercises) {
-       return {};
-     }
+    if (!lastCompletedSession || !lastCompletedSession.exercises) {
+      return {};
+    }
 
     const lastWeights: Record<string, number[]> = {};
 
@@ -212,10 +218,10 @@ export const useWorkoutSessions = (user: User) => {
           lastWeights[exerciseLog.exerciseId] = weights;
         }
       }
-     });
+    });
 
-     return lastWeights;
-  };
+    return lastWeights;
+  }, [sessions]);
 
   return {
     sessions,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
 import { Routine, User, WorkoutSession, ExerciseLog } from '../types';
 import { useExerciseLogs } from '../hooks/useWorkouts';
@@ -62,7 +62,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
-  const hasProgress = exerciseLogs.some(log => log.sets?.some(set => set.completed));
+  const hasProgress = useMemo(
+    () => exerciseLogs.some(log => log.sets?.some(set => set.completed)),
+    [exerciseLogs]
+  );
 
   useEffect(() => {
     const storedLogs = loadProgressFromStorage(session.id);
@@ -91,13 +94,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     }
   }, [exerciseLogs, session.id, hasProgress]);
 
-  const lastWeights = getLastWeightsForRoutine(routine.id);
+  const lastWeights = useMemo(
+    () => getLastWeightsForRoutine(routine.id),
+    [getLastWeightsForRoutine, routine.id]
+  );
 
-  const getLogForExerciseCustom = (exerciseId: string, userId: string): ExerciseLog | undefined => {
+  const getLogForExerciseCustom = useCallback((exerciseId: string, userId: string): ExerciseLog | undefined => {
     const localLog = exerciseLogs.find(l => l.exerciseId === exerciseId);
     if (localLog) return localLog;
     return getLogForExercise(exerciseId, userId);
-  };
+  }, [exerciseLogs, getLogForExercise]);
 
   useEffect(() => {
     if (!workoutStartTime) return;
@@ -110,32 +116,35 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     return () => clearInterval(interval);
   }, [workoutStartTime]);
 
-  const handleUpdateLog = (log: ExerciseLog) => {
+  const handleUpdateLog = useCallback((log: ExerciseLog) => {
     updateExerciseLog(log);
-    const updatedLogs = exerciseLogs.map(l => l.exerciseId === log.exerciseId ? log : l);
-    if (!updatedLogs.find(l => l.exerciseId === log.exerciseId)) {
-      updatedLogs.push(log);
-    }
-    setExerciseLogs(updatedLogs);
-  };
 
-  const handleStartRestTimer = (seconds: number) => {
+    setExerciseLogs(prevLogs => {
+      const updatedLogs = prevLogs.map(l => l.exerciseId === log.exerciseId ? log : l);
+      if (!updatedLogs.find(l => l.exerciseId === log.exerciseId)) {
+        updatedLogs.push(log);
+      }
+      return updatedLogs;
+    });
+  }, [updateExerciseLog]);
+
+  const handleStartRestTimer = useCallback((seconds: number) => {
     if (seconds > 0) {
       setTimerSeconds(seconds);
       setShowTimer(true);
     }
-  };
+  }, []);
 
-  const handleBackToDashboard = () => {
+  const handleBackToDashboard = useCallback(() => {
     if (!hasProgress) {
       localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
       localStorage.removeItem(`workoutStartTime_${session.id}`);
     }
     onBackToDashboard(hasProgress);
-  };
+  }, [hasProgress, onBackToDashboard, session.id]);
 
-  const handleCompleteWorkout = () => {
-    const exerciseLogs = routine.exercises.map(exercise => {
+  const handleCompleteWorkout = useCallback(() => {
+    const logsToSave = routine.exercises.map(exercise => {
       const log = getLogForExerciseCustom(exercise.id, user.id) || {
         exerciseId: exercise.id,
         userId: user.id,
@@ -145,20 +154,25 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       return log;
     });
 
-    onCompleteWorkout(exerciseLogs);
+    onCompleteWorkout(logsToSave);
     localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
     localStorage.removeItem(`workoutStartTime_${session.id}`);
-  };
-
-  const completedExercises = routine.exercises.filter(exercise => {
-    const log = getLogForExerciseCustom(exercise.id, user.id);
-    return log && log.sets.length > 0 && log.sets.every(set => set.completed);
-  }).length;
+  }, [getLogForExerciseCustom, onCompleteWorkout, routine.exercises, session.id, user.id]);
 
   const totalExercises = routine.exercises.length;
-  const workoutProgress = totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
 
-  const formatTime = (seconds: number): string => {
+  const completedExercises = useMemo(() => {
+    return routine.exercises.filter(exercise => {
+      const log = getLogForExerciseCustom(exercise.id, user.id);
+      return log && log.sets.length > 0 && log.sets.every(set => set.completed);
+    }).length;
+  }, [getLogForExerciseCustom, routine.exercises, user.id]);
+
+  const workoutProgress = useMemo(() => {
+    return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
+  }, [completedExercises, totalExercises]);
+
+  const formatTime = useCallback((seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
@@ -167,7 +181,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
+  }, []);
 
   return (
     <div className="app-shell pb-28">
@@ -262,14 +276,15 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
           })}
         </div>
 
-        {workoutProgress === 100 && (
+        {hasProgress && (
           <div className="mt-8 text-center">
             <button
               onClick={handleCompleteWorkout}
               className="btn-primary inline-flex items-center gap-2 px-8"
+              aria-label={workoutProgress === 100 ? 'Completar entrenamiento' : 'Finalizar entrenamiento incompleto'}
             >
               <CheckCircle size={20} />
-              <span>Completar Entrenamiento</span>
+              <span>{workoutProgress === 100 ? 'Completar Entrenamiento' : 'Finalizar Entrenamiento'}</span>
             </button>
           </div>
         )}

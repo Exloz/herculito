@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Calendar, TrendingUp, Award, Clock, LogOut, Dumbbell, Bell } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../types';
 import { useRoutines } from '../hooks/useRoutines';
@@ -7,6 +7,7 @@ import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { WorkoutCalendar } from '../components/WorkoutCalendar';
 import { ActiveWorkout } from '../components/ActiveWorkout';
 import { getRecommendedMuscleGroup } from '../utils/muscleGroups';
+import { useUI } from '../contexts/ui-context';
 
 interface DashboardProps {
   user: User;
@@ -36,6 +37,10 @@ const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: 
     localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
   } else {
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('active-workout-changed'));
   }
 };
 
@@ -101,15 +106,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   } | null>(null);
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
+  const { showToast, confirm } = useUI();
 
 
-   // Restore active workout from localStorage on mount
+  // Restore active workout from localStorage on mount
   useEffect(() => {
-    const stored = loadActiveWorkoutFromStorage();
-    if (stored) {
-      setActiveWorkout(stored);
-      setShowActiveWorkout(false);
-    }
+    const checkAndResume = () => {
+      const stored = loadActiveWorkoutFromStorage();
+      if (stored) {
+        setActiveWorkout(stored);
+        
+        const forceOpen = localStorage.getItem('activeWorkoutForceOpen');
+        if (forceOpen === 'true') {
+          setShowActiveWorkout(true);
+          localStorage.removeItem('activeWorkoutForceOpen');
+        } else {
+          setShowActiveWorkout(false);
+        }
+      }
+    };
+
+    checkAndResume();
+
+    const handleResumeEvent = () => {
+      const stored = loadActiveWorkoutFromStorage();
+      if (stored) {
+        setActiveWorkout(stored);
+        setShowActiveWorkout(true);
+      }
+      localStorage.removeItem('activeWorkoutForceOpen');
+    };
+
+    window.addEventListener('resume-active-workout', handleResumeEvent);
+    return () => window.removeEventListener('resume-active-workout', handleResumeEvent);
   }, []);
 
   useEffect(() => {
@@ -137,44 +166,43 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   } = useWorkoutSessions(user);
 
   // Obtener recomendación de grupo muscular
-  const recentSessions = getRecentSessions(7); // Últimos 7 días
-  const recommendedGroup = getRecommendedMuscleGroup(recentSessions);
+  const recentSessions = useMemo(() => getRecentSessions(7), [getRecentSessions]);
+  const recommendedGroup = useMemo(() => getRecommendedMuscleGroup(recentSessions), [recentSessions]);
 
   // Estadísticas de entrenamiento
-  const stats = getWorkoutStats();
-   const handleStartWorkout = async (routineId: string) => {
-     try {
-       const session = await startWorkoutSession(routineId);
-       const routine = routines.find(r => r.id === routineId);
- 
+  const stats = useMemo(() => getWorkoutStats(), [getWorkoutStats]);
+
+  const handleStartWorkout = useCallback(async (routineId: string) => {
+    try {
+      const session = await startWorkoutSession(routineId);
+      const routine = routines.find(r => r.id === routineId);
 
       if (routine) {
         const newActiveWorkout = { routine, session };
         setActiveWorkout(newActiveWorkout);
         setShowActiveWorkout(true);
       } else {
-        alert('Rutina no encontrada');
+        showToast('Rutina no encontrada', 'error');
       }
+    } catch {
+      showToast('Error al iniciar el entrenamiento. Inténtalo de nuevo.', 'error');
+    }
+  }, [startWorkoutSession, routines, showToast]);
 
-     } catch {
-       alert('Error al iniciar el entrenamiento. Inténtalo de nuevo.');
-     }
-   };
-
-  const handleRoutineMuscleGroupChange = async (routineId: string, newMuscleGroup: MuscleGroup) => {
+  const handleRoutineMuscleGroupChange = useCallback(async (routineId: string, newMuscleGroup: MuscleGroup) => {
     try {
       await updateRoutine(routineId, { primaryMuscleGroup: newMuscleGroup });
     } catch {
-      alert('Error al cambiar el grupo muscular. Inténtalo de nuevo.');
+      showToast('Error al cambiar el grupo muscular. Inténtalo de nuevo.', 'error');
     }
-  };
+  }, [updateRoutine, showToast]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDayClick = (_date: string) => {
+  const handleDayClick = useCallback((_date: string) => {
     // Aquí podrías mostrar detalles del entrenamiento de ese día
-  };
+  }, []);
 
-  const handleBackToDashboard = (hasProgress: boolean) => {
+  const handleBackToDashboard = useCallback((hasProgress: boolean) => {
     setShowActiveWorkout(false);
     if (hasProgress && activeWorkout) {
       saveActiveWorkoutToStorage(activeWorkout);
@@ -182,9 +210,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       setActiveWorkout(null);
       saveActiveWorkoutToStorage(null);
     }
-  };
+  }, [activeWorkout]);
 
-  const handleCancelActiveWorkout = () => {
+  const handleCancelActiveWorkout = useCallback(() => {
     if (!activeWorkout) return;
     const sessionId = activeWorkout.session?.id;
     if (sessionId) {
@@ -193,28 +221,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     setActiveWorkout(null);
     setShowActiveWorkout(false);
     saveActiveWorkoutToStorage(null);
-  };
+  }, [activeWorkout]);
 
-  const handleDismissIosGuide = () => {
+  const handleDismissIosGuide = useCallback(() => {
     setShowIosNotificationGuide(false);
-  };
+  }, []);
 
 
-   const handleCompleteWorkout = async (exerciseLogs: ExerciseLog[]) => {
-     if (!activeWorkout) return;
+  const handleCompleteWorkout = useCallback(async (exerciseLogs: ExerciseLog[]) => {
+    if (!activeWorkout) return;
 
+    const finishWorkout = async () => {
       try {
-      await completeWorkoutSession(activeWorkout.session.id, exerciseLogs);
-      setActiveWorkout(null);
-      setShowActiveWorkout(false);
-      saveActiveWorkoutToStorage(null);
-      alert('¡Entrenamiento completado! 🎉');
+        await completeWorkoutSession(activeWorkout.session.id, exerciseLogs);
+        setActiveWorkout(null);
+        setShowActiveWorkout(false);
+        saveActiveWorkoutToStorage(null);
+        showToast('¡Entrenamiento completado! 🎉', 'success');
+      } catch (error) {
+        console.error('Error completing workout:', error);
+        showToast('Error al completar el entrenamiento. Inténtalo de nuevo.', 'error');
+      }
+    };
 
-     } catch (error) {
-       console.error('Error completing workout:', error);
-       alert('Error al completar el entrenamiento. Inténtalo de nuevo.');
-     }
-  };
+    const allExercisesCompleted = activeWorkout.routine.exercises.every(exercise => {
+      const log = exerciseLogs.find(l => l.exerciseId === exercise.id);
+      return !!log && log.sets.length > 0 && log.sets.every(s => s.completed);
+    });
+
+    if (!allExercisesCompleted) {
+      confirm({
+        title: 'Entrenamiento incompleto',
+        message: 'No has completado todos los ejercicios. ¿Quieres terminar el entrenamiento de todas formas?',
+        confirmText: 'Terminar',
+        cancelText: 'Seguir entrenando',
+        onConfirm: finishWorkout,
+        isDanger: false
+      });
+    } else {
+      finishWorkout();
+    }
+  }, [activeWorkout, completeWorkoutSession, confirm, showToast]);
 
   // Si hay un entrenamiento activo, mostrar la vista de entrenamiento
   if (activeWorkout && showActiveWorkout) {
@@ -261,6 +308,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 onClick={() => setShowCalendar(!showCalendar)}
                 className={`btn-secondary flex items-center gap-2 ${showCalendar ? 'border-mint/60 text-mint' : ''}`}
                 title="Ver calendario"
+                aria-label={showCalendar ? "Ocultar calendario" : "Ver calendario"}
               >
                 <Calendar size={18} />
                 <span className="hidden sm:inline">Calendario</span>
@@ -270,6 +318,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 onClick={onLogout}
                 className="btn-danger flex items-center gap-2"
                 title="Cerrar sesión"
+                aria-label="Cerrar sesión"
               >
                 <LogOut size={18} />
                 <span className="hidden sm:inline">Salir</span>

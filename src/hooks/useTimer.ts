@@ -251,7 +251,7 @@ export const useTimer = () => {
           setHasNotified(true);
           void showTimerNotification(
             '¡Descanso terminado!',
-            'Continúa con tu entrenamiento basura!'
+            'Continúa con tu entrenamiento.'
           );
         }
 

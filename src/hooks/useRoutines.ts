@@ -1,5 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
-import { collection, doc, setDoc, addDoc, updateDoc, onSnapshot, query, where, deleteDoc, increment } from 'firebase/firestore';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  collection,
+  doc,
+  setDoc,
+  addDoc,
+  updateDoc,
+  onSnapshot,
+  query,
+  where,
+  deleteDoc,
+  increment,
+  type DocumentData,
+  type QuerySnapshot
+} from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Routine, ExerciseHistory, Exercise, MuscleGroup } from '../types';
 import { getCurrentDateString } from '../utils/dateUtils';
@@ -8,6 +21,7 @@ export const useRoutines = (userId: string) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const initializedDefaultsRef = useRef(false);
 
   useEffect(() => {
     if (!userId) {
@@ -18,67 +32,135 @@ export const useRoutines = (userId: string) => {
     setLoading(true);
     setError(null);
 
-    // Obtener todas las rutinas (sin filtros de Firebase para evitar problemas de índices)
     const routinesRef = collection(db, 'routines');
-    const q = query(routinesRef);
 
-    const unsubscribeRoutines = onSnapshot(q, (snapshot) => {
-      const allRoutinesData = snapshot.docs.map(doc => {
-        const data = doc.data();
+    let mineByCreatedBy: Routine[] = [];
+    let mineByUserId: Routine[] = [];
+    let publicByTrue: Routine[] = [];
+    let publicByMissing: Routine[] = [];
+
+    let initialSnapshotsRemaining = 4;
+
+    const toJsDate = (value: unknown): Date | undefined => {
+      if (!value) return undefined;
+      if (value instanceof Date) return value;
+      const maybe = value as { toDate?: () => Date };
+      if (typeof maybe.toDate === 'function') return maybe.toDate();
+      return undefined;
+    };
+
+    const mapSnapshot = (snapshot: QuerySnapshot<DocumentData>): Routine[] => {
+      return (snapshot as QuerySnapshot<DocumentData>).docs.map((docSnap) => {
+        const data = docSnap.data();
         return {
-          id: doc.id,
+          id: docSnap.id,
           ...data,
-          createdAt: data.createdAt?.toDate(),
-          updatedAt: data.updatedAt?.toDate(),
+          createdAt: toJsDate(data.createdAt),
+          updatedAt: toJsDate(data.updatedAt),
         };
       }) as Routine[];
+    };
 
-      // Filtrar rutinas: para compatibilidad con rutinas existentes
-      const filteredRoutines = allRoutinesData.filter(routine => {
-        // Si la rutina no tiene la propiedad isPublic (rutinas viejas), la consideramos pública
-        const isPublicRoutine = routine.isPublic !== false; // true si es undefined o true
-
-        // Si la rutina no tiene createdBy (rutinas viejas), asumimos que es del usuario actual
-        // También incluir si tiene userId (rutinas viejas) que coincida con el usuario actual
-        const isUserRoutine = !routine.createdBy || routine.createdBy === userId || routine.userId === userId;
-
-        const shouldShow = isPublicRoutine || isUserRoutine;
-
-        return shouldShow;
+    const updateCombined = () => {
+      const byId = new Map<string, Routine>();
+      [...publicByMissing, ...publicByTrue, ...mineByUserId, ...mineByCreatedBy].forEach((routine) => {
+        byId.set(routine.id, routine);
       });
 
-      // Ordenar: primero las del usuario, luego por fecha
-      filteredRoutines.sort((a, b) => {
-        // Priorizar las del usuario actual (incluyendo rutinas sin createdBy o con userId)
-        const aIsUser = !a.createdBy || a.createdBy === userId || a.userId === userId;
-        const bIsUser = !b.createdBy || b.createdBy === userId || b.userId === userId;
+      const combined = Array.from(byId.values());
+
+      combined.sort((a, b) => {
+        const aIsUser = a.createdBy === userId || a.userId === userId;
+        const bIsUser = b.createdBy === userId || b.userId === userId;
 
         if (aIsUser && !bIsUser) return -1;
         if (bIsUser && !aIsUser) return 1;
 
-        // Luego por fecha de creación
-        if (!a.createdAt) return 1;
-        if (!b.createdAt) return -1;
-        return b.createdAt.getTime() - a.createdAt.getTime();
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
       });
 
-      setRoutines(filteredRoutines);
-      setLoading(false);
+      setRoutines(combined);
 
-      // Inicializar rutinas por defecto si el usuario no tiene ninguna propia
-      const userRoutines = filteredRoutines.filter(r =>
-        !r.createdBy || r.createdBy === userId || r.userId === userId
-      );
-      if (userRoutines.length === 0 && !loading) {
-        setTimeout(() => initializeDefaultRoutines(), 100);
+      if (initialSnapshotsRemaining === 0) {
+        setLoading(false);
+        const hasUserRoutines = combined.some((routine) => routine.createdBy === userId || routine.userId === userId);
+        if (!hasUserRoutines && !initializedDefaultsRef.current) {
+          initializedDefaultsRef.current = true;
+          setTimeout(() => {
+            void initializeDefaultRoutines();
+          }, 0);
+        }
       }
-    }, (err) => {
-      setError('Error al cargar rutinas: ' + err.message);
-      setLoading(false);
-    });
+    };
+
+    const handleInitialSnapshot = () => {
+      if (initialSnapshotsRemaining > 0) {
+        initialSnapshotsRemaining -= 1;
+        if (initialSnapshotsRemaining === 0) {
+          updateCombined();
+        }
+      }
+    };
+
+    const unsubMineByCreatedBy = onSnapshot(
+      query(routinesRef, where('createdBy', '==', userId)),
+      (snapshot) => {
+        mineByCreatedBy = mapSnapshot(snapshot);
+        handleInitialSnapshot();
+        updateCombined();
+      },
+      (err) => {
+        setError('Error al cargar rutinas: ' + err.message);
+        setLoading(false);
+      }
+    );
+
+    const unsubMineByUserId = onSnapshot(
+      query(routinesRef, where('userId', '==', userId)),
+      (snapshot) => {
+        mineByUserId = mapSnapshot(snapshot);
+        handleInitialSnapshot();
+        updateCombined();
+      },
+      (err) => {
+        setError('Error al cargar rutinas: ' + err.message);
+        setLoading(false);
+      }
+    );
+
+    const unsubPublicByTrue = onSnapshot(
+      query(routinesRef, where('isPublic', '==', true)),
+      (snapshot) => {
+        publicByTrue = mapSnapshot(snapshot);
+        handleInitialSnapshot();
+        updateCombined();
+      },
+      (err) => {
+        setError('Error al cargar rutinas: ' + err.message);
+        setLoading(false);
+      }
+    );
+
+    const unsubPublicByMissing = onSnapshot(
+      query(routinesRef, where('isPublic', '==', null)),
+      (snapshot) => {
+        publicByMissing = mapSnapshot(snapshot);
+        handleInitialSnapshot();
+        updateCombined();
+      },
+      (err) => {
+        setError('Error al cargar rutinas: ' + err.message);
+        setLoading(false);
+      }
+    );
 
     return () => {
-      unsubscribeRoutines();
+      unsubMineByCreatedBy();
+      unsubMineByUserId();
+      unsubPublicByTrue();
+      unsubPublicByMissing();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -126,29 +208,27 @@ export const useRoutines = (userId: string) => {
 
   // Verificar si el usuario actual es el creador de la rutina
   const canEditRoutine = (routine: Routine): boolean => {
-    // Si no tiene createdBy (rutinas viejas), verificar userId o asumimos que es del usuario actual
-    return !routine.createdBy || routine.createdBy === userId || routine.userId === userId;
+    return routine.createdBy === userId || routine.userId === userId;
   };
 
   // Obtener rutinas públicas vs propias
   const getPublicRoutines = (): Routine[] => {
     return routines.filter(r => {
       const isPublic = r.isPublic !== false; // true si es undefined o true
-      const isFromOtherUser = r.createdBy && r.createdBy !== userId && r.userId !== userId;
-      return isPublic && isFromOtherUser;
+      const isFromOtherUser = (r.createdBy && r.createdBy !== userId) || (r.userId && r.userId !== userId);
+      // If there is no owner metadata, treat as community/public.
+      const hasKnownOwner = !!r.createdBy || !!r.userId;
+      return isPublic && (!hasKnownOwner || isFromOtherUser);
     });
   };
 
   const getUserRoutines = (): Routine[] => {
     return routines.filter(r =>
-      !r.createdBy || r.createdBy === userId || r.userId === userId
+      r.createdBy === userId || r.userId === userId
     );
   };
 
   const initializeDefaultRoutines = async () => {
-    if (routines.length > 0) return; // Ya hay rutinas
-    if (loading) return; // Aún está cargando
-
     const defaultRoutines = [
       {
         name: 'Pecho y Tríceps',

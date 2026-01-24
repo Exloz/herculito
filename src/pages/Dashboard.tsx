@@ -45,29 +45,6 @@ const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: 
   }
 };
 
-const hasCompletedSets = (exerciseLogs: ExerciseLog[] | null): boolean => {
-  if (!exerciseLogs) return false;
-  return exerciseLogs.some(log => log.sets?.some(set => set.completed));
-};
-
-const loadProgressFromStorage = (sessionId: string): ExerciseLog[] | null => {
-  const stored = localStorage.getItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
-  if (!stored) return null;
-
-  try {
-    const data = JSON.parse(stored);
-    const now = Date.now();
-    if (now - data.timestamp > EXPIRATION_TIME) {
-      localStorage.removeItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
-      return null;
-    }
-    return data.exerciseLogs as ExerciseLog[];
-  } catch {
-    localStorage.removeItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
-    return null;
-  }
-};
-
 const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSession } | null => {
   const stored = localStorage.getItem(ACTIVE_WORKOUT_KEY);
   if (!stored) return null;
@@ -81,12 +58,6 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
     }
 
     if (!data?.session?.id || !data?.routine) {
-      localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-      return null;
-    }
-
-    const progressLogs = loadProgressFromStorage(data.session.id);
-    if (!hasCompletedSets(progressLogs)) {
       localStorage.removeItem(ACTIVE_WORKOUT_KEY);
       return null;
     }
@@ -156,7 +127,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   }, []);
 
 
-   const { routines, loading: routinesLoading, updateRoutine } = useRoutines(user.id);
+   const { routines, loading: routinesLoading, updateRoutine, incrementRoutineUsage } = useRoutines(user.id);
   const {
     sessions,
     loading: sessionsLoading,
@@ -175,13 +146,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
-      const session = await startWorkoutSession(routineId);
       const routine = routines.find(r => r.id === routineId);
 
       if (routine) {
+        const session = await startWorkoutSession(routine);
         const newActiveWorkout = { routine, session };
         setActiveWorkout(newActiveWorkout);
         setShowActiveWorkout(true);
+        saveActiveWorkoutToStorage(newActiveWorkout);
       } else {
         showToast('Rutina no encontrada', 'error');
       }
@@ -203,13 +175,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     // Aquí podrías mostrar detalles del entrenamiento de ese día
   }, []);
 
-  const handleBackToDashboard = useCallback((hasProgress: boolean) => {
+  const handleBackToDashboard = useCallback(() => {
     setShowActiveWorkout(false);
-    if (hasProgress && activeWorkout) {
+    if (activeWorkout) {
       saveActiveWorkoutToStorage(activeWorkout);
-    } else {
-      setActiveWorkout(null);
-      saveActiveWorkoutToStorage(null);
     }
   }, [activeWorkout]);
 
@@ -218,6 +187,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     const sessionId = activeWorkout.session?.id;
     if (sessionId) {
       localStorage.removeItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
+      localStorage.removeItem(`workoutStartTime_${sessionId}`);
     }
     setActiveWorkout(null);
     setShowActiveWorkout(false);
@@ -235,10 +205,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     const finishWorkout = async () => {
       try {
         await completeWorkoutSession(activeWorkout.session.id, exerciseLogs);
+        await incrementRoutineUsage(activeWorkout.routine.id);
         setActiveWorkout(null);
         setShowActiveWorkout(false);
         saveActiveWorkoutToStorage(null);
-        showToast('¡Entrenamiento completado! 🎉', 'success');
+        showToast('Entrenamiento completado', 'success');
       } catch (error) {
         console.error('Error completing workout:', error);
         showToast('Error al completar el entrenamiento. Inténtalo de nuevo.', 'error');
@@ -262,7 +233,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     } else {
       finishWorkout();
     }
-  }, [activeWorkout, completeWorkoutSession, confirm, showToast]);
+  }, [activeWorkout, completeWorkoutSession, confirm, showToast, incrementRoutineUsage]);
 
   // Si hay un entrenamiento activo, mostrar la vista de entrenamiento
   if (activeWorkout && showActiveWorkout) {
@@ -271,6 +242,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         user={user}
         routine={activeWorkout.routine}
         session={activeWorkout.session}
+        sessions={sessions}
         onBackToDashboard={handleBackToDashboard}
         onCompleteWorkout={handleCompleteWorkout}
       />

@@ -23,10 +23,17 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onCancel,
 }) => {
   const confirmButtonRef = useRef<HTMLButtonElement | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
+    previousActiveElementRef.current = document.activeElement as HTMLElement | null;
     confirmButtonRef.current?.focus();
+    return () => {
+      previousActiveElementRef.current?.focus?.();
+      previousActiveElementRef.current = null;
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -35,6 +42,35 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         onCancel();
+      }
+
+      if (event.key === 'Tab') {
+        const root = modalRef.current;
+        if (!root) return;
+
+        const focusables = Array.from(
+          root.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+
+        if (event.shiftKey) {
+          if (!active || active === first) {
+            event.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (active === last) {
+            event.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
 
@@ -50,6 +86,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       onClick={onCancel}
     >
       <div
+        ref={modalRef}
         className="bg-charcoal border border-mist/60 rounded-2xl w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200"
         role="alertdialog"
         aria-modal="true"

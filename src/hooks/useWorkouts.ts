@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { Workout, ExerciseLog } from '../types';
@@ -89,13 +89,38 @@ export const useWorkouts = () => {
 export const useExerciseLogs = (date: string, userId?: string) => {
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
   const [loading, setLoading] = useState(false); // Cambiado a false para evitar carga infinita
+  const pendingWritesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const pendingPayloadRef = useRef<Map<string, ExerciseLog>>(new Map());
+
+  const flushPendingWrites = useCallback(async () => {
+    const payloads = Array.from(pendingPayloadRef.current.entries());
+    pendingPayloadRef.current.clear();
+
+    const timeouts = Array.from(pendingWritesRef.current.values());
+    pendingWritesRef.current.clear();
+    timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
+
+    await Promise.all(
+      payloads.map(async ([logId, payload]) => {
+        try {
+          await setDoc(doc(db, 'exerciseLogs', logId), payload, { merge: true });
+        } catch {
+          // Error silencioso para logs
+        }
+      })
+    );
+  }, []);
 
   useEffect(() => {
     // Inicializar con estado vacío - esto permite que la funcionalidad básica funcione
     // Los logs se crearán automáticamente cuando el usuario interactúe con los ejercicios
     setLogs([]);
     setLoading(false);
-  }, [date, userId]);
+
+    return () => {
+      void flushPendingWrites();
+    };
+  }, [date, userId, flushPendingWrites]);
 
   const updateExerciseLog = async (log: ExerciseLog) => {
     try {
@@ -107,9 +132,8 @@ export const useExerciseLogs = (date: string, userId?: string) => {
       };
 
       const logId = `${logWithAllFields.exerciseId}_${logWithAllFields.userId}_${logWithAllFields.date}`;
-      await setDoc(doc(db, 'exerciseLogs', logId), logWithAllFields, { merge: true });
 
-      // Actualizar el estado local para feedback inmediato
+      // Feedback inmediato en UI
       setLogs(prevLogs => {
         const existingIndex = prevLogs.findIndex(l =>
           l.exerciseId === logWithAllFields.exerciseId &&
@@ -121,10 +145,30 @@ export const useExerciseLogs = (date: string, userId?: string) => {
           const updated = [...prevLogs];
           updated[existingIndex] = logWithAllFields;
           return updated;
-        } else {
-          return [...prevLogs, logWithAllFields];
         }
+        return [...prevLogs, logWithAllFields];
       });
+
+      // Persistencia con debounce para evitar escribir en Firestore en cada tecla
+      pendingPayloadRef.current.set(logId, logWithAllFields);
+      const existingTimeout = pendingWritesRef.current.get(logId);
+      if (existingTimeout) {
+        clearTimeout(existingTimeout);
+      }
+
+      const timeoutId = setTimeout(async () => {
+        const payload = pendingPayloadRef.current.get(logId);
+        pendingPayloadRef.current.delete(logId);
+        pendingWritesRef.current.delete(logId);
+        if (!payload) return;
+        try {
+          await setDoc(doc(db, 'exerciseLogs', logId), payload, { merge: true });
+        } catch {
+          // Error silencioso para logs
+        }
+      }, 400);
+
+      pendingWritesRef.current.set(logId, timeoutId);
     } catch {
       // Error silencioso para logs
     }

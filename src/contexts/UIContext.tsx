@@ -49,7 +49,12 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     <UIContext.Provider value={{ showToast, confirm }}>
       {children}
       
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-full max-w-sm px-4 pointer-events-none">
+      <div
+        className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 w-full max-w-sm px-4 pointer-events-none"
+        role="status"
+        aria-live="polite"
+        aria-relevant="additions text"
+      >
         <div className="pointer-events-auto flex flex-col gap-2">
           {toasts.map((toast) => (
             <Toast

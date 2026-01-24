@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { WorkoutSession, WorkoutCalendarDay } from '../types';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
@@ -26,6 +26,22 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   const firstDayWeekday = firstDayOfMonth.getDay();
   const daysInMonth = lastDayOfMonth.getDate();
 
+  const workoutsByDate = useMemo(() => {
+    const map = new Map<string, WorkoutCalendarDay['workouts']>();
+    sessions.forEach((session) => {
+      if (!session.completedAt) return;
+      const dateStr = getDateStringInAppTimeZone(session.completedAt);
+      const workouts = map.get(dateStr) ?? [];
+      workouts.push({
+        muscleGroup: session.primaryMuscleGroup!,
+        routineName: session.routineName,
+        sessionId: session.id
+      });
+      map.set(dateStr, workouts);
+    });
+    return map;
+  }, [sessions]);
+
   const days: WorkoutCalendarDay[] = [];
 
   for (let i = 0; i < firstDayWeekday; i++) {
@@ -41,17 +57,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
     const date = new Date(year, month, day);
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
-    const dayWorkouts = sessions
-      .filter(session => {
-        if (!session.completedAt) return false;
-        const sessionDate = getDateStringInAppTimeZone(session.completedAt);
-        return sessionDate === dateStr;
-      })
-      .map(session => ({
-        muscleGroup: session.primaryMuscleGroup!,
-        routineName: session.routineName,
-        sessionId: session.id
-      }));
+    const dayWorkouts = workoutsByDate.get(dateStr) ?? [];
 
     days.push({
       date: dateStr,
@@ -123,9 +129,12 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
           const isInCurrentMonth = isCurrentMonth(day.date);
 
           return (
-            <div
+            <button
               key={index}
               onClick={() => onDayClick?.(day.date)}
+              type="button"
+              disabled={!onDayClick}
+              aria-label={`Día ${dayNumber}${hasWorkout ? `, ${day.workouts.length} entrenamiento(s)` : ''}`}
               className={`
                 relative aspect-square p-0.5 sm:p-1 rounded-lg cursor-pointer transition-colors touch-manipulation
                 ${isCurrentDay
@@ -135,6 +144,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                     : 'text-slate-600 hover:bg-charcoal'
                 }
                 ${hasWorkout ? 'ring-1 sm:ring-2 ring-mint/60' : ''}
+                ${!onDayClick ? 'cursor-default' : ''}
               `}
             >
               <div className="text-xs font-medium text-center leading-tight">
@@ -161,7 +171,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                   </div>
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>

@@ -1,6 +1,6 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { CacheFirst, NetworkFirst } from 'workbox-strategies';
+import { CacheFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
@@ -8,14 +8,6 @@ declare const self: ServiceWorkerGlobalScope & {
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
-
-registerRoute(
-  ({ url }: { url: URL }) => url.origin === 'https://firestore.googleapis.com',
-  new NetworkFirst({
-    cacheName: 'firestore-cache',
-    networkTimeoutSeconds: 5
-  })
-);
 
 registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',

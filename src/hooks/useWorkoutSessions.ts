@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collection, doc, setDoc, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { WorkoutSession, User, ExerciseLog } from '../types';
+import { Routine, WorkoutSession, User, ExerciseLog } from '../types';
 import { getRoutinePrimaryMuscleGroup } from '../utils/muscleGroups';
-import { useRoutines } from './useRoutines';
 
 export const useWorkoutSessions = (user: User) => {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { routines } = useRoutines(user.id);
 
   useEffect(() => {
     const userId = user?.id;
@@ -90,16 +88,12 @@ export const useWorkoutSessions = (user: User) => {
     }
   }, [user.id]);
 
-  const startWorkoutSession = useCallback(async (routineId: string): Promise<WorkoutSession> => {
-    const routine = routines.find(r => r.id === routineId);
-    if (!routine) {
-      throw new Error('Routine not found');
-    }
+  const startWorkoutSession = useCallback(async (routine: Routine): Promise<WorkoutSession> => {
 
     const session: WorkoutSession = {
-      id: `${routineId}_${user.id}_${Date.now()}`,
+      id: `${routine.id}_${user.id}_${Date.now()}`,
       userId: user.id,
-      routineId,
+      routineId: routine.id,
       routineName: routine.name,
       primaryMuscleGroup: routine.primaryMuscleGroup || getRoutinePrimaryMuscleGroup(routine),
       startedAt: new Date(),
@@ -113,7 +107,7 @@ export const useWorkoutSessions = (user: User) => {
     });
 
     return session;
-  }, [routines, user.id]);
+  }, [user.id]);
 
   const completeWorkoutSession = useCallback(async (sessionId: string, exercises: ExerciseLog[]) => {
     const session = sessions.find(s => s.id === sessionId);

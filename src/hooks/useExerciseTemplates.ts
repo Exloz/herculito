@@ -1,5 +1,16 @@
-import { useState, useEffect } from 'react';
-import { collection, doc, addDoc, onSnapshot, query, updateDoc, increment } from 'firebase/firestore';
+import { useState, useEffect, useRef } from 'react';
+import {
+  collection,
+  doc,
+  addDoc,
+  onSnapshot,
+  query,
+  updateDoc,
+  increment,
+  where,
+  type DocumentData,
+  type QuerySnapshot
+} from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 export interface ExerciseTemplate {
@@ -20,6 +31,7 @@ export const useExerciseTemplates = (userId: string) => {
   const [exercises, setExercises] = useState<ExerciseTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const initializedDefaultsRef = useRef(false);
 
   useEffect(() => {
     if (!userId) {
@@ -28,42 +40,110 @@ export const useExerciseTemplates = (userId: string) => {
     }
 
     const exercisesRef = collection(db, 'exerciseTemplates');
-    // Simplificar las consultas para evitar problemas de permisos e índices
-    const allExercisesQuery = query(exercisesRef);
+    setLoading(true);
+    setError(null);
 
-    const unsubscribe = onSnapshot(allExercisesQuery, (snapshot) => {
-      
-      const allExercises = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate(),
-      })) as ExerciseTemplate[];
+    let mine: ExerciseTemplate[] = [];
+    let publicByTrue: ExerciseTemplate[] = [];
+    let publicByMissing: ExerciseTemplate[] = [];
+    let initialSnapshotsRemaining = 3;
 
-      // Filtrar en el cliente: ejercicios públicos + ejercicios del usuario
-      const filteredExercises = allExercises.filter(exercise => 
-        exercise.isPublic || exercise.createdBy === userId
-      );
+    const toJsDate = (value: unknown): Date | undefined => {
+      if (!value) return undefined;
+      if (value instanceof Date) return value;
+      const maybe = value as { toDate?: () => Date };
+      if (typeof maybe.toDate === 'function') return maybe.toDate();
+      return undefined;
+    };
 
-      // Ordenar en el cliente: primero los del usuario, luego por uso
-      filteredExercises.sort((a, b) => {
-        // Priorizar ejercicios del usuario
+    const mapSnapshot = (snapshot: QuerySnapshot<DocumentData>): ExerciseTemplate[] => {
+      return snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: toJsDate(data.createdAt) ?? new Date(),
+        };
+      }) as ExerciseTemplate[];
+    };
+
+    const updateCombined = () => {
+      const byId = new Map<string, ExerciseTemplate>();
+      [...publicByMissing, ...publicByTrue, ...mine].forEach((exercise) => {
+        byId.set(exercise.id, exercise);
+      });
+
+      const combined = Array.from(byId.values());
+      combined.sort((a, b) => {
         if (a.createdBy === userId && b.createdBy !== userId) return -1;
         if (b.createdBy === userId && a.createdBy !== userId) return 1;
-        
-        // Luego por número de usos
         return (b.timesUsed || 0) - (a.timesUsed || 0);
       });
 
-      setExercises(filteredExercises);
-      setLoading(false);
-    }, () => {
-      setError('Error al cargar ejercicios');
-      setLoading(false);
-    });
+      setExercises(combined);
+
+      if (initialSnapshotsRemaining === 0) {
+        setLoading(false);
+        if (!initializedDefaultsRef.current && !combined.some((ex) => ex.isPublic)) {
+          initializedDefaultsRef.current = true;
+          setTimeout(() => {
+            void initializeBasicExercises();
+          }, 0);
+        }
+      }
+    };
+
+    const handleInitialSnapshot = () => {
+      if (initialSnapshotsRemaining > 0) {
+        initialSnapshotsRemaining -= 1;
+      }
+    };
+
+    const unsubMine = onSnapshot(
+      query(exercisesRef, where('createdBy', '==', userId)),
+      (snapshot) => {
+        mine = mapSnapshot(snapshot);
+        handleInitialSnapshot();
+        updateCombined();
+      },
+      () => {
+        setError('Error al cargar ejercicios');
+        setLoading(false);
+      }
+    );
+
+    const unsubPublicTrue = onSnapshot(
+      query(exercisesRef, where('isPublic', '==', true)),
+      (snapshot) => {
+        publicByTrue = mapSnapshot(snapshot);
+        handleInitialSnapshot();
+        updateCombined();
+      },
+      () => {
+        setError('Error al cargar ejercicios');
+        setLoading(false);
+      }
+    );
+
+    const unsubPublicMissing = onSnapshot(
+      query(exercisesRef, where('isPublic', '==', null)),
+      (snapshot) => {
+        publicByMissing = mapSnapshot(snapshot);
+        handleInitialSnapshot();
+        updateCombined();
+      },
+      () => {
+        setError('Error al cargar ejercicios');
+        setLoading(false);
+      }
+    );
 
     return () => {
-      unsubscribe();
+      unsubMine();
+      unsubPublicTrue();
+      unsubPublicMissing();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const createExerciseTemplate = async (
@@ -142,9 +222,6 @@ export const useExerciseTemplates = (userId: string) => {
   };
 
   const initializeBasicExercises = async () => {
-    // Solo inicializar si no hay ejercicios públicos
-    if (exercises.some(ex => ex.isPublic)) return;
-
     const basicExercises = [
       { name: 'Press de Banca', category: 'Pecho', sets: 4, reps: 10, restTime: 120 },
       { name: 'Press Inclinado', category: 'Pecho', sets: 3, reps: 12, restTime: 90 },

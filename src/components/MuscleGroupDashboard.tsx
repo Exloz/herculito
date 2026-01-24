@@ -97,7 +97,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                 </div>
               )}
 
-               {routine.createdBy && routine.createdBy !== (currentUser as unknown as string) && (
+               {routine.createdBy && routine.createdBy !== currentUser.id && (
                  <div className="text-xs text-slate-500">
                    Por {routine.createdByName || 'Otro usuario'}
                  </div>

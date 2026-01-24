@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
 import { Routine, User, WorkoutSession, ExerciseLog } from '../types';
 import { useExerciseLogs } from '../hooks/useWorkouts';
-import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
 import { ExerciseCard } from './ExerciseCard';
 import { Timer } from './Timer';
 import { getCurrentDateString } from '../utils/dateUtils';
+import { getLastWeightsForRoutineFromSessions } from '../utils/workoutSessions';
 
 const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
@@ -41,6 +41,7 @@ interface ActiveWorkoutProps {
   user: User;
   routine: Routine;
   session: WorkoutSession;
+  sessions: WorkoutSession[];
   onBackToDashboard: (hasProgress: boolean) => void;
   onCompleteWorkout: (exerciseLogs: ExerciseLog[]) => void;
 }
@@ -50,12 +51,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   user,
   routine,
   session,
+  sessions,
   onBackToDashboard,
   onCompleteWorkout
 }) => {
   const today = getCurrentDateString();
   const { updateExerciseLog, getLogForExercise } = useExerciseLogs(today, user.id);
-  const { getLastWeightsForRoutine } = useWorkoutSessions(user);
 
   const [workoutTime, setWorkoutTime] = useState(0);
   const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
@@ -95,8 +96,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   }, [exerciseLogs, session.id, hasProgress]);
 
   const lastWeights = useMemo(
-    () => getLastWeightsForRoutine(routine.id),
-    [getLastWeightsForRoutine, routine.id]
+    () => getLastWeightsForRoutineFromSessions(sessions, routine.id),
+    [sessions, routine.id]
   );
 
   const getLogForExerciseCustom = useCallback((exerciseId: string, userId: string): ExerciseLog | undefined => {
@@ -136,12 +137,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   }, []);
 
   const handleBackToDashboard = useCallback(() => {
-    if (!hasProgress) {
-      localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
-      localStorage.removeItem(`workoutStartTime_${session.id}`);
-    }
     onBackToDashboard(hasProgress);
-  }, [hasProgress, onBackToDashboard, session.id]);
+  }, [hasProgress, onBackToDashboard]);
 
   const handleCompleteWorkout = useCallback(() => {
     const logsToSave = routine.exercises.map(exercise => {

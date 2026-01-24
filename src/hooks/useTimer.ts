@@ -263,7 +263,7 @@ export const useTimer = () => {
 
         releaseWakeLock();
       }
-    }, 100);
+    }, 250);
 
     return () => {
       if (intervalRef.current) {

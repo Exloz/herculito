@@ -15,13 +15,25 @@ service cloud.firestore {
     }
 
     function isValidExerciseTemplate() {
-      return request.resource.data.keys().hasAll(['name', 'muscleGroup'])
+      // Backwards-compatible schema:
+      // - Older app versions use `category`
+      // - Newer/stricter schema may use `muscleGroup`
+      // - `description` is optional
+      return request.resource.data.keys().hasAll(['name', 'createdBy', 'isPublic', 'sets', 'reps'])
         && isValidString(request.resource.data.name, 100)
-        && isValidString(request.resource.data.muscleGroup, 50)
-        && request.resource.data.name.size() <= 100
-        && request.resource.data.description.size() <= 500
+        && isValidString(request.resource.data.createdBy, 128)
+        && request.resource.data.isPublic is bool
+        && (
+          ('muscleGroup' in request.resource.data && isValidString(request.resource.data.muscleGroup, 50))
+          || ('category' in request.resource.data && isValidString(request.resource.data.category, 50))
+        )
+        && (!('description' in request.resource.data) || request.resource.data.description is string && request.resource.data.description.size() <= 500)
+        && request.resource.data.sets is number
+        && request.resource.data.reps is number
         && request.resource.data.sets >= 1 && request.resource.data.sets <= 20
-        && request.resource.data.reps >= 1 && request.resource.data.reps <= 100;
+        && request.resource.data.reps >= 1 && request.resource.data.reps <= 100
+        && (!('restTime' in request.resource.data) || request.resource.data.restTime is number && request.resource.data.restTime >= 0 && request.resource.data.restTime <= 3600)
+        && (!('timesUsed' in request.resource.data) || request.resource.data.timesUsed is number && request.resource.data.timesUsed >= 0);
     }
 
     match /routines/{routineId} {
@@ -48,9 +60,21 @@ service cloud.firestore {
       allow delete: if isAuthenticated()
         && (isOwner(resource.data.createdBy) || isOwner(resource.data.userId));
 
+      // Allow community usage counter increments without requiring ownership.
+      // NOTE: must compare request.resource.data with resource.data (not resource.data with itself).
       allow update: if isAuthenticated()
-        && resource.data.diff(resource.data).affectedKeys().hasOnly(['timesUsed'])
-        && request.resource.data.timesUsed >= resource.data.timesUsed;
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['timesUsed'])
+        && (request.resource.data.timesUsed is number)
+        && (
+          (
+            resource.data.timesUsed is number
+            && request.resource.data.timesUsed == resource.data.timesUsed + 1
+          )
+          || (
+            !('timesUsed' in resource.data)
+            && request.resource.data.timesUsed == 1
+          )
+        );
     }
 
     match /userRoutines/{userRoutineId} {
@@ -90,6 +114,21 @@ service cloud.firestore {
           )
         )
         && isValidExerciseTemplate();
+
+      // Allow usage counter increments without requiring ownership.
+      allow update: if isAuthenticated()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['timesUsed'])
+        && (request.resource.data.timesUsed is number)
+        && (
+          (
+            resource.data.timesUsed is number
+            && request.resource.data.timesUsed == resource.data.timesUsed + 1
+          )
+          || (
+            !('timesUsed' in resource.data)
+            && request.resource.data.timesUsed == 1
+          )
+        );
 
       allow delete: if isAuthenticated()
         && (

@@ -31,7 +31,11 @@ export const Toast: React.FC<ToastProps> = ({ id, type, message, onClose }) => {
   };
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-md shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${bgColors[type]}`}>
+    <div
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-md shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${bgColors[type]}`}
+      role={type === 'error' ? 'alert' : 'status'}
+      aria-atomic="true"
+    >
       <span className="shrink-0">{icons[type]}</span>
       <p className="text-sm font-medium">{message}</p>
       <button 

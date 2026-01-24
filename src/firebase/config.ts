@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { enableIndexedDbPersistence, getFirestore } from 'firebase/firestore';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 // Validación de variables de entorno requeridas
@@ -33,6 +33,13 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+
+// Offline persistence (best-effort). This improves gym/offline usability, but can fail
+// in some environments (private mode, multiple tabs). We silently fall back to online.
+void enableIndexedDbPersistence(db).catch(() => {
+  // noop
+});
+
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

@@ -73,7 +73,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       sets: template.sets,
       reps: template.reps,
       restTime: template.restTime,
-      video: template.video
+      ...(template.video ? { video: template.video } : {})
     };
 
     // Incrementar contador de uso
@@ -111,7 +111,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         sets: customExercise.sets,
         reps: customExercise.reps,
         restTime: customExercise.restTime,
-        video: selectedVideo ?? undefined
+        ...(selectedVideo ? { video: selectedVideo } : {})
       };
 
       // Mostrar mensaje de éxito

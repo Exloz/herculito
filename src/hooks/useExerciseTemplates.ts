@@ -170,7 +170,7 @@ export const useExerciseTemplates = (userId: string) => {
         reps,
         restTime,
         description,
-        video,
+        ...(video ? { video } : {}),
         createdBy: userId,
         isPublic,
         createdAt: new Date(),

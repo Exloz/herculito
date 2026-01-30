@@ -493,7 +493,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             </div>
 
          </div>
-       </main>
+        </main>
+        <div className="px-4 pb-8">
+          <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
+            Version 1.0.0
+          </div>
+        </div>
     </div>
   );
 };

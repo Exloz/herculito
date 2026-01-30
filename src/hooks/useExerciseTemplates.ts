@@ -12,6 +12,7 @@ import {
   type QuerySnapshot
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { ExerciseVideo } from '../types';
 
 export interface ExerciseTemplate {
   id: string;
@@ -21,6 +22,7 @@ export interface ExerciseTemplate {
   reps: number;
   restTime: number;
   description?: string;
+  video?: ExerciseVideo;
   createdBy: string; // userId del creador
   isPublic: boolean; // si es público para todos los usuarios
   createdAt: Date;
@@ -153,7 +155,8 @@ export const useExerciseTemplates = (userId: string) => {
     reps: number,
     restTime: number,
     description?: string,
-    isPublic: boolean = false
+    isPublic: boolean = false,
+    video?: ExerciseVideo
   ) => {
     if (!userId) {
       throw new Error('Usuario no autenticado');
@@ -167,6 +170,7 @@ export const useExerciseTemplates = (userId: string) => {
         reps,
         restTime,
         description,
+        video,
         createdBy: userId,
         isPublic,
         createdAt: new Date(),
@@ -193,6 +197,16 @@ export const useExerciseTemplates = (userId: string) => {
      } catch {
        // Error silenciado para incremento de uso
      }
+  };
+
+  const updateExerciseTemplate = async (exerciseId: string, updates: Partial<ExerciseTemplate>) => {
+    try {
+      const exerciseRef = doc(db, 'exerciseTemplates', exerciseId);
+      await updateDoc(exerciseRef, updates);
+    } catch {
+      setError('Error al actualizar ejercicio');
+      throw new Error('update_failed');
+    }
   };
 
   const getCategories = (): string[] => {
@@ -259,6 +273,7 @@ export const useExerciseTemplates = (userId: string) => {
     loading,
     error,
     createExerciseTemplate,
+    updateExerciseTemplate,
     incrementUsage,
     getCategories,
     getExercisesByCategory,

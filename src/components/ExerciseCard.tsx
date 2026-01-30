@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Clock, Weight, Plus, Minus } from 'lucide-react';
+import { Check, Clock, Weight, Plus, Minus, Play } from 'lucide-react';
 import { Exercise, ExerciseLog, WorkoutSet } from '../types';
 import { getCurrentDateString } from '../utils/dateUtils';
 
@@ -20,6 +20,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   onStartTimer,
   previousWeights
 }) => {
+  const [showVideo, setShowVideo] = React.useState(false);
 
   const initializeSets = (): WorkoutSet[] => {
     const sets: WorkoutSet[] = [];
@@ -205,6 +206,43 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
         <div className="mt-3 flex items-center gap-2 text-sm text-slate-400 bg-slateDeep rounded-xl p-2">
           <Clock size={16} />
           <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
+        </div>
+      )}
+
+      {exercise.video?.url && (
+        <div className="mt-4 space-y-2">
+          <button
+            type="button"
+            onClick={() => setShowVideo((prev) => !prev)}
+            className="btn-ghost text-sm flex items-center gap-2"
+          >
+            <Play size={16} />
+            <span>{showVideo ? 'Ocultar video' : 'Ver video'}</span>
+          </button>
+
+          {showVideo && (
+            <div className="space-y-2">
+              <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                <video
+                  className="h-full w-full"
+                  src={exercise.video.url}
+                  controls
+                  playsInline
+                  preload="metadata"
+                />
+              </div>
+              <div className="text-xs text-slate-400">
+                <a
+                  href={exercise.video.pageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-mint hover:text-mintDeep"
+                >
+                  Abrir en MuscleWiki
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       )}
      </div>

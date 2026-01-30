@@ -13,6 +13,13 @@ export interface MuscleGroupInfo {
   color: string; // color hex para el calendario
 }
 
+export interface ExerciseVideo {
+  provider: 'musclewiki';
+  slug: string;
+  url: string;
+  pageUrl: string;
+}
+
 export interface Exercise {
   id: string;
   name: string;
@@ -20,6 +27,7 @@ export interface Exercise {
   reps: number;
   restTime?: number; // en segundos
   muscleGroup?: MuscleGroup; // nuevo campo opcional
+  video?: ExerciseVideo;
 }
 
 export interface WorkoutSet {

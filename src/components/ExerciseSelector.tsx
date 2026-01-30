@@ -339,8 +339,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setSuccessMessage('');
               }}
               className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${!showCustomForm
-                  ? 'bg-mint/15 text-mint'
-                  : 'bg-slateDeep text-slate-300 hover:text-white'
+                ? 'bg-mint/15 text-mint'
+                : 'bg-slateDeep text-slate-300 hover:text-white'
                 }`}
             >
               Ejercicios ({exercises.length})
@@ -353,8 +353,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setSuccessMessage('');
               }}
               className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${showCustomForm
-                  ? 'bg-mint/15 text-mint'
-                  : 'bg-slateDeep text-slate-300 hover:text-white'
+                ? 'bg-mint/15 text-mint'
+                : 'bg-slateDeep text-slate-300 hover:text-white'
                 }`}
             >
               Crear Nuevo
@@ -398,14 +398,14 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
                 {user?.id && (
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>{ownVideoCandidates} ejercicios sin video o sin vistas</span>
+                    <span>{ownVideoCandidates} ejercicios sin video</span>
                     <button
                       type="button"
                       onClick={handleBackfillVideos}
                       disabled={backfillRunning || ownVideoCandidates === 0}
                       className="btn-ghost text-xs disabled:opacity-60"
                     >
-                      {backfillRunning ? 'Actualizando...' : 'Auto videos'}
+                      {backfillRunning ? 'Actualizando...' : 'Cargar videos automáticamente'}
                     </button>
                   </div>
                 )}

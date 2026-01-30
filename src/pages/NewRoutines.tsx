@@ -254,14 +254,14 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
 
         {activeTab === 'my' && (
           <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
-            <span>{routinesMissingVideos} ejercicios sin video o sin vistas en tus rutinas</span>
+            <span>{routinesMissingVideos} ejercicios sin video</span>
             <button
               type="button"
               onClick={handleBackfillRoutineVideos}
               disabled={routineBackfillRunning || routinesMissingVideos === 0}
               className="btn-ghost text-xs disabled:opacity-60"
             >
-              {routineBackfillRunning ? 'Actualizando...' : 'Auto videos rutinas'}
+              {routineBackfillRunning ? 'Actualizando...' : 'Cargar videos automáticamente'}
             </button>
           </div>
         )}

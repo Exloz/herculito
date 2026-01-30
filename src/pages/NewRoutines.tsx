@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Dumbbell, Target, User as UserIcon, Eye } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { RoutineEditor } from '../components/RoutineEditor';
-import { User, Routine, Exercise, MuscleGroup } from '../types';
+import { User, Routine, Exercise, MuscleGroup, ExerciseVideo } from '../types';
 import { useUI } from '../contexts/ui-context';
 import { formatDateInAppTimeZone } from '../utils/dateUtils';
+import { fetchMusclewikiSuggestions, fetchMusclewikiVideos } from '../utils/musclewikiApi';
 
 interface RoutinesProps {
   user: User;
@@ -25,6 +26,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const [editingRoutine, setEditingRoutine] = useState<Routine | undefined>();
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'my' | 'public'>('my');
+  const [routineBackfillRunning, setRoutineBackfillRunning] = useState(false);
+  const [routineBackfillMessage, setRoutineBackfillMessage] = useState('');
 
   const handleCreateRoutine = () => {
     setEditingRoutine(undefined);
@@ -84,6 +87,83 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const myRoutines = getUserRoutines();
   const publicRoutines = getPublicRoutines();
   const displayedRoutines = activeTab === 'my' ? myRoutines : publicRoutines;
+  const routinesMissingVideos = myRoutines.reduce((total, routine) => {
+    return total + routine.exercises.filter((exercise) => !exercise.video && exercise.name.trim()).length;
+  }, 0);
+
+  const handleBackfillRoutineVideos = async () => {
+    if (routineBackfillRunning) return;
+    if (myRoutines.length === 0) {
+      setRoutineBackfillMessage('No tienes rutinas para actualizar');
+      return;
+    }
+
+    const routinesToUpdate = myRoutines.filter(canEditRoutine);
+    const candidates = routinesToUpdate.flatMap((routine) => routine.exercises.filter((exercise) => !exercise.video && exercise.name.trim()));
+    if (candidates.length === 0) {
+      setRoutineBackfillMessage('No hay ejercicios sin video en tus rutinas');
+      return;
+    }
+
+    const threshold = 0.45;
+    let updated = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    setRoutineBackfillRunning(true);
+    setRoutineBackfillMessage(`Buscando videos... (0/${candidates.length})`);
+
+    let processed = 0;
+    for (const routine of routinesToUpdate) {
+      let routineChanged = false;
+      const nextExercises: Exercise[] = [];
+
+      for (const exercise of routine.exercises) {
+        if (exercise.video || !exercise.name.trim()) {
+          nextExercises.push(exercise);
+          continue;
+        }
+
+        try {
+          const suggestions = await fetchMusclewikiSuggestions(exercise.name, 5);
+          const best = suggestions[0];
+          if (!best || best.score < threshold) {
+            skipped += 1;
+            processed += 1;
+            setRoutineBackfillMessage(`Buscando videos... (${processed}/${candidates.length})`);
+            nextExercises.push(exercise);
+            continue;
+          }
+
+          const data = await fetchMusclewikiVideos(best.slug);
+          const video: ExerciseVideo = {
+            provider: 'musclewiki',
+            slug: best.slug,
+            url: data.defaultVideoUrl,
+            pageUrl: data.pageUrl
+          };
+          nextExercises.push({ ...exercise, video });
+          routineChanged = true;
+          updated += 1;
+        } catch {
+          failed += 1;
+          nextExercises.push(exercise);
+        } finally {
+          processed += 1;
+          setRoutineBackfillMessage(`Buscando videos... (${processed}/${candidates.length})`);
+        }
+      }
+
+      if (routineChanged) {
+        await updateRoutine(routine.id, { exercises: nextExercises });
+      }
+    }
+
+    const parts = [`${updated} actualizados`, `${skipped} omitidos`];
+    if (failed > 0) parts.push(`${failed} errores`);
+    setRoutineBackfillMessage(`Listo: ${parts.join(', ')}.`);
+    setRoutineBackfillRunning(false);
+  };
 
   if (loading) {
     return (
@@ -135,6 +215,26 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             Públicas ({publicRoutines.length})
           </button>
         </div>
+
+        {activeTab === 'my' && (
+          <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
+            <span>{routinesMissingVideos} ejercicios sin video en tus rutinas</span>
+            <button
+              type="button"
+              onClick={handleBackfillRoutineVideos}
+              disabled={routineBackfillRunning || routinesMissingVideos === 0}
+              className="btn-ghost text-xs disabled:opacity-60"
+            >
+              {routineBackfillRunning ? 'Actualizando...' : 'Auto videos rutinas'}
+            </button>
+          </div>
+        )}
+
+        {routineBackfillMessage && (
+          <div className="text-xs text-slate-400 mb-4">
+            {routineBackfillMessage}
+          </div>
+        )}
 
         {/* Lista de rutinas */}
         {displayedRoutines.length === 0 ? (

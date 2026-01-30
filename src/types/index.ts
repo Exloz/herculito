@@ -13,11 +13,17 @@ export interface MuscleGroupInfo {
   color: string; // color hex para el calendario
 }
 
+export interface ExerciseVideoVariant {
+  url: string;
+  kind: string;
+}
+
 export interface ExerciseVideo {
   provider: 'musclewiki';
   slug: string;
   url: string;
   pageUrl: string;
+  variants?: ExerciseVideoVariant[];
 }
 
 export interface Exercise {

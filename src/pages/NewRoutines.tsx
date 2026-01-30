@@ -140,7 +140,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             provider: 'musclewiki',
             slug: best.slug,
             url: data.defaultVideoUrl,
-            pageUrl: data.pageUrl
+            pageUrl: data.pageUrl,
+            variants: data.variants
           };
           nextExercises.push({ ...exercise, video });
           routineChanged = true;

@@ -9,6 +9,7 @@ import { ActiveWorkout } from '../components/ActiveWorkout';
 import { getRecommendedMuscleGroup } from '../utils/muscleGroups';
 import { useUI } from '../contexts/ui-context';
 import { formatDateInAppTimeZone } from '../utils/dateUtils';
+import { version as appVersion } from '../../package.json';
 
 interface DashboardProps {
   user: User;
@@ -496,7 +497,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         </main>
         <div className="px-4 pb-8">
           <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
-            Version 1.0.0
+            Version {appVersion}
           </div>
         </div>
     </div>

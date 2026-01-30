@@ -173,7 +173,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         provider: 'musclewiki',
         slug: suggestion.slug,
         url: data.defaultVideoUrl,
-        pageUrl: data.pageUrl
+        pageUrl: data.pageUrl,
+        variants: data.variants
       });
     } catch {
       setVideoError('No pudimos obtener el video seleccionado');
@@ -219,7 +220,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           provider: 'musclewiki',
           slug: best.slug,
           url: data.defaultVideoUrl,
-          pageUrl: data.pageUrl
+          pageUrl: data.pageUrl,
+          variants: data.variants
         };
         await updateExerciseTemplate(exercise.id, { video });
         updated += 1;
@@ -232,6 +234,33 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     if (failed > 0) parts.push(`${failed} errores`);
     setBackfillMessage(`Listo: ${parts.join(', ')}.`);
     setBackfillRunning(false);
+  };
+
+  const getPreviewUrls = (video: ExerciseVideo) => {
+    const variants = video.variants ?? [];
+    const frontVariant = variants.find((variant) => variant.kind.includes('front'));
+    const sideVariant = variants.find((variant) => variant.kind.includes('side'));
+    const detectView = (url: string) => {
+      if (url.includes('-front')) return 'front';
+      if (url.includes('-side')) return 'side';
+      return 'unknown';
+    };
+
+    const detectedView = detectView(video.url);
+    const frontCandidate = frontVariant?.url ?? (detectedView === 'front' ? video.url : undefined);
+    const sideCandidate = sideVariant?.url ?? (detectedView === 'side' ? video.url : undefined);
+    const fallbackSource = frontCandidate ?? sideCandidate ?? video.url;
+
+    const frontUrl = frontCandidate
+      ?? (fallbackSource.includes('-side') ? fallbackSource.replace('-side', '-front') : fallbackSource);
+    let sideUrl = sideCandidate
+      ?? (fallbackSource.includes('-front') ? fallbackSource.replace('-front', '-side') : undefined);
+
+    if (sideUrl === frontUrl) {
+      sideUrl = undefined;
+    }
+
+    return { frontUrl, sideUrl };
   };
 
   if (!user?.id) {
@@ -511,15 +540,39 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
                   {selectedVideo && (
                     <div className="space-y-2">
-                      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
-                        <video
-                          className="h-full w-full"
-                          src={selectedVideo.url}
-                          controls
-                          playsInline
-                          preload="metadata"
-                        />
-                      </div>
+                      {(() => {
+                        const { frontUrl, sideUrl } = getPreviewUrls(selectedVideo);
+                        return (
+                          <div className={`grid gap-3 ${sideUrl ? 'sm:grid-cols-2' : ''}`}>
+                            <div>
+                              <div className="text-xs text-slate-400 mb-1">Vista frontal</div>
+                              <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                                <video
+                                  className="h-full w-full"
+                                  src={frontUrl}
+                                  controls
+                                  playsInline
+                                  preload="metadata"
+                                />
+                              </div>
+                            </div>
+                            {sideUrl && (
+                              <div>
+                                <div className="text-xs text-slate-400 mb-1">Vista lateral</div>
+                                <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                                  <video
+                                    className="h-full w-full"
+                                    src={sideUrl}
+                                    controls
+                                    playsInline
+                                    preload="metadata"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                       <div className="flex items-center justify-between text-xs">
                         <a
                           href={selectedVideo.pageUrl}

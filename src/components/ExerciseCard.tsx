@@ -1,6 +1,6 @@
 import React from 'react';
 import { Check, Clock, Weight, Plus, Minus, Play } from 'lucide-react';
-import { Exercise, ExerciseLog, WorkoutSet } from '../types';
+import { Exercise, ExerciseLog, WorkoutSet, ExerciseVideo } from '../types';
 import { getCurrentDateString } from '../utils/dateUtils';
 
 interface ExerciseCardProps {
@@ -21,6 +21,33 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   previousWeights
 }) => {
   const [showVideo, setShowVideo] = React.useState(false);
+
+  const getVideoUrls = (video: ExerciseVideo) => {
+    const variants = video.variants ?? [];
+    const frontVariant = variants.find((variant) => variant.kind.includes('front'));
+    const sideVariant = variants.find((variant) => variant.kind.includes('side'));
+    const detectView = (url: string) => {
+      if (url.includes('-front')) return 'front';
+      if (url.includes('-side')) return 'side';
+      return 'unknown';
+    };
+
+    const detectedView = detectView(video.url);
+    const frontCandidate = frontVariant?.url ?? (detectedView === 'front' ? video.url : undefined);
+    const sideCandidate = sideVariant?.url ?? (detectedView === 'side' ? video.url : undefined);
+    const fallbackSource = frontCandidate ?? sideCandidate ?? video.url;
+
+    const frontUrl = frontCandidate
+      ?? (fallbackSource.includes('-side') ? fallbackSource.replace('-side', '-front') : fallbackSource);
+    let sideUrl = sideCandidate
+      ?? (fallbackSource.includes('-front') ? fallbackSource.replace('-front', '-side') : undefined);
+
+    if (sideUrl === frontUrl) {
+      sideUrl = undefined;
+    }
+
+    return { frontUrl, sideUrl };
+  };
 
   const initializeSets = (): WorkoutSet[] => {
     const sets: WorkoutSet[] = [];
@@ -222,15 +249,39 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
           {showVideo && (
             <div className="space-y-2">
-              <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
-                <video
-                  className="h-full w-full"
-                  src={exercise.video.url}
-                  controls
-                  playsInline
-                  preload="metadata"
-                />
-              </div>
+              {(() => {
+                const { frontUrl, sideUrl } = getVideoUrls(exercise.video);
+                return (
+                  <div className={`grid gap-3 ${sideUrl ? 'sm:grid-cols-2' : ''}`}>
+                    <div>
+                      <div className="text-xs text-slate-400 mb-1">Vista frontal</div>
+                      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                        <video
+                          className="h-full w-full"
+                          src={frontUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                        />
+                      </div>
+                    </div>
+                    {sideUrl && (
+                      <div>
+                        <div className="text-xs text-slate-400 mb-1">Vista lateral</div>
+                        <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                          <video
+                            className="h-full w-full"
+                            src={sideUrl}
+                            controls
+                            playsInline
+                            preload="metadata"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="text-xs text-slate-400">
                 <a
                   href={exercise.video.pageUrl}

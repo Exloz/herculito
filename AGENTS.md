@@ -89,3 +89,4 @@ pnpm preview      # Preview production build
 3. Build with `pnpm build` to verify production readiness
 4. Follow the existing hook pattern for new features
 5. Service worker is production-only; dev unregisters it to avoid stale caches
+6. Bump the minor version in `package.json` for every commit

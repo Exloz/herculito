@@ -63,7 +63,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const filteredExercises = searchExercises(searchTerm, selectedCategory);
   const categories = getCategories();
   const ownVideoCandidates = user?.id
-    ? exercises.filter((exercise) => exercise.createdBy === user.id && !exercise.video).length
+    ? exercises.filter((exercise) => {
+      if (exercise.createdBy !== user.id) return false;
+      if (!exercise.name.trim()) return false;
+      if (!exercise.video) return true;
+      return !exercise.video.variants || exercise.video.variants.length === 0;
+    }).length
     : 0;
 
   const handleSelectTemplate = async (template: ExerciseTemplate) => {
@@ -186,9 +191,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const handleBackfillVideos = async () => {
     if (!user?.id || backfillRunning) return;
 
-    const candidates = exercises.filter(
-      (exercise) => exercise.createdBy === user.id && !exercise.video && exercise.name.trim()
-    );
+    const candidates = exercises.filter((exercise) => {
+      if (exercise.createdBy !== user.id) return false;
+      if (!exercise.name.trim()) return false;
+      if (!exercise.video) return true;
+      return !exercise.video.variants || exercise.video.variants.length === 0;
+    });
 
     if (candidates.length === 0) {
       setBackfillMessage('No hay ejercicios sin video para actualizar');
@@ -208,6 +216,25 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       setBackfillMessage(`Buscando videos... (${index + 1}/${candidates.length})`);
 
       try {
+        const existingSlug = exercise.video?.slug
+          || (exercise.video?.pageUrl?.includes('/exercise/')
+            ? exercise.video.pageUrl.split('/exercise/')[1]?.split('/')[0]
+            : undefined);
+
+        if (exercise.video && existingSlug && (!exercise.video.variants || exercise.video.variants.length === 0)) {
+          const data = await fetchMusclewikiVideos(existingSlug);
+          const video: ExerciseVideo = {
+            ...exercise.video,
+            slug: existingSlug,
+            url: exercise.video.url || data.defaultVideoUrl,
+            pageUrl: exercise.video.pageUrl || data.pageUrl,
+            variants: data.variants
+          };
+          await updateExerciseTemplate(exercise.id, { video });
+          updated += 1;
+          continue;
+        }
+
         const suggestions = await fetchMusclewikiSuggestions(exercise.name, 5);
         const best = suggestions[0];
         if (!best || best.score < threshold) {
@@ -371,7 +398,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
                 {user?.id && (
                   <div className="flex items-center justify-between text-xs text-slate-400">
-                    <span>{ownVideoCandidates} ejercicios sin video</span>
+                    <span>{ownVideoCandidates} ejercicios sin video o sin vistas</span>
                     <button
                       type="button"
                       onClick={handleBackfillVideos}
@@ -395,6 +422,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 {filteredExercises.map((exercise) => (
                   <button
                     key={exercise.id}
+                    type="button"
                     onClick={() => handleSelectTemplate(exercise)}
                     className="w-full p-3 bg-slateDeep hover:bg-charcoal rounded-xl text-left transition-colors"
                   >
@@ -630,6 +658,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
                 <div className="flex space-x-2">
                   <button
+                    type="button"
                     onClick={() => {
                       setShowCustomForm(false);
                       setError('');
@@ -652,6 +681,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                   </button>
 
                   <button
+                    type="button"
                     onClick={handleCustomExercise}
                     disabled={!customExercise.name.trim() || creatingExercise}
                     className="btn-primary flex-[2] flex items-center justify-center gap-2 disabled:opacity-60"

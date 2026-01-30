@@ -128,9 +128,24 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     <div className="app-card p-4 mb-4">
       {/* Header del ejercicio */}
       <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold text-white">{exercise.name}</h3>
-          <div className="flex items-center space-x-2 text-sm text-slate-400">
+        <div className="flex items-center justify-between mb-2 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <h3 className="text-lg font-semibold text-white truncate">{exercise.name}</h3>
+            {exercise.video?.url && (
+              <button
+                type="button"
+                onClick={() => setShowVideo((prev) => !prev)}
+                className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${showVideo
+                  ? 'border-mint/70 text-mint bg-mint/10'
+                  : 'border-mist/60 text-slate-300 hover:text-white hover:border-mint/50'
+                  }`}
+              >
+                <Play size={12} />
+                <span>{showVideo ? 'Ocultar video' : 'Ver video'}</span>
+              </button>
+            )}
+          </div>
+          <div className="flex items-center space-x-2 text-sm text-slate-400 shrink-0">
             <Weight size={16} />
             <span>{exercise.sets} × {exercise.reps}</span>
           </div>
@@ -236,64 +251,51 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
         </div>
       )}
 
-      {exercise.video?.url && (
+      {exercise.video?.url && showVideo && (
         <div className="mt-4 space-y-2">
-          <button
-            type="button"
-            onClick={() => setShowVideo((prev) => !prev)}
-            className="btn-ghost text-sm flex items-center gap-2"
-          >
-            <Play size={16} />
-            <span>{showVideo ? 'Ocultar video' : 'Ver video'}</span>
-          </button>
-
-          {showVideo && (
-            <div className="space-y-2">
-              {(() => {
-                const { frontUrl, sideUrl } = getVideoUrls(exercise.video);
-                return (
-                  <div className={`grid gap-3 ${sideUrl ? 'sm:grid-cols-2' : ''}`}>
-                    <div>
-                      <div className="text-xs text-slate-400 mb-1">Vista frontal</div>
-                      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
-                        <video
-                          className="h-full w-full"
-                          src={frontUrl}
-                          controls
-                          playsInline
-                          preload="metadata"
-                        />
-                      </div>
-                    </div>
-                    {sideUrl && (
-                      <div>
-                        <div className="text-xs text-slate-400 mb-1">Vista lateral</div>
-                        <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
-                          <video
-                            className="h-full w-full"
-                            src={sideUrl}
-                            controls
-                            playsInline
-                            preload="metadata"
-                          />
-                        </div>
-                      </div>
-                    )}
+          {(() => {
+            const { frontUrl, sideUrl } = getVideoUrls(exercise.video);
+            return (
+              <div className={`grid gap-3 ${sideUrl ? 'sm:grid-cols-2' : ''}`}>
+                <div>
+                  <div className="text-xs text-slate-400 mb-1">Vista frontal</div>
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                    <video
+                      className="h-full w-full"
+                      src={frontUrl}
+                      controls
+                      playsInline
+                      preload="metadata"
+                    />
                   </div>
-                );
-              })()}
-              <div className="text-xs text-slate-400">
-                <a
-                  href={exercise.video.pageUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-mint hover:text-mintDeep"
-                >
-                  Abrir en MuscleWiki
-                </a>
+                </div>
+                {sideUrl && (
+                  <div>
+                    <div className="text-xs text-slate-400 mb-1">Vista lateral</div>
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                      <video
+                        className="h-full w-full"
+                        src={sideUrl}
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
+          <div className="text-xs text-slate-400">
+            <a
+              href={exercise.video.pageUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-mint hover:text-mintDeep"
+            >
+              Abrir en MuscleWiki
+            </a>
+          </div>
         </div>
       )}
      </div>

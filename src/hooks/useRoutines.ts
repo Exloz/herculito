@@ -12,10 +12,17 @@ import {
 
 const toDate = (value: unknown): Date => {
   if (value instanceof Date) return value;
-  if (typeof value === 'number') return new Date(value);
+  if (typeof value === 'number') {
+    const ms = value < 1e12 ? value * 1000 : value;
+    return new Date(ms);
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return new Date(parsed);
+  }
   const maybe = value as { toDate?: () => Date };
   if (typeof maybe?.toDate === 'function') return maybe.toDate();
-  return new Date();
+  return new Date(0);
 };
 
 const mapRoutine = (routine: RoutineResponse): Routine => {
@@ -244,12 +251,17 @@ export const useExerciseHistory = (userId: string) => {
   const [history] = useState<ExerciseHistory[]>([]);
 
   const updateExerciseHistory = async (
-    _exerciseId: string,
-    _exerciseName: string,
-    _weights: number[],
-    _personalRecord: number
+    exerciseId: string,
+    exerciseName: string,
+    weights: number[],
+    personalRecord: number
   ) => {
     if (!userId) return;
+
+    void exerciseId;
+    void exerciseName;
+    void weights;
+    void personalRecord;
   };
 
   const getExerciseHistory = (exerciseId: string): ExerciseHistory | undefined => {

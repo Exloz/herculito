@@ -249,6 +249,25 @@ export const upsertExerciseLog = async (
   });
 };
 
+export const fetchExerciseLogsForDate = async (date: string): Promise<ExerciseLog[]> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  const data = await fetchJson<{ logs: unknown[] }>(`${origin}/v1/data/exercise-logs?date=${encodeURIComponent(date)}`, {
+    headers: { authorization: `Bearer ${token}` }
+  });
+
+  const logs = Array.isArray(data.logs) ? data.logs : [];
+  return logs.filter((value): value is ExerciseLog => {
+    const log = value as ExerciseLog;
+    return (
+      typeof log?.exerciseId === 'string' &&
+      typeof log?.userId === 'string' &&
+      typeof log?.date === 'string' &&
+      Array.isArray(log?.sets)
+    );
+  });
+};
+
 export const fetchWorkouts = async (): Promise<Workout[]> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();

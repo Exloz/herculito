@@ -30,7 +30,20 @@ const loadProgressFromStorage = (sessionId: string): ExerciseLog[] | null => {
       localStorage.removeItem(`${PROGRESS_KEY}_${sessionId}`);
       return null;
     }
-    return data.exerciseLogs;
+    const logs = data.exerciseLogs as ExerciseLog[];
+    // Rehydrate Date fields that were stringified.
+    logs.forEach((log) => {
+      (log.sets ?? []).forEach((set) => {
+        const completedAt = (set as unknown as { completedAt?: unknown }).completedAt;
+        if (typeof completedAt === 'string') {
+          const parsed = Date.parse(completedAt);
+          if (Number.isFinite(parsed)) {
+            (set as unknown as { completedAt?: Date }).completedAt = new Date(parsed);
+          }
+        }
+      });
+    });
+    return logs;
   } catch {
     localStorage.removeItem(`${PROGRESS_KEY}_${sessionId}`);
     return null;
@@ -44,6 +57,7 @@ interface ActiveWorkoutProps {
   sessions: WorkoutSession[];
   onBackToDashboard: (hasProgress: boolean) => void;
   onCompleteWorkout: (exerciseLogs: ExerciseLog[]) => void;
+  onUpdateProgress: (sessionId: string, exerciseLogs: ExerciseLog[]) => void | Promise<void>;
 }
 
 
@@ -53,7 +67,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   session,
   sessions,
   onBackToDashboard,
-  onCompleteWorkout
+  onCompleteWorkout,
+  onUpdateProgress
 }) => {
   const today = getCurrentDateString();
   const { updateExerciseLog, getLogForExercise } = useExerciseLogs(today, user.id);
@@ -94,6 +109,19 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       localStorage.removeItem(`${PROGRESS_KEY}_${session.id}`);
     }
   }, [exerciseLogs, session.id, hasProgress]);
+
+  useEffect(() => {
+    if (!session.id) return;
+    if (exerciseLogs.length === 0) return;
+
+    const timeoutId = setTimeout(() => {
+      onUpdateProgress(session.id, exerciseLogs);
+    }, 800);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [exerciseLogs, onUpdateProgress, session.id]);
 
   const lastWeights = useMemo(
     () => getLastWeightsForRoutineFromSessions(sessions, routine.id),

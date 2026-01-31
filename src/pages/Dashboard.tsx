@@ -63,7 +63,30 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
       return null;
     }
 
-    return data;
+    const toDate = (value: unknown): Date | undefined => {
+      if (!value) return undefined;
+      if (value instanceof Date) return value;
+      if (typeof value === 'number') {
+        const ms = value < 1e12 ? value * 1000 : value;
+        return new Date(ms);
+      }
+      if (typeof value === 'string') {
+        const parsed = Date.parse(value);
+        if (Number.isFinite(parsed)) return new Date(parsed);
+      }
+      return undefined;
+    };
+
+    const routine = data.routine as Routine;
+    const session = data.session as WorkoutSession;
+
+    routine.createdAt = toDate((routine as unknown as { createdAt?: unknown }).createdAt) ?? new Date(0);
+    routine.updatedAt = toDate((routine as unknown as { updatedAt?: unknown }).updatedAt) ?? new Date(0);
+
+    session.startedAt = toDate((session as unknown as { startedAt?: unknown }).startedAt) ?? new Date(0);
+    session.completedAt = toDate((session as unknown as { completedAt?: unknown }).completedAt);
+
+    return { routine, session };
   } catch {
     localStorage.removeItem(ACTIVE_WORKOUT_KEY);
     return null;
@@ -134,6 +157,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     loading: sessionsLoading,
     startWorkoutSession,
     completeWorkoutSession,
+    updateSessionProgress,
     getRecentSessions,
     getWorkoutStats
   } = useWorkoutSessions(user);
@@ -246,6 +270,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         sessions={sessions}
         onBackToDashboard={handleBackToDashboard}
         onCompleteWorkout={handleCompleteWorkout}
+        onUpdateProgress={updateSessionProgress}
       />
     );
   }

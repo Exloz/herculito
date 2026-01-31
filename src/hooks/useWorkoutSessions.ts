@@ -12,7 +12,14 @@ import {
 const toDate = (value: unknown): Date | undefined => {
   if (!value) return undefined;
   if (value instanceof Date) return value;
-  if (typeof value === 'number') return new Date(value);
+  if (typeof value === 'number') {
+    const ms = value < 1e12 ? value * 1000 : value;
+    return new Date(ms);
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return new Date(parsed);
+  }
   const maybe = value as { toDate?: () => Date };
   if (typeof maybe?.toDate === 'function') return maybe.toDate();
   return undefined;

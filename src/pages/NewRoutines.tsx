@@ -6,6 +6,7 @@ import { User, Routine, Exercise, MuscleGroup, ExerciseVideo } from '../types';
 import { useUI } from '../contexts/ui-context';
 import { formatDateInAppTimeZone } from '../utils/dateUtils';
 import { fetchMusclewikiSuggestions, fetchMusclewikiVideos } from '../utils/musclewikiApi';
+import { updateExerciseTemplate } from '../utils/dataApi';
 
 interface RoutinesProps {
   user: User;
@@ -146,20 +147,21 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
               ? exercise.video.pageUrl.split('/exercise/')[1]?.split('/')[0]
               : undefined);
 
-          if (needsVariants && existingSlug) {
-            const data = await fetchMusclewikiVideos(existingSlug);
-            const video: ExerciseVideo = {
-              provider: 'musclewiki',
-              slug: existingSlug,
-              url: exercise.video?.url || data.defaultVideoUrl,
-              pageUrl: exercise.video?.pageUrl || data.pageUrl,
-              variants: data.variants
-            };
-            nextExercises.push({ ...exercise, video });
-            routineChanged = true;
-            updated += 1;
-          } else {
-            const suggestions = await fetchMusclewikiSuggestions(exercise.name, 5);
+            if (needsVariants && existingSlug) {
+              const data = await fetchMusclewikiVideos(existingSlug);
+              const video: ExerciseVideo = {
+                provider: 'musclewiki',
+                slug: existingSlug,
+                url: exercise.video?.url || data.defaultVideoUrl,
+                pageUrl: exercise.video?.pageUrl || data.pageUrl,
+                variants: data.variants
+              };
+              await updateExerciseTemplate(exercise.id, { video });
+              nextExercises.push({ ...exercise, video });
+              routineChanged = true;
+              updated += 1;
+            } else {
+              const suggestions = await fetchMusclewikiSuggestions(exercise.name, 5);
             const best = suggestions[0];
             if (!best || best.score < threshold) {
               skipped += 1;
@@ -170,17 +172,18 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             }
 
             const data = await fetchMusclewikiVideos(best.slug);
-            const video: ExerciseVideo = {
-              provider: 'musclewiki',
-              slug: best.slug,
-              url: data.defaultVideoUrl,
-              pageUrl: data.pageUrl,
-              variants: data.variants
-            };
-            nextExercises.push({ ...exercise, video });
-            routineChanged = true;
-            updated += 1;
-          }
+              const video: ExerciseVideo = {
+                provider: 'musclewiki',
+                slug: best.slug,
+                url: data.defaultVideoUrl,
+                pageUrl: data.pageUrl,
+                variants: data.variants
+              };
+              await updateExerciseTemplate(exercise.id, { video });
+              nextExercises.push({ ...exercise, video });
+              routineChanged = true;
+              updated += 1;
+            }
         } catch {
           failed += 1;
           nextExercises.push(exercise);

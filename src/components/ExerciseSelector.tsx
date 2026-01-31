@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Plus, Search, ChevronDown, X, Loader, Play } from 'lucide-react';
-import { useExerciseTemplates, ExerciseTemplate } from '../hooks/useExerciseTemplates';
+import { useExerciseTemplates } from '../hooks/useExerciseTemplates';
 import { useAuth } from '../hooks/useAuth';
-import { Exercise, ExerciseVideo } from '../types';
+import { Exercise, ExerciseVideo, ExerciseTemplate } from '../types';
 import {
   fetchMusclewikiSuggestions,
   fetchMusclewikiVideos,
@@ -73,7 +73,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
   const handleSelectTemplate = async (template: ExerciseTemplate) => {
     const exercise: Exercise = {
-      id: `${template.id}_${Date.now()}`, // ID único para la rutina
+      id: template.id,
       name: template.name,
       sets: template.sets,
       reps: template.reps,
@@ -105,13 +105,13 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         customExercise.reps,
         customExercise.restTime,
         customExercise.description,
-        false, // No público por defecto
+        true,
         selectedVideo ?? undefined
       );
 
       // Crear el ejercicio para la rutina
       const exercise: Exercise = {
-        id: `${templateId}_${Date.now()}`,
+        id: templateId,
         name: customExercise.name,
         sets: customExercise.sets,
         reps: customExercise.reps,

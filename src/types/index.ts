@@ -36,6 +36,22 @@ export interface Exercise {
   video?: ExerciseVideo;
 }
 
+export interface ExerciseTemplate {
+  id: string;
+  name: string;
+  category: string;
+  sets: number;
+  reps: number;
+  restTime: number;
+  description?: string;
+  video?: ExerciseVideo;
+  createdBy: string;
+  createdByName?: string;
+  isPublic: boolean;
+  createdAt: Date;
+  timesUsed: number;
+}
+
 export interface WorkoutSet {
   setNumber: number;
   weight: number;

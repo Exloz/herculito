@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { Workout, ExerciseLog } from '../types';
+import { fetchWorkouts, upsertWorkout, upsertExerciseLog } from '../utils/dataApi';
 
 export const useWorkouts = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -11,18 +10,13 @@ export const useWorkouts = () => {
   useEffect(() => {
     const loadWorkouts = async () => {
       try {
-        // Crear rutina por defecto si no existe
-        await initializeDefaultRoutine();
-
-        const workoutsRef = collection(db, 'workouts');
-        const snapshot = await getDocs(workoutsRef);
-
-        const workoutsData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Workout[];
-
-        setWorkouts(workoutsData);
+        const data = await fetchWorkouts();
+        if (data.length === 0) {
+          const defaults = await initializeDefaultRoutine();
+          setWorkouts(defaults);
+        } else {
+          setWorkouts(data);
+        }
       } catch {
         setError('Error al cargar entrenamientos');
       } finally {
@@ -30,10 +24,10 @@ export const useWorkouts = () => {
       }
     };
 
-    loadWorkouts();
+    void loadWorkouts();
   }, []);
 
-  const initializeDefaultRoutine = async () => {
+  const initializeDefaultRoutine = async (): Promise<Workout[]> => {
     const defaultWorkouts: Workout[] = [
       {
         id: 'monday',
@@ -68,16 +62,16 @@ export const useWorkouts = () => {
     ];
 
     for (const workout of defaultWorkouts) {
-      await setDoc(doc(db, 'workouts', workout.id), workout, { merge: true });
+      await upsertWorkout(workout);
     }
+
+    return defaultWorkouts;
   };
 
   const updateWorkout = async (workout: Workout) => {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id, ...workoutData } = workout;
-      await updateDoc(doc(db, 'workouts', workout.id), workoutData);
-      setWorkouts(prev => prev.map(w => w.id === workout.id ? workout : w));
+      await upsertWorkout(workout);
+      setWorkouts((prev) => prev.map((w) => (w.id === workout.id ? workout : w)));
     } catch {
       setError('Error al actualizar entrenamiento');
     }
@@ -88,7 +82,7 @@ export const useWorkouts = () => {
 
 export const useExerciseLogs = (date: string, userId?: string) => {
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
-  const [loading, setLoading] = useState(false); // Cambiado a false para evitar carga infinita
+  const [loading, setLoading] = useState(false);
   const pendingWritesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendingPayloadRef = useRef<Map<string, ExerciseLog>>(new Map());
 
@@ -101,9 +95,9 @@ export const useExerciseLogs = (date: string, userId?: string) => {
     timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
 
     await Promise.all(
-      payloads.map(async ([logId, payload]) => {
+      payloads.map(async ([, payload]) => {
         try {
-          await setDoc(doc(db, 'exerciseLogs', logId), payload, { merge: true });
+          await upsertExerciseLog(payload.exerciseId, payload.date, payload.sets);
         } catch {
           // Error silencioso para logs
         }
@@ -112,8 +106,6 @@ export const useExerciseLogs = (date: string, userId?: string) => {
   }, []);
 
   useEffect(() => {
-    // Inicializar con estado vacío - esto permite que la funcionalidad básica funcione
-    // Los logs se crearán automáticamente cuando el usuario interactúe con los ejercicios
     setLogs([]);
     setLoading(false);
 
@@ -124,7 +116,6 @@ export const useExerciseLogs = (date: string, userId?: string) => {
 
   const updateExerciseLog = async (log: ExerciseLog) => {
     try {
-      // Asegurar que el log tenga todos los campos necesarios
       const logWithAllFields = {
         ...log,
         userId: log.userId || userId || '',
@@ -133,9 +124,8 @@ export const useExerciseLogs = (date: string, userId?: string) => {
 
       const logId = `${logWithAllFields.exerciseId}_${logWithAllFields.userId}_${logWithAllFields.date}`;
 
-      // Feedback inmediato en UI
-      setLogs(prevLogs => {
-        const existingIndex = prevLogs.findIndex(l =>
+      setLogs((prevLogs) => {
+        const existingIndex = prevLogs.findIndex((l) =>
           l.exerciseId === logWithAllFields.exerciseId &&
           l.userId === logWithAllFields.userId &&
           l.date === logWithAllFields.date
@@ -149,7 +139,6 @@ export const useExerciseLogs = (date: string, userId?: string) => {
         return [...prevLogs, logWithAllFields];
       });
 
-      // Persistencia con debounce para evitar escribir en Firestore en cada tecla
       pendingPayloadRef.current.set(logId, logWithAllFields);
       const existingTimeout = pendingWritesRef.current.get(logId);
       if (existingTimeout) {
@@ -162,7 +151,7 @@ export const useExerciseLogs = (date: string, userId?: string) => {
         pendingWritesRef.current.delete(logId);
         if (!payload) return;
         try {
-          await setDoc(doc(db, 'exerciseLogs', logId), payload, { merge: true });
+          await upsertExerciseLog(payload.exerciseId, payload.date, payload.sets);
         } catch {
           // Error silencioso para logs
         }
@@ -174,19 +163,17 @@ export const useExerciseLogs = (date: string, userId?: string) => {
     }
   };
 
-  const getLogForExercise = (exerciseId: string, userId: string) => {
-    // Buscar en el estado local primero
-    const localLog = logs.find(log =>
+  const getLogForExercise = (exerciseId: string, userIdValue: string) => {
+    const localLog = logs.find((log) =>
       log.exerciseId === exerciseId &&
-      log.userId === userId &&
+      log.userId === userIdValue &&
       log.date === date
     );
 
-    // Si no se encuentra, crear un log vacío por defecto
     if (!localLog) {
       return {
         exerciseId,
-        userId,
+        userId: userIdValue,
         date,
         sets: []
       };

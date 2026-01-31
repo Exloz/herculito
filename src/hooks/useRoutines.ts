@@ -1,21 +1,30 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  collection,
-  doc,
-  setDoc,
-  addDoc,
-  updateDoc,
-  onSnapshot,
-  query,
-  where,
-  deleteDoc,
-  increment,
-  type DocumentData,
-  type QuerySnapshot
-} from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { Routine, ExerciseHistory, Exercise, MuscleGroup } from '../types';
-import { getCurrentDateString } from '../utils/dateUtils';
+import {
+  fetchRoutines,
+  createExerciseTemplate as apiCreateExerciseTemplate,
+  createRoutine as apiCreateRoutine,
+  updateRoutine as apiUpdateRoutine,
+  deleteRoutine as apiDeleteRoutine,
+  incrementRoutineUsage as apiIncrementRoutineUsage,
+  type RoutineResponse
+} from '../utils/dataApi';
+
+const toDate = (value: unknown): Date => {
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') return new Date(value);
+  const maybe = value as { toDate?: () => Date };
+  if (typeof maybe?.toDate === 'function') return maybe.toDate();
+  return new Date();
+};
+
+const mapRoutine = (routine: RoutineResponse): Routine => {
+  return {
+    ...routine,
+    createdAt: toDate(routine.createdAt),
+    updatedAt: toDate(routine.updatedAt)
+  };
+};
 
 export const useRoutines = (userId: string) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -23,7 +32,7 @@ export const useRoutines = (userId: string) => {
   const [error, setError] = useState<string | null>(null);
   const initializedDefaultsRef = useRef(false);
 
-  useEffect(() => {
+  const loadRoutines = useCallback(async () => {
     if (!userId) {
       setLoading(false);
       return;
@@ -32,252 +41,184 @@ export const useRoutines = (userId: string) => {
     setLoading(true);
     setError(null);
 
-    const routinesRef = collection(db, 'routines');
+    try {
+      const data = await fetchRoutines();
+      const mapped = data.map(mapRoutine);
+      setRoutines(mapped);
 
-    let mineByCreatedBy: Routine[] = [];
-    let mineByUserId: Routine[] = [];
-    let publicByTrue: Routine[] = [];
-    let publicByMissing: Routine[] = [];
-
-    let initialSnapshotsRemaining = 4;
-
-    const toJsDate = (value: unknown): Date | undefined => {
-      if (!value) return undefined;
-      if (value instanceof Date) return value;
-      const maybe = value as { toDate?: () => Date };
-      if (typeof maybe.toDate === 'function') return maybe.toDate();
-      return undefined;
-    };
-
-    const mapSnapshot = (snapshot: QuerySnapshot<DocumentData>): Routine[] => {
-      return (snapshot as QuerySnapshot<DocumentData>).docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data,
-          createdAt: toJsDate(data.createdAt),
-          updatedAt: toJsDate(data.updatedAt),
-        };
-      }) as Routine[];
-    };
-
-    const updateCombined = () => {
-      const byId = new Map<string, Routine>();
-      [...publicByMissing, ...publicByTrue, ...mineByUserId, ...mineByCreatedBy].forEach((routine) => {
-        byId.set(routine.id, routine);
-      });
-
-      const combined = Array.from(byId.values());
-
-      combined.sort((a, b) => {
-        const aIsUser = a.createdBy === userId || a.userId === userId;
-        const bIsUser = b.createdBy === userId || b.userId === userId;
-
-        if (aIsUser && !bIsUser) return -1;
-        if (bIsUser && !aIsUser) return 1;
-
-        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-        return bTime - aTime;
-      });
-
-      setRoutines(combined);
-
-      if (initialSnapshotsRemaining === 0) {
-        setLoading(false);
-        const hasUserRoutines = combined.some((routine) => routine.createdBy === userId || routine.userId === userId);
-        if (!hasUserRoutines && !initializedDefaultsRef.current) {
-          initializedDefaultsRef.current = true;
-          setTimeout(() => {
-            void initializeDefaultRoutines();
-          }, 0);
-        }
+      const hasUserRoutines = mapped.some((routine) => routine.createdBy === userId || routine.userId === userId);
+      if (!hasUserRoutines && !initializedDefaultsRef.current) {
+        initializedDefaultsRef.current = true;
+        setTimeout(() => {
+          void initializeDefaultRoutines();
+        }, 0);
       }
-    };
-
-    const handleInitialSnapshot = () => {
-      if (initialSnapshotsRemaining > 0) {
-        initialSnapshotsRemaining -= 1;
-        if (initialSnapshotsRemaining === 0) {
-          updateCombined();
-        }
-      }
-    };
-
-    const unsubMineByCreatedBy = onSnapshot(
-      query(routinesRef, where('createdBy', '==', userId)),
-      (snapshot) => {
-        mineByCreatedBy = mapSnapshot(snapshot);
-        handleInitialSnapshot();
-        updateCombined();
-      },
-      (err) => {
-        setError('Error al cargar rutinas: ' + err.message);
-        setLoading(false);
-      }
-    );
-
-    const unsubMineByUserId = onSnapshot(
-      query(routinesRef, where('userId', '==', userId)),
-      (snapshot) => {
-        mineByUserId = mapSnapshot(snapshot);
-        handleInitialSnapshot();
-        updateCombined();
-      },
-      (err) => {
-        setError('Error al cargar rutinas: ' + err.message);
-        setLoading(false);
-      }
-    );
-
-    const unsubPublicByTrue = onSnapshot(
-      query(routinesRef, where('isPublic', '==', true)),
-      (snapshot) => {
-        publicByTrue = mapSnapshot(snapshot);
-        handleInitialSnapshot();
-        updateCombined();
-      },
-      (err) => {
-        setError('Error al cargar rutinas: ' + err.message);
-        setLoading(false);
-      }
-    );
-
-    const unsubPublicByMissing = onSnapshot(
-      query(routinesRef, where('isPublic', '==', null)),
-      (snapshot) => {
-        publicByMissing = mapSnapshot(snapshot);
-        handleInitialSnapshot();
-        updateCombined();
-      },
-      (err) => {
-        setError('Error al cargar rutinas: ' + err.message);
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      unsubMineByCreatedBy();
-      unsubMineByUserId();
-      unsubPublicByTrue();
-      unsubPublicByMissing();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al cargar rutinas';
+      setError(`Error al cargar rutinas: ${message}`);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
 
-  const createRoutine = useCallback(async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true, primaryMuscleGroup?: MuscleGroup, createdByName?: string) => {
-    const routine: Omit<Routine, 'id'> = {
+  useEffect(() => {
+    void loadRoutines();
+  }, [loadRoutines]);
+
+  const createRoutine = useCallback(async (
+    name: string,
+    description: string,
+    exercises: Exercise[],
+    isPublic: boolean = true,
+    primaryMuscleGroup?: MuscleGroup,
+    createdByName?: string
+  ) => {
+    const routine = await apiCreateRoutine({
       name,
       description,
       exercises,
-      createdBy: userId,
-      createdByName: createdByName || 'Usuario',
       isPublic,
-      timesUsed: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      primaryMuscleGroup
-    };
+      primaryMuscleGroup,
+      createdByName
+    });
 
-    const routinesRef = collection(db, 'routines');
-    const docRef = await addDoc(routinesRef, routine);
-
-    return docRef.id;
-  }, [userId]);
+    const mapped = mapRoutine(routine);
+    setRoutines((prev) => [mapped, ...prev]);
+    return mapped.id;
+  }, []);
 
   const updateRoutine = useCallback(async (routineId: string, updates: Partial<Routine>) => {
-    const routineRef = doc(db, 'routines', routineId);
-    await updateDoc(routineRef, {
-      ...updates,
-      updatedAt: new Date(),
+    await apiUpdateRoutine(routineId, {
+      name: updates.name,
+      description: updates.description,
+      exercises: updates.exercises,
+      isPublic: updates.isPublic,
+      primaryMuscleGroup: updates.primaryMuscleGroup
     });
+
+    setRoutines((prev) =>
+      prev.map((routine) =>
+        routine.id === routineId
+          ? {
+            ...routine,
+            ...updates,
+            updatedAt: new Date()
+          }
+          : routine
+      )
+    );
   }, []);
 
   const deleteRoutine = async (routineId: string) => {
-    const routineRef = doc(db, 'routines', routineId);
-    await deleteDoc(routineRef);
+    await apiDeleteRoutine(routineId);
+    setRoutines((prev) => prev.filter((routine) => routine.id !== routineId));
   };
 
-  // Función para incrementar el contador de uso cuando alguien ejecuta una rutina
   const incrementRoutineUsage = async (routineId: string) => {
-    const routineRef = doc(db, 'routines', routineId);
-    await updateDoc(routineRef, {
-      timesUsed: increment(1)
-    });
+    await apiIncrementRoutineUsage(routineId);
+    setRoutines((prev) =>
+      prev.map((routine) =>
+        routine.id === routineId
+          ? { ...routine, timesUsed: (routine.timesUsed || 0) + 1 }
+          : routine
+      )
+    );
   };
 
-  // Verificar si el usuario actual es el creador de la rutina
   const canEditRoutine = (routine: Routine): boolean => {
     return routine.createdBy === userId || routine.userId === userId;
   };
 
-  // Obtener rutinas públicas vs propias
   const getPublicRoutines = (): Routine[] => {
-    return routines.filter(r => {
-      const isPublic = r.isPublic !== false; // true si es undefined o true
-      const isFromOtherUser = (r.createdBy && r.createdBy !== userId) || (r.userId && r.userId !== userId);
-      // If there is no owner metadata, treat as community/public.
-      const hasKnownOwner = !!r.createdBy || !!r.userId;
+    return routines.filter((routine) => {
+      const isPublic = routine.isPublic !== false;
+      const isFromOtherUser = (routine.createdBy && routine.createdBy !== userId) || (routine.userId && routine.userId !== userId);
+      const hasKnownOwner = !!routine.createdBy || !!routine.userId;
       return isPublic && (!hasKnownOwner || isFromOtherUser);
     });
   };
 
   const getUserRoutines = (): Routine[] => {
-    return routines.filter(r =>
-      r.createdBy === userId || r.userId === userId
+    return routines.filter((routine) =>
+      routine.createdBy === userId || routine.userId === userId
     );
   };
 
   const initializeDefaultRoutines = async () => {
+    const ensureExercise = async (exercise: { name: string; category: string; sets: number; reps: number; restTime: number }) => {
+      const created = await apiCreateExerciseTemplate({
+        name: exercise.name,
+        category: exercise.category,
+        sets: exercise.sets,
+        reps: exercise.reps,
+        restTime: exercise.restTime,
+        description: 'Ejercicio básico',
+        isPublic: true,
+        createdByName: 'Sistema'
+      });
+      return created.id;
+    };
+
     const defaultRoutines = [
       {
         name: 'Pecho y Tríceps',
         description: 'Rutina enfocada en pecho y tríceps',
         exercises: [
-          { id: 'bench_press', name: 'Press de Banca', sets: 4, reps: 8, restTime: 180 },
-          { id: 'incline_press', name: 'Press Inclinado', sets: 3, reps: 10, restTime: 120 },
-          { id: 'flyes', name: 'Aperturas con Mancuernas', sets: 3, reps: 12, restTime: 90 },
-          { id: 'tricep_dips', name: 'Fondos en Paralelas', sets: 3, reps: 12, restTime: 90 },
-          { id: 'tricep_extension', name: 'Extensión de Tríceps', sets: 3, reps: 15, restTime: 60 }
+          { name: 'Press de Banca', category: 'Pecho', sets: 4, reps: 8, restTime: 180 },
+          { name: 'Press Inclinado', category: 'Pecho', sets: 3, reps: 10, restTime: 120 },
+          { name: 'Aperturas con Mancuernas', category: 'Pecho', sets: 3, reps: 12, restTime: 90 },
+          { name: 'Fondos en Paralelas', category: 'Tríceps', sets: 3, reps: 12, restTime: 90 },
+          { name: 'Extensión de Tríceps', category: 'Tríceps', sets: 3, reps: 15, restTime: 60 }
         ]
       },
       {
         name: 'Espalda y Bíceps',
         description: 'Rutina enfocada en espalda y bíceps',
         exercises: [
-          { id: 'pull_ups', name: 'Dominadas', sets: 4, reps: 8, restTime: 180 },
-          { id: 'barbell_rows', name: 'Remo con Barra', sets: 4, reps: 10, restTime: 120 },
-          { id: 'lat_pulldown', name: 'Jalones al Pecho', sets: 3, reps: 12, restTime: 90 },
-          { id: 'bicep_curls', name: 'Curl de Bíceps', sets: 3, reps: 12, restTime: 90 },
-          { id: 'hammer_curls', name: 'Curl Martillo', sets: 3, reps: 15, restTime: 60 }
+          { name: 'Dominadas', category: 'Espalda', sets: 4, reps: 8, restTime: 180 },
+          { name: 'Remo con Barra', category: 'Espalda', sets: 4, reps: 10, restTime: 120 },
+          { name: 'Jalones al Pecho', category: 'Espalda', sets: 3, reps: 12, restTime: 90 },
+          { name: 'Curl de Bíceps', category: 'Bíceps', sets: 3, reps: 12, restTime: 90 },
+          { name: 'Curl Martillo', category: 'Bíceps', sets: 3, reps: 15, restTime: 60 }
         ]
       },
       {
         name: 'Piernas',
         description: 'Rutina completa de piernas',
         exercises: [
-          { id: 'squats', name: 'Sentadillas', sets: 4, reps: 10, restTime: 180 },
-          { id: 'deadlifts', name: 'Peso Muerto', sets: 4, reps: 8, restTime: 180 },
-          { id: 'leg_press', name: 'Prensa de Piernas', sets: 3, reps: 15, restTime: 120 },
-          { id: 'leg_curls', name: 'Curl de Femorales', sets: 3, reps: 12, restTime: 90 },
-          { id: 'calf_raises', name: 'Elevación de Gemelos', sets: 4, reps: 20, restTime: 60 }
+          { name: 'Sentadillas', category: 'Piernas', sets: 4, reps: 10, restTime: 180 },
+          { name: 'Peso Muerto', category: 'Espalda', sets: 4, reps: 8, restTime: 180 },
+          { name: 'Prensa de Piernas', category: 'Piernas', sets: 3, reps: 15, restTime: 120 },
+          { name: 'Curl de Femorales', category: 'Piernas', sets: 3, reps: 12, restTime: 90 },
+          { name: 'Elevación de Gemelos', category: 'Piernas', sets: 4, reps: 20, restTime: 60 }
         ]
       },
       {
         name: 'Hombros',
         description: 'Rutina enfocada en hombros',
         exercises: [
-          { id: 'overhead_press', name: 'Press Militar', sets: 4, reps: 10, restTime: 120 },
-          { id: 'lateral_raises', name: 'Elevaciones Laterales', sets: 3, reps: 15, restTime: 60 },
-          { id: 'rear_delt_fly', name: 'Vuelos Posteriores', sets: 3, reps: 15, restTime: 60 },
-          { id: 'upright_rows', name: 'Remo al Mentón', sets: 3, reps: 12, restTime: 60 }
+          { name: 'Press Militar', category: 'Hombros', sets: 4, reps: 10, restTime: 120 },
+          { name: 'Elevaciones Laterales', category: 'Hombros', sets: 3, reps: 15, restTime: 60 },
+          { name: 'Vuelos Posteriores', category: 'Hombros', sets: 3, reps: 15, restTime: 60 },
+          { name: 'Remo al Mentón', category: 'Hombros', sets: 3, reps: 12, restTime: 60 }
         ]
       }
     ];
 
     try {
       for (const routine of defaultRoutines) {
-        await createRoutine(routine.name, routine.description, routine.exercises, true, undefined, 'Sistema'); // Públicas por defecto
+        const exercises = [] as Exercise[];
+        for (const exercise of routine.exercises) {
+          const exerciseId = await ensureExercise(exercise);
+          exercises.push({
+            id: exerciseId,
+            name: exercise.name,
+            sets: exercise.sets,
+            reps: exercise.reps,
+            restTime: exercise.restTime
+          });
+        }
+        await createRoutine(routine.name, routine.description, exercises, true, undefined, 'Sistema');
       }
     } catch {
       // Error silenciado para inicialización por defecto
@@ -299,51 +240,20 @@ export const useRoutines = (userId: string) => {
   };
 };
 
-
 export const useExerciseHistory = (userId: string) => {
-  const [history, setHistory] = useState<ExerciseHistory[]>([]);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const historyRef = collection(db, 'exerciseHistory');
-    const q = query(historyRef, where('userId', '==', userId));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const historyData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as unknown as ExerciseHistory[];
-
-      setHistory(historyData);
-    });
-
-    return () => unsubscribe();
-  }, [userId]);
+  const [history] = useState<ExerciseHistory[]>([]);
 
   const updateExerciseHistory = async (
-    exerciseId: string,
-    exerciseName: string,
-    weights: number[],
-    personalRecord: number
+    _exerciseId: string,
+    _exerciseName: string,
+    _weights: number[],
+    _personalRecord: number
   ) => {
-    try {
-      const historyRef = doc(db, 'exerciseHistory', `${exerciseId}_${userId}`);
-      await setDoc(historyRef, {
-        exerciseId,
-        exerciseName,
-        userId,
-        lastWeight: weights,
-        lastDate: getCurrentDateString(),
-        personalRecord,
-      }, { merge: true });
-    } catch {
-      // Error silenciado para historial de ejercicios
-    }
+    if (!userId) return;
   };
 
   const getExerciseHistory = (exerciseId: string): ExerciseHistory | undefined => {
-    return history.find(h => h.exerciseId === exerciseId);
+    return history.find((entry) => entry.exerciseId === exerciseId);
   };
 
   return {

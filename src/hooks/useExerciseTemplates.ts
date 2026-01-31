@@ -1,33 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ExerciseTemplate, ExerciseVideo } from '../types';
 import {
-  collection,
-  doc,
-  addDoc,
-  onSnapshot,
-  query,
-  updateDoc,
-  increment,
-  where,
-  type DocumentData,
-  type QuerySnapshot
-} from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { ExerciseVideo } from '../types';
+  fetchExercises,
+  createExerciseTemplate as apiCreateExerciseTemplate,
+  updateExerciseTemplate as apiUpdateExerciseTemplate,
+  incrementExerciseUsage as apiIncrementExerciseUsage,
+  type ExerciseTemplateResponse
+} from '../utils/dataApi';
 
-export interface ExerciseTemplate {
-  id: string;
-  name: string;
-  category: string;
-  sets: number;
-  reps: number;
-  restTime: number;
-  description?: string;
-  video?: ExerciseVideo;
-  createdBy: string; // userId del creador
-  isPublic: boolean; // si es público para todos los usuarios
-  createdAt: Date;
-  timesUsed: number; // cuántas veces se ha usado
-}
+const toDate = (value: unknown): Date => {
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') return new Date(value);
+  const maybe = value as { toDate?: () => Date };
+  if (typeof maybe?.toDate === 'function') return maybe.toDate();
+  return new Date();
+};
+
+const mapExercise = (exercise: ExerciseTemplateResponse): ExerciseTemplate => {
+  return {
+    ...exercise,
+    createdAt: toDate(exercise.createdAt)
+  };
+};
 
 export const useExerciseTemplates = (userId: string) => {
   const [exercises, setExercises] = useState<ExerciseTemplate[]>([]);
@@ -35,118 +29,45 @@ export const useExerciseTemplates = (userId: string) => {
   const [error, setError] = useState<string | null>(null);
   const initializedDefaultsRef = useRef(false);
 
-  useEffect(() => {
+  const sortExercises = useCallback((items: ExerciseTemplate[]) => {
+    return [...items].sort((a, b) => {
+      if (a.createdBy === userId && b.createdBy !== userId) return -1;
+      if (b.createdBy === userId && a.createdBy !== userId) return 1;
+      return (b.timesUsed || 0) - (a.timesUsed || 0);
+    });
+  }, [userId]);
+
+  const loadExercises = useCallback(async () => {
     if (!userId) {
       setLoading(false);
       return;
     }
 
-    const exercisesRef = collection(db, 'exerciseTemplates');
     setLoading(true);
     setError(null);
 
-    let mine: ExerciseTemplate[] = [];
-    let publicByTrue: ExerciseTemplate[] = [];
-    let publicByMissing: ExerciseTemplate[] = [];
-    let initialSnapshotsRemaining = 3;
+    try {
+      const data = await fetchExercises();
+      const mapped = data.map(mapExercise);
+      const sorted = sortExercises(mapped);
+      setExercises(sorted);
 
-    const toJsDate = (value: unknown): Date | undefined => {
-      if (!value) return undefined;
-      if (value instanceof Date) return value;
-      const maybe = value as { toDate?: () => Date };
-      if (typeof maybe.toDate === 'function') return maybe.toDate();
-      return undefined;
-    };
-
-    const mapSnapshot = (snapshot: QuerySnapshot<DocumentData>): ExerciseTemplate[] => {
-      return snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data,
-          createdAt: toJsDate(data.createdAt) ?? new Date(),
-        };
-      }) as ExerciseTemplate[];
-    };
-
-    const updateCombined = () => {
-      const byId = new Map<string, ExerciseTemplate>();
-      [...publicByMissing, ...publicByTrue, ...mine].forEach((exercise) => {
-        byId.set(exercise.id, exercise);
-      });
-
-      const combined = Array.from(byId.values());
-      combined.sort((a, b) => {
-        if (a.createdBy === userId && b.createdBy !== userId) return -1;
-        if (b.createdBy === userId && a.createdBy !== userId) return 1;
-        return (b.timesUsed || 0) - (a.timesUsed || 0);
-      });
-
-      setExercises(combined);
-
-      if (initialSnapshotsRemaining === 0) {
-        setLoading(false);
-        if (!initializedDefaultsRef.current && !combined.some((ex) => ex.isPublic)) {
-          initializedDefaultsRef.current = true;
-          setTimeout(() => {
-            void initializeBasicExercises();
-          }, 0);
-        }
+      if (!initializedDefaultsRef.current && !sorted.some((ex) => ex.isPublic)) {
+        initializedDefaultsRef.current = true;
+        setTimeout(() => {
+          void initializeBasicExercises();
+        }, 0);
       }
-    };
+    } catch {
+      setError('Error al cargar ejercicios');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId, sortExercises]);
 
-    const handleInitialSnapshot = () => {
-      if (initialSnapshotsRemaining > 0) {
-        initialSnapshotsRemaining -= 1;
-      }
-    };
-
-    const unsubMine = onSnapshot(
-      query(exercisesRef, where('createdBy', '==', userId)),
-      (snapshot) => {
-        mine = mapSnapshot(snapshot);
-        handleInitialSnapshot();
-        updateCombined();
-      },
-      () => {
-        setError('Error al cargar ejercicios');
-        setLoading(false);
-      }
-    );
-
-    const unsubPublicTrue = onSnapshot(
-      query(exercisesRef, where('isPublic', '==', true)),
-      (snapshot) => {
-        publicByTrue = mapSnapshot(snapshot);
-        handleInitialSnapshot();
-        updateCombined();
-      },
-      () => {
-        setError('Error al cargar ejercicios');
-        setLoading(false);
-      }
-    );
-
-    const unsubPublicMissing = onSnapshot(
-      query(exercisesRef, where('isPublic', '==', null)),
-      (snapshot) => {
-        publicByMissing = mapSnapshot(snapshot);
-        handleInitialSnapshot();
-        updateCombined();
-      },
-      () => {
-        setError('Error al cargar ejercicios');
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      unsubMine();
-      unsubPublicTrue();
-      unsubPublicMissing();
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  useEffect(() => {
+    void loadExercises();
+  }, [loadExercises]);
 
   const createExerciseTemplate = async (
     name: string,
@@ -155,7 +76,7 @@ export const useExerciseTemplates = (userId: string) => {
     reps: number,
     restTime: number,
     description?: string,
-    isPublic: boolean = false,
+    isPublic: boolean = true,
     video?: ExerciseVideo
   ) => {
     if (!userId) {
@@ -163,24 +84,20 @@ export const useExerciseTemplates = (userId: string) => {
     }
 
     try {
-      const template: Omit<ExerciseTemplate, 'id'> = {
+      const created = await apiCreateExerciseTemplate({
         name,
         category,
         sets,
         reps,
         restTime,
         description,
-        ...(video ? { video } : {}),
-        createdBy: userId,
         isPublic,
-        createdAt: new Date(),
-        timesUsed: 0
-      };
+        video
+      });
 
-      const templatesRef = collection(db, 'exerciseTemplates');
-      const docRef = await addDoc(templatesRef, template);
-      
-      return docRef.id;
+      const mapped = mapExercise(created);
+      setExercises((prev) => sortExercises([mapped, ...prev]));
+      return created.id;
     } catch (error) {
       setError('Error al crear ejercicio');
       throw error;
@@ -189,20 +106,37 @@ export const useExerciseTemplates = (userId: string) => {
 
   const incrementUsage = async (exerciseId: string) => {
     try {
-      const exerciseRef = doc(db, 'exerciseTemplates', exerciseId);
-      // Incrementar timesUsed usando Firebase increment
-      await updateDoc(exerciseRef, {
-        timesUsed: increment(1)
-      });
-     } catch {
-       // Error silenciado para incremento de uso
-     }
+      await apiIncrementExerciseUsage(exerciseId);
+      setExercises((prev) =>
+        prev.map((exercise) =>
+          exercise.id === exerciseId
+            ? { ...exercise, timesUsed: (exercise.timesUsed || 0) + 1 }
+            : exercise
+        )
+      );
+    } catch {
+      // Error silenciado para incremento de uso
+    }
   };
 
   const updateExerciseTemplate = async (exerciseId: string, updates: Partial<ExerciseTemplate>) => {
     try {
-      const exerciseRef = doc(db, 'exerciseTemplates', exerciseId);
-      await updateDoc(exerciseRef, updates);
+      await apiUpdateExerciseTemplate(exerciseId, {
+        name: updates.name,
+        category: updates.category,
+        sets: updates.sets,
+        reps: updates.reps,
+        restTime: updates.restTime,
+        description: updates.description,
+        isPublic: updates.isPublic,
+        video: updates.video
+      });
+
+      setExercises((prev) =>
+        prev.map((exercise) =>
+          exercise.id === exerciseId ? { ...exercise, ...updates } : exercise
+        )
+      );
     } catch {
       setError('Error al actualizar ejercicio');
       throw new Error('update_failed');
@@ -210,28 +144,28 @@ export const useExerciseTemplates = (userId: string) => {
   };
 
   const getCategories = (): string[] => {
-    const categories = [...new Set(exercises.map(ex => ex.category))].sort();
+    const categories = [...new Set(exercises.map((ex) => ex.category))].sort();
     return categories;
   };
 
   const getExercisesByCategory = (category: string): ExerciseTemplate[] => {
-    return exercises.filter(ex => ex.category === category);
+    return exercises.filter((ex) => ex.category === category);
   };
 
   const searchExercises = (searchTerm: string, category?: string): ExerciseTemplate[] => {
     let filtered = exercises;
-    
+
     if (category) {
-      filtered = filtered.filter(ex => ex.category === category);
+      filtered = filtered.filter((ex) => ex.category === category);
     }
-    
+
     if (searchTerm) {
-      filtered = filtered.filter(ex => 
+      filtered = filtered.filter((ex) =>
         ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         ex.category.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     return filtered;
   };
 
@@ -248,7 +182,7 @@ export const useExerciseTemplates = (userId: string) => {
       { name: 'Sentadillas', category: 'Piernas', sets: 4, reps: 12, restTime: 120 },
       { name: 'Zancadas', category: 'Piernas', sets: 3, reps: 12, restTime: 90 },
       { name: 'Curl de Bíceps', category: 'Bíceps', sets: 3, reps: 12, restTime: 60 },
-      { name: 'Fondos de Tríceps', category: 'Tríceps', sets: 3, reps: 15, restTime: 60 },
+      { name: 'Fondos de Tríceps', category: 'Tríceps', sets: 3, reps: 15, restTime: 60 }
     ];
 
     try {
@@ -260,12 +194,12 @@ export const useExerciseTemplates = (userId: string) => {
           exercise.reps,
           exercise.restTime,
           'Ejercicio básico',
-          true // Público
+          true
         );
       }
-     } catch {
-       // Error silenciado para ejercicios básicos
-     }
+    } catch {
+      // Error silenciado para ejercicios básicos
+    }
   };
 
   return {

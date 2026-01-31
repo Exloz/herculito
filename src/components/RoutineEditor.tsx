@@ -23,8 +23,14 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [isPublic, setIsPublic] = useState(routine?.isPublic ?? true);
   const [primaryMuscleGroup, setPrimaryMuscleGroup] = useState<MuscleGroup>(routine?.primaryMuscleGroup || 'fullbody');
+  const [exerciseError, setExerciseError] = useState('');
 
   const handleAddExercise = (exercise: Exercise) => {
+    if (exercises.some((existing) => existing.id === exercise.id)) {
+      setExerciseError('Este ejercicio ya esta en la rutina.');
+      return;
+    }
+    if (exerciseError) setExerciseError('');
     const newExercises = [...exercises, exercise];
     setExercises(newExercises);
 
@@ -203,6 +209,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+            {exerciseError && (
+              <div className="mt-3 text-sm text-amberGlow">
+                {exerciseError}
               </div>
             )}
           </div>

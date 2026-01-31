@@ -97,7 +97,7 @@ export const useExerciseLogs = (date: string, userId?: string) => {
     await Promise.all(
       payloads.map(async ([, payload]) => {
         try {
-          await upsertExerciseLog(payload.exerciseId, payload.date, payload.sets);
+          await upsertExerciseLog(payload.exerciseId, payload.date, payload.sets, payload.userId);
         } catch {
           // Error silencioso para logs
         }
@@ -151,7 +151,7 @@ export const useExerciseLogs = (date: string, userId?: string) => {
         pendingWritesRef.current.delete(logId);
         if (!payload) return;
         try {
-          await upsertExerciseLog(payload.exerciseId, payload.date, payload.sets);
+          await upsertExerciseLog(payload.exerciseId, payload.date, payload.sets, payload.userId);
         } catch {
           // Error silencioso para logs
         }

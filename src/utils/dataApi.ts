@@ -231,7 +231,12 @@ export const completeSession = async (sessionId: string, exercises: ExerciseLog[
   });
 };
 
-export const upsertExerciseLog = async (exerciseId: string, date: string, sets: ExerciseLog['sets']): Promise<void> => {
+export const upsertExerciseLog = async (
+  exerciseId: string,
+  date: string,
+  sets: ExerciseLog['sets'],
+  userId?: string
+): Promise<void> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();
   await fetchJson<{ ok: boolean }>(`${origin}/v1/data/exercise-logs`, {
@@ -240,7 +245,7 @@ export const upsertExerciseLog = async (exerciseId: string, date: string, sets: 
       'content-type': 'application/json',
       authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({ exerciseId, date, sets })
+    body: JSON.stringify({ exerciseId, date, sets, userId })
   });
 };
 

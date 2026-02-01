@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ExerciseTemplate, ExerciseVideo } from '../types';
 import {
   fetchExercises,
@@ -34,7 +34,6 @@ export const useExerciseTemplates = (userId: string) => {
   const [exercises, setExercises] = useState<ExerciseTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const initializedDefaultsRef = useRef(false);
 
   const sortExercises = useCallback((items: ExerciseTemplate[]) => {
     return [...items].sort((a, b) => {
@@ -58,13 +57,6 @@ export const useExerciseTemplates = (userId: string) => {
       const mapped = data.map(mapExercise);
       const sorted = sortExercises(mapped);
       setExercises(sorted);
-
-      if (!initializedDefaultsRef.current && !sorted.some((ex) => ex.isPublic)) {
-        initializedDefaultsRef.current = true;
-        setTimeout(() => {
-          void initializeBasicExercises();
-        }, 0);
-      }
     } catch {
       setError('Error al cargar ejercicios');
     } finally {
@@ -176,39 +168,6 @@ export const useExerciseTemplates = (userId: string) => {
     return filtered;
   };
 
-  const initializeBasicExercises = async () => {
-    const basicExercises = [
-      { name: 'Press de Banca', category: 'Pecho', sets: 4, reps: 10, restTime: 120 },
-      { name: 'Press Inclinado', category: 'Pecho', sets: 3, reps: 12, restTime: 90 },
-      { name: 'Flexiones', category: 'Pecho', sets: 3, reps: 15, restTime: 60 },
-      { name: 'Peso Muerto', category: 'Espalda', sets: 4, reps: 8, restTime: 150 },
-      { name: 'Dominadas', category: 'Espalda', sets: 3, reps: 10, restTime: 90 },
-      { name: 'Remo con Barra', category: 'Espalda', sets: 4, reps: 10, restTime: 90 },
-      { name: 'Press Militar', category: 'Hombros', sets: 4, reps: 10, restTime: 120 },
-      { name: 'Elevaciones Laterales', category: 'Hombros', sets: 3, reps: 15, restTime: 60 },
-      { name: 'Sentadillas', category: 'Piernas', sets: 4, reps: 12, restTime: 120 },
-      { name: 'Zancadas', category: 'Piernas', sets: 3, reps: 12, restTime: 90 },
-      { name: 'Curl de Bíceps', category: 'Bíceps', sets: 3, reps: 12, restTime: 60 },
-      { name: 'Fondos de Tríceps', category: 'Tríceps', sets: 3, reps: 15, restTime: 60 }
-    ];
-
-    try {
-      for (const exercise of basicExercises) {
-        await createExerciseTemplate(
-          exercise.name,
-          exercise.category,
-          exercise.sets,
-          exercise.reps,
-          exercise.restTime,
-          'Ejercicio básico',
-          true
-        );
-      }
-    } catch {
-      // Error silenciado para ejercicios básicos
-    }
-  };
-
   return {
     exercises,
     loading,
@@ -218,7 +177,6 @@ export const useExerciseTemplates = (userId: string) => {
     incrementUsage,
     getCategories,
     getExercisesByCategory,
-    searchExercises,
-    initializeBasicExercises
+    searchExercises
   };
 };

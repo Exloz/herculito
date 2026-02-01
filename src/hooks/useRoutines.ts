@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Routine, ExerciseHistory, Exercise, MuscleGroup } from '../types';
 import {
   fetchRoutines,
-  createExerciseTemplate as apiCreateExerciseTemplate,
   createRoutine as apiCreateRoutine,
   updateRoutine as apiUpdateRoutine,
   deleteRoutine as apiDeleteRoutine,
@@ -37,7 +36,6 @@ export const useRoutines = (userId: string) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const initializedDefaultsRef = useRef(false);
 
   const loadRoutines = useCallback(async () => {
     if (!userId) {
@@ -52,14 +50,6 @@ export const useRoutines = (userId: string) => {
       const data = await fetchRoutines();
       const mapped = data.map(mapRoutine);
       setRoutines(mapped);
-
-      const hasUserRoutines = mapped.some((routine) => routine.createdBy === userId || routine.userId === userId);
-      if (!hasUserRoutines && !initializedDefaultsRef.current) {
-        initializedDefaultsRef.current = true;
-        setTimeout(() => {
-          void initializeDefaultRoutines();
-        }, 0);
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al cargar rutinas';
       setError(`Error al cargar rutinas: ${message}`);
@@ -139,9 +129,10 @@ export const useRoutines = (userId: string) => {
   const getPublicRoutines = (): Routine[] => {
     return routines.filter((routine) => {
       const isPublic = routine.isPublic !== false;
-      const isFromOtherUser = (routine.createdBy && routine.createdBy !== userId) || (routine.userId && routine.userId !== userId);
-      const hasKnownOwner = !!routine.createdBy || !!routine.userId;
-      return isPublic && (!hasKnownOwner || isFromOtherUser);
+      const owner = routine.createdBy || routine.userId;
+      if (!owner) return false;
+      if (owner === 'system') return false;
+      return isPublic && owner !== userId;
     });
   };
 
@@ -149,87 +140,6 @@ export const useRoutines = (userId: string) => {
     return routines.filter((routine) =>
       routine.createdBy === userId || routine.userId === userId
     );
-  };
-
-  const initializeDefaultRoutines = async () => {
-    const ensureExercise = async (exercise: { name: string; category: string; sets: number; reps: number; restTime: number }) => {
-      const created = await apiCreateExerciseTemplate({
-        name: exercise.name,
-        category: exercise.category,
-        sets: exercise.sets,
-        reps: exercise.reps,
-        restTime: exercise.restTime,
-        description: 'Ejercicio básico',
-        isPublic: true,
-        createdByName: 'Sistema'
-      });
-      return created.id;
-    };
-
-    const defaultRoutines = [
-      {
-        name: 'Pecho y Tríceps',
-        description: 'Rutina enfocada en pecho y tríceps',
-        exercises: [
-          { name: 'Press de Banca', category: 'Pecho', sets: 4, reps: 8, restTime: 180 },
-          { name: 'Press Inclinado', category: 'Pecho', sets: 3, reps: 10, restTime: 120 },
-          { name: 'Aperturas con Mancuernas', category: 'Pecho', sets: 3, reps: 12, restTime: 90 },
-          { name: 'Fondos en Paralelas', category: 'Tríceps', sets: 3, reps: 12, restTime: 90 },
-          { name: 'Extensión de Tríceps', category: 'Tríceps', sets: 3, reps: 15, restTime: 60 }
-        ]
-      },
-      {
-        name: 'Espalda y Bíceps',
-        description: 'Rutina enfocada en espalda y bíceps',
-        exercises: [
-          { name: 'Dominadas', category: 'Espalda', sets: 4, reps: 8, restTime: 180 },
-          { name: 'Remo con Barra', category: 'Espalda', sets: 4, reps: 10, restTime: 120 },
-          { name: 'Jalones al Pecho', category: 'Espalda', sets: 3, reps: 12, restTime: 90 },
-          { name: 'Curl de Bíceps', category: 'Bíceps', sets: 3, reps: 12, restTime: 90 },
-          { name: 'Curl Martillo', category: 'Bíceps', sets: 3, reps: 15, restTime: 60 }
-        ]
-      },
-      {
-        name: 'Piernas',
-        description: 'Rutina completa de piernas',
-        exercises: [
-          { name: 'Sentadillas', category: 'Piernas', sets: 4, reps: 10, restTime: 180 },
-          { name: 'Peso Muerto', category: 'Espalda', sets: 4, reps: 8, restTime: 180 },
-          { name: 'Prensa de Piernas', category: 'Piernas', sets: 3, reps: 15, restTime: 120 },
-          { name: 'Curl de Femorales', category: 'Piernas', sets: 3, reps: 12, restTime: 90 },
-          { name: 'Elevación de Gemelos', category: 'Piernas', sets: 4, reps: 20, restTime: 60 }
-        ]
-      },
-      {
-        name: 'Hombros',
-        description: 'Rutina enfocada en hombros',
-        exercises: [
-          { name: 'Press Militar', category: 'Hombros', sets: 4, reps: 10, restTime: 120 },
-          { name: 'Elevaciones Laterales', category: 'Hombros', sets: 3, reps: 15, restTime: 60 },
-          { name: 'Vuelos Posteriores', category: 'Hombros', sets: 3, reps: 15, restTime: 60 },
-          { name: 'Remo al Mentón', category: 'Hombros', sets: 3, reps: 12, restTime: 60 }
-        ]
-      }
-    ];
-
-    try {
-      for (const routine of defaultRoutines) {
-        const exercises = [] as Exercise[];
-        for (const exercise of routine.exercises) {
-          const exerciseId = await ensureExercise(exercise);
-          exercises.push({
-            id: exerciseId,
-            name: exercise.name,
-            sets: exercise.sets,
-            reps: exercise.reps,
-            restTime: exercise.restTime
-          });
-        }
-        await createRoutine(routine.name, routine.description, exercises, true, undefined, 'Sistema');
-      }
-    } catch {
-      // Error silenciado para inicialización por defecto
-    }
   };
 
   return {
@@ -242,8 +152,7 @@ export const useRoutines = (userId: string) => {
     incrementRoutineUsage,
     canEditRoutine,
     getPublicRoutines,
-    getUserRoutines,
-    initializeDefaultRoutines
+    getUserRoutines
   };
 };
 

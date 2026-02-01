@@ -11,12 +11,7 @@ export const useWorkouts = () => {
     const loadWorkouts = async () => {
       try {
         const data = await fetchWorkouts();
-        if (data.length === 0) {
-          const defaults = await initializeDefaultRoutine();
-          setWorkouts(defaults);
-        } else {
-          setWorkouts(data);
-        }
+        setWorkouts(data);
       } catch {
         setError('Error al cargar entrenamientos');
       } finally {
@@ -26,47 +21,6 @@ export const useWorkouts = () => {
 
     void loadWorkouts();
   }, []);
-
-  const initializeDefaultRoutine = async (): Promise<Workout[]> => {
-    const defaultWorkouts: Workout[] = [
-      {
-        id: 'monday',
-        day: 'monday',
-        name: 'Pecho y Tríceps',
-        exercises: [
-          { id: 'bench_press', name: 'Press de Banca', sets: 4, reps: 10, restTime: 120 },
-          { id: 'incline_press', name: 'Press Inclinado', sets: 3, reps: 12, restTime: 90 },
-          { id: 'tricep_dips', name: 'Fondos de Tríceps', sets: 3, reps: 15, restTime: 60 }
-        ]
-      },
-      {
-        id: 'wednesday',
-        day: 'wednesday',
-        name: 'Espalda y Bíceps',
-        exercises: [
-          { id: 'deadlift', name: 'Peso Muerto', sets: 4, reps: 8, restTime: 150 },
-          { id: 'pull_ups', name: 'Dominadas', sets: 3, reps: 10, restTime: 90 },
-          { id: 'bicep_curls', name: 'Curl de Bíceps', sets: 3, reps: 12, restTime: 60 }
-        ]
-      },
-      {
-        id: 'friday',
-        day: 'friday',
-        name: 'Pierna y Glúteo',
-        exercises: [
-          { id: 'squats', name: 'Sentadillas', sets: 4, reps: 12, restTime: 120 },
-          { id: 'lunges', name: 'Zancadas', sets: 3, reps: 15, restTime: 90 },
-          { id: 'leg_press', name: 'Prensa de Pierna', sets: 3, reps: 12, restTime: 90 }
-        ]
-      }
-    ];
-
-    for (const workout of defaultWorkouts) {
-      await upsertWorkout(workout);
-    }
-
-    return defaultWorkouts;
-  };
 
   const updateWorkout = async (workout: Workout) => {
     try {

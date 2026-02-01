@@ -29,9 +29,9 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   const workoutsByDate = useMemo(() => {
     const map = new Map<string, WorkoutCalendarDay['workouts']>();
     sessions.forEach((session) => {
-      // TEMPORARY: Show all sessions (completed or not) using startedAt as fallback
-      const dateToUse = session.completedAt || session.startedAt;
-      if (!dateToUse) return;
+      // Only show completed sessions (where user clicked "Finalizar Entrenamiento")
+      if (!session.completedAt) return;
+      const dateToUse = session.completedAt;
       const dateStr = getDateStringInAppTimeZone(dateToUse);
       const workouts = map.get(dateStr) ?? [];
       workouts.push({

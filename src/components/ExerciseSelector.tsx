@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Search, ChevronDown, X, Loader, Play } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, ChevronDown, X, Loader, Play, Check, Pencil } from 'lucide-react';
 import { useExerciseTemplates } from '../hooks/useExerciseTemplates';
 import { useAuth } from '../hooks/useAuth';
 import { Exercise, ExerciseVideo, ExerciseTemplate } from '../types';
@@ -12,12 +12,17 @@ import {
 interface ExerciseSelectorProps {
   onSelectExercise: (exercise: Exercise) => void;
   onCancel: () => void;
+  editingExercise?: Exercise | null;
+  onUpdateExercise?: (exerciseId: string, updates: Partial<Exercise>) => void;
 }
 
 export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onSelectExercise,
-  onCancel
+  onCancel,
+  editingExercise,
+  onUpdateExercise
 }) => {
+  const isEditing = !!editingExercise;
   const { user } = useAuth();
 
   const {
@@ -52,6 +57,24 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     restTime: 90,
     description: ''
   });
+
+  // Pre-populate form when editing
+  useEffect(() => {
+    if (isEditing && editingExercise) {
+      setShowCustomForm(true);
+      setCustomExercise({
+        name: editingExercise.name,
+        category: editingExercise.category || '',
+        sets: editingExercise.sets,
+        reps: editingExercise.reps,
+        restTime: editingExercise.restTime || 90,
+        description: editingExercise.description || ''
+      });
+      if (editingExercise.video) {
+        setSelectedVideo(editingExercise.video);
+      }
+    }
+  }, [isEditing, editingExercise]);
 
   // Logging cuando el componente se monta/desmonta
   React.useEffect(() => {
@@ -97,48 +120,79 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     setSuccessMessage('');
 
     try {
-      // Crear el template en la base de datos
-      const templateId = await createExerciseTemplate(
-        customExercise.name,
-        customExercise.category || 'Personalizado',
-        customExercise.sets,
-        customExercise.reps,
-        customExercise.restTime,
-        customExercise.description,
-        true,
-        selectedVideo ?? undefined
-      );
+      if (isEditing && editingExercise && onUpdateExercise) {
+        // Update existing exercise
+        const updates: Partial<Exercise> = {
+          name: customExercise.name,
+          sets: customExercise.sets,
+          reps: customExercise.reps,
+          restTime: customExercise.restTime,
+          ...(selectedVideo ? { video: selectedVideo } : { video: undefined })
+        };
 
-      // Crear el ejercicio para la rutina
-      const exercise: Exercise = {
-        id: templateId,
-        name: customExercise.name,
-        sets: customExercise.sets,
-        reps: customExercise.reps,
-        restTime: customExercise.restTime,
-        ...(selectedVideo ? { video: selectedVideo } : {})
-      };
+        // Update exercise template in database
+        await updateExerciseTemplate(editingExercise.id, {
+          name: customExercise.name,
+          category: customExercise.category || 'Personalizado',
+          sets: customExercise.sets,
+          reps: customExercise.reps,
+          restTime: customExercise.restTime,
+          description: customExercise.description,
+          video: selectedVideo ?? undefined
+        });
 
-      // Mostrar mensaje de éxito
-      setSuccessMessage(`¡Ejercicio "${customExercise.name}" creado y añadido exitosamente!`);
+        // Update exercise in routine
+        onUpdateExercise(editingExercise.id, updates);
 
-      // Limpiar el formulario
-      setCustomExercise({
-        name: '',
-        category: '',
-        sets: 3,
-        reps: 10,
-        restTime: 90,
-        description: ''
-      });
-      setVideoSuggestions([]);
-      setSelectedVideo(null);
-      setVideoError('');
+        setSuccessMessage(`¡Ejercicio "${customExercise.name}" actualizado exitosamente!`);
 
-      onSelectExercise(exercise);
+        // Close after a brief delay
+        setTimeout(() => {
+          onCancel();
+        }, 800);
+      } else {
+        // Crear el template en la base de datos
+        const templateId = await createExerciseTemplate(
+          customExercise.name,
+          customExercise.category || 'Personalizado',
+          customExercise.sets,
+          customExercise.reps,
+          customExercise.restTime,
+          customExercise.description,
+          true,
+          selectedVideo ?? undefined
+        );
 
+        // Crear el ejercicio para la rutina
+        const exercise: Exercise = {
+          id: templateId,
+          name: customExercise.name,
+          sets: customExercise.sets,
+          reps: customExercise.reps,
+          restTime: customExercise.restTime,
+          ...(selectedVideo ? { video: selectedVideo } : {})
+        };
+
+        // Mostrar mensaje de éxito
+        setSuccessMessage(`¡Ejercicio "${customExercise.name}" creado y añadido exitosamente!`);
+
+        // Limpiar el formulario
+        setCustomExercise({
+          name: '',
+          category: '',
+          sets: 3,
+          reps: 10,
+          restTime: 90,
+          description: ''
+        });
+        setVideoSuggestions([]);
+        setSelectedVideo(null);
+        setVideoError('');
+
+        onSelectExercise(exercise);
+      }
     } catch {
-      setError('Error al crear el ejercicio. Por favor, intenta de nuevo.');
+      setError(isEditing ? 'Error al actualizar el ejercicio. Por favor, intenta de nuevo.' : 'Error al crear el ejercicio. Por favor, intenta de nuevo.');
     } finally {
       setCreatingExercise(false);
     }
@@ -317,7 +371,16 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       <div className="app-card w-full max-w-md max-h-[80vh] overflow-hidden">
         <div className="p-4 border-b border-mist/60">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white">Añadir Ejercicio</h3>
+            <h3 className="text-lg font-bold text-white">
+              {isEditing ? (
+                <span className="flex items-center gap-2">
+                  <Pencil size={18} className="text-mint" />
+                  Editar Ejercicio
+                </span>
+              ) : (
+                'Añadir Ejercicio'
+              )}
+            </h3>
             <button
               type="button"
               onClick={() => {
@@ -547,27 +610,52 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
                   {videoSuggestions.length > 0 && (
                     <div className="space-y-2">
-                      {videoSuggestions.map((suggestion) => (
-                        <button
-                          key={suggestion.slug}
-                          type="button"
-                          onClick={() => handlePickSuggestion(suggestion)}
-                          className="w-full px-3 py-2 rounded-xl bg-slateDeep hover:bg-charcoal text-left transition-colors flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Play size={14} className="text-mint" />
-                            <span className="text-sm text-white">{suggestion.displayName}</span>
-                          </div>
-                          <span className="text-[11px] text-slate-400">
-                            {Math.min(100, Math.round(suggestion.score * 100))}%
-                          </span>
-                        </button>
-                      ))}
+                      <div className="text-xs text-slate-400 mb-1">
+                        Selecciona un video de la lista:
+                      </div>
+                      {videoSuggestions.map((suggestion) => {
+                        const isSelected = selectedVideo?.slug === suggestion.slug;
+                        return (
+                          <button
+                            key={suggestion.slug}
+                            type="button"
+                            onClick={() => handlePickSuggestion(suggestion)}
+                            className={`w-full px-3 py-3 rounded-xl text-left transition-all flex items-center justify-between ${
+                              isSelected
+                                ? 'bg-mint/20 border-2 border-mint'
+                                : 'bg-slateDeep hover:bg-charcoal border-2 border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                isSelected ? 'bg-mint text-ink' : 'bg-charcoal text-slate-400'
+                              }`}>
+                                {isSelected ? <Check size={16} /> : <Play size={14} />}
+                              </div>
+                              <div>
+                                <span className={`text-sm font-medium ${isSelected ? 'text-mint' : 'text-white'}`}>
+                                  {suggestion.displayName}
+                                </span>
+                                <div className="text-[11px] text-slate-400">
+                                  Coincidencia: {Math.min(100, Math.round(suggestion.score * 100))}%
+                                </div>
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <span className="text-xs text-mint font-medium">Seleccionado</span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   )}
 
                   {selectedVideo && (
-                    <div className="space-y-2">
+                    <div className="bg-mint/10 border-2 border-mint rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2 text-mint">
+                        <Check size={18} />
+                        <span className="font-semibold">Video seleccionado</span>
+                      </div>
                       {(() => {
                         const { frontUrl, sideUrl } = getPreviewUrls(selectedVideo);
                         return (
@@ -601,21 +689,24 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                           </div>
                         );
                       })()}
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between text-xs pt-2">
                         <a
                           href={selectedVideo.pageUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-mint hover:text-mintDeep"
+                          className="text-mint hover:text-mintDeep font-medium"
                         >
-                          Abrir en MuscleWiki
+                          Abrir en MuscleWiki →
                         </a>
                         <button
                           type="button"
-                          onClick={() => setSelectedVideo(null)}
-                          className="text-slate-400 hover:text-white"
+                          onClick={() => {
+                            setSelectedVideo(null);
+                            setVideoSuggestions([]);
+                          }}
+                          className="text-amberGlow hover:text-amberGlow/80 font-medium"
                         >
-                          Quitar video
+                          Cambiar video
                         </button>
                       </div>
                     </div>
@@ -689,12 +780,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     {creatingExercise ? (
                       <>
                         <Loader size={16} className="animate-spin" />
-                        <span>Creando...</span>
+                        <span>{isEditing ? 'Guardando...' : 'Creando...'}</span>
                       </>
                     ) : (
                       <>
-                        <Plus size={16} />
-                        <span>Crear y Añadir</span>
+                        {isEditing ? <Check size={16} /> : <Plus size={16} />}
+                        <span>{isEditing ? 'Guardar Cambios' : 'Crear y Añadir'}</span>
                       </>
                     )}
                   </button>

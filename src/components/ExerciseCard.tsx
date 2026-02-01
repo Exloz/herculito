@@ -243,16 +243,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
         })}
       </div>
 
-      {/* Información de descanso */}
-      {exercise.restTime && (
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-400 bg-slateDeep rounded-xl p-2">
-          <Clock size={16} />
-          <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
-        </div>
-      )}
-
+      {/* Video - ahora justo debajo del header */}
       {exercise.video?.url && showVideo && (
-        <div className="mt-4 space-y-2">
+        <div className="mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
           {(() => {
             const { frontUrl, sideUrl } = getVideoUrls(exercise.video);
             return (
@@ -298,6 +291,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           </div>
         </div>
       )}
+
+      {/* Información de descanso */}
+      {exercise.restTime && (
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-400 bg-slateDeep rounded-xl p-2">
+          <Clock size={16} />
+          <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
+        </div>
+      )}
      </div>
    );
-});
+ });

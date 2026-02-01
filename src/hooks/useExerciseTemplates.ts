@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import Fuse from 'fuse.js';
 import { ExerciseTemplate, ExerciseVideo } from '../types';
 import {
   fetchExercises,
@@ -154,15 +155,25 @@ export const useExerciseTemplates = (userId: string) => {
   const searchExercises = (searchTerm: string, category?: string): ExerciseTemplate[] => {
     let filtered = exercises;
 
+    // Apply category filter first
     if (category) {
       filtered = filtered.filter((ex) => ex.category === category);
     }
 
-    if (searchTerm) {
-      filtered = filtered.filter((ex) =>
-        ex.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ex.category.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    // Apply fuzzy search if there's a search term
+    if (searchTerm && searchTerm.trim().length >= 2) {
+      // Search in the filtered list or all exercises
+      const searchSource = category ? filtered : exercises;
+      const fuseInstance = new Fuse(searchSource, {
+        keys: ['name', 'category'],
+        threshold: 0.4,
+        distance: 100,
+        includeScore: true,
+        minMatchCharLength: 2
+      });
+      
+      const results = fuseInstance.search(searchTerm.trim());
+      filtered = results.map((result) => result.item);
     }
 
     return filtered;

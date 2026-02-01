@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Save, X } from 'lucide-react';
+import { Plus, Trash2, Save, X, Pencil } from 'lucide-react';
 import { Routine, Exercise, MuscleGroup } from '../types';
 import { ExerciseSelector } from './ExerciseSelector';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
@@ -21,6 +21,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [description, setDescription] = useState(routine?.description || '');
   const [exercises, setExercises] = useState<Exercise[]>(routine?.exercises || []);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [isPublic, setIsPublic] = useState(routine?.isPublic ?? false);
   const [primaryMuscleGroup, setPrimaryMuscleGroup] = useState<MuscleGroup>(routine?.primaryMuscleGroup || 'fullbody');
   const [exerciseError, setExerciseError] = useState('');
@@ -162,16 +163,37 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 {exercises.map((exercise, index) => (
                   <div key={exercise.id} className="app-surface-muted p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-white">
-                        {index + 1}. {exercise.name}
-                      </h4>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveExercise(exercise.id)}
-                        className="text-red-400 hover:text-red-300 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-white">
+                          {index + 1}. {exercise.name}
+                        </h4>
+                        {exercise.video?.url && (
+                          <span className="text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">
+                            Con video
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingExercise(exercise);
+                            setShowExerciseSelector(true);
+                          }}
+                          className="text-slate-400 hover:text-mint transition-colors"
+                          title="Editar ejercicio"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveExercise(exercise.id)}
+                          className="text-red-400 hover:text-red-300 transition-colors"
+                          title="Eliminar ejercicio"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3 text-sm">
@@ -224,7 +246,10 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               onSelectExercise={handleAddExercise}
               onCancel={() => {
                 setShowExerciseSelector(false);
+                setEditingExercise(null);
               }}
+              editingExercise={editingExercise}
+              onUpdateExercise={handleUpdateExercise}
             />
           )}
 

@@ -29,11 +29,13 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   const workoutsByDate = useMemo(() => {
     const map = new Map<string, WorkoutCalendarDay['workouts']>();
     sessions.forEach((session) => {
-      if (!session.completedAt) return;
-      const dateStr = getDateStringInAppTimeZone(session.completedAt);
+      // TEMPORARY: Show all sessions (completed or not) using startedAt as fallback
+      const dateToUse = session.completedAt || session.startedAt;
+      if (!dateToUse) return;
+      const dateStr = getDateStringInAppTimeZone(dateToUse);
       const workouts = map.get(dateStr) ?? [];
       workouts.push({
-        muscleGroup: session.primaryMuscleGroup!,
+        muscleGroup: session.primaryMuscleGroup || 'fullbody',
         routineName: session.routineName,
         sessionId: session.id
       });

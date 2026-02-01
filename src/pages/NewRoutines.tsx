@@ -40,7 +40,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
     setShowEditor(true);
   };
 
-  const handleSaveRoutine = async (name: string, description: string, exercises: Exercise[], isPublic: boolean = true, primaryMuscleGroup?: MuscleGroup) => {
+  const handleSaveRoutine = async (name: string, description: string, exercises: Exercise[], isPublic: boolean = false, primaryMuscleGroup?: MuscleGroup) => {
     setSaving(true);
     try {
       if (editingRoutine) {

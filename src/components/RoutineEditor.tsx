@@ -21,7 +21,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [description, setDescription] = useState(routine?.description || '');
   const [exercises, setExercises] = useState<Exercise[]>(routine?.exercises || []);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
-  const [isPublic, setIsPublic] = useState(routine?.isPublic ?? true);
+  const [isPublic, setIsPublic] = useState(routine?.isPublic ?? false);
   const [primaryMuscleGroup, setPrimaryMuscleGroup] = useState<MuscleGroup>(routine?.primaryMuscleGroup || 'fullbody');
   const [exerciseError, setExerciseError] = useState('');
 

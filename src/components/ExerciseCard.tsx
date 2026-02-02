@@ -118,10 +118,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
     onUpdateLog(updatedLog);
 
-     // Si se completó la serie y hay tiempo de descanso, iniciar temporizador
-     if (!wasCompleted && exercise.restTime && exercise.restTime > 0) {
-       onStartTimer(exercise.restTime);
-     }
+    // Si se completó la serie y hay tiempo de descanso, iniciar temporizador
+    if (!wasCompleted && exercise.restTime && exercise.restTime > 0) {
+      onStartTimer(exercise.restTime);
+    }
   };
 
   return (
@@ -150,6 +150,56 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
             <span>{exercise.sets} × {exercise.reps}</span>
           </div>
         </div>
+
+
+        {exercise.video?.url && showVideo && (
+          <div className="mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+            {(() => {
+              const { frontUrl, sideUrl } = getVideoUrls(exercise.video);
+              return (
+                <div className={`grid gap-3 ${sideUrl ? 'sm:grid-cols-2' : ''}`}>
+                  <div>
+                    <div className="text-xs text-slate-400 mb-1">Vista frontal</div>
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                      <video
+                        className="h-full w-full"
+                        src={frontUrl}
+                        controls
+                        playsInline
+                        preload="metadata"
+                      />
+                    </div>
+                  </div>
+                  {sideUrl && (
+                    <div>
+                      <div className="text-xs text-slate-400 mb-1">Vista lateral</div>
+                      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                        <video
+                          className="h-full w-full"
+                          src={sideUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+            <div className="text-xs text-slate-400">
+              <a
+                href={exercise.video.pageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="text-mint hover:text-mintDeep"
+              >
+                Abrir en MuscleWiki
+              </a>
+            </div>
+          </div>
+        )}
+
 
         {/* Barra de progreso */}
         <div className="w-full bg-slateDeep rounded-full h-2 mb-2">
@@ -194,11 +244,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <div className="flex items-center bg-slateDeep rounded-lg border border-mist/60 overflow-hidden">
-                      <button
-                        onClick={() => adjustWeight(setNumber, -2.5)}
-                        className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
-                        aria-label="Reducir peso 2.5kg"
-                      >
+                    <button
+                      onClick={() => adjustWeight(setNumber, -2.5)}
+                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
+                      aria-label="Reducir peso 2.5kg"
+                    >
                       <Minus size={14} />
                     </button>
                     <div className="relative">
@@ -212,15 +262,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                         min="0"
                         aria-label={`Peso para serie ${setNumber}`}
                       />
-                       {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (
+                      {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (
                         <div className="absolute top-0 right-0 w-2 h-2 bg-mint rounded-full translate-x-1/2 -translate-y-1/2" title="Peso anterior" />
                       )}
                     </div>
-                      <button
-                        onClick={() => adjustWeight(setNumber, 2.5)}
-                        className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
-                        aria-label="Aumentar peso 2.5kg"
-                      >
+                    <button
+                      onClick={() => adjustWeight(setNumber, 2.5)}
+                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
+                      aria-label="Aumentar peso 2.5kg"
+                    >
                       <Plus size={14} />
                     </button>
                   </div>
@@ -243,55 +293,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
         })}
       </div>
 
-      {/* Video - ahora justo debajo del header */}
-      {exercise.video?.url && showVideo && (
-        <div className="mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-          {(() => {
-            const { frontUrl, sideUrl } = getVideoUrls(exercise.video);
-            return (
-              <div className={`grid gap-3 ${sideUrl ? 'sm:grid-cols-2' : ''}`}>
-                <div>
-                  <div className="text-xs text-slate-400 mb-1">Vista frontal</div>
-                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
-                    <video
-                      className="h-full w-full"
-                      src={frontUrl}
-                      controls
-                      playsInline
-                      preload="metadata"
-                    />
-                  </div>
-                </div>
-                {sideUrl && (
-                  <div>
-                    <div className="text-xs text-slate-400 mb-1">Vista lateral</div>
-                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
-                      <video
-                        className="h-full w-full"
-                        src={sideUrl}
-                        controls
-                        playsInline
-                        preload="metadata"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-          <div className="text-xs text-slate-400">
-            <a
-              href={exercise.video.pageUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="text-mint hover:text-mintDeep"
-            >
-              Abrir en MuscleWiki
-            </a>
-          </div>
-        </div>
-      )}
-
       {/* Información de descanso */}
       {exercise.restTime && (
         <div className="mt-3 flex items-center gap-2 text-sm text-slate-400 bg-slateDeep rounded-xl p-2">
@@ -299,6 +300,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
         </div>
       )}
-     </div>
-   );
- });
+    </div>
+  );
+});

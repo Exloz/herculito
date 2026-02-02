@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Save, X, Pencil } from 'lucide-react';
+import { Plus, Trash2, Save, X, Pencil, Play, VideoOff } from 'lucide-react';
 import { Routine, Exercise, MuscleGroup } from '../types';
 import { ExerciseSelector } from './ExerciseSelector';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
@@ -167,10 +167,10 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         <h4 className="font-semibold text-white">
                           {index + 1}. {exercise.name}
                         </h4>
-                        {exercise.video?.url && (
-                          <span className="text-xs bg-mint/20 text-mint px-2 py-0.5 rounded-full">
-                            Con video
-                          </span>
+                        {exercise.video?.url ? (
+                          <Play size={14} className="text-mint" />
+                        ) : (
+                          <VideoOff size={14} className="text-slate-500" />
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 mb-1">Descanso (seg)</label>
+                        <label className="block text-slate-300 mb-1">Descanso</label>
                         <input
                           type="number"
                           value={exercise.restTime}

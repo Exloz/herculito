@@ -218,7 +218,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 mb-1">Descanso</label>
+                        <label className="block text-slate-300 mb-1">Desc. (s)</label>
                         <input
                           type="number"
                           value={exercise.restTime}

@@ -139,6 +139,30 @@ export const useWorkoutSessions = (user: User) => {
     );
   }, [sessions]);
 
+  const getThisWeekSessions = useCallback((): WorkoutSession[] => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0=Domingo, 1=Lunes, ..., 6=Sábado
+    const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - daysSinceMonday);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    return sessions.filter((session) =>
+      session.completedAt && session.completedAt >= startOfWeek
+    );
+  }, [sessions]);
+
+  const getThisMonthSessions = useCallback((): WorkoutSession[] => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    return sessions.filter((session) =>
+      session.completedAt && session.completedAt >= startOfMonth
+    );
+  }, [sessions]);
+
   const calculateWorkoutStreak = useCallback((): number => {
     const completedSessions = sessions
       .filter((s) => s.completedAt)
@@ -169,8 +193,8 @@ export const useWorkoutSessions = (user: User) => {
 
   const getWorkoutStats = useCallback(() => {
     const completed = sessions.filter((s) => s.completedAt);
-    const thisWeek = getRecentSessions(7);
-    const thisMonth = getRecentSessions(30);
+    const thisWeek = getThisWeekSessions();
+    const thisMonth = getThisMonthSessions();
 
     return {
       totalWorkouts: completed.length,
@@ -178,7 +202,7 @@ export const useWorkoutSessions = (user: User) => {
       thisMonthWorkouts: thisMonth.length,
       currentStreak: calculateWorkoutStreak()
     };
-  }, [sessions, getRecentSessions, calculateWorkoutStreak]);
+  }, [sessions, getThisWeekSessions, getThisMonthSessions, calculateWorkoutStreak]);
 
   const getLastWeightsForRoutine = useCallback((routineId: string): Record<string, number[]> => {
     const lastCompletedSession = sessions

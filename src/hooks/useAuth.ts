@@ -6,6 +6,7 @@ import { User } from '../types';
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
@@ -17,6 +18,7 @@ export function useAuth() {
           photoURL: firebaseUser.photoURL || undefined,
         };
         setUser(user);
+        setError(null);
       } else {
         setUser(null);
       }
@@ -29,8 +31,10 @@ export function useAuth() {
   const signInWithGoogle = async () => {
     try {
       setLoading(true);
+      setError(null);
       await signInWithPopup(auth, googleProvider);
     } catch {
+      setError('No se pudo iniciar sesión con Google. Inténtalo de nuevo.');
       setLoading(false);
     }
   };
@@ -39,6 +43,7 @@ export function useAuth() {
     try {
       await signOut(auth);
     } catch {
+      setError('No se pudo cerrar la sesión. Inténtalo de nuevo.');
       // Error silencioso para logout
     }
   };
@@ -46,6 +51,7 @@ export function useAuth() {
   return {
     user,
     loading,
+    error,
     signInWithGoogle,
     logout,
   };

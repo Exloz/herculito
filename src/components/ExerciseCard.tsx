@@ -49,7 +49,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     return { frontUrl, sideUrl };
   };
 
-  const initializeSets = (): WorkoutSet[] => {
+  const defaultSets = React.useMemo((): WorkoutSet[] => {
     const sets: WorkoutSet[] = [];
     for (let i = 1; i <= exercise.sets; i++) {
       const existingSet = log.sets.find(s => s.setNumber === i);
@@ -69,9 +69,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
       }
     }
     return sets;
-  };
+  }, [exercise.sets, log.sets, previousWeights]);
 
-  const currentSets = log.sets.length > 0 ? log.sets : initializeSets();
+  const currentSets = log.sets.length > 0 ? log.sets : defaultSets;
   const completedSets = currentSets.filter(s => s.completed).length;
   const progressPercentage = (completedSets / exercise.sets) * 100;
 
@@ -254,7 +254,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     <div className="relative">
                       <input
                         type="number"
-                        value={weight || ''}
+                        value={Number.isFinite(weight) ? weight : ''}
                         onChange={(e) => updateSetWeight(setNumber, parseFloat(e.target.value) || 0)}
                         className="w-16 bg-transparent text-center text-sm font-medium focus:outline-none py-1"
                         placeholder="0"

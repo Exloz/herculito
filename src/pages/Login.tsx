@@ -1,9 +1,21 @@
+import { useEffect } from 'react';
+import { useUI } from '../contexts/ui-context';
+
 interface LoginProps {
   onGoogleLogin: () => void;
   loading: boolean;
+  errorMessage?: string | null;
 }
 
-export function Login({ onGoogleLogin, loading }: LoginProps) {
+export function Login({ onGoogleLogin, loading, errorMessage }: LoginProps) {
+  const { showToast } = useUI();
+
+  useEffect(() => {
+    if (errorMessage) {
+      showToast(errorMessage, 'error');
+    }
+  }, [errorMessage, showToast]);
+
   return (
     <div className="app-shell flex items-center justify-center p-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
       <div className="app-card relative w-full max-w-md overflow-hidden p-8">
@@ -28,6 +40,12 @@ export function Login({ onGoogleLogin, loading }: LoginProps) {
                 Inicia sesión para empezar a registrar tus entrenamientos
               </p>
             </div>
+
+            {errorMessage && (
+              <div className="rounded-xl border border-crimson/40 bg-crimson/10 px-4 py-3 text-sm text-crimson">
+                {errorMessage}
+              </div>
+            )}
 
             <button
               onClick={onGoogleLogin}

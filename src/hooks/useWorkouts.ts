@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Workout, ExerciseLog } from '../types';
+import { useUI } from '../contexts/ui-context';
 import { fetchWorkouts, upsertWorkout, upsertExerciseLog, fetchExerciseLogsForDate } from '../utils/dataApi';
 
 export const useWorkouts = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { showToast } = useUI();
 
   useEffect(() => {
     const loadWorkouts = async () => {
@@ -13,21 +15,25 @@ export const useWorkouts = () => {
         const data = await fetchWorkouts();
         setWorkouts(data);
       } catch {
-        setError('Error al cargar entrenamientos');
+        const message = 'Error al cargar entrenamientos';
+        setError(message);
+        showToast(message, 'error');
       } finally {
         setLoading(false);
       }
     };
 
     void loadWorkouts();
-  }, []);
+  }, [showToast]);
 
   const updateWorkout = async (workout: Workout) => {
     try {
       await upsertWorkout(workout);
       setWorkouts((prev) => prev.map((w) => (w.id === workout.id ? workout : w)));
     } catch {
-      setError('Error al actualizar entrenamiento');
+      const message = 'Error al actualizar entrenamiento';
+      setError(message);
+      showToast(message, 'error');
     }
   };
 
@@ -37,8 +43,10 @@ export const useWorkouts = () => {
 export const useExerciseLogs = (date: string, userId?: string) => {
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const { showToast } = useUI();
   const pendingWritesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendingPayloadRef = useRef<Map<string, ExerciseLog>>(new Map());
+  const loadErrorShownRef = useRef<string | null>(null);
 
   const PENDING_KEY = 'pendingExerciseLogs';
 
@@ -114,6 +122,10 @@ export const useExerciseLogs = (date: string, userId?: string) => {
         // If load fails, keep whatever we have locally.
         const pendingForDate = Array.from(pendingPayloadRef.current.values()).filter((log) => log.date === date);
         setLogs(pendingForDate);
+        if (loadErrorShownRef.current !== date) {
+          loadErrorShownRef.current = date;
+          showToast('No se pudieron cargar registros. Mostrando datos locales.', 'info');
+        }
       } finally {
         setLoading(false);
       }
@@ -131,7 +143,7 @@ export const useExerciseLogs = (date: string, userId?: string) => {
       window.removeEventListener('online', handleOnline);
       void flushPendingWrites();
     };
-  }, [date, userId, flushPendingWrites, restorePending]);
+  }, [date, userId, flushPendingWrites, restorePending, showToast]);
 
   const updateExerciseLog = async (log: ExerciseLog) => {
     try {

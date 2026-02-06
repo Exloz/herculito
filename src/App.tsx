@@ -1,47 +1,76 @@
-import { useState, Suspense, lazy } from 'react';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { Login } from './pages/Login';
 import { Navigation } from './components/Navigation';
 import { useAuth } from './hooks/useAuth';
 import { ScrollToTop } from './components/ScrollToTop';
 import { UIProvider } from './contexts/UIContext';
+import { useUI } from './contexts/ui-context';
 
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => import('./pages/NewRoutines').then(module => ({ default: module.Routines })));
 
-// Prevent scroll restoration issues with Suspense lazy loading
-window.history.scrollRestoration = 'manual';
+const LoadingScreen = () => (
+  <div className="app-shell flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-12 h-12 border-4 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <div className="text-slate-100 text-lg">Cargando...</div>
+    </div>
+  </div>
+);
+
+const AuthErrorToast = ({ message }: { message: string | null }) => {
+  const { showToast } = useUI();
+
+  useEffect(() => {
+    if (message) {
+      showToast(message, 'error');
+    }
+  }, [message, showToast]);
+
+  return null;
+};
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'routines'>('dashboard');
-  const { user, loading, signInWithGoogle, logout } = useAuth();
+  const { user, loading, error, signInWithGoogle, logout } = useAuth();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.history.scrollRestoration) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
 
   if (loading) {
     return (
-      <div className="app-shell flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <div className="text-slate-100 text-lg">Cargando...</div>
-        </div>
-      </div>
+      <UIProvider>
+        <LoadingScreen />
+      </UIProvider>
     );
   }
 
   if (!user) {
-    return <Login onGoogleLogin={signInWithGoogle} loading={loading} />;
+    return (
+      <UIProvider>
+        <Login onGoogleLogin={signInWithGoogle} loading={loading} errorMessage={error} />
+      </UIProvider>
+    );
   }
 
   return (
     <UIProvider>
+      <AuthErrorToast message={error} />
       <div className="app-shell">
-          <Suspense fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <div className="text-slate-100 text-lg">Cargando...</div>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center min-h-screen">
+              <div className="text-center">
+                <div className="w-12 h-12 border-4 border-mint border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <div className="text-slate-100 text-lg">Cargando...</div>
+              </div>
             </div>
-          </div>
-        }>
+          }
+        >
           <ScrollToTop />
           {currentPage === 'dashboard' && <Dashboard user={user} onLogout={logout} />}
           {currentPage === 'routines' && <Routines user={user} />}

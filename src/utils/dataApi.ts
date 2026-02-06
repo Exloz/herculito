@@ -1,34 +1,10 @@
-import { auth } from '../firebase/config';
-import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate } from '../types';
+import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup } from '../types';
+import { fetchJson, getIdToken } from './apiClient';
 import { getPushApiOrigin } from './pushApi';
 
 export type ExerciseTemplateResponse = Omit<ExerciseTemplate, 'createdAt'> & { createdAt: number };
 export type RoutineResponse = Omit<Routine, 'createdAt' | 'updatedAt'> & { createdAt: number; updatedAt: number };
 export type WorkoutSessionResponse = Omit<WorkoutSession, 'startedAt' | 'completedAt'> & { startedAt: number; completedAt?: number };
-
-const getIdToken = async (): Promise<string> => {
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error('Not authenticated');
-  }
-  return user.getIdToken();
-};
-
-const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
-  const res = await fetch(url, init);
-  const contentType = res.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
-    if (!res.ok) {
-      throw new Error(`Request failed: ${res.status}`);
-    }
-    throw new Error('Invalid response type');
-  }
-  const data = (await res.json()) as T;
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status}`);
-  }
-  return data;
-};
 
 export const fetchExercises = async (): Promise<ExerciseTemplateResponse[]> => {
   const origin = getPushApiOrigin();
@@ -48,7 +24,7 @@ export const createExerciseTemplate = async (payload: {
   description?: string;
   isPublic?: boolean;
   createdByName?: string;
-  muscleGroup?: string;
+  muscleGroup?: MuscleGroup;
   video?: ExerciseVideo;
 }): Promise<ExerciseTemplateResponse> => {
   const origin = getPushApiOrigin();
@@ -72,7 +48,7 @@ export const updateExerciseTemplate = async (id: string, updates: Partial<{
   restTime: number;
   description?: string;
   isPublic?: boolean;
-  muscleGroup?: string;
+  muscleGroup?: MuscleGroup;
   video?: ExerciseVideo;
 }>): Promise<void> => {
   const origin = getPushApiOrigin();

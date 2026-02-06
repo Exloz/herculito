@@ -1,4 +1,4 @@
-import { auth } from '../firebase/config';
+import { fetchJson, getIdToken } from './apiClient';
 
 const DEVICE_ID_KEY = 'pushDeviceId';
 
@@ -67,14 +67,6 @@ export const shouldUseBackgroundRestPush = (): boolean => {
   return isIosPushCapable() && isStandalonePwa();
 };
 
-const getIdToken = async (): Promise<string> => {
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error('Not authenticated');
-  }
-  return user.getIdToken();
-};
-
 const urlBase64ToArrayBuffer = (base64String: string): ArrayBuffer => {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -85,24 +77,6 @@ const urlBase64ToArrayBuffer = (base64String: string): ArrayBuffer => {
     outputArray[i] = rawData.charCodeAt(i);
   }
   return buffer;
-};
-
-const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
-  const res = await fetch(url, init);
-  const contentType = res.headers.get('content-type') ?? '';
-
-  if (!contentType.includes('application/json')) {
-    if (!res.ok) {
-      throw new Error(`Request failed: ${res.status}`);
-    }
-    throw new Error('Invalid response type');
-  }
-
-  const data = (await res.json()) as T;
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status}`);
-  }
-  return data;
 };
 
 let cachedVapidPublicKey: string | null = null;

@@ -21,6 +21,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   previousWeights
 }) => {
   const [showVideo, setShowVideo] = React.useState(false);
+  const [draftWeights, setDraftWeights] = React.useState<Record<number, string>>({});
 
   const getVideoUrls = (video: ExerciseVideo) => {
     const variants = video.variants ?? [];
@@ -88,6 +89,57 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     };
 
     onUpdateLog(updatedLog);
+  };
+
+  const clearDraftWeight = (setNumber: number) => {
+    setDraftWeights((previousDrafts) => {
+      if (!(setNumber in previousDrafts)) {
+        return previousDrafts;
+      }
+
+      const nextDrafts = { ...previousDrafts };
+      delete nextDrafts[setNumber];
+      return nextDrafts;
+    });
+  };
+
+  const handleWeightChange = (setNumber: number, rawValue: string) => {
+    setDraftWeights((previousDrafts) => ({
+      ...previousDrafts,
+      [setNumber]: rawValue
+    }));
+
+    if (rawValue.trim() === '') {
+      return;
+    }
+
+    const parsedWeight = Number(rawValue);
+    if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+      return;
+    }
+
+    updateSetWeight(setNumber, parsedWeight);
+  };
+
+  const handleWeightBlur = (setNumber: number) => {
+    const rawDraftValue = draftWeights[setNumber];
+
+    if (rawDraftValue === undefined) {
+      return;
+    }
+
+    if (rawDraftValue.trim() === '') {
+      updateSetWeight(setNumber, 0);
+      clearDraftWeight(setNumber);
+      return;
+    }
+
+    const parsedWeight = Number(rawDraftValue);
+    if (Number.isFinite(parsedWeight) && parsedWeight >= 0) {
+      updateSetWeight(setNumber, parsedWeight);
+    }
+
+    clearDraftWeight(setNumber);
   };
 
   const adjustWeight = (setNumber: number, delta: number) => {
@@ -226,6 +278,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           const currentSet = currentSets.find(s => s.setNumber === setNumber);
           const isCompleted = currentSet?.completed || false;
           const weight = currentSet?.weight || 0;
+          const draftWeight = draftWeights[setNumber];
 
           return (
             <div
@@ -254,10 +307,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     <div className="relative">
                       <input
                         type="number"
-                        value={Number.isFinite(weight) ? weight : ''}
-                        onChange={(e) => updateSetWeight(setNumber, parseFloat(e.target.value) || 0)}
+                        value={draftWeight !== undefined ? draftWeight : (Number.isFinite(weight) ? String(weight) : '')}
+                        onChange={(e) => handleWeightChange(setNumber, e.target.value)}
+                        onBlur={() => handleWeightBlur(setNumber)}
                         className="w-16 bg-transparent text-center text-sm font-medium focus:outline-none py-1"
                         placeholder="0"
+                        inputMode="decimal"
                         step="0.5"
                         min="0"
                         aria-label={`Peso para serie ${setNumber}`}

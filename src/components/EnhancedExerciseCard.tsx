@@ -15,6 +15,7 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
   onUpdateSets,
   onStartTimer
 }) => {
+  const [draftWeights, setDraftWeights] = useState<Record<number, string>>({});
   const [sets, setSets] = useState<WorkoutSet[]>(() => {
     const initialSets: WorkoutSet[] = [];
     for (let i = 1; i <= exercise.sets; i++) {
@@ -33,6 +34,57 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
     );
     setSets(newSets);
     onUpdateSets(exercise.id, newSets);
+  };
+
+  const clearDraftWeight = (setNumber: number) => {
+    setDraftWeights((previousDrafts) => {
+      if (!(setNumber in previousDrafts)) {
+        return previousDrafts;
+      }
+
+      const nextDrafts = { ...previousDrafts };
+      delete nextDrafts[setNumber];
+      return nextDrafts;
+    });
+  };
+
+  const handleWeightChange = (setNumber: number, rawValue: string) => {
+    setDraftWeights((previousDrafts) => ({
+      ...previousDrafts,
+      [setNumber]: rawValue
+    }));
+
+    if (rawValue.trim() === '') {
+      return;
+    }
+
+    const parsedWeight = Number(rawValue);
+    if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+      return;
+    }
+
+    updateSetWeight(setNumber, parsedWeight);
+  };
+
+  const handleWeightBlur = (setNumber: number) => {
+    const rawDraftValue = draftWeights[setNumber];
+
+    if (rawDraftValue === undefined) {
+      return;
+    }
+
+    if (rawDraftValue.trim() === '') {
+      updateSetWeight(setNumber, 0);
+      clearDraftWeight(setNumber);
+      return;
+    }
+
+    const parsedWeight = Number(rawDraftValue);
+    if (Number.isFinite(parsedWeight) && parsedWeight >= 0) {
+      updateSetWeight(setNumber, parsedWeight);
+    }
+
+    clearDraftWeight(setNumber);
   };
 
   const toggleSetCompletion = (setNumber: number) => {
@@ -127,9 +179,11 @@ export const EnhancedExerciseCard: React.FC<EnhancedExerciseCardProps> = ({
                   </button>
                   <input
                     type="number"
-                    value={set.weight}
-                    onChange={(e) => updateSetWeight(set.setNumber, parseFloat(e.target.value) || 0)}
+                    value={draftWeights[set.setNumber] ?? String(set.weight)}
+                    onChange={(e) => handleWeightChange(set.setNumber, e.target.value)}
+                    onBlur={() => handleWeightBlur(set.setNumber)}
                     className="w-16 px-2 py-1 bg-slateDeep border border-mist/50 rounded text-center text-white text-sm"
+                    inputMode="decimal"
                     step="0.5"
                     min="0"
                   />

@@ -138,6 +138,19 @@ export const useTimer = () => {
   const timerStartTimeRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const endTimeRef = useRef<number | null>(null);
+  const restPushCommandSeqRef = useRef(0);
+  const restPushCommandAtRef = useRef(0);
+
+  const nextRestPushCommand = useCallback(() => {
+    const now = Date.now();
+    const commandAtMs = Math.max(now, restPushCommandAtRef.current + 1);
+    restPushCommandAtRef.current = commandAtMs;
+    restPushCommandSeqRef.current += 1;
+    return {
+      sequence: restPushCommandSeqRef.current,
+      commandAtMs
+    };
+  }, []);
 
   const acquireWakeLock = useCallback(async () => {
     if ('wakeLock' in navigator && !isMobileDevice()) {
@@ -214,9 +227,19 @@ export const useTimer = () => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (audioContextRef.current) audioContextRef.current.close();
+
+      timerStartTimeRef.current = null;
+      endTimeRef.current = null;
+      localStorage.removeItem(TIMER_STORAGE_KEY);
+
+      const { commandAtMs } = nextRestPushCommand();
+      void cancelRestPush({ commandAtMs }).catch(() => {
+        console.warn('Failed to cancel iOS background push');
+      });
+
       releaseWakeLock();
     };
-  }, [releaseWakeLock]);
+  }, [nextRestPushCommand, releaseWakeLock]);
 
   useEffect(() => {
     if (!isActive) {
@@ -251,7 +274,8 @@ export const useTimer = () => {
         if (!hasNotified) {
           setHasNotified(true);
 
-          void cancelRestPush().catch(() => {
+          const { commandAtMs } = nextRestPushCommand();
+          void cancelRestPush({ commandAtMs }).catch(() => {
             console.warn('Failed to cancel iOS background push');
           });
 
@@ -271,7 +295,7 @@ export const useTimer = () => {
         intervalRef.current = null;
       }
     };
-  }, [isActive, hasNotified, initialTime, acquireWakeLock, startAudioContext, releaseWakeLock]);
+  }, [isActive, hasNotified, initialTime, acquireWakeLock, startAudioContext, releaseWakeLock, nextRestPushCommand]);
 
   const requestPermission = useCallback(async () => {
     return requestNotificationPermission();
@@ -279,6 +303,8 @@ export const useTimer = () => {
 
   const startTimer = useCallback(async (seconds: number) => {
     if (seconds <= 0) return;
+
+    const { sequence, commandAtMs } = nextRestPushCommand();
 
     localStorage.removeItem(TIMER_STORAGE_KEY);
 
@@ -299,13 +325,15 @@ export const useTimer = () => {
         try {
           const ready = await ensureIosBackgroundPushReady();
           if (!ready) return;
-          await scheduleRestPush(seconds);
+          if (sequence !== restPushCommandSeqRef.current) return;
+
+          await scheduleRestPush(seconds, undefined, { commandAtMs });
         } catch {
           console.warn('Failed to schedule iOS background push');
         }
       })();
     }
-  }, [requestPermission]);
+  }, [nextRestPushCommand, requestPermission]);
 
   const pauseTimer = useCallback(() => {
     setIsActive(false);
@@ -314,14 +342,17 @@ export const useTimer = () => {
       intervalRef.current = null;
     }
 
-    void cancelRestPush().catch(() => {
+    const { commandAtMs } = nextRestPushCommand();
+    void cancelRestPush({ commandAtMs }).catch(() => {
       console.warn('Failed to cancel iOS background push');
     });
 
     releaseWakeLock();
-  }, [releaseWakeLock]);
+  }, [nextRestPushCommand, releaseWakeLock]);
 
   const resetTimer = useCallback(() => {
+    const { commandAtMs } = nextRestPushCommand();
+
     localStorage.removeItem(TIMER_STORAGE_KEY);
     setIsActive(false);
     setTimeLeft(0);
@@ -336,12 +367,12 @@ export const useTimer = () => {
       intervalRef.current = null;
     }
 
-    void cancelRestPush().catch(() => {
+    void cancelRestPush({ commandAtMs }).catch(() => {
       console.warn('Failed to cancel iOS background push');
     });
 
     releaseWakeLock();
-  }, [releaseWakeLock]);
+  }, [nextRestPushCommand, releaseWakeLock]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);

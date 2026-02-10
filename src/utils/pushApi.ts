@@ -172,7 +172,11 @@ export const ensureIosBackgroundPushReady = async (): Promise<{ deviceId: string
   return { deviceId };
 };
 
-export const scheduleRestPush = async (seconds: number, overrides?: { title?: string; body?: string; url?: string }): Promise<void> => {
+export const scheduleRestPush = async (
+  seconds: number,
+  overrides?: { title?: string; body?: string; url?: string },
+  options?: { commandAtMs?: number }
+): Promise<void> => {
   if (!shouldUseBackgroundRestPush()) return;
   if (Notification.permission !== 'granted') return;
 
@@ -194,6 +198,7 @@ export const scheduleRestPush = async (seconds: number, overrides?: { title?: st
     body: JSON.stringify({
       deviceId,
       seconds,
+      commandAtMs: options?.commandAtMs ?? Date.now(),
       title: overrides?.title,
       body: overrides?.body,
       url: overrides?.url
@@ -201,7 +206,7 @@ export const scheduleRestPush = async (seconds: number, overrides?: { title?: st
   });
 };
 
-export const cancelRestPush = async (): Promise<void> => {
+export const cancelRestPush = async (options?: { commandAtMs?: number }): Promise<void> => {
   if (!shouldUseBackgroundRestPush()) return;
 
   const origin = getPushApiOrigin();
@@ -214,6 +219,9 @@ export const cancelRestPush = async (): Promise<void> => {
       'content-type': 'application/json',
       authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({ deviceId })
+    body: JSON.stringify({
+      deviceId,
+      commandAtMs: options?.commandAtMs ?? Date.now()
+    })
   });
 };

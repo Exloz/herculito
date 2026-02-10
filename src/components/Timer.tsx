@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Timer as TimerIcon, X, Pause, Play } from 'lucide-react';
 import { useTimer } from '../hooks/useTimer';
 
@@ -36,17 +36,22 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
     }
   }, [initialSeconds, startTimer]);
 
+  const handleClose = useCallback(() => {
+    resetTimer();
+    onClose();
+  }, [onClose, resetTimer]);
+
   useEffect(() => {
     if (timeLeft === 0 && !isActive && startTimeRef.current && !hasAutoClosed.current) {
       const elapsed = Date.now() - startTimeRef.current;
       if (elapsed > 1000) {
         hasAutoClosed.current = true;
         setTimeout(() => {
-          onClose();
+          handleClose();
         }, 2000);
       }
     }
-  }, [timeLeft, isActive, onClose]);
+  }, [timeLeft, isActive, handleClose]);
 
   const handleEnableNotifications = async () => {
     await requestPermission();
@@ -63,7 +68,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
           <span className="text-white font-medium">Descanso</span>
         </div>
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="btn-ghost"
           aria-label="Cerrar temporizador"
         >

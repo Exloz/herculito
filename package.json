@@ -1,6 +1,5 @@
 {
   "name": "herculito",
-  "private": true,
   "version": "1.19.0",
   "type": "module",
   "scripts": {

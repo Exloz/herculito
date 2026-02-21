@@ -77,7 +77,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
       return;
     }
 
-    const minValue = field === 'restTime' ? 30 : 1;
+    const minValue = field === 'restTime' ? 5 : 1;
     handleUpdateExercise(exerciseId, { [field]: Math.max(minValue, parsedValue) } as Partial<Exercise>);
   };
 
@@ -87,7 +87,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
       return;
     }
 
-    const minValue = field === 'restTime' ? 30 : 1;
+    const minValue = field === 'restTime' ? 5 : 1;
     const parsedValue = Number.parseInt(draftValue, 10);
     const nextValue = Number.isNaN(parsedValue) ? fallback : Math.max(minValue, parsedValue);
 
@@ -287,8 +287,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                           onChange={(e) => handleExerciseNumberChange(exercise.id, 'restTime', e.target.value)}
                           onBlur={() => handleExerciseNumberBlur(exercise.id, 'restTime', exercise.restTime)}
                           className="input input-sm"
-                          min="30"
-                          step="30"
+                          min="5"
+                          step="5"
                         />
                       </div>
                     </div>

@@ -131,7 +131,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
     const resolvedSets = getNumericValue(customExercise.sets, 3, 1);
     const resolvedReps = getNumericValue(customExercise.reps, 10, 1);
-    const resolvedRestTime = getNumericValue(customExercise.restTime, 90, 30);
+    const resolvedRestTime = getNumericValue(customExercise.restTime, 90, 5);
 
     setCreatingExercise(true);
     setError(''); // Limpiar errores previos
@@ -789,8 +789,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                         setCustomExercise({ ...customExercise, restTime: parsedValue });
                       }}
                       className="input input-sm text-sm"
-                      min="30"
-                      step="30"
+                      min="5"
+                      step="5"
                     />
                   </div>
                 </div>

@@ -4,6 +4,12 @@ import { Routine, Exercise, MuscleGroup } from '../types';
 import { ExerciseSelector } from './ExerciseSelector';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
 
+interface ExerciseDraftValues {
+  sets?: string;
+  reps?: string;
+  restTime?: string;
+}
+
 interface RoutineEditorProps {
   routine?: Routine;
   onSave: (name: string, description: string, exercises: Exercise[], isPublic?: boolean, primaryMuscleGroup?: MuscleGroup) => void;
@@ -25,6 +31,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [isPublic, setIsPublic] = useState(routine?.isPublic ?? false);
   const [primaryMuscleGroup, setPrimaryMuscleGroup] = useState<MuscleGroup>(routine?.primaryMuscleGroup || 'fullbody');
   const [exerciseError, setExerciseError] = useState('');
+  const [exerciseDrafts, setExerciseDrafts] = useState<Record<string, ExerciseDraftValues>>({});
 
   const handleAddExercise = (exercise: Exercise) => {
     if (exercises.some((existing) => existing.id === exercise.id)) {
@@ -49,6 +56,59 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     setExercises(exercises.map(e =>
       e.id === exerciseId ? { ...e, ...updates } : e
     ));
+  };
+
+
+  const handleExerciseNumberChange = (exerciseId: string, field: keyof ExerciseDraftValues, rawValue: string) => {
+    setExerciseDrafts((previousDrafts) => ({
+      ...previousDrafts,
+      [exerciseId]: {
+        ...previousDrafts[exerciseId],
+        [field]: rawValue
+      }
+    }));
+
+    if (rawValue.trim() === '') {
+      return;
+    }
+
+    const parsedValue = Number.parseInt(rawValue, 10);
+    if (Number.isNaN(parsedValue)) {
+      return;
+    }
+
+    const minValue = field === 'restTime' ? 30 : 1;
+    handleUpdateExercise(exerciseId, { [field]: Math.max(minValue, parsedValue) } as Partial<Exercise>);
+  };
+
+  const handleExerciseNumberBlur = (exerciseId: string, field: keyof ExerciseDraftValues, fallback: number) => {
+    const draftValue = exerciseDrafts[exerciseId]?.[field];
+    if (draftValue === undefined) {
+      return;
+    }
+
+    const minValue = field === 'restTime' ? 30 : 1;
+    const parsedValue = Number.parseInt(draftValue, 10);
+    const nextValue = Number.isNaN(parsedValue) ? fallback : Math.max(minValue, parsedValue);
+
+    handleUpdateExercise(exerciseId, { [field]: nextValue } as Partial<Exercise>);
+
+    setExerciseDrafts((previousDrafts) => {
+      const currentDraft = previousDrafts[exerciseId];
+      if (!currentDraft) return previousDrafts;
+
+      const nextDraft = { ...currentDraft };
+      delete nextDraft[field];
+
+      const nextDrafts = { ...previousDrafts };
+      if (Object.keys(nextDraft).length === 0) {
+        delete nextDrafts[exerciseId];
+      } else {
+        nextDrafts[exerciseId] = nextDraft;
+      }
+
+      return nextDrafts;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -201,8 +261,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         <label className="block text-slate-300 mb-1">Series</label>
                         <input
                           type="number"
-                          value={exercise.sets}
-                          onChange={(e) => handleUpdateExercise(exercise.id, { sets: parseInt(e.target.value) })}
+                          value={exerciseDrafts[exercise.id]?.sets ?? String(exercise.sets)}
+                          onChange={(e) => handleExerciseNumberChange(exercise.id, 'sets', e.target.value)}
+                          onBlur={() => handleExerciseNumberBlur(exercise.id, 'sets', exercise.sets)}
                           className="input input-sm"
                           min="1"
                         />
@@ -211,8 +272,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         <label className="block text-slate-300 mb-1">Reps</label>
                         <input
                           type="number"
-                          value={exercise.reps}
-                          onChange={(e) => handleUpdateExercise(exercise.id, { reps: parseInt(e.target.value) })}
+                          value={exerciseDrafts[exercise.id]?.reps ?? String(exercise.reps)}
+                          onChange={(e) => handleExerciseNumberChange(exercise.id, 'reps', e.target.value)}
+                          onBlur={() => handleExerciseNumberBlur(exercise.id, 'reps', exercise.reps)}
                           className="input input-sm"
                           min="1"
                         />
@@ -221,8 +283,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         <label className="block text-slate-300 mb-1">Desc. (s)</label>
                         <input
                           type="number"
-                          value={exercise.restTime}
-                          onChange={(e) => handleUpdateExercise(exercise.id, { restTime: parseInt(e.target.value) })}
+                          value={exerciseDrafts[exercise.id]?.restTime ?? String(exercise.restTime)}
+                          onChange={(e) => handleExerciseNumberChange(exercise.id, 'restTime', e.target.value)}
+                          onBlur={() => handleExerciseNumberBlur(exercise.id, 'restTime', exercise.restTime)}
                           className="input input-sm"
                           min="30"
                           step="30"

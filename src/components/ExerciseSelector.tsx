@@ -16,6 +16,20 @@ interface ExerciseSelectorProps {
   onUpdateExercise?: (exerciseId: string, updates: Partial<Exercise>) => void;
 }
 
+interface CustomExerciseForm {
+  name: string;
+  category: string;
+  sets: number | '';
+  reps: number | '';
+  restTime: number | '';
+  description: string;
+}
+
+const getNumericValue = (value: number | '', fallback: number, min: number) => {
+  const resolvedValue = value === '' ? fallback : value;
+  return Math.max(min, resolvedValue);
+};
+
 export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onSelectExercise,
   onCancel,
@@ -49,7 +63,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [backfillMessage, setBackfillMessage] = useState('');
 
   // Estado para ejercicio personalizado
-  const [customExercise, setCustomExercise] = useState({
+  const [customExercise, setCustomExercise] = useState<CustomExerciseForm>({
     name: '',
     category: '',
     sets: 3,
@@ -115,6 +129,10 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       return;
     }
 
+    const resolvedSets = getNumericValue(customExercise.sets, 3, 1);
+    const resolvedReps = getNumericValue(customExercise.reps, 10, 1);
+    const resolvedRestTime = getNumericValue(customExercise.restTime, 90, 30);
+
     setCreatingExercise(true);
     setError(''); // Limpiar errores previos
     setSuccessMessage('');
@@ -124,9 +142,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         // Update existing exercise
         const updates: Partial<Exercise> = {
           name: customExercise.name,
-          sets: customExercise.sets,
-          reps: customExercise.reps,
-          restTime: customExercise.restTime,
+          sets: resolvedSets,
+          reps: resolvedReps,
+          restTime: resolvedRestTime,
           ...(selectedVideo ? { video: selectedVideo } : { video: undefined })
         };
 
@@ -134,9 +152,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         await updateExerciseTemplate(editingExercise.id, {
           name: customExercise.name,
           category: customExercise.category || 'Personalizado',
-          sets: customExercise.sets,
-          reps: customExercise.reps,
-          restTime: customExercise.restTime,
+          sets: resolvedSets,
+          reps: resolvedReps,
+          restTime: resolvedRestTime,
           description: customExercise.description,
           video: selectedVideo ?? undefined
         });
@@ -155,9 +173,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         const templateId = await createExerciseTemplate(
           customExercise.name,
           customExercise.category || 'Personalizado',
-          customExercise.sets,
-          customExercise.reps,
-          customExercise.restTime,
+          resolvedSets,
+          resolvedReps,
+          resolvedRestTime,
           customExercise.description,
           true,
           selectedVideo ?? undefined
@@ -167,9 +185,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         const exercise: Exercise = {
           id: templateId,
           name: customExercise.name,
-          sets: customExercise.sets,
-          reps: customExercise.reps,
-          restTime: customExercise.restTime,
+          sets: resolvedSets,
+          reps: resolvedReps,
+          restTime: resolvedRestTime,
           ...(selectedVideo ? { video: selectedVideo } : {})
         };
 
@@ -719,7 +737,17 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     <input
                       type="number"
                       value={customExercise.sets}
-                      onChange={(e) => setCustomExercise({ ...customExercise, sets: parseInt(e.target.value) || 1 })}
+                      onChange={(e) => {
+                        const nextValue = e.target.value;
+                        if (nextValue === '') {
+                          setCustomExercise({ ...customExercise, sets: '' });
+                          return;
+                        }
+
+                        const parsedValue = Number.parseInt(nextValue, 10);
+                        if (Number.isNaN(parsedValue)) return;
+                        setCustomExercise({ ...customExercise, sets: parsedValue });
+                      }}
                       className="input input-sm text-sm"
                       min="1"
                     />
@@ -729,7 +757,17 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     <input
                       type="number"
                       value={customExercise.reps}
-                      onChange={(e) => setCustomExercise({ ...customExercise, reps: parseInt(e.target.value) || 1 })}
+                      onChange={(e) => {
+                        const nextValue = e.target.value;
+                        if (nextValue === '') {
+                          setCustomExercise({ ...customExercise, reps: '' });
+                          return;
+                        }
+
+                        const parsedValue = Number.parseInt(nextValue, 10);
+                        if (Number.isNaN(parsedValue)) return;
+                        setCustomExercise({ ...customExercise, reps: parsedValue });
+                      }}
                       className="input input-sm text-sm"
                       min="1"
                     />
@@ -739,7 +777,17 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                     <input
                       type="number"
                       value={customExercise.restTime}
-                      onChange={(e) => setCustomExercise({ ...customExercise, restTime: parseInt(e.target.value) || 30 })}
+                      onChange={(e) => {
+                        const nextValue = e.target.value;
+                        if (nextValue === '') {
+                          setCustomExercise({ ...customExercise, restTime: '' });
+                          return;
+                        }
+
+                        const parsedValue = Number.parseInt(nextValue, 10);
+                        if (Number.isNaN(parsedValue)) return;
+                        setCustomExercise({ ...customExercise, restTime: parsedValue });
+                      }}
                       className="input input-sm text-sm"
                       min="30"
                       step="30"

@@ -7,6 +7,11 @@ export const Routines: React.FC = () => {
   const { workouts, updateWorkout, loading } = useWorkouts();
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+  const [exerciseNumberDrafts, setExerciseNumberDrafts] = useState<{
+    sets?: string;
+    reps?: string;
+    restTime?: string;
+  }>({});
 
   const daysOfWeek = [
     { key: 'monday', name: 'Lunes' },
@@ -43,6 +48,55 @@ export const Routines: React.FC = () => {
     setEditingExercise(newExercise);
   };
 
+
+  const handleExerciseNumberChange = (field: 'sets' | 'reps' | 'restTime', rawValue: string) => {
+    setExerciseNumberDrafts((previousDrafts) => ({
+      ...previousDrafts,
+      [field]: rawValue
+    }));
+
+    if (!editingExercise || rawValue.trim() === '') {
+      return;
+    }
+
+    const parsedValue = Number.parseInt(rawValue, 10);
+    if (Number.isNaN(parsedValue)) {
+      return;
+    }
+
+    const minValue = field === 'restTime' ? 0 : 1;
+    setEditingExercise({
+      ...editingExercise,
+      [field]: Math.max(minValue, parsedValue)
+    });
+  };
+
+  const handleExerciseNumberBlur = (field: 'sets' | 'reps' | 'restTime', fallback: number) => {
+    if (!editingExercise) {
+      return;
+    }
+
+    const draftValue = exerciseNumberDrafts[field];
+    if (draftValue === undefined) {
+      return;
+    }
+
+    const parsedValue = Number.parseInt(draftValue, 10);
+    const minValue = field === 'restTime' ? 0 : 1;
+    const nextValue = Number.isNaN(parsedValue) ? fallback : Math.max(minValue, parsedValue);
+
+    setEditingExercise({
+      ...editingExercise,
+      [field]: nextValue
+    });
+
+    setExerciseNumberDrafts((previousDrafts) => {
+      const nextDrafts = { ...previousDrafts };
+      delete nextDrafts[field];
+      return nextDrafts;
+    });
+  };
+
   const handleSaveExercise = () => {
     if (!editingExercise || !editingWorkout) return;
 
@@ -55,6 +109,7 @@ export const Routines: React.FC = () => {
       exercises: updatedExercises
     });
     setEditingExercise(null);
+    setExerciseNumberDrafts({});
   };
 
   const handleDeleteExercise = (exerciseId: string) => {
@@ -111,8 +166,9 @@ export const Routines: React.FC = () => {
                   </label>
                   <input
                     type="number"
-                    value={editingExercise.sets}
-                    onChange={(e) => setEditingExercise({ ...editingExercise, sets: parseInt(e.target.value) || 0 })}
+                    value={exerciseNumberDrafts.sets ?? String(editingExercise.sets)}
+                    onChange={(e) => handleExerciseNumberChange('sets', e.target.value)}
+                    onBlur={() => handleExerciseNumberBlur('sets', editingExercise.sets)}
                     className="input"
                     min="1"
                   />
@@ -124,8 +180,9 @@ export const Routines: React.FC = () => {
                   </label>
                   <input
                     type="number"
-                    value={editingExercise.reps}
-                    onChange={(e) => setEditingExercise({ ...editingExercise, reps: parseInt(e.target.value) || 0 })}
+                    value={exerciseNumberDrafts.reps ?? String(editingExercise.reps)}
+                    onChange={(e) => handleExerciseNumberChange('reps', e.target.value)}
+                    onBlur={() => handleExerciseNumberBlur('reps', editingExercise.reps)}
                     className="input"
                     min="1"
                   />
@@ -138,8 +195,9 @@ export const Routines: React.FC = () => {
                 </label>
                 <input
                   type="number"
-                  value={editingExercise.restTime || 0}
-                  onChange={(e) => setEditingExercise({ ...editingExercise, restTime: parseInt(e.target.value) || 0 })}
+                  value={exerciseNumberDrafts.restTime ?? String(editingExercise.restTime || 0)}
+                  onChange={(e) => handleExerciseNumberChange('restTime', e.target.value)}
+                  onBlur={() => handleExerciseNumberBlur('restTime', editingExercise.restTime || 0)}
                   className="input"
                   min="0"
                   step="10"
@@ -156,7 +214,10 @@ export const Routines: React.FC = () => {
                 <span>Guardar</span>
               </button>
               <button
-                onClick={() => setEditingExercise(null)}
+                onClick={() => {
+                  setEditingExercise(null);
+                  setExerciseNumberDrafts({});
+                }}
                 className="btn-secondary px-4"
               >
                 Cancelar

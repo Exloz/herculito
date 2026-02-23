@@ -10,6 +10,22 @@ interface LoginProps {
 export function Login({ onGoogleLogin, loading, errorMessage }: LoginProps) {
   const { showToast } = useUI();
 
+  const handleCopyError = async () => {
+    if (!errorMessage) return;
+
+    if (typeof navigator === 'undefined' || !navigator.clipboard) {
+      showToast('No se pudo copiar el error automaticamente.', 'error');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(errorMessage);
+      showToast('Error copiado. Pegalo al reportarlo.', 'success');
+    } catch {
+      showToast('No se pudo copiar el error automaticamente.', 'error');
+    }
+  };
+
   useEffect(() => {
     if (errorMessage) {
       showToast(errorMessage, 'error');
@@ -43,7 +59,17 @@ export function Login({ onGoogleLogin, loading, errorMessage }: LoginProps) {
 
             {errorMessage && (
               <div className="rounded-xl border border-crimson/40 bg-crimson/10 px-4 py-3 text-sm text-crimson">
-                {errorMessage}
+                <p className="break-words">{errorMessage}</p>
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <p className="text-[11px] text-crimson/80">Incluye este mensaje al reportar el problema.</p>
+                  <button
+                    type="button"
+                    onClick={handleCopyError}
+                    className="btn-ghost text-xs text-crimson hover:text-crimson"
+                  >
+                    Copiar error
+                  </button>
+                </div>
               </div>
             )}
 

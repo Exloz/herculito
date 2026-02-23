@@ -1,6 +1,6 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { CacheFirst } from 'workbox-strategies';
+import { CacheFirst, NetworkOnly } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
@@ -8,6 +8,11 @@ declare const self: ServiceWorkerGlobalScope & {
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
+
+registerRoute(
+  ({ url }: { url: URL }) => url.pathname.startsWith('/__/auth/'),
+  new NetworkOnly()
+);
 
 registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',

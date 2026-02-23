@@ -166,6 +166,11 @@ Si recibes errores sobre variables de entorno faltantes:
 - Asegúrate de que tu dominio esté en la lista de dominios autorizados
 - Revisa que las credenciales en `.env` sean correctas
 
+#### Error: "missing initial state" en iPhone/PWA
+- Este error suele aparecer cuando `signInWithRedirect` usa un `authDomain` distinto al dominio de la app y Safari aplica particion de storage.
+- Recomendado para PWA iOS: usar un `VITE_FIREBASE_AUTH_DOMAIN` del mismo sitio de la app y configurar proxy de `__/auth/*` hacia `<tu-proyecto>.firebaseapp.com`.
+- Si no puedes alinear dominios, muestra al usuario una alternativa (abrir la web en Safari en vez de la app instalada).
+
 ### Problemas de Firestore
 - Verifica que las reglas de Firestore permitan las operaciones necesarias
 - Asegúrate de que el proyecto Firebase tenga Firestore habilitado

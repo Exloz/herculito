@@ -62,45 +62,41 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
 
   return (
     <div className="fixed left-4 right-4 mx-auto max-w-sm app-card px-3 py-2.5 z-50 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] sm:bottom-4">
-      <div className="flex items-center justify-between mb-1">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex items-center gap-2 min-w-0">
           <TimerIcon className="text-mint" size={18} />
           <span className="text-sm text-white font-medium">Descanso</span>
         </div>
-        <button
-          onClick={handleClose}
-          className="btn-ghost min-h-0 min-w-0 h-8 w-8 p-0"
-          aria-label="Cerrar temporizador"
-        >
-          <X size={18} />
-        </button>
-      </div>
 
-      <div className="text-center mb-1.5">
-        <div className="text-2xl font-bold text-white font-mono leading-none">{formatTime()}</div>
-        <div className="w-full bg-slateDeep rounded-full h-1.5 mt-1.5">
-          <div
-            className="bg-mint h-1.5 rounded-full transition-all duration-200"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="flex items-center gap-1.5">
+          <div className="text-2xl font-bold text-white font-mono leading-none tabular-nums">{formatTime()}</div>
+          <button
+            onClick={handleClose}
+            className="btn-ghost min-h-0 min-w-0 h-8 w-8 p-0"
+            aria-label="Cerrar temporizador"
+          >
+            <X size={18} />
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          <div className="w-full bg-slateDeep rounded-full h-1.5">
+            <div
+              className="bg-mint h-1.5 rounded-full transition-all duration-200"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
         <button
           onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
-          className="rounded-lg bg-mint text-ink font-semibold px-3 py-2 text-sm flex items-center justify-center gap-1.5 transition-colors hover:bg-mintDeep touch-manipulation"
+          className="rounded-lg bg-mint text-ink font-semibold px-3 py-2 text-sm flex items-center justify-center gap-1.5 transition-colors hover:bg-mintDeep touch-manipulation min-w-[120px]"
           aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
         >
           {isActive ? <Pause size={16} /> : <Play size={16} />}
           <span>{isActive ? 'Pausar' : 'Reanudar'}</span>
-        </button>
-        <button
-          onClick={resetTimer}
-          className="rounded-lg border border-mist/60 bg-slateDeep text-slate-100 px-3 py-2 text-sm transition-colors hover:border-mint/40 hover:text-white touch-manipulation"
-          aria-label="Reiniciar temporizador"
-        >
-          Reiniciar
         </button>
       </div>
 

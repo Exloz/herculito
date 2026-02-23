@@ -387,7 +387,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       </header>
 
       <main
-        className={`max-w-4xl mx-auto px-4 py-6 sm:py-8 transition-[padding-bottom] duration-200 ${hasProgress ? (showTimer ? 'pb-[calc(16rem+env(safe-area-inset-bottom))]' : 'pb-[calc(10rem+env(safe-area-inset-bottom))]') : 'pb-8'}`}
+        className={`max-w-4xl mx-auto px-4 py-6 sm:py-8 transition-[padding-bottom] duration-200 ${showTimer ? 'pb-[calc(11.5rem+env(safe-area-inset-bottom))]' : 'pb-[calc(6rem+env(safe-area-inset-bottom))]'}`}
       >
         <div className="space-y-4">
           {routine.exercises.map((exercise, index) => {
@@ -397,7 +397,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
               date: getCurrentDateString(),
               sets: []
             };
-            const isCompleted = log.sets.length > 0 && log.sets.every(set => set.completed);
+            const isCompleted = isExerciseLogCompleted(log.sets, exercise.sets);
 
             return (
               <div
@@ -426,24 +426,20 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
           })}
         </div>
 
-      </main>
-
-      {hasProgress && (
-        <div
-          className={`fixed left-4 right-4 z-40 transition-all duration-200 ${showTimer ? 'bottom-[calc(env(safe-area-inset-bottom)+18.5rem)] sm:bottom-[13rem]' : 'bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] sm:bottom-6'}`}
-        >
-          <div className="max-w-4xl mx-auto">
+        {hasProgress && (
+          <div className="mt-7 text-center">
             <button
               onClick={handleCompleteWorkout}
-              className="btn-primary w-full inline-flex items-center justify-center gap-2 px-6 shadow-lift"
+              className="btn-primary inline-flex items-center gap-2 px-8"
               aria-label={workoutProgress === 100 ? 'Completar entrenamiento' : 'Finalizar entrenamiento incompleto'}
             >
               <CheckCircle size={20} />
               <span>{workoutProgress === 100 ? 'Completar Entrenamiento' : 'Finalizar Entrenamiento'}</span>
             </button>
           </div>
-        </div>
-      )}
+        )}
+
+      </main>
 
       {showTimer && (
         <Timer

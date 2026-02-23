@@ -39,6 +39,7 @@ function App() {
     error,
     signInWithGoogle,
     requiresSafariForGoogleSignIn,
+    safariLoginUrl,
     openSafariForGoogleLogin,
     logout
   } = useAuth();
@@ -65,6 +66,7 @@ function App() {
           loading={loading}
           errorMessage={error}
           requiresSafariForGoogleSignIn={requiresSafariForGoogleSignIn}
+          safariLoginUrl={safariLoginUrl}
           onOpenSafariForGoogleLogin={openSafariForGoogleLogin}
         />
       </UIProvider>

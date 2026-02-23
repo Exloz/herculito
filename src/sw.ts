@@ -15,6 +15,11 @@ registerRoute(
 );
 
 registerRoute(
+  ({ url }: { url: URL }) => url.pathname === '/__/firebase/init.json',
+  new NetworkOnly()
+);
+
+registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',
   new CacheFirst({
     cacheName: 'google-fonts-cache'

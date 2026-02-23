@@ -6,7 +6,8 @@ interface LoginProps {
   loading: boolean;
   errorMessage?: string | null;
   requiresSafariForGoogleSignIn?: boolean;
-  onOpenSafariForGoogleLogin?: () => void;
+  safariLoginUrl?: string;
+  onOpenSafariForGoogleLogin?: () => void | Promise<void>;
 }
 
 export function Login({
@@ -14,13 +15,14 @@ export function Login({
   loading,
   errorMessage,
   requiresSafariForGoogleSignIn = false,
+  safariLoginUrl,
   onOpenSafariForGoogleLogin
 }: LoginProps) {
   const { showToast } = useUI();
 
   const handleGoogleAction = () => {
     if (requiresSafariForGoogleSignIn && onOpenSafariForGoogleLogin) {
-      onOpenSafariForGoogleLogin();
+      void onOpenSafariForGoogleLogin();
       return;
     }
 
@@ -104,7 +106,7 @@ export function Login({
               {loading ? (
                 <div className="w-5 h-5 border-2 border-ink border-t-transparent rounded-full animate-spin" />
               ) : requiresSafariForGoogleSignIn ? (
-                <span>Abrir en Safari para iniciar sesion</span>
+                <span>Copiar enlace para Safari</span>
               ) : (
                 <>
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -132,9 +134,13 @@ export function Login({
 
             <p className="text-xs text-slate-400 text-center">
               {requiresSafariForGoogleSignIn
-                ? 'Despues de abrir Safari, vuelve a tocar el boton para continuar con Google.'
+                ? 'El boton copia o comparte el enlace para abrirlo en Safari y evitar el bloqueo de iOS PWA.'
                 : 'Sincroniza tu progreso y accede desde cualquier dispositivo.'}
             </p>
+
+            {requiresSafariForGoogleSignIn && safariLoginUrl && (
+              <p className="text-[11px] text-slate-500 break-all text-center">URL Safari: {safariLoginUrl}</p>
+            )}
           </div>
         </div>
       </div>

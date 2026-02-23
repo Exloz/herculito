@@ -75,6 +75,11 @@ const getIosPwaSafariRequiredMessage = () => withErrorCode(
   IOS_PWA_SAFARI_REQUIRED_CODE
 );
 
+const getSafariLoginUrl = () => {
+  if (typeof window === 'undefined') return 'https://herculito.exloz.site/';
+  return `${window.location.origin}/`;
+};
+
 const getNormalizedHost = (domain: string): string | null => {
   const trimmed = domain.trim();
   if (!trimmed) return null;
@@ -264,6 +269,7 @@ export function useAuth() {
   const [error, setError] = useState<string | null>(null);
   const [persistenceMode, setPersistenceMode] = useState<AuthPersistenceMode>('default');
   const requiresSafariForGoogleSignIn = isIosStandalone();
+  const safariLoginUrl = getSafariLoginUrl();
 
   useEffect(() => {
     let isActive = true;
@@ -392,16 +398,48 @@ export function useAuth() {
     }
   };
 
-  const openSafariForGoogleLogin = () => {
+  const openSafariForGoogleLogin = async () => {
     if (typeof window === 'undefined') return;
 
-    const openedWindow = window.open(window.location.href, '_blank', 'noopener,noreferrer');
-    if (!openedWindow) {
-      setError(withErrorCode(
-        'No se pudo abrir Safari automaticamente. Abre Herculito directamente desde Safari para iniciar sesion con Google.',
-        IOS_PWA_SAFARI_REQUIRED_CODE
-      ));
+    const nav = navigator as Navigator & {
+      share?: (data: ShareData) => Promise<void>;
+    };
+
+    if (typeof nav.share === 'function') {
+      try {
+        await nav.share({
+          title: 'Herculito',
+          text: 'Abre este enlace en Safari para iniciar sesion con Google',
+          url: safariLoginUrl
+        });
+        setError(withErrorCode(
+          `Comparte o abre este enlace en Safari para iniciar sesion: ${safariLoginUrl}`,
+          IOS_PWA_SAFARI_REQUIRED_CODE
+        ));
+        return;
+      } catch {
+        // Continuamos con fallback de copiado.
+      }
     }
+
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(safariLoginUrl);
+        setError(withErrorCode(
+          `Enlace copiado. Abre Safari, pega y entra aqui para iniciar sesion: ${safariLoginUrl}`,
+          IOS_PWA_SAFARI_REQUIRED_CODE
+        ));
+        return;
+      } catch {
+        // Continuamos con fallback final.
+      }
+    }
+
+    window.open(safariLoginUrl, '_blank', 'noopener,noreferrer');
+    setError(withErrorCode(
+      `No se pudo copiar automaticamente. Abre Safari y entra manualmente a: ${safariLoginUrl}`,
+      IOS_PWA_SAFARI_REQUIRED_CODE
+    ));
   };
 
   const logout = async () => {
@@ -418,6 +456,7 @@ export function useAuth() {
     error,
     signInWithGoogle,
     requiresSafariForGoogleSignIn,
+    safariLoginUrl,
     openSafariForGoogleLogin,
     logout,
   };

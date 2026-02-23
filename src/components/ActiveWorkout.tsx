@@ -11,8 +11,8 @@ const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 const SESSION_LOGS_MIGRATION_KEY = 'activeWorkoutSessionLogsMigration_v1';
 
-const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
-const easeOutCubic = (value: number): number => 1 - Math.pow(1 - value, 3);
+const COMPACT_ENTER_SCROLL_Y = 88;
+const COMPACT_EXIT_SCROLL_Y = 36;
 
 const toComparableDateValue = (value: unknown): number | null => {
   if (value instanceof Date) return value.getTime();
@@ -171,14 +171,10 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
   hasLastWeights,
   onBackToDashboard
 }) => {
-  const [headerCompactProgress, setHeaderCompactProgress] = useState(0);
+  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const headerScrollFrameRef = useRef<number | null>(null);
-  const headerAnimationFrameRef = useRef<number | null>(null);
-  const headerTargetProgressRef = useRef(0);
-  const headerProgressRef = useRef(0);
-  const lastAnimationTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!workoutStartTime) {
@@ -202,50 +198,18 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-    const animateProgress = (timestamp: number) => {
-      const target = headerTargetProgressRef.current;
-      const current = headerProgressRef.current;
-      const previousTimestamp = lastAnimationTimeRef.current ?? timestamp;
-      const dt = Math.min(64, timestamp - previousTimestamp);
-      lastAnimationTimeRef.current = timestamp;
-
-      const blendFactor = reduceMotionQuery.matches ? 1 : 1 - Math.exp(-dt / 48);
-      const nextValue = current + (target - current) * blendFactor;
-
-      if (Math.abs(nextValue - target) < 0.001) {
-        headerProgressRef.current = target;
-        setHeaderCompactProgress(target);
-        headerAnimationFrameRef.current = null;
-        lastAnimationTimeRef.current = null;
-        return;
-      }
-
-      headerProgressRef.current = nextValue;
-      setHeaderCompactProgress(nextValue);
-      headerAnimationFrameRef.current = window.requestAnimationFrame(animateProgress);
-    };
-
-    const updateCompactHeaderTarget = () => {
+    const updateCompactHeaderState = () => {
       const scrollY = Math.max(
         0,
         window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
       );
 
-      const rawProgress = clamp01((scrollY - 6) / 120);
-      const targetProgress = easeOutCubic(rawProgress);
-      headerTargetProgressRef.current = targetProgress;
-
-      if (reduceMotionQuery.matches) {
-        headerProgressRef.current = targetProgress;
-        setHeaderCompactProgress(targetProgress);
-        return;
-      }
-
-      if (headerAnimationFrameRef.current === null) {
-        headerAnimationFrameRef.current = window.requestAnimationFrame(animateProgress);
-      }
+      setIsHeaderCompact((previousValue) => {
+        if (previousValue) {
+          return scrollY > COMPACT_EXIT_SCROLL_Y;
+        }
+        return scrollY > COMPACT_ENTER_SCROLL_Y;
+      });
     };
 
     const handleScroll = () => {
@@ -254,12 +218,12 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
       }
 
       headerScrollFrameRef.current = window.requestAnimationFrame(() => {
-        updateCompactHeaderTarget();
+        updateCompactHeaderState();
         headerScrollFrameRef.current = null;
       });
     };
 
-    updateCompactHeaderTarget();
+    updateCompactHeaderState();
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleScroll);
 
@@ -271,38 +235,14 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
         window.cancelAnimationFrame(headerScrollFrameRef.current);
         headerScrollFrameRef.current = null;
       }
-
-      if (headerAnimationFrameRef.current !== null) {
-        window.cancelAnimationFrame(headerAnimationFrameRef.current);
-        headerAnimationFrameRef.current = null;
-      }
     };
   }, []);
 
-  const headerPaddingTopRem = 1 - (0.45 * headerCompactProgress);
-  const headerPaddingBottomRem = 1 - (0.6 * headerCompactProgress);
-
-  const expandedVisibility = clamp01(1 - (headerCompactProgress / 0.82));
-  const expandedBlockOpacity = Math.pow(expandedVisibility, 1.25);
-  const expandedBlockMaxHeight = Math.round(188 * expandedVisibility);
-  const expandedBlockTranslateY = Math.round(-10 * headerCompactProgress);
-
-  const compactTitleVisibility = clamp01((headerCompactProgress - 0.28) / 0.58);
-  const compactTitleOpacity = Math.pow(compactTitleVisibility, 1.2);
-  const compactTitleTranslateY = Math.round(10 * (1 - compactTitleVisibility));
-
-  const compactBarVisibility = clamp01((headerCompactProgress - 0.36) / 0.5);
-  const compactBarOpacity = compactBarVisibility;
-  const compactBarMaxHeight = Math.round(8 * compactBarVisibility);
-  const compactChipGap = 12 - (3 * headerCompactProgress);
-  const compactTitleMaxWidth = `${11.5 - (2.5 * headerCompactProgress)}rem`;
-
   return (
     <header
-      className="app-header px-4 sticky top-0 z-10"
+      className={`app-header px-4 sticky top-0 z-10 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'pt-[calc(0.55rem+env(safe-area-inset-top))] pb-2' : 'pt-[calc(1rem+env(safe-area-inset-top))] pb-4'}`}
       style={{
-        paddingTop: `calc(${headerPaddingTopRem}rem + env(safe-area-inset-top))`,
-        paddingBottom: `${headerPaddingBottomRem}rem`
+        willChange: 'padding'
       }}
     >
       <div className="max-w-4xl mx-auto">
@@ -316,14 +256,14 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
           </button>
 
           <div
-            className="pointer-events-none absolute left-1/2 min-w-0 -translate-x-1/2 px-2"
+            className="pointer-events-none absolute left-1/2 min-w-0 -translate-x-1/2 px-2 transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
-              opacity: compactTitleOpacity,
-              transform: `translate(-50%, ${compactTitleTranslateY}px)`,
+              opacity: isHeaderCompact ? 1 : 0,
+              transform: `translate(-50%, ${isHeaderCompact ? 0 : 10}px)`,
               willChange: 'opacity, transform'
             }}
           >
-            <div className="truncate text-center text-sm font-display text-white" style={{ maxWidth: compactTitleMaxWidth }}>
+            <div className={`truncate text-center text-sm font-display text-white transition-[max-width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-w-[9rem]' : 'max-w-[11.5rem]'}`}>
               {routineName}
             </div>
           </div>
@@ -331,7 +271,8 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
           <div
             className="flex items-center"
             style={{
-              gap: `${compactChipGap}px`
+              gap: isHeaderCompact ? '9px' : '12px',
+              transition: 'gap 300ms cubic-bezier(0.22, 1, 0.36, 1)'
             }}
           >
             <div className="chip">
@@ -347,11 +288,8 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
         </div>
 
         <div
-          className="mt-4 overflow-hidden"
+          className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-0 opacity-0 -translate-y-2 mt-0' : 'max-h-80 opacity-100 translate-y-0 mt-4'}`}
           style={{
-            opacity: expandedBlockOpacity,
-            maxHeight: `${expandedBlockMaxHeight}px`,
-            transform: `translateY(${expandedBlockTranslateY}px)`,
             willChange: 'opacity, transform, max-height'
           }}
         >
@@ -382,10 +320,8 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
         </div>
 
         <div
-          className="overflow-hidden"
+          className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-5 opacity-100' : 'max-h-0 opacity-0'}`}
           style={{
-            opacity: compactBarOpacity,
-            maxHeight: `${compactBarMaxHeight}px`,
             willChange: 'opacity, max-height'
           }}
         >

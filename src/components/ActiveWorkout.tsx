@@ -209,7 +209,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   }, []);
 
   return (
-    <div className="app-shell pb-28">
+    <div className="app-shell pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <header className="app-header px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sticky top-0 z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
@@ -263,7 +263,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+      <main
+        className={`max-w-4xl mx-auto px-4 py-6 sm:py-8 ${showTimer ? 'pb-[calc(22rem+env(safe-area-inset-bottom))]' : 'pb-8'}`}
+      >
         <div className="space-y-4">
           {routine.exercises.map((exercise, index) => {
             const log = getLogForExerciseCustom(exercise.id, user.id) || {

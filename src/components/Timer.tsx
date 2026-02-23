@@ -61,7 +61,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 app-card p-4 z-50">
+    <div className="fixed left-4 right-4 app-card p-4 z-50 bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] sm:bottom-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <TimerIcon className="text-mint" size={20} />

@@ -10,11 +10,7 @@ import { getLastWeightsForRoutineFromSessions } from '../utils/workoutSessions';
 const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 const SESSION_LOGS_MIGRATION_KEY = 'activeWorkoutSessionLogsMigration_v1';
-const COMPACT_SCROLL_START_Y = 4;
-const COMPACT_SCROLL_FULL_Y = 128;
-
-const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
-const lerp = (from: number, to: number, progress: number): number => from + ((to - from) * progress);
+const COMPACT_SCROLL_THRESHOLD_Y = 72;
 
 const toComparableDateValue = (value: unknown): number | null => {
   if (value instanceof Date) return value.getTime();
@@ -173,7 +169,7 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
   hasLastWeights,
   onBackToDashboard
 }) => {
-  const [headerCompactProgress, setHeaderCompactProgress] = useState(0);
+  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const headerScrollFrameRef = useRef<number | null>(null);
@@ -205,16 +201,7 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
         0,
         window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
       );
-
-      const rawProgress = (scrollY - COMPACT_SCROLL_START_Y) / (COMPACT_SCROLL_FULL_Y - COMPACT_SCROLL_START_Y);
-      const compactProgress = clamp01(rawProgress);
-
-      setHeaderCompactProgress((previousValue) => {
-        if (Math.abs(previousValue - compactProgress) < 0.003) {
-          return previousValue;
-        }
-        return compactProgress;
-      });
+      setIsHeaderCompact(scrollY > COMPACT_SCROLL_THRESHOLD_Y);
     };
 
     const handleScroll = () => {
@@ -243,33 +230,9 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
     };
   }, []);
 
-  const headerPaddingTopRem = lerp(1, 0.56, headerCompactProgress);
-  const headerPaddingBottomRem = lerp(1, 0.5, headerCompactProgress);
-
-  const expandedOpacity = lerp(1, 0, headerCompactProgress);
-  const expandedTranslateY = lerp(0, -10, headerCompactProgress);
-  const expandedMaxHeight = lerp(188, 0, headerCompactProgress);
-  const expandedMarginTop = lerp(16, 0, headerCompactProgress);
-
-  const compactTitleProgress = clamp01((headerCompactProgress - 0.2) / 0.55);
-  const compactTitleOpacity = compactTitleProgress;
-  const compactTitleTranslateY = lerp(10, 0, compactTitleProgress);
-  const compactTitleMaxWidthRem = lerp(11.5, 9, headerCompactProgress);
-
-  const compactBarProgress = clamp01((headerCompactProgress - 0.35) / 0.55);
-  const compactBarOpacity = compactBarProgress;
-  const compactBarMaxHeight = lerp(0, 20, compactBarProgress);
-
-  const chipGapPx = lerp(12, 9, headerCompactProgress);
-
   return (
     <header
-      className="app-header px-4 sticky top-0 z-10"
-      style={{
-        paddingTop: `calc(${headerPaddingTopRem.toFixed(3)}rem + env(safe-area-inset-top))`,
-        paddingBottom: `${headerPaddingBottomRem.toFixed(3)}rem`,
-        willChange: 'padding'
-      }}
+      className={`app-header px-4 sticky top-0 z-10 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'pt-[calc(0.55rem+env(safe-area-inset-top))] pb-2' : 'pt-[calc(1rem+env(safe-area-inset-top))] pb-4'}`}
     >
       <div className="max-w-4xl mx-auto">
         <div className="relative flex items-center justify-between gap-2">
@@ -282,16 +245,19 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
           </button>
 
           <div
-            className="pointer-events-none absolute left-1/2 min-w-0 -translate-x-1/2 px-2"
+            className="pointer-events-none absolute left-1/2 min-w-0 -translate-x-1/2 px-2 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
-              opacity: compactTitleOpacity,
-              transform: `translate(-50%, ${compactTitleTranslateY.toFixed(2)}px)`,
+              opacity: isHeaderCompact ? 1 : 0,
+              transform: `translate(-50%, ${isHeaderCompact ? 0 : 10}px)`,
               willChange: 'opacity, transform'
             }}
           >
             <div
               className="truncate text-center text-sm font-display text-white"
-              style={{ maxWidth: `${compactTitleMaxWidthRem.toFixed(3)}rem` }}
+              style={{
+                maxWidth: isHeaderCompact ? '9rem' : '11.5rem',
+                transition: 'max-width 300ms cubic-bezier(0.22, 1, 0.36, 1)'
+              }}
             >
               {routineName}
             </div>
@@ -300,7 +266,8 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
           <div
             className="flex items-center"
             style={{
-              gap: `${chipGapPx.toFixed(2)}px`
+              gap: isHeaderCompact ? '9px' : '12px',
+              transition: 'gap 300ms cubic-bezier(0.22, 1, 0.36, 1)'
             }}
           >
             <div className="chip">
@@ -316,14 +283,7 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
         </div>
 
         <div
-          className="overflow-hidden"
-          style={{
-            opacity: expandedOpacity,
-            maxHeight: `${expandedMaxHeight.toFixed(2)}px`,
-            transform: `translateY(${expandedTranslateY.toFixed(2)}px)`,
-            marginTop: `${expandedMarginTop.toFixed(2)}px`,
-            willChange: 'opacity, transform, max-height'
-          }}
+          className={`overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-0 opacity-0 -translate-y-2 mt-0' : 'max-h-80 opacity-100 translate-y-0 mt-4'}`}
         >
           <h1 className="text-2xl font-display text-white flex items-center gap-2">
             <Dumbbell size={24} className="text-mint" />
@@ -352,12 +312,7 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
         </div>
 
         <div
-          className="overflow-hidden"
-          style={{
-            opacity: compactBarOpacity,
-            maxHeight: `${compactBarMaxHeight.toFixed(2)}px`,
-            willChange: 'opacity, max-height'
-          }}
+          className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-5 opacity-100' : 'max-h-0 opacity-0'}`}
         >
           <div className="pt-1.5">
             <div className="w-full bg-slateDeep rounded-full h-1">

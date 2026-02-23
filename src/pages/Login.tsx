@@ -5,10 +5,27 @@ interface LoginProps {
   onGoogleLogin: () => void;
   loading: boolean;
   errorMessage?: string | null;
+  requiresSafariForGoogleSignIn?: boolean;
+  onOpenSafariForGoogleLogin?: () => void;
 }
 
-export function Login({ onGoogleLogin, loading, errorMessage }: LoginProps) {
+export function Login({
+  onGoogleLogin,
+  loading,
+  errorMessage,
+  requiresSafariForGoogleSignIn = false,
+  onOpenSafariForGoogleLogin
+}: LoginProps) {
   const { showToast } = useUI();
+
+  const handleGoogleAction = () => {
+    if (requiresSafariForGoogleSignIn && onOpenSafariForGoogleLogin) {
+      onOpenSafariForGoogleLogin();
+      return;
+    }
+
+    onGoogleLogin();
+  };
 
   const handleCopyError = async () => {
     if (!errorMessage) return;
@@ -73,13 +90,21 @@ export function Login({ onGoogleLogin, loading, errorMessage }: LoginProps) {
               </div>
             )}
 
+            {requiresSafariForGoogleSignIn && (
+              <div className="rounded-xl border border-amberGlow/40 bg-amberGlow/10 px-4 py-3 text-sm text-amberGlow">
+                En iPhone con la app instalada, Google debe abrirse en Safari para mostrar teclado y completar el login.
+              </div>
+            )}
+
             <button
-              onClick={onGoogleLogin}
-              disabled={loading}
+              onClick={handleGoogleAction}
+              disabled={loading || (requiresSafariForGoogleSignIn && !onOpenSafariForGoogleLogin)}
               className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-ink border-t-transparent rounded-full animate-spin" />
+              ) : requiresSafariForGoogleSignIn ? (
+                <span>Abrir en Safari para iniciar sesion</span>
               ) : (
                 <>
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -106,7 +131,9 @@ export function Login({ onGoogleLogin, loading, errorMessage }: LoginProps) {
             </button>
 
             <p className="text-xs text-slate-400 text-center">
-              Sincroniza tu progreso y accede desde cualquier dispositivo.
+              {requiresSafariForGoogleSignIn
+                ? 'Despues de abrir Safari, vuelve a tocar el boton para continuar con Google.'
+                : 'Sincroniza tu progreso y accede desde cualquier dispositivo.'}
             </p>
           </div>
         </div>

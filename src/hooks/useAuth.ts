@@ -19,6 +19,7 @@ const REDIRECT_MARKER_MAX_AGE_MS = 10 * 60 * 1000;
 
 type AuthPersistenceMode = 'local' | 'session' | 'memory' | 'default';
 type RedirectContext = 'ios-pwa' | 'popup-fallback';
+const IOS_PWA_SAFARI_REQUIRED_CODE = 'auth/ios-pwa-safari-required';
 
 interface RedirectMarker {
   ts: number;
@@ -68,6 +69,11 @@ const withErrorCode = (message: string, code: string | null) => {
   if (!code) return message;
   return `${message} (codigo: ${code})`;
 };
+
+const getIosPwaSafariRequiredMessage = () => withErrorCode(
+  'En iPhone con la PWA instalada, Google puede bloquear el teclado dentro del flujo de Firebase. Abre Herculito en Safari para iniciar sesion.',
+  IOS_PWA_SAFARI_REQUIRED_CODE
+);
 
 const getNormalizedHost = (domain: string): string | null => {
   const trimmed = domain.trim();
@@ -257,6 +263,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [persistenceMode, setPersistenceMode] = useState<AuthPersistenceMode>('default');
+  const requiresSafariForGoogleSignIn = isIosStandalone();
 
   useEffect(() => {
     let isActive = true;
@@ -315,6 +322,12 @@ export function useAuth() {
   }, []);
 
   const signInWithGoogle = async () => {
+    if (requiresSafariForGoogleSignIn) {
+      setLoading(false);
+      setError(getIosPwaSafariRequiredMessage());
+      return;
+    }
+
     const runRedirectSignIn = async (context: RedirectContext) => {
       if (persistenceMode === 'memory') {
         setError(withErrorCode(
@@ -352,7 +365,6 @@ export function useAuth() {
       setError(null);
       await signInWithPopup(auth, googleProvider);
     } catch (popupError) {
-      const isStandaloneIos = isIosStandalone();
       const errorCode = getFirebaseErrorCode(popupError);
       const canFallbackToRedirect = (
         errorCode === 'auth/popup-blocked' ||
@@ -360,14 +372,14 @@ export function useAuth() {
       );
 
       if (canFallbackToRedirect) {
-        const context: RedirectContext = isStandaloneIos ? 'ios-pwa' : 'popup-fallback';
+        const context: RedirectContext = requiresSafariForGoogleSignIn ? 'ios-pwa' : 'popup-fallback';
         await runRedirectSignIn(context);
         return;
       }
 
       if (errorCode === 'auth/popup-closed-by-user') {
         setError(withErrorCode('Cancelaste el inicio de sesion con Google. Intentalo de nuevo.', errorCode));
-      } else if (isStandaloneIos) {
+      } else if (requiresSafariForGoogleSignIn) {
         setError(getFriendlyErrorMessage(
           popupError,
           'No se pudo iniciar sesion con Google en iOS PWA. Intenta abrir Herculito desde Safari y vuelve a intentarlo.'
@@ -377,6 +389,18 @@ export function useAuth() {
       }
 
       setLoading(false);
+    }
+  };
+
+  const openSafariForGoogleLogin = () => {
+    if (typeof window === 'undefined') return;
+
+    const openedWindow = window.open(window.location.href, '_blank', 'noopener,noreferrer');
+    if (!openedWindow) {
+      setError(withErrorCode(
+        'No se pudo abrir Safari automaticamente. Abre Herculito directamente desde Safari para iniciar sesion con Google.',
+        IOS_PWA_SAFARI_REQUIRED_CODE
+      ));
     }
   };
 
@@ -393,6 +417,8 @@ export function useAuth() {
     loading,
     error,
     signInWithGoogle,
+    requiresSafariForGoogleSignIn,
+    openSafariForGoogleLogin,
     logout,
   };
 }

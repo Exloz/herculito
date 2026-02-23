@@ -33,7 +33,15 @@ const AuthErrorToast = ({ message }: { message: string | null }) => {
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'dashboard' | 'routines'>('dashboard');
-  const { user, loading, error, signInWithGoogle, logout } = useAuth();
+  const {
+    user,
+    loading,
+    error,
+    signInWithGoogle,
+    requiresSafariForGoogleSignIn,
+    openSafariForGoogleLogin,
+    logout
+  } = useAuth();
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.history.scrollRestoration) {
@@ -52,7 +60,13 @@ function App() {
   if (!user) {
     return (
       <UIProvider>
-        <Login onGoogleLogin={signInWithGoogle} loading={loading} errorMessage={error} />
+        <Login
+          onGoogleLogin={signInWithGoogle}
+          loading={loading}
+          errorMessage={error}
+          requiresSafariForGoogleSignIn={requiresSafariForGoogleSignIn}
+          onOpenSafariForGoogleLogin={openSafariForGoogleLogin}
+        />
       </UIProvider>
     );
   }

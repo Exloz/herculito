@@ -11,6 +11,9 @@ const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 const SESSION_LOGS_MIGRATION_KEY = 'activeWorkoutSessionLogsMigration_v1';
 
+const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
+const easeOutCubic = (value: number): number => 1 - Math.pow(1 - value, 3);
+
 const toComparableDateValue = (value: unknown): number | null => {
   if (value instanceof Date) return value.getTime();
   if (typeof value === 'string' || typeof value === 'number') {
@@ -152,13 +155,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const { updateExerciseLog, getLogForExercise, loading: logsLoading } = useExerciseLogs(today, user.id);
   const hasMigratedSessionLogsRef = useRef(false);
   const headerScrollFrameRef = useRef<number | null>(null);
+  const headerAnimationFrameRef = useRef<number | null>(null);
+  const headerTargetProgressRef = useRef(0);
+  const headerProgressRef = useRef(0);
 
   const [workoutTime, setWorkoutTime] = useState(0);
   const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
-  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
+  const [headerCompactProgress, setHeaderCompactProgress] = useState(0);
   const hasProgress = useMemo(
     () => exerciseLogs.some(log => log.sets?.some(set => set.completed)),
     [exerciseLogs]
@@ -229,14 +235,44 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const animateProgress = () => {
+      const target = headerTargetProgressRef.current;
+      const current = headerProgressRef.current;
+      const nextValue = current + (target - current) * 0.2;
+
+      if (Math.abs(nextValue - target) < 0.001) {
+        headerProgressRef.current = target;
+        setHeaderCompactProgress(target);
+        headerAnimationFrameRef.current = null;
+        return;
+      }
+
+      headerProgressRef.current = nextValue;
+      setHeaderCompactProgress(nextValue);
+      headerAnimationFrameRef.current = window.requestAnimationFrame(animateProgress);
+    };
+
     const updateCompactHeaderState = () => {
-      const scrollY = window.scrollY || window.pageYOffset || 0;
-      setIsHeaderCompact((previousValue) => {
-        if (previousValue) {
-          return scrollY > 16;
-        }
-        return scrollY > 44;
-      });
+      const scrollY = Math.max(
+        0,
+        window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
+      );
+      const rawProgress = clamp01((scrollY - 8) / 96);
+      const targetProgress = easeOutCubic(rawProgress);
+
+      headerTargetProgressRef.current = targetProgress;
+
+      if (reduceMotionQuery.matches) {
+        headerProgressRef.current = targetProgress;
+        setHeaderCompactProgress(targetProgress);
+        return;
+      }
+
+      if (headerAnimationFrameRef.current === null) {
+        headerAnimationFrameRef.current = window.requestAnimationFrame(animateProgress);
+      }
     };
 
     const handleScroll = () => {
@@ -252,12 +288,18 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
     updateCompactHeaderState();
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
       if (headerScrollFrameRef.current !== null) {
         window.cancelAnimationFrame(headerScrollFrameRef.current);
         headerScrollFrameRef.current = null;
+      }
+      if (headerAnimationFrameRef.current !== null) {
+        window.cancelAnimationFrame(headerAnimationFrameRef.current);
+        headerAnimationFrameRef.current = null;
       }
     };
   }, []);
@@ -369,44 +411,115 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   }, []);
 
+  const headerPaddingTopRem = 1 - (0.45 * headerCompactProgress);
+  const headerPaddingBottomRem = 1 - (0.6 * headerCompactProgress);
+
+  const expandedVisibility = clamp01(1 - (headerCompactProgress / 0.82));
+  const expandedBlockOpacity = Math.pow(expandedVisibility, 1.25);
+  const expandedBlockMaxHeight = Math.round(188 * expandedVisibility);
+  const expandedBlockTranslateY = Math.round(-10 * headerCompactProgress);
+
+  const compactTitleVisibility = clamp01((headerCompactProgress - 0.28) / 0.58);
+  const compactTitleOpacity = Math.pow(compactTitleVisibility, 1.2);
+  const compactTitleTranslateY = Math.round(10 * (1 - compactTitleVisibility));
+
+  const compactBarVisibility = clamp01((headerCompactProgress - 0.36) / 0.5);
+  const compactBarOpacity = compactBarVisibility;
+  const compactBarMaxHeight = Math.round(8 * compactBarVisibility);
+  const compactChipGap = 12 - (3 * headerCompactProgress);
+  const compactTitleMaxWidth = `${11.5 - (2.5 * headerCompactProgress)}rem`;
+
   return (
     <div className="app-shell pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <header
-        className={`app-header px-4 sticky top-0 z-10 transition-[padding] duration-200 ${isHeaderCompact ? 'pb-2 pt-[calc(0.5rem+env(safe-area-inset-top))]' : 'pb-4 pt-[calc(1rem+env(safe-area-inset-top))]'}`}
+        className="app-header px-4 sticky top-0 z-10"
+        style={{
+          paddingTop: `calc(${headerPaddingTopRem}rem + env(safe-area-inset-top))`,
+          paddingBottom: `${headerPaddingBottomRem}rem`
+        }}
       >
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between gap-2">
+          <div className="relative flex items-center justify-between gap-2">
             <button
               onClick={handleBackToDashboard}
-              className={`btn-ghost flex items-center gap-2 ${isHeaderCompact ? 'px-2 py-1.5' : ''}`}
+              className="btn-ghost flex items-center gap-2"
             >
-              <ArrowLeft size={isHeaderCompact ? 18 : 20} />
-              <span className={`font-medium ${isHeaderCompact ? 'text-sm' : ''}`}>Volver</span>
+              <ArrowLeft size={20} />
+              <span className="font-medium">Volver</span>
             </button>
 
-            {isHeaderCompact && (
-              <div className="min-w-0 flex-1 px-1">
-                <div className="truncate text-center text-sm font-display text-white">
-                  {routine.name}
-                </div>
+            <div
+              className="pointer-events-none absolute left-1/2 min-w-0 -translate-x-1/2 px-2"
+              style={{
+                opacity: compactTitleOpacity,
+                transform: `translate(-50%, ${compactTitleTranslateY}px)`
+              }}
+            >
+              <div className="truncate text-center text-sm font-display text-white" style={{ maxWidth: compactTitleMaxWidth }}>
+                {routine.name}
               </div>
-            )}
+            </div>
 
-            <div className={`flex items-center ${isHeaderCompact ? 'gap-2' : 'gap-3'}`}>
+            <div
+              className="flex items-center"
+              style={{
+                gap: `${compactChipGap}px`
+              }}
+            >
               <div className="chip">
-                <Clock size={isHeaderCompact ? 12 : 14} />
+                <Clock size={14} />
                 <span className="font-mono text-xs">{formatTime(workoutTime)}</span>
               </div>
 
               <div className="chip chip-warm">
-                <Target size={isHeaderCompact ? 12 : 14} />
+                <Target size={14} />
                 <span className="text-xs">{completedExercises}/{totalExercises}</span>
               </div>
             </div>
           </div>
 
-          {isHeaderCompact ? (
-            <div className="mt-1.5">
+          <div
+            className="mt-4 overflow-hidden"
+            style={{
+              opacity: expandedBlockOpacity,
+              maxHeight: `${expandedBlockMaxHeight}px`,
+              transform: `translateY(${expandedBlockTranslateY}px)`
+            }}
+          >
+            <h1 className="text-2xl font-display text-white flex items-center gap-2">
+              <Dumbbell size={24} className="text-mint" />
+              <span>{routine.name}</span>
+            </h1>
+
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-slate-300">Progreso del entrenamiento</span>
+                <span className="text-sm font-semibold text-mint">{Math.round(workoutProgress)}%</span>
+              </div>
+              <div className="w-full bg-slateDeep rounded-full h-2">
+                <div
+                  className="bg-gradient-to-r from-mint to-amberGlow h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${workoutProgress}%` }}
+                />
+              </div>
+
+              {Object.keys(lastWeights).length > 0 && (
+                <div className="mt-2 text-xs text-mint flex items-center gap-2">
+                  <div className="w-2 h-2 bg-mint rounded-full"></div>
+                  <span>Se han cargado los pesos de tu última sesión</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            className="overflow-hidden"
+            style={{
+              opacity: compactBarOpacity,
+              maxHeight: `${compactBarMaxHeight}px`
+            }}
+          >
+            <div className="pt-1.5">
               <div className="w-full bg-slateDeep rounded-full h-1">
                 <div
                   className="bg-gradient-to-r from-mint to-amberGlow h-1 rounded-full transition-all duration-300"
@@ -414,34 +527,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
                 />
               </div>
             </div>
-          ) : (
-            <div className="mt-4">
-              <h1 className="text-2xl font-display text-white flex items-center gap-2">
-                <Dumbbell size={24} className="text-mint" />
-                <span>{routine.name}</span>
-              </h1>
-
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-slate-300">Progreso del entrenamiento</span>
-                  <span className="text-sm font-semibold text-mint">{Math.round(workoutProgress)}%</span>
-                </div>
-                <div className="w-full bg-slateDeep rounded-full h-2">
-                  <div
-                    className="bg-gradient-to-r from-mint to-amberGlow h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${workoutProgress}%` }}
-                  />
-                </div>
-
-                {Object.keys(lastWeights).length > 0 && (
-                  <div className="mt-2 text-xs text-mint flex items-center gap-2">
-                    <div className="w-2 h-2 bg-mint rounded-full"></div>
-                    <span>Se han cargado los pesos de tu última sesión</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </header>
 

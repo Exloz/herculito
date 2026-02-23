@@ -23,6 +23,38 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   const [showVideo, setShowVideo] = React.useState(false);
   const [draftWeights, setDraftWeights] = React.useState<Record<number, string>>({});
 
+  const currentSets = React.useMemo((): WorkoutSet[] => {
+    const normalizedBySetNumber = new Map<number, WorkoutSet>();
+
+    log.sets.forEach((set) => {
+      const setNumber = Number(set.setNumber);
+      if (!Number.isInteger(setNumber)) return;
+      if (setNumber < 1 || setNumber > exercise.sets) return;
+      normalizedBySetNumber.set(setNumber, set);
+    });
+
+    const sets: WorkoutSet[] = [];
+    for (let i = 1; i <= exercise.sets; i++) {
+      const existingSet = normalizedBySetNumber.get(i);
+      if (existingSet) {
+        sets.push(existingSet);
+        continue;
+      }
+
+      const previousWeight = previousWeights && previousWeights[i - 1] !== undefined
+        ? previousWeights[i - 1]
+        : 0;
+
+      sets.push({
+        setNumber: i,
+        weight: previousWeight,
+        completed: false
+      });
+    }
+
+    return sets;
+  }, [exercise.sets, log.sets, previousWeights]);
+
   const getVideoUrls = (video: ExerciseVideo) => {
     const variants = video.variants ?? [];
     const frontVariant = variants.find((variant) => variant.kind.includes('front'));
@@ -50,31 +82,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     return { frontUrl, sideUrl };
   };
 
-  const defaultSets = React.useMemo((): WorkoutSet[] => {
-    const sets: WorkoutSet[] = [];
-    for (let i = 1; i <= exercise.sets; i++) {
-      const existingSet = log.sets.find(s => s.setNumber === i);
-      if (existingSet) {
-        sets.push(existingSet);
-      } else {
-        // Usar el peso anterior si está disponible, sino usar 0
-        const previousWeight = previousWeights && previousWeights[i - 1] !== undefined
-          ? previousWeights[i - 1]
-          : 0;
-
-        sets.push({
-          setNumber: i,
-          weight: previousWeight,
-          completed: false
-        });
-      }
-    }
-    return sets;
-  }, [exercise.sets, log.sets, previousWeights]);
-
-  const currentSets = log.sets.length > 0 ? log.sets : defaultSets;
   const completedSets = currentSets.filter(s => s.completed).length;
-  const progressPercentage = (completedSets / exercise.sets) * 100;
+  const progressPercentage = exercise.sets > 0
+    ? Math.min(100, (completedSets / exercise.sets) * 100)
+    : 0;
 
   const updateSetWeight = (setNumber: number, weight: number) => {
     const updatedSets = currentSets.map(set =>

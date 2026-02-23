@@ -30,6 +30,26 @@ const isIOSDevice = () => {
   return isAppleMobile || isIPadOS;
 };
 
+const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: number): boolean => {
+  if (expectedSets <= 0) return false;
+
+  const completionBySetNumber = new Map<number, boolean>();
+  (sets ?? []).forEach((set) => {
+    const setNumber = Number(set.setNumber);
+    if (!Number.isInteger(setNumber)) return;
+    if (setNumber < 1 || setNumber > expectedSets) return;
+    completionBySetNumber.set(setNumber, set.completed === true);
+  });
+
+  for (let setNumber = 1; setNumber <= expectedSets; setNumber += 1) {
+    if (completionBySetNumber.get(setNumber) !== true) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
   if (activeWorkout) {
     const data = {
@@ -243,7 +263,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
     const allExercisesCompleted = activeWorkout.routine.exercises.every(exercise => {
       const log = exerciseLogs.find(l => l.exerciseId === exercise.id);
-      return !!log && log.sets.length > 0 && log.sets.every(s => s.completed);
+      return !!log && isExerciseLogCompleted(log.sets, exercise.sets);
     });
 
     if (!allExercisesCompleted) {

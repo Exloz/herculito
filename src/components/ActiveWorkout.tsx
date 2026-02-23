@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
-import { Routine, User, WorkoutSession, ExerciseLog } from '../types';
+import { Routine, User, WorkoutSession, ExerciseLog, WorkoutSet } from '../types';
 import { useExerciseLogs } from '../hooks/useWorkouts';
 import { ExerciseCard } from './ExerciseCard';
 import { Timer } from './Timer';
@@ -9,6 +9,84 @@ import { getLastWeightsForRoutineFromSessions } from '../utils/workoutSessions';
 
 const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
+const SESSION_LOGS_MIGRATION_KEY = 'activeWorkoutSessionLogsMigration_v1';
+
+const toComparableDateValue = (value: unknown): number | null => {
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = Date.parse(String(value));
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const areWorkoutSetsEqual = (left: WorkoutSet[], right: WorkoutSet[]): boolean => {
+  if (left.length !== right.length) return false;
+
+  for (let index = 0; index < left.length; index += 1) {
+    const leftSet = left[index];
+    const rightSet = right[index];
+
+    if (leftSet.setNumber !== rightSet.setNumber) return false;
+    if (leftSet.weight !== rightSet.weight) return false;
+    if (leftSet.completed !== rightSet.completed) return false;
+
+    const leftCompletedAt = toComparableDateValue(leftSet.completedAt);
+    const rightCompletedAt = toComparableDateValue(rightSet.completedAt);
+    if (leftCompletedAt !== rightCompletedAt) return false;
+  }
+
+  return true;
+};
+
+const normalizeWorkoutSets = (sets: WorkoutSet[], expectedSets: number): WorkoutSet[] => {
+  if (expectedSets <= 0) return [];
+
+  const normalizedBySetNumber = new Map<number, WorkoutSet>();
+  sets.forEach((set) => {
+    const setNumber = Number(set.setNumber);
+    if (!Number.isInteger(setNumber)) return;
+    if (setNumber < 1 || setNumber > expectedSets) return;
+    normalizedBySetNumber.set(setNumber, set);
+  });
+
+  const normalizedSets: WorkoutSet[] = [];
+  for (let setNumber = 1; setNumber <= expectedSets; setNumber += 1) {
+    const existingSet = normalizedBySetNumber.get(setNumber);
+    if (existingSet) {
+      normalizedSets.push(existingSet);
+      continue;
+    }
+
+    normalizedSets.push({
+      setNumber,
+      weight: 0,
+      completed: false
+    });
+  }
+
+  return normalizedSets;
+};
+
+const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: number): boolean => {
+  if (expectedSets <= 0) return false;
+
+  const completionBySetNumber = new Map<number, boolean>();
+  (sets ?? []).forEach((set) => {
+    const setNumber = Number(set.setNumber);
+    if (!Number.isInteger(setNumber)) return;
+    if (setNumber < 1 || setNumber > expectedSets) return;
+    completionBySetNumber.set(setNumber, set.completed === true);
+  });
+
+  for (let setNumber = 1; setNumber <= expectedSets; setNumber += 1) {
+    if (completionBySetNumber.get(setNumber) !== true) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 const saveProgressToStorage = (sessionId: string, exerciseLogs: ExerciseLog[]) => {
   const data = {
@@ -71,7 +149,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   onUpdateProgress
 }) => {
   const today = getCurrentDateString();
-  const { updateExerciseLog, getLogForExercise } = useExerciseLogs(today, user.id);
+  const { updateExerciseLog, getLogForExercise, loading: logsLoading } = useExerciseLogs(today, user.id);
+  const hasMigratedSessionLogsRef = useRef(false);
 
   const [workoutTime, setWorkoutTime] = useState(0);
   const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
@@ -176,7 +255,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         date: getCurrentDateString(),
         sets: []
       };
-      return log;
+      return {
+        ...log,
+        sets: normalizeWorkoutSets(log.sets ?? [], exercise.sets)
+      };
     });
 
     onCompleteWorkout(logsToSave);
@@ -184,12 +266,53 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     localStorage.removeItem(`workoutStartTime_${session.id}`);
   }, [getLogForExerciseCustom, onCompleteWorkout, routine.exercises, session.id, user.id]);
 
+  useEffect(() => {
+    if (logsLoading) return;
+    if (hasMigratedSessionLogsRef.current) return;
+
+    const migrationKey = `${SESSION_LOGS_MIGRATION_KEY}_${session.id}`;
+    try {
+      if (localStorage.getItem(migrationKey) === 'done') {
+        hasMigratedSessionLogsRef.current = true;
+        return;
+      }
+    } catch {
+      // ignore storage read errors
+    }
+
+    const migratedLogs: ExerciseLog[] = [];
+    routine.exercises.forEach((exercise) => {
+      const log = getLogForExerciseCustom(exercise.id, user.id);
+      if (!log || (log.sets?.length ?? 0) === 0) return;
+
+      const normalizedSets = normalizeWorkoutSets(log.sets, exercise.sets);
+      if (areWorkoutSetsEqual(log.sets, normalizedSets)) return;
+
+      migratedLogs.push({
+        ...log,
+        sets: normalizedSets
+      });
+    });
+
+    migratedLogs.forEach((log) => {
+      handleUpdateLog(log);
+    });
+
+    try {
+      localStorage.setItem(migrationKey, 'done');
+    } catch {
+      // ignore storage write errors
+    }
+
+    hasMigratedSessionLogsRef.current = true;
+  }, [getLogForExerciseCustom, handleUpdateLog, logsLoading, routine.exercises, session.id, user.id]);
+
   const totalExercises = routine.exercises.length;
 
   const completedExercises = useMemo(() => {
     return routine.exercises.filter(exercise => {
       const log = getLogForExerciseCustom(exercise.id, user.id);
-      return log && log.sets.length > 0 && log.sets.every(set => set.completed);
+      return !!log && isExerciseLogCompleted(log.sets, exercise.sets);
     }).length;
   }, [getLogForExerciseCustom, routine.exercises, user.id]);
 
@@ -209,7 +332,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   }, []);
 
   return (
-    <div className="app-shell pb-[calc(7rem+env(safe-area-inset-bottom))]">
+    <div className="app-shell pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <header className="app-header px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sticky top-0 z-10">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
@@ -264,7 +387,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       </header>
 
       <main
-        className={`max-w-4xl mx-auto px-4 py-6 sm:py-8 ${showTimer ? 'pb-[calc(22rem+env(safe-area-inset-bottom))]' : 'pb-8'}`}
+        className={`max-w-4xl mx-auto px-4 py-6 sm:py-8 transition-[padding-bottom] duration-200 ${hasProgress ? (showTimer ? 'pb-[calc(16rem+env(safe-area-inset-bottom))]' : 'pb-[calc(10rem+env(safe-area-inset-bottom))]') : 'pb-8'}`}
       >
         <div className="space-y-4">
           {routine.exercises.map((exercise, index) => {
@@ -303,19 +426,24 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
           })}
         </div>
 
-        {hasProgress && (
-          <div className="mt-8 text-center">
+      </main>
+
+      {hasProgress && (
+        <div
+          className={`fixed left-4 right-4 z-40 transition-all duration-200 ${showTimer ? 'bottom-[calc(env(safe-area-inset-bottom)+18.5rem)] sm:bottom-[13rem]' : 'bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] sm:bottom-6'}`}
+        >
+          <div className="max-w-4xl mx-auto">
             <button
               onClick={handleCompleteWorkout}
-              className="btn-primary inline-flex items-center gap-2 px-8"
+              className="btn-primary w-full inline-flex items-center justify-center gap-2 px-6 shadow-lift"
               aria-label={workoutProgress === 100 ? 'Completar entrenamiento' : 'Finalizar entrenamiento incompleto'}
             >
               <CheckCircle size={20} />
               <span>{workoutProgress === 100 ? 'Completar Entrenamiento' : 'Finalizar Entrenamiento'}</span>
             </button>
           </div>
-        )}
-      </main>
+        </div>
+      )}
 
       {showTimer && (
         <Timer

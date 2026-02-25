@@ -403,8 +403,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                         void handleToggleRoutineVisibility(routine.id, !isVisibleOnDashboard);
                       }}
                       disabled={isRoutineVisibilityLoading || isRoutineVisibilityUpdating(routine.id)}
-                      className={`inline-flex h-5 w-10 shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink disabled:cursor-not-allowed disabled:opacity-60 ${isVisibleOnDashboard
-                        ? 'bg-mint'
+                      className={`relative inline-flex h-6 w-11 min-h-0 min-w-0 shrink-0 items-center rounded-full p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink disabled:cursor-not-allowed disabled:opacity-60 ${isVisibleOnDashboard
+                        ? 'bg-slate-200'
                         : 'bg-slate-600'
                         }`}
                       aria-label={isVisibleOnDashboard
@@ -413,9 +413,9 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                       }
                     >
                       <span
-                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${isVisibleOnDashboard
-                          ? 'translate-x-5'
-                          : 'translate-x-0.5'
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-sm transition-all ${isVisibleOnDashboard
+                          ? 'translate-x-5 border border-slate-700 bg-slate-900'
+                          : 'translate-x-0 border border-slate-300 bg-white'
                           }`}
                       />
                     </button>

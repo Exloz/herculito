@@ -454,7 +454,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       <div className="px-4 py-3 sm:py-4">
         <div className="max-w-7xl mx-auto">
           <div className="app-surface p-3 sm:p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
               <div className="app-surface-muted p-2.5 sm:p-3 text-center">
                 <div className="flex items-center justify-center gap-2 mb-1.5">
                   <Award className="text-amberGlow" size={16} />
@@ -497,11 +497,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Este mes</span>
                 </div>
                 <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.thisMonthWorkouts}</div>
-                <div className="text-[11px] text-slate-400">
-                  {competitionLoading
-                    ? 'entrenamientos · Top mensual: ...'
-                    : `entrenamientos · Top mensual: ${formatPosition(competitionStats.userMonthRank)}`}
+                <div className="text-[11px] text-slate-400">entrenamientos</div>
+              </div>
+
+              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
+                  <Trophy className="text-mint" size={16} />
+                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Top mensual</span>
                 </div>
+                <div className="text-lg sm:text-xl font-display text-white leading-tight">
+                  {competitionLoading ? '...' : formatPosition(competitionStats.userMonthRank)}
+                </div>
+                <div className="text-[11px] text-slate-400">tu posicion</div>
               </div>
             </div>
 

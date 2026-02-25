@@ -403,16 +403,21 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                         void handleToggleRoutineVisibility(routine.id, !isVisibleOnDashboard);
                       }}
                       disabled={isRoutineVisibilityLoading || isRoutineVisibilityUpdating(routine.id)}
-                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-60 ${isVisibleOnDashboard
-                        ? 'border-mint/70 bg-mint/20 text-mint'
-                        : 'border-slate-500 bg-slate-700 text-slate-300'
+                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-md border transition-colors disabled:opacity-60 ${isVisibleOnDashboard
+                        ? 'border-mint/70 bg-mint/30'
+                        : 'border-slate-500 bg-slate-700'
                         }`}
                       aria-label={isVisibleOnDashboard
                         ? `Ocultar ${routine.name} del inicio`
                         : `Mostrar ${routine.name} en inicio`
                       }
                     >
-                      {isVisibleOnDashboard ? 'Visible' : 'Oculta'}
+                      <span
+                        className={`inline-block h-3.5 w-3.5 transform rounded-sm bg-white transition-transform ${isVisibleOnDashboard
+                          ? 'translate-x-4'
+                          : 'translate-x-1'
+                          }`}
+                      />
                     </button>
                   </div>
                 )}

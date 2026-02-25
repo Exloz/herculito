@@ -403,9 +403,9 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                         void handleToggleRoutineVisibility(routine.id, !isVisibleOnDashboard);
                       }}
                       disabled={isRoutineVisibilityLoading || isRoutineVisibilityUpdating(routine.id)}
-                      className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-md border transition-colors disabled:opacity-60 ${isVisibleOnDashboard
-                        ? 'border-mint/70 bg-mint/30'
-                        : 'border-slate-500 bg-slate-700'
+                      className={`inline-flex h-5 w-10 shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink disabled:cursor-not-allowed disabled:opacity-60 ${isVisibleOnDashboard
+                        ? 'bg-mint'
+                        : 'bg-slate-600'
                         }`}
                       aria-label={isVisibleOnDashboard
                         ? `Ocultar ${routine.name} del inicio`
@@ -413,9 +413,9 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                       }
                     >
                       <span
-                        className={`inline-block h-3.5 w-3.5 transform rounded-sm bg-white transition-transform ${isVisibleOnDashboard
-                          ? 'translate-x-4'
-                          : 'translate-x-1'
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform ${isVisibleOnDashboard
+                          ? 'translate-x-5'
+                          : 'translate-x-0.5'
                           }`}
                       />
                     </button>

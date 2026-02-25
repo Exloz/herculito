@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Calendar, TrendingUp, Award, Clock, LogOut, Dumbbell, Bell } from 'lucide-react';
+import { Calendar, TrendingUp, Award, Clock, LogOut, Dumbbell, Bell, Trophy, Crown } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../types';
 import { useRoutines } from '../hooks/useRoutines';
+import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
 import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { WorkoutCalendar } from '../components/WorkoutCalendar';
@@ -9,11 +10,19 @@ import { ActiveWorkout } from '../components/ActiveWorkout';
 import { getRecommendedMuscleGroup } from '../utils/muscleGroups';
 import { useUI } from '../contexts/ui-context';
 import { formatDateInAppTimeZone } from '../utils/dateUtils';
+import { fetchCompetitiveLeaderboard, type LeaderboardEntryResponse } from '../utils/dataApi';
 import { version as appVersion } from '../../package.json';
 
 interface DashboardProps {
   user: User;
   onLogout: () => void;
+}
+
+interface LeaderboardEntry {
+  userId: string;
+  name: string;
+  totalExercises: number;
+  position: number;
 }
 
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
@@ -48,6 +57,24 @@ const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: number)
   }
 
   return true;
+};
+
+const mapLeaderboardEntry = (
+  entry: LeaderboardEntryResponse | null,
+  currentUserId: string,
+  currentUserName: string
+): LeaderboardEntry | null => {
+  if (!entry) return null;
+
+  const trimmedName = entry.name?.trim();
+  const fallbackName = entry.userId === currentUserId
+    ? currentUserName || 'Tu'
+    : `Usuario ${entry.userId.slice(0, 6)}`;
+
+  return {
+    ...entry,
+    name: trimmedName || fallbackName
+  };
 };
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
@@ -122,6 +149,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   } | null>(null);
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
+  const [competitionLoading, setCompetitionLoading] = useState(false);
+  const [competitionStats, setCompetitionStats] = useState<{
+    weekLeader: LeaderboardEntry | null;
+    monthLeader: LeaderboardEntry | null;
+    userWeekRank: LeaderboardEntry | null;
+    userMonthRank: LeaderboardEntry | null;
+  }>({
+    weekLeader: null,
+    monthLeader: null,
+    userWeekRank: null,
+    userMonthRank: null
+  });
   const { showToast, confirm } = useUI();
 
 
@@ -172,6 +211,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
 
    const { routines, loading: routinesLoading, updateRoutine, incrementRoutineUsage } = useRoutines(user.id);
+  const { isRoutineVisibleOnDashboard } = usePublicRoutineVisibility(user.id);
   const {
     sessions,
     loading: sessionsLoading,
@@ -189,9 +229,72 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   // Estadísticas de entrenamiento
   const stats = useMemo(() => getWorkoutStats(), [getWorkoutStats]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCompetitionStats = async () => {
+      setCompetitionLoading(true);
+
+      try {
+        const leaderboard = await fetchCompetitiveLeaderboard(25);
+        if (cancelled) return;
+
+        const currentUserName = user.name.trim();
+
+        setCompetitionStats({
+          weekLeader: mapLeaderboardEntry(leaderboard.week.top[0] ?? null, user.id, currentUserName),
+          monthLeader: mapLeaderboardEntry(leaderboard.month.top[0] ?? null, user.id, currentUserName),
+          userWeekRank: mapLeaderboardEntry(leaderboard.week.currentUser, user.id, currentUserName),
+          userMonthRank: mapLeaderboardEntry(leaderboard.month.currentUser, user.id, currentUserName)
+        });
+      } catch {
+        if (cancelled) return;
+
+        setCompetitionStats({
+          weekLeader: null,
+          monthLeader: null,
+          userWeekRank: null,
+          userMonthRank: null
+        });
+      } finally {
+        if (!cancelled) {
+          setCompetitionLoading(false);
+        }
+      }
+    };
+
+    void loadCompetitionStats();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id, user.name, stats.totalWorkouts, stats.thisWeekWorkouts, stats.thisMonthWorkouts]);
+
+  const formatPosition = (entry: LeaderboardEntry | null): string => {
+    if (competitionLoading) return '...';
+    if (!entry) return 'Sin ranking';
+    return `#${entry.position}`;
+  };
+
+  const dashboardRoutines = useMemo(() => {
+    return routines.filter((routine) => {
+      const owner = routine.createdBy || routine.userId;
+      const isPublicRoutine = routine.isPublic !== false;
+      const isCommunityRoutine = Boolean(
+        owner &&
+        owner !== 'system' &&
+        owner !== user.id &&
+        isPublicRoutine
+      );
+
+      if (!isCommunityRoutine) return true;
+      return isRoutineVisibleOnDashboard(routine.id);
+    });
+  }, [routines, user.id, isRoutineVisibleOnDashboard]);
+
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
-      const routine = routines.find(r => r.id === routineId);
+        const routine = dashboardRoutines.find(r => r.id === routineId);
 
       if (routine) {
         const session = await startWorkoutSession(routine);
@@ -205,7 +308,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     } catch {
       showToast('Error al iniciar el entrenamiento. Inténtalo de nuevo.', 'error');
     }
-  }, [startWorkoutSession, routines, showToast]);
+  }, [startWorkoutSession, dashboardRoutines, showToast]);
 
   const handleRoutineMuscleGroupChange = useCallback(async (routineId: string, newMuscleGroup: MuscleGroup) => {
     try {
@@ -351,7 +454,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       <div className="px-4 py-5">
         <div className="max-w-7xl mx-auto">
           <div className="app-surface p-4 sm:p-5">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
               <div className="app-surface-muted p-3 sm:p-4 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
                   <Award className="text-amberGlow" size={16} />
@@ -381,6 +484,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
               <div className="app-surface-muted p-3 sm:p-4 text-center">
                 <div className="flex items-center justify-center gap-2 mb-2">
+                  <TrendingUp className="text-amberGlow" size={16} />
+                  <span className="text-xs sm:text-sm font-semibold text-slate-300">Racha larga</span>
+                </div>
+                <div className="text-xl sm:text-2xl font-display text-white">{stats.longestStreak}</div>
+                <div className="text-xs text-slate-400">días récord</div>
+              </div>
+
+              <div className="app-surface-muted p-3 sm:p-4 text-center">
+                <div className="flex items-center justify-center gap-2 mb-2">
                   <Clock className="text-amberGlow" size={16} />
                   <span className="text-xs sm:text-sm font-semibold text-slate-300">Este mes</span>
                 </div>
@@ -388,11 +500,78 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 <div className="text-xs text-slate-400">entrenamientos</div>
               </div>
             </div>
+
+            <div className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-mist/40">
+              <div className="flex items-center gap-2 mb-3">
+                <Trophy className="text-amberGlow" size={18} />
+                <h2 className="text-sm sm:text-base font-display text-white">Clasificación competitiva</h2>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="app-surface-muted p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Top semanal</span>
+                    <span className="text-sm font-semibold text-mint">{formatPosition(competitionStats.userWeekRank)}</span>
+                  </div>
+
+                  {competitionStats.weekLeader ? (
+                    <>
+                      <div className="flex items-center gap-2 text-mint mb-1">
+                        <Crown size={15} />
+                        <span className="text-xs sm:text-sm font-semibold">Lider: {competitionStats.weekLeader.name}</span>
+                      </div>
+                      <div className="text-xs text-slate-400 mb-2">{competitionStats.weekLeader.totalExercises} ejercicios liderando</div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-400 mb-2">
+                      {competitionLoading ? 'Cargando ranking semanal...' : 'Sin datos suficientes esta semana'}
+                    </div>
+                  )}
+
+                  {competitionStats.userWeekRank ? (
+                    <div className="text-sm text-slate-300">Tú llevas {competitionStats.userWeekRank.totalExercises} ejercicios</div>
+                  ) : (
+                    <div className="text-sm text-slate-400">
+                      {competitionLoading ? 'Calculando tu posición semanal...' : 'Aún no registras ejercicios esta semana'}
+                    </div>
+                  )}
+                </div>
+
+                <div className="app-surface-muted p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Top mensual</span>
+                    <span className="text-sm font-semibold text-mint">{formatPosition(competitionStats.userMonthRank)}</span>
+                  </div>
+
+                  {competitionStats.monthLeader ? (
+                    <>
+                      <div className="flex items-center gap-2 text-mint mb-1">
+                        <Crown size={15} />
+                        <span className="text-xs sm:text-sm font-semibold">Lider: {competitionStats.monthLeader.name}</span>
+                      </div>
+                      <div className="text-xs text-slate-400 mb-2">{competitionStats.monthLeader.totalExercises} ejercicios liderando</div>
+                    </>
+                  ) : (
+                    <div className="text-xs text-slate-400 mb-2">
+                      {competitionLoading ? 'Cargando ranking mensual...' : 'Sin datos suficientes este mes'}
+                    </div>
+                  )}
+
+                  {competitionStats.userMonthRank ? (
+                    <div className="text-sm text-slate-300">Tú llevas {competitionStats.userMonthRank.totalExercises} ejercicios</div>
+                  ) : (
+                    <div className="text-sm text-slate-400">
+                      {competitionLoading ? 'Calculando tu posición mensual...' : 'Aún no registras ejercicios este mes'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-       {/* Main Content */}
+        {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         {activeWorkout && (
           <div className="mb-6">
@@ -472,11 +651,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
 
 
-             <MuscleGroupDashboard
-               routines={routines}
-               currentUser={user}
-               onStartWorkout={handleStartWorkout}
-               onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
+              <MuscleGroupDashboard
+                routines={dashboardRoutines}
+                currentUser={user}
+                onStartWorkout={handleStartWorkout}
+                onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
                recommendedGroup={recommendedGroup}
              />
            </div>

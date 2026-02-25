@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Dumbbell, Target, User as UserIcon, Eye } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
+import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
 import { RoutineEditor } from '../components/RoutineEditor';
 import { User, Routine, Exercise, MuscleGroup, ExerciseVideo } from '../types';
 import { useUI } from '../contexts/ui-context';
@@ -23,6 +24,12 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
     getUserRoutines,
     getPublicRoutines
   } = useRoutines(user.id);
+  const {
+    isRoutineVisibleOnDashboard,
+    isRoutineVisibilityLoading,
+    isRoutineVisibilityUpdating,
+    setRoutineVisibilityOnDashboard
+  } = usePublicRoutineVisibility(user.id);
   const [showEditor, setShowEditor] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState<Routine | undefined>();
   const [saving, setSaving] = useState(false);
@@ -84,9 +91,18 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
     });
   };
 
+  const handleToggleRoutineVisibility = async (routineId: string, nextVisible: boolean) => {
+    try {
+      await setRoutineVisibilityOnDashboard(routineId, nextVisible);
+    } catch {
+      showToast('No se pudo guardar la visibilidad de la rutina', 'error');
+    }
+  };
+
   // Funciones para filtrar rutinas
   const myRoutines = getUserRoutines();
   const publicRoutines = getPublicRoutines();
+  const visiblePublicRoutinesCount = publicRoutines.filter((routine) => isRoutineVisibleOnDashboard(routine.id)).length;
   const displayedRoutines = activeTab === 'my' ? myRoutines : publicRoutines;
   const routinesMissingVideos = myRoutines.reduce((total, routine) => {
     return total + routine.exercises.filter((exercise) => {
@@ -269,6 +285,12 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
           </div>
         )}
 
+        {activeTab === 'public' && publicRoutines.length > 0 && (
+          <div className="text-xs text-slate-400 mb-4">
+            {visiblePublicRoutinesCount} de {publicRoutines.length} rutinas públicas visibles en Inicio
+          </div>
+        )}
+
         {routineBackfillMessage && (
           <div className="text-xs text-slate-400 mb-4">
             {routineBackfillMessage}
@@ -299,11 +321,14 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
           </div>
         ) : (
           <div className="space-y-4">
-            {displayedRoutines.map((routine) => (
-              <div
-                key={routine.id}
-                className="app-card p-4 sm:p-5"
-              >
+            {displayedRoutines.map((routine) => {
+              const isVisibleOnDashboard = isRoutineVisibleOnDashboard(routine.id);
+
+              return (
+                <div
+                  key={routine.id}
+                  className="app-card p-4 sm:p-5"
+                >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -367,6 +392,39 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                   </div>
                 </div>
 
+                {activeTab === 'public' && (
+                  <div className="mb-3 app-surface-muted rounded-xl px-3 py-2 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm text-slate-200">Mostrar en Inicio</p>
+                      <p className="text-xs text-slate-500">Controla si esta rutina aparece en tu dashboard</p>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isVisibleOnDashboard}
+                      onClick={() => {
+                        void handleToggleRoutineVisibility(routine.id, !isVisibleOnDashboard);
+                      }}
+                      disabled={isRoutineVisibilityLoading || isRoutineVisibilityUpdating(routine.id)}
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${isVisibleOnDashboard
+                        ? 'bg-mint'
+                        : 'bg-slate-600'
+                        }`}
+                      aria-label={isVisibleOnDashboard
+                        ? `Ocultar ${routine.name} del inicio`
+                        : `Mostrar ${routine.name} en inicio`
+                      }
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isVisibleOnDashboard
+                          ? 'translate-x-5'
+                          : 'translate-x-1'
+                          }`}
+                      />
+                    </button>
+                  </div>
+                )}
+
                 {/* Preview de ejercicios */}
                 {routine.exercises.length > 0 && (
                   <div className="mt-3 pt-3 app-divider">
@@ -389,7 +447,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

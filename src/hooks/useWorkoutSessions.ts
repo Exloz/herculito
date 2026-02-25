@@ -25,6 +25,34 @@ const toDate = (value: unknown): Date | undefined => {
   return undefined;
 };
 
+const toDateKey = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateKey = (dateKey: string): Date => {
+  const [year, month, day] = dateKey.split('-').map((part) => Number.parseInt(part, 10));
+  return new Date(year, (month || 1) - 1, day || 1);
+};
+
+const addDays = (date: Date, days: number): Date => {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+};
+
+const getCompletedSessionDayKeys = (sessions: WorkoutSession[]): string[] => {
+  const uniqueDays = new Set<string>();
+  sessions.forEach((session) => {
+    if (!session.completedAt) return;
+    uniqueDays.add(toDateKey(session.completedAt));
+  });
+
+  return Array.from(uniqueDays).sort();
+};
+
 const mapSession = (session: WorkoutSessionResponse): WorkoutSession => {
   return {
     ...session,
@@ -164,31 +192,56 @@ export const useWorkoutSessions = (user: User) => {
   }, [sessions]);
 
   const calculateWorkoutStreak = useCallback((): number => {
-    const completedSessions = sessions
-      .filter((s) => s.completedAt)
-      .sort((a, b) => b.completedAt!.getTime() - a.completedAt!.getTime());
+    const completedDays = getCompletedSessionDayKeys(sessions);
+    if (completedDays.length === 0) return 0;
 
-    if (completedSessions.length === 0) return 0;
+    const completedDaysSet = new Set(completedDays);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = addDays(today, -1);
+    const todayKey = toDateKey(today);
+    const yesterdayKey = toDateKey(yesterday);
+
+    let anchorDate: Date | null = null;
+    if (completedDaysSet.has(todayKey)) {
+      anchorDate = today;
+    } else if (completedDaysSet.has(yesterdayKey)) {
+      anchorDate = yesterday;
+    } else {
+      return 0;
+    }
 
     let streak = 0;
-    let currentDate = new Date();
-    currentDate.setHours(23, 59, 59, 999);
-
-    for (const session of completedSessions) {
-      const sessionDate = new Date(session.completedAt!);
-      sessionDate.setHours(23, 59, 59, 999);
-
-      const daysDiff = Math.floor((currentDate.getTime() - sessionDate.getTime()) / (1000 * 60 * 60 * 24));
-
-      if (daysDiff <= 1) {
-        streak++;
-        currentDate = sessionDate;
-      } else {
-        break;
-      }
+    let cursor = anchorDate;
+    while (completedDaysSet.has(toDateKey(cursor))) {
+      streak += 1;
+      cursor = addDays(cursor, -1);
     }
 
     return streak;
+  }, [sessions]);
+
+  const calculateLongestWorkoutStreak = useCallback((): number => {
+    const completedDays = getCompletedSessionDayKeys(sessions);
+    if (completedDays.length === 0) return 0;
+
+    let longestStreak = 1;
+    let currentStreak = 1;
+
+    for (let index = 1; index < completedDays.length; index += 1) {
+      const previousDate = parseDateKey(completedDays[index - 1]);
+      const expectedNextDayKey = toDateKey(addDays(previousDate, 1));
+
+      if (completedDays[index] === expectedNextDayKey) {
+        currentStreak += 1;
+      } else {
+        longestStreak = Math.max(longestStreak, currentStreak);
+        currentStreak = 1;
+      }
+    }
+
+    return Math.max(longestStreak, currentStreak);
   }, [sessions]);
 
   const getWorkoutStats = useCallback(() => {
@@ -200,9 +253,10 @@ export const useWorkoutSessions = (user: User) => {
       totalWorkouts: completed.length,
       thisWeekWorkouts: thisWeek.length,
       thisMonthWorkouts: thisMonth.length,
-      currentStreak: calculateWorkoutStreak()
+      currentStreak: calculateWorkoutStreak(),
+      longestStreak: calculateLongestWorkoutStreak()
     };
-  }, [sessions, getThisWeekSessions, getThisMonthSessions, calculateWorkoutStreak]);
+  }, [sessions, getThisWeekSessions, getThisMonthSessions, calculateWorkoutStreak, calculateLongestWorkoutStreak]);
 
   const getLastWeightsForRoutine = useCallback((routineId: string): Record<string, number[]> => {
     const lastCompletedSession = sessions

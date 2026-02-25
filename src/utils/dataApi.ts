@@ -5,6 +5,20 @@ import { getPushApiOrigin } from './pushApi';
 export type ExerciseTemplateResponse = Omit<ExerciseTemplate, 'createdAt'> & { createdAt: number };
 export type RoutineResponse = Omit<Routine, 'createdAt' | 'updatedAt'> & { createdAt: number; updatedAt: number };
 export type WorkoutSessionResponse = Omit<WorkoutSession, 'startedAt' | 'completedAt'> & { startedAt: number; completedAt?: number };
+export type LeaderboardEntryResponse = {
+  userId: string;
+  name?: string;
+  totalExercises: number;
+  position: number;
+};
+export type LeaderboardPeriodResponse = {
+  top: LeaderboardEntryResponse[];
+  currentUser: LeaderboardEntryResponse | null;
+};
+export type CompetitiveLeaderboardResponse = {
+  week: LeaderboardPeriodResponse;
+  month: LeaderboardPeriodResponse;
+};
 
 export const fetchExercises = async (): Promise<ExerciseTemplateResponse[]> => {
   const origin = getPushApiOrigin();
@@ -152,6 +166,30 @@ export const incrementRoutineUsage = async (id: string): Promise<void> => {
   });
 };
 
+export const fetchHiddenPublicRoutineIds = async (): Promise<string[]> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  const data = await fetchJson<{ hiddenRoutineIds: unknown[] }>(`${origin}/v1/data/routines/visibility`, {
+    headers: { authorization: `Bearer ${token}` }
+  });
+
+  const hiddenRoutineIds = Array.isArray(data.hiddenRoutineIds) ? data.hiddenRoutineIds : [];
+  return hiddenRoutineIds.filter((value): value is string => typeof value === 'string');
+};
+
+export const updateRoutineVisibility = async (routineId: string, visible: boolean): Promise<void> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/routines/visibility`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ routineId, visible })
+  });
+};
+
 export const fetchSessions = async (): Promise<WorkoutSessionResponse[]> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();
@@ -159,6 +197,16 @@ export const fetchSessions = async (): Promise<WorkoutSessionResponse[]> => {
     headers: { authorization: `Bearer ${token}` }
   });
   return data.sessions ?? [];
+};
+
+export const fetchCompetitiveLeaderboard = async (limit = 10): Promise<CompetitiveLeaderboardResponse> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  const safeLimit = Math.min(50, Math.max(1, Math.floor(limit)));
+
+  return fetchJson<CompetitiveLeaderboardResponse>(`${origin}/v1/data/leaderboard?limit=${safeLimit}`, {
+    headers: { authorization: `Bearer ${token}` }
+  });
 };
 
 export const startSession = async (payload: {

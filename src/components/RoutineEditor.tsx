@@ -113,6 +113,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (showExerciseSelector) return;
     if (!name.trim() || exercises.length === 0) return;
     onSave(name, description, exercises, isPublic, primaryMuscleGroup);
   };
@@ -283,9 +284,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         <label className="block text-slate-300 mb-1">Desc. (s)</label>
                         <input
                           type="number"
-                          value={exerciseDrafts[exercise.id]?.restTime ?? String(exercise.restTime)}
+                          value={exerciseDrafts[exercise.id]?.restTime ?? String(exercise.restTime ?? 90)}
                           onChange={(e) => handleExerciseNumberChange(exercise.id, 'restTime', e.target.value)}
-                          onBlur={() => handleExerciseNumberBlur(exercise.id, 'restTime', exercise.restTime)}
+                          onBlur={() => handleExerciseNumberBlur(exercise.id, 'restTime', exercise.restTime ?? 90)}
                           className="input input-sm"
                           min="5"
                           step="5"
@@ -303,24 +304,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             )}
           </div>
 
-          {/* Selector de ejercicios */}
-          {showExerciseSelector && (
-            <ExerciseSelector
-              onSelectExercise={handleAddExercise}
-              onCancel={() => {
-                setShowExerciseSelector(false);
-                setEditingExercise(null);
-              }}
-              editingExercise={editingExercise}
-              onUpdateExercise={handleUpdateExercise}
-            />
-          )}
-
           {/* Botones de acción */}
           <div className="flex space-x-3 pt-6">
             <button
               type="submit"
-              disabled={loading || !name.trim() || exercises.length === 0}
+              disabled={loading || showExerciseSelector || !name.trim() || exercises.length === 0}
               className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-60"
             >
               <Save size={18} />
@@ -335,6 +323,19 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             </button>
           </div>
         </form>
+
+        {/* Selector de ejercicios */}
+        {showExerciseSelector && (
+          <ExerciseSelector
+            onSelectExercise={handleAddExercise}
+            onCancel={() => {
+              setShowExerciseSelector(false);
+              setEditingExercise(null);
+            }}
+            editingExercise={editingExercise}
+            onUpdateExercise={handleUpdateExercise}
+          />
+        )}
       </div>
     </div>
   );

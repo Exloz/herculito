@@ -21,7 +21,7 @@ interface DashboardProps {
 interface LeaderboardEntry {
   userId: string;
   name: string;
-  totalExercises: number;
+  totalWorkouts: number;
   position: number;
 }
 
@@ -451,117 +451,121 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       </header>
 
       {/* Stats Bar */}
-      <div className="px-4 py-5">
+      <div className="px-4 py-3 sm:py-4">
         <div className="max-w-7xl mx-auto">
-          <div className="app-surface p-4 sm:p-5">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-              <div className="app-surface-muted p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="app-surface p-3 sm:p-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3">
+              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
                   <Award className="text-amberGlow" size={16} />
-                  <span className="text-xs sm:text-sm font-semibold text-slate-300">Total</span>
+                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Total</span>
                 </div>
-                <div className="text-xl sm:text-2xl font-display text-white">{stats.totalWorkouts}</div>
-                <div className="text-xs text-slate-400">entrenamientos</div>
+                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.totalWorkouts}</div>
+                <div className="text-[11px] text-slate-400">entrenamientos</div>
               </div>
 
-              <div className="app-surface-muted p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
                   <Calendar className="text-mint" size={16} />
-                  <span className="text-xs sm:text-sm font-semibold text-slate-300">Esta semana</span>
+                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Esta semana</span>
                 </div>
-                <div className="text-xl sm:text-2xl font-display text-white">{stats.thisWeekWorkouts}</div>
-                <div className="text-xs text-slate-400">entrenamientos</div>
+                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.thisWeekWorkouts}</div>
+                <div className="text-[11px] text-slate-400">entrenamientos</div>
               </div>
 
-              <div className="app-surface-muted p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
                   <TrendingUp className="text-mint" size={16} />
-                  <span className="text-xs sm:text-sm font-semibold text-slate-300">Racha</span>
+                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Racha</span>
                 </div>
-                <div className="text-xl sm:text-2xl font-display text-white">{stats.currentStreak}</div>
-                <div className="text-xs text-slate-400">días consecutivos</div>
+                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.currentStreak}</div>
+                <div className="text-[11px] text-slate-400">dias consecutivos</div>
               </div>
 
-              <div className="app-surface-muted p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
                   <TrendingUp className="text-amberGlow" size={16} />
-                  <span className="text-xs sm:text-sm font-semibold text-slate-300">Racha larga</span>
+                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Racha larga</span>
                 </div>
-                <div className="text-xl sm:text-2xl font-display text-white">{stats.longestStreak}</div>
-                <div className="text-xs text-slate-400">días récord</div>
+                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.longestStreak}</div>
+                <div className="text-[11px] text-slate-400">dias record</div>
               </div>
 
-              <div className="app-surface-muted p-3 sm:p-4 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
+              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
+                <div className="flex items-center justify-center gap-2 mb-1.5">
                   <Clock className="text-amberGlow" size={16} />
-                  <span className="text-xs sm:text-sm font-semibold text-slate-300">Este mes</span>
+                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Este mes</span>
                 </div>
-                <div className="text-xl sm:text-2xl font-display text-white">{stats.thisMonthWorkouts}</div>
-                <div className="text-xs text-slate-400">entrenamientos</div>
+                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.thisMonthWorkouts}</div>
+                <div className="text-[11px] text-slate-400">
+                  {competitionLoading
+                    ? 'entrenamientos · Top mensual: ...'
+                    : `entrenamientos · Top mensual: ${formatPosition(competitionStats.userMonthRank)}`}
+                </div>
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-mist/40">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="mt-3 pt-3 border-t border-mist/40">
+              <div className="flex items-center gap-2 mb-2">
                 <Trophy className="text-amberGlow" size={18} />
-                <h2 className="text-sm sm:text-base font-display text-white">Clasificación competitiva</h2>
+                <h2 className="text-xs sm:text-sm font-display text-white">Clasificacion global</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                <div className="app-surface-muted p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Top semanal</span>
-                    <span className="text-sm font-semibold text-mint">{formatPosition(competitionStats.userWeekRank)}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+                <div className="app-surface-muted px-3 py-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top semanal</span>
+                    <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userWeekRank)}</span>
                   </div>
 
                   {competitionStats.weekLeader ? (
                     <>
-                      <div className="flex items-center gap-2 text-mint mb-1">
-                        <Crown size={15} />
-                        <span className="text-xs sm:text-sm font-semibold">Lider: {competitionStats.weekLeader.name}</span>
+                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
+                        <Crown size={14} />
+                        <span className="font-semibold">Lider: {competitionStats.weekLeader.name}</span>
                       </div>
-                      <div className="text-xs text-slate-400 mb-2">{competitionStats.weekLeader.totalExercises} ejercicios liderando</div>
+                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.weekLeader.totalWorkouts} entrenamientos liderando</div>
                     </>
                   ) : (
-                    <div className="text-xs text-slate-400 mb-2">
+                    <div className="text-[11px] text-slate-400 mb-1.5">
                       {competitionLoading ? 'Cargando ranking semanal...' : 'Sin datos suficientes esta semana'}
                     </div>
                   )}
 
                   {competitionStats.userWeekRank ? (
-                    <div className="text-sm text-slate-300">Tú llevas {competitionStats.userWeekRank.totalExercises} ejercicios</div>
+                    <div className="text-xs text-slate-300">Tu llevas {competitionStats.userWeekRank.totalWorkouts} entrenamientos</div>
                   ) : (
-                    <div className="text-sm text-slate-400">
-                      {competitionLoading ? 'Calculando tu posición semanal...' : 'Aún no registras ejercicios esta semana'}
+                    <div className="text-xs text-slate-400">
+                      {competitionLoading ? 'Calculando tu posición semanal...' : 'Aun no registras entrenamientos esta semana'}
                     </div>
                   )}
                 </div>
 
-                <div className="app-surface-muted p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Top mensual</span>
-                    <span className="text-sm font-semibold text-mint">{formatPosition(competitionStats.userMonthRank)}</span>
+                <div className="app-surface-muted px-3 py-2.5">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top mensual</span>
+                    <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userMonthRank)}</span>
                   </div>
 
                   {competitionStats.monthLeader ? (
                     <>
-                      <div className="flex items-center gap-2 text-mint mb-1">
-                        <Crown size={15} />
-                        <span className="text-xs sm:text-sm font-semibold">Lider: {competitionStats.monthLeader.name}</span>
+                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
+                        <Crown size={14} />
+                        <span className="font-semibold">Lider: {competitionStats.monthLeader.name}</span>
                       </div>
-                      <div className="text-xs text-slate-400 mb-2">{competitionStats.monthLeader.totalExercises} ejercicios liderando</div>
+                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.monthLeader.totalWorkouts} entrenamientos liderando</div>
                     </>
                   ) : (
-                    <div className="text-xs text-slate-400 mb-2">
+                    <div className="text-[11px] text-slate-400 mb-1.5">
                       {competitionLoading ? 'Cargando ranking mensual...' : 'Sin datos suficientes este mes'}
                     </div>
                   )}
 
                   {competitionStats.userMonthRank ? (
-                    <div className="text-sm text-slate-300">Tú llevas {competitionStats.userMonthRank.totalExercises} ejercicios</div>
+                    <div className="text-xs text-slate-300">Tu llevas {competitionStats.userMonthRank.totalWorkouts} entrenamientos</div>
                   ) : (
-                    <div className="text-sm text-slate-400">
-                      {competitionLoading ? 'Calculando tu posición mensual...' : 'Aún no registras ejercicios este mes'}
+                    <div className="text-xs text-slate-400">
+                      {competitionLoading ? 'Calculando tu posición mensual...' : 'Aun no registras entrenamientos este mes'}
                     </div>
                   )}
                 </div>

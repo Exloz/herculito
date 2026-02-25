@@ -393,11 +393,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                 </div>
 
                 {activeTab === 'public' && (
-                  <div className="mb-3 app-surface-muted rounded-xl px-3 py-2 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm text-slate-200">Mostrar en Inicio</p>
-                      <p className="text-xs text-slate-500">Controla si esta rutina aparece en tu dashboard</p>
-                    </div>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <p className="text-sm text-slate-200">Mostrar en Inicio</p>
                     <button
                       type="button"
                       role="switch"
@@ -406,21 +403,16 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                         void handleToggleRoutineVisibility(routine.id, !isVisibleOnDashboard);
                       }}
                       disabled={isRoutineVisibilityLoading || isRoutineVisibilityUpdating(routine.id)}
-                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${isVisibleOnDashboard
-                        ? 'bg-mint'
-                        : 'bg-slate-600'
+                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors disabled:opacity-60 ${isVisibleOnDashboard
+                        ? 'border-mint/70 bg-mint/20 text-mint'
+                        : 'border-slate-500 bg-slate-700 text-slate-300'
                         }`}
                       aria-label={isVisibleOnDashboard
                         ? `Ocultar ${routine.name} del inicio`
                         : `Mostrar ${routine.name} en inicio`
                       }
                     >
-                      <span
-                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isVisibleOnDashboard
-                          ? 'translate-x-5'
-                          : 'translate-x-1'
-                          }`}
-                      />
+                      {isVisibleOnDashboard ? 'Visible' : 'Oculta'}
                     </button>
                   </div>
                 )}

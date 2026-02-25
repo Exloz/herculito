@@ -8,7 +8,7 @@ export type WorkoutSessionResponse = Omit<WorkoutSession, 'startedAt' | 'complet
 export type LeaderboardEntryResponse = {
   userId: string;
   name?: string;
-  totalExercises: number;
+  totalWorkouts: number;
   position: number;
 };
 export type LeaderboardPeriodResponse = {

@@ -75,14 +75,15 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   // Pre-populate form when editing
   useEffect(() => {
     if (isEditing && editingExercise) {
+      const editableExercise = editingExercise as Exercise & { category?: string; description?: string };
       setShowCustomForm(true);
       setCustomExercise({
         name: editingExercise.name,
-        category: editingExercise.category || '',
+        category: editableExercise.category || '',
         sets: editingExercise.sets,
         reps: editingExercise.reps,
         restTime: editingExercise.restTime || 90,
-        description: editingExercise.description || ''
+        description: editableExercise.description || ''
       });
       if (editingExercise.video) {
         setSelectedVideo(editingExercise.video);
@@ -95,6 +96,19 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     return () => {
     };
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onCancel]);
 
   // Obtener ejercicios filtrados
   const filteredExercises = searchExercises(searchTerm, selectedCategory);
@@ -365,7 +379,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   if (!user?.id) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="app-card p-6 text-center">
+        <div className="app-card p-6 text-center" role="dialog" aria-modal="true" aria-label="Verificando autenticación">
           <Loader className="animate-spin mx-auto mb-4 text-mint" size={32} />
           <p className="text-white">Verificando autenticación...</p>
         </div>
@@ -376,7 +390,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="app-card p-6 text-center">
+        <div className="app-card p-6 text-center" role="dialog" aria-modal="true" aria-label="Cargando ejercicios">
           <Loader className="animate-spin mx-auto mb-4 text-mint" size={32} />
           <p className="text-white">Cargando ejercicios...</p>
         </div>
@@ -386,10 +400,15 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="app-card w-full max-w-md max-h-[80vh] overflow-hidden">
+      <div
+        className="app-card w-full max-w-md max-h-[80vh] overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exercise-selector-title"
+      >
         <div className="p-4 border-b border-mist/60">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-white">
+            <h3 id="exercise-selector-title" className="text-lg font-bold text-white">
               {isEditing ? (
                 <span className="flex items-center gap-2">
                   <Pencil size={18} className="text-mint" />
@@ -405,6 +424,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 onCancel();
               }}
               className="btn-ghost"
+              aria-label="Cerrar selector de ejercicios"
             >
               <X size={20} />
             </button>

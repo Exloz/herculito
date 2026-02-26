@@ -150,8 +150,15 @@ export const getRecommendedMuscleGroup = (recentWorkouts: WorkoutSession[]): Mus
       return recommendedGroup;
     }
 
-    // Retornar un grupo no entrenado aleatoriamente
-    return untrainedGroups[Math.floor(Math.random() * untrainedGroups.length)];
+    // Retornar un grupo no entrenado de forma determinística por día
+    const daySeed = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+    const seedSource = `${daySeed}:${recentMuscleGroups.join('|')}`;
+    let hash = 0;
+    for (let index = 0; index < seedSource.length; index += 1) {
+      hash = (hash * 31 + seedSource.charCodeAt(index)) >>> 0;
+    }
+
+    return untrainedGroups[hash % untrainedGroups.length];
   } catch {
     return null;
   }

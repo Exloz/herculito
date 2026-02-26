@@ -8,6 +8,9 @@ interface ClerkLike {
 
 type TokenGetter = () => Promise<string | null>;
 
+const DEFAULT_TIMEOUT_MS = 15000;
+const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
+
 let tokenGetter: TokenGetter | null = null;
 
 export const setTokenGetter = (getter: TokenGetter | null): void => {
@@ -46,17 +49,61 @@ export const getIdToken = async (): Promise<string> => {
 };
 
 export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
-  const res = await fetch(url, init);
-  const contentType = res.headers.get('content-type') ?? '';
-  if (!contentType.includes('application/json')) {
-    if (!res.ok) {
-      throw new Error(`Request failed: ${res.status}`);
+  const method = (init?.method ?? 'GET').toUpperCase();
+  const retries = method === 'GET' || method === 'HEAD' ? 1 : 0;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = globalThis.setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+    const externalSignal = init?.signal;
+
+    const onAbort = () => {
+      controller.abort();
+    };
+
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        controller.abort();
+      } else {
+        externalSignal.addEventListener('abort', onAbort, { once: true });
+      }
     }
-    throw new Error('Invalid response type');
+
+    try {
+      const res = await fetch(url, {
+        ...init,
+        signal: controller.signal
+      });
+
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!res.ok) {
+        const shouldRetry = RETRYABLE_STATUS_CODES.has(res.status) && attempt < retries;
+        if (shouldRetry) {
+          continue;
+        }
+        throw new Error(`Request failed: ${res.status}`);
+      }
+
+      if (!contentType.includes('application/json')) {
+        throw new Error('Invalid response type');
+      }
+
+      return (await res.json()) as T;
+    } catch (error) {
+      if (attempt < retries) {
+        continue;
+      }
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timed out');
+      }
+      throw error;
+    } finally {
+      globalThis.clearTimeout(timeoutId);
+      if (externalSignal) {
+        externalSignal.removeEventListener('abort', onAbort);
+      }
+    }
   }
-  const data = (await res.json()) as T;
-  if (!res.ok) {
-    throw new Error(`Request failed: ${res.status}`);
-  }
-  return data;
+
+  throw new Error('Request failed');
 };

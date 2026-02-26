@@ -1,4 +1,4 @@
-import { useEffect, useState, Suspense, lazy } from 'react';
+import { useEffect, useState, Suspense, lazy, useCallback } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { Login } from './pages/Login';
 import { Navigation } from './components/Navigation';
@@ -10,6 +10,19 @@ import { useUI } from './contexts/ui-context';
 // Lazy load pages for better performance
 const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => import('./pages/NewRoutines').then(module => ({ default: module.Routines })));
+
+type AppPage = 'dashboard' | 'routines';
+
+const getPageFromPathname = (pathname: string): AppPage => {
+  if (pathname.startsWith('/routines')) {
+    return 'routines';
+  }
+  return 'dashboard';
+};
+
+const getPathnameFromPage = (page: AppPage): string => {
+  return page === 'routines' ? '/routines' : '/';
+};
 
 const LoadingScreen = () => (
   <div className="app-shell flex items-center justify-center">
@@ -33,7 +46,12 @@ const AuthErrorToast = ({ message }: { message: string | null }) => {
 };
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'dashboard' | 'routines'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<AppPage>(() => {
+    if (typeof window === 'undefined') {
+      return 'dashboard';
+    }
+    return getPageFromPathname(window.location.pathname);
+  });
   const {
     user,
     loading,
@@ -48,6 +66,30 @@ function App() {
   useEffect(() => {
     if (typeof window !== 'undefined' && window.history.scrollRestoration) {
       window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handlePopState = () => {
+      setCurrentPage(getPageFromPathname(window.location.pathname));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  const handlePageChange = useCallback((nextPage: AppPage) => {
+    setCurrentPage(nextPage);
+
+    if (typeof window === 'undefined') return;
+
+    const targetPathname = getPathnameFromPage(nextPage);
+    if (window.location.pathname !== targetPathname) {
+      window.history.pushState({}, '', targetPathname);
     }
   }, []);
 
@@ -102,7 +144,7 @@ function App() {
           {currentPage === 'dashboard' && <Dashboard user={user} onLogout={logout} />}
           {currentPage === 'routines' && <Routines user={user} />}
         </Suspense>
-        <Navigation currentPage={currentPage} onPageChange={setCurrentPage} />
+        <Navigation currentPage={currentPage} onPageChange={handlePageChange} />
       </div>
     </UIProvider>
   );

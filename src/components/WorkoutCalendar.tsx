@@ -99,6 +99,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
         <button
           onClick={() => navigateMonth('prev')}
           className="btn-ghost p-2 touch-manipulation"
+          aria-label="Mes anterior"
         >
           <ChevronLeft size={18} className="text-slate-300" />
         </button>
@@ -110,6 +111,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
         <button
           onClick={() => navigateMonth('next')}
           className="btn-ghost p-2 touch-manipulation"
+          aria-label="Mes siguiente"
         >
           <ChevronRight size={18} className="text-slate-300" />
         </button>

@@ -48,37 +48,76 @@ export const useExerciseLogs = (date: string, userId?: string) => {
   const pendingPayloadRef = useRef<Map<string, ExerciseLog>>(new Map());
   const loadErrorShownRef = useRef<string | null>(null);
 
-  const PENDING_KEY = 'pendingExerciseLogs';
+  const PENDING_KEY_PREFIX = 'pendingExerciseLogs';
+  const LEGACY_PENDING_KEY = 'pendingExerciseLogs';
+  const resolvedUserId = userId?.trim() ?? '';
+  const pendingStorageKey = `${PENDING_KEY_PREFIX}:${resolvedUserId || 'anonymous'}`;
 
   const persistPending = useCallback(() => {
     try {
-      const entries = Array.from(pendingPayloadRef.current.entries());
+      const entries = Array.from(pendingPayloadRef.current.entries()).filter(([, logValue]) => {
+        return logValue.userId === resolvedUserId;
+      });
       const payload: Record<string, ExerciseLog> = {};
       entries.forEach(([logId, logValue]) => {
         payload[logId] = logValue;
       });
-      localStorage.setItem(PENDING_KEY, JSON.stringify(payload));
+      localStorage.setItem(pendingStorageKey, JSON.stringify(payload));
     } catch {
       // ignore
     }
-  }, []);
+  }, [pendingStorageKey, resolvedUserId]);
 
   const restorePending = useCallback(() => {
     try {
-      const raw = localStorage.getItem(PENDING_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Record<string, ExerciseLog>;
-      if (!parsed || typeof parsed !== 'object') return;
-      Object.entries(parsed).forEach(([logId, value]) => {
-        if (!value || typeof value.exerciseId !== 'string' || typeof value.userId !== 'string' || typeof value.date !== 'string') {
-          return;
+      pendingPayloadRef.current.clear();
+
+      const raw = localStorage.getItem(pendingStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Record<string, ExerciseLog>;
+        if (parsed && typeof parsed === 'object') {
+          Object.entries(parsed).forEach(([logId, value]) => {
+            if (!value || typeof value.exerciseId !== 'string' || typeof value.userId !== 'string' || typeof value.date !== 'string') {
+              return;
+            }
+            if (value.userId !== resolvedUserId) {
+              return;
+            }
+            pendingPayloadRef.current.set(logId, value);
+          });
         }
-        pendingPayloadRef.current.set(logId, value);
-      });
+      }
+
+      const legacyRaw = localStorage.getItem(LEGACY_PENDING_KEY);
+      if (legacyRaw) {
+        const parsedLegacy = JSON.parse(legacyRaw) as Record<string, ExerciseLog>;
+        if (parsedLegacy && typeof parsedLegacy === 'object') {
+          const remainingLegacyPayload: Record<string, ExerciseLog> = {};
+          Object.entries(parsedLegacy).forEach(([logId, value]) => {
+            if (!value || typeof value.exerciseId !== 'string' || typeof value.userId !== 'string' || typeof value.date !== 'string') {
+              return;
+            }
+            if (value.userId !== resolvedUserId) {
+              remainingLegacyPayload[logId] = value;
+              return;
+            }
+            pendingPayloadRef.current.set(logId, value);
+          });
+
+          if (Object.keys(remainingLegacyPayload).length > 0) {
+            localStorage.setItem(LEGACY_PENDING_KEY, JSON.stringify(remainingLegacyPayload));
+          } else {
+            localStorage.removeItem(LEGACY_PENDING_KEY);
+          }
+          persistPending();
+        } else {
+          localStorage.removeItem(LEGACY_PENDING_KEY);
+        }
+      }
     } catch {
       // ignore
     }
-  }, []);
+  }, [pendingStorageKey, persistPending, resolvedUserId]);
 
   const flushPendingWrites = useCallback(async () => {
     const payloads = Array.from(pendingPayloadRef.current.entries());
@@ -109,7 +148,9 @@ export const useExerciseLogs = (date: string, userId?: string) => {
       try {
         const serverLogs = await fetchExerciseLogsForDate(date);
         // Apply pending overrides for this date.
-        const pendingForDate = Array.from(pendingPayloadRef.current.values()).filter((log) => log.date === date);
+        const pendingForDate = Array.from(pendingPayloadRef.current.values()).filter((log) => {
+          return log.date === date && log.userId === resolvedUserId;
+        });
         const byKey = new Map<string, ExerciseLog>();
         serverLogs.forEach((log) => {
           byKey.set(`${log.exerciseId}_${log.userId}_${log.date}`, log);
@@ -120,7 +161,9 @@ export const useExerciseLogs = (date: string, userId?: string) => {
         setLogs(Array.from(byKey.values()));
       } catch {
         // If load fails, keep whatever we have locally.
-        const pendingForDate = Array.from(pendingPayloadRef.current.values()).filter((log) => log.date === date);
+        const pendingForDate = Array.from(pendingPayloadRef.current.values()).filter((log) => {
+          return log.date === date && log.userId === resolvedUserId;
+        });
         setLogs(pendingForDate);
         if (loadErrorShownRef.current !== date) {
           loadErrorShownRef.current = date;
@@ -143,15 +186,19 @@ export const useExerciseLogs = (date: string, userId?: string) => {
       window.removeEventListener('online', handleOnline);
       void flushPendingWrites();
     };
-  }, [date, userId, flushPendingWrites, restorePending, showToast]);
+  }, [date, flushPendingWrites, resolvedUserId, restorePending, showToast]);
 
   const updateExerciseLog = async (log: ExerciseLog) => {
     try {
       const logWithAllFields = {
         ...log,
-        userId: log.userId || userId || '',
+        userId: log.userId || resolvedUserId,
         date: log.date || date
       };
+
+      if (!logWithAllFields.userId) {
+        return;
+      }
 
       const logId = `${logWithAllFields.exerciseId}_${logWithAllFields.userId}_${logWithAllFields.date}`;
 

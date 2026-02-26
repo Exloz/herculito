@@ -16,7 +16,7 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [modalConfig, setModalConfig] = useState<ConfirmOptions | null>(null);
 
   const showToast = useCallback((message: string, type: ToastType = 'info') => {
-    const id = Math.random().toString(36).substring(7);
+    const id = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}_${Math.random().toString(16).slice(2)}`;
     setToasts((prev) => [...prev, { id, type, message }]);
   }, []);
 

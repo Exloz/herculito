@@ -1,5 +1,8 @@
 # 🔧 Configuración de Firebase Firestore
 
+> Nota: este documento es legacy. La app actual usa Clerk + API propia (`VITE_PUSH_API_ORIGIN`) para persistencia.
+> Conservamos esta guía solo para referencia histórica de migración.
+
 ## ⚠️ Error de Permisos Solucionado
 
 Si estás viendo errores de `permission-denied` en la consola, esto se debe a que Firebase necesita configurar índices compuestos para las consultas de la aplicación.

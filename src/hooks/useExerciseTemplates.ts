@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Fuse from 'fuse.js';
 import { ExerciseTemplate, ExerciseVideo } from '../types';
 import {
@@ -43,6 +43,33 @@ export const useExerciseTemplates = (userId: string) => {
       return (b.timesUsed || 0) - (a.timesUsed || 0);
     });
   }, [userId]);
+
+  const fuseOptions = useMemo(() => ({
+    keys: ['name', 'category'],
+    threshold: 0.4,
+    distance: 100,
+    includeScore: true,
+    minMatchCharLength: 2
+  }), []);
+
+  const exerciseSearchIndex = useMemo(() => new Fuse(exercises, fuseOptions), [exercises, fuseOptions]);
+
+  const categorySearchIndex = useMemo(() => {
+    const indexByCategory = new Map<string, Fuse<ExerciseTemplate>>();
+    const byCategory = new Map<string, ExerciseTemplate[]>();
+
+    exercises.forEach((exercise) => {
+      const current = byCategory.get(exercise.category) ?? [];
+      current.push(exercise);
+      byCategory.set(exercise.category, current);
+    });
+
+    byCategory.forEach((items, category) => {
+      indexByCategory.set(category, new Fuse(items, fuseOptions));
+    });
+
+    return indexByCategory;
+  }, [exercises, fuseOptions]);
 
   const loadExercises = useCallback(async () => {
     if (!userId) {
@@ -162,17 +189,16 @@ export const useExerciseTemplates = (userId: string) => {
 
     // Apply fuzzy search if there's a search term
     if (searchTerm && searchTerm.trim().length >= 2) {
-      // Search in the filtered list or all exercises
-      const searchSource = category ? filtered : exercises;
-      const fuseInstance = new Fuse(searchSource, {
-        keys: ['name', 'category'],
-        threshold: 0.4,
-        distance: 100,
-        includeScore: true,
-        minMatchCharLength: 2
-      });
-      
-      const results = fuseInstance.search(searchTerm.trim());
+      const query = searchTerm.trim();
+      const fuseInstance = category
+        ? categorySearchIndex.get(category)
+        : exerciseSearchIndex;
+
+      if (!fuseInstance) {
+        return filtered;
+      }
+
+      const results = fuseInstance.search(query);
       filtered = results.map((result) => result.item);
     }
 

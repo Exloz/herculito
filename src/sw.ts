@@ -28,6 +28,13 @@ registerRoute(
   })
 );
 
+registerRoute(
+  ({ url }: { url: URL }) => url.origin === 'https://fonts.gstatic.com',
+  new CacheFirst({
+    cacheName: 'google-fonts-static-cache'
+  })
+);
+
 type PushPayload = {
   title?: unknown;
   body?: unknown;
@@ -36,6 +43,30 @@ type PushPayload = {
 };
 
 const getString = (value: unknown): string | undefined => (typeof value === 'string' && value.trim() ? value : undefined);
+
+const DEFAULT_NOTIFICATION_URL = self.location.origin;
+const ALLOWED_NOTIFICATION_ORIGINS = new Set<string>([
+  self.location.origin,
+  'https://herculito.exloz.site'
+]);
+
+const getSafeNotificationUrl = (value: unknown): string => {
+  const raw = getString(value);
+  if (!raw) return DEFAULT_NOTIFICATION_URL;
+
+  try {
+    const parsed = new URL(raw, self.location.origin);
+    if (parsed.protocol !== 'https:') {
+      return DEFAULT_NOTIFICATION_URL;
+    }
+    if (!ALLOWED_NOTIFICATION_ORIGINS.has(parsed.origin)) {
+      return DEFAULT_NOTIFICATION_URL;
+    }
+    return parsed.href;
+  } catch {
+    return DEFAULT_NOTIFICATION_URL;
+  }
+};
 
 self.addEventListener('push', (event: PushEvent) => {
   const data = (() => {
@@ -48,7 +79,7 @@ self.addEventListener('push', (event: PushEvent) => {
 
   const title = getString(data.title) ?? '¡Descanso terminado!';
   const body = getString(data.body) ?? 'Continúa con tu entrenamiento.';
-  const url = getString(data.url) ?? 'https://herculito.exloz.site';
+  const url = getSafeNotificationUrl(data.url);
   const tag = getString(data.tag) ?? 'rest-timer';
 
   event.waitUntil(
@@ -67,7 +98,7 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
   notification.close();
 
   const data = notification.data as { url?: unknown } | undefined;
-  const url = getString(data?.url) ?? 'https://herculito.exloz.site';
+  const url = getSafeNotificationUrl(data?.url);
 
   event.waitUntil(
     (async () => {

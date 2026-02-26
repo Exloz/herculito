@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Save, X, Pencil, Play, VideoOff } from 'lucide-react';
 import { Routine, Exercise, MuscleGroup } from '../types';
 import { ExerciseSelector } from './ExerciseSelector';
@@ -118,16 +118,35 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     onSave(name, description, exercises, isPublic, primaryMuscleGroup);
   };
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onCancel]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="app-card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div
+        className="app-card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="routine-editor-title"
+      >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-display text-white">
+          <h2 id="routine-editor-title" className="text-xl font-display text-white">
             {routine ? 'Editar Rutina' : 'Nueva Rutina'}
           </h2>
           <button
             onClick={onCancel}
             className="btn-ghost"
+            aria-label="Cerrar editor de rutina"
           >
             <X size={24} />
           </button>

@@ -54,6 +54,12 @@ if (import.meta.env.PROD) {
       window.location.reload();
     });
   }
+} else if ('serviceWorker' in navigator) {
+  void navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => {
+      void registration.unregister();
+    });
+  });
 }
 
 createRoot(document.getElementById('root')!).render(

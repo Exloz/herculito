@@ -1,4 +1,5 @@
 import { useEffect, useState, Suspense, lazy } from 'react';
+import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { Login } from './pages/Login';
 import { Navigation } from './components/Navigation';
 import { useAuth } from './hooks/useAuth';
@@ -49,6 +50,16 @@ function App() {
       window.history.scrollRestoration = 'manual';
     }
   }, []);
+
+  if (typeof window !== 'undefined' && window.location.pathname === '/sso-callback') {
+    return (
+      <UIProvider>
+        <div className="app-shell flex items-center justify-center">
+          <AuthenticateWithRedirectCallback />
+        </div>
+      </UIProvider>
+    );
+  }
 
   if (loading) {
     return (

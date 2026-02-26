@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAuth as useClerkAuth, useClerk, useUser } from '@clerk/clerk-react';
+import { useAuth as useClerkAuth, useClerk, useSignIn, useUser } from '@clerk/clerk-react';
 import { User } from '../types';
 import { setTokenGetter } from '../utils/apiClient';
 
@@ -11,7 +11,8 @@ const getBrowserOrigin = () => {
 export function useAuth() {
   const { isLoaded: isAuthLoaded, getToken } = useClerkAuth();
   const { isLoaded: isUserLoaded, user: clerkUser } = useUser();
-  const { openSignIn, signOut } = useClerk();
+  const { isLoaded: isSignInLoaded, signIn } = useSignIn();
+  const { signOut } = useClerk();
   const [error, setError] = useState<string | null>(null);
 
   const user = useMemo<User | null>(() => {
@@ -57,14 +58,20 @@ export function useAuth() {
   const signInWithGoogle = useCallback(async () => {
     try {
       setError(null);
-      openSignIn({
-        afterSignInUrl: '/',
-        afterSignUpUrl: '/'
+      if (!isSignInLoaded || !signIn) {
+        throw new Error('clerk_signin_not_ready');
+      }
+
+      const origin = typeof window === 'undefined' ? 'https://herculito.exloz.site' : window.location.origin;
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: `${origin}/sso-callback`,
+        redirectUrlComplete: `${origin}/`
       });
     } catch {
       setError('No se pudo iniciar sesion con Clerk. Intentalo de nuevo.');
     }
-  }, [openSignIn]);
+  }, [isSignInLoaded, signIn]);
 
   const logout = useCallback(async () => {
     try {

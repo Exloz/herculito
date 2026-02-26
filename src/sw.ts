@@ -6,6 +6,18 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
 };
 
+self.skipWaiting();
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 

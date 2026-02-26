@@ -10,8 +10,8 @@ import { getLastWeightsForRoutineFromSessions } from '../utils/workoutSessions';
 const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 const SESSION_LOGS_MIGRATION_KEY = 'activeWorkoutSessionLogsMigration_v1';
-const ENTER_COMPACT_SCROLL_THRESHOLD_Y = 88;
-const EXIT_COMPACT_SCROLL_THRESHOLD_Y = 52;
+const ENTER_COMPACT_SCROLL_THRESHOLD_Y = 132;
+const EXIT_COMPACT_SCROLL_THRESHOLD_Y = 12;
 const HEADER_TOGGLE_COOLDOWN_MS = 180;
 
 const toComparableDateValue = (value: unknown): number | null => {

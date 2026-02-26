@@ -1,13 +1,13 @@
 # HERCULITO - App de Seguimiento de Entrenamientos
 
-Una aplicación React moderna para trackear entrenamientos en el gimnasio con autenticación Google y sincronización en tiempo real.
+Una aplicación React moderna para trackear entrenamientos en el gimnasio con autenticación Clerk y persistencia en API propia.
 
 ## 🚀 Características
 
 - **🔐 Autenticación con Google**: Inicio de sesión seguro y fácil
 - **🎯 Sistema de Rutinas Flexible**: Crea rutinas personalizadas con ejercicios específicos
 - **📊 Seguimiento Inteligente**: Registra pesos, series y repeticiones con historial
-- **🔄 Sincronización en Tiempo Real**: Datos actualizados instantáneamente via Firebase  
+- **🔄 Sincronización de Datos**: Datos persistidos y consultados vía API propia
 - **⏱️ Timer de Descanso**: Controla los tiempos entre series automáticamente
 - **📈 Historial de Progreso**: Ve tu progreso y récords personales
 - **📱 Diseño Responsive**: Optimizado para móviles y desktop
@@ -15,11 +15,11 @@ Una aplicación React moderna para trackear entrenamientos en el gimnasio con au
 - **PWA en produccion**: Service worker y soporte offline basico en builds
 - **💾 Sesiones de Entrenamiento**: Registra cada sesión con fecha, duración y notas
 
-## 🔧 Configuración de Firebase
+## 🔧 Configuración de Clerk y API
 
 ### Variables de Entorno
 
-Este proyecto utiliza variables de entorno para mantener seguras las credenciales de Firebase.
+Este proyecto utiliza variables de entorno para Clerk y para la API de datos/push.
 
 #### Configuración Inicial
 
@@ -28,47 +28,15 @@ Este proyecto utiliza variables de entorno para mantener seguras las credenciale
    cp .env.example .env
    ```
 
-2. Reemplaza los valores de ejemplo con tus credenciales reales de Firebase:
-   - `VITE_FIREBASE_API_KEY`: Tu API Key de Firebase
-   - `VITE_FIREBASE_AUTH_DOMAIN`: El dominio de autenticación de tu proyecto
-   - `VITE_FIREBASE_PROJECT_ID`: El ID de tu proyecto de Firebase
-   - `VITE_FIREBASE_STORAGE_BUCKET`: El bucket de almacenamiento
-   - `VITE_FIREBASE_MESSAGING_SENDER_ID`: El ID del sender para messaging
-   - `VITE_FIREBASE_APP_ID`: El ID de la aplicación
-   - `VITE_FIREBASE_MEASUREMENT_ID`: (Opcional) ID para Google Analytics
+2. Reemplaza los valores de ejemplo con tus credenciales reales:
+   - `VITE_CLERK_PUBLISHABLE_KEY`: Publishable key de Clerk
+   - `VITE_CLERK_JWT_TEMPLATE`: Template JWT para la API (ej. `herculito_api`)
+   - `VITE_PUSH_API_ORIGIN`: URL base de la API (ej. `https://api.herculito.exloz.site`)
 
-3. **Configura Google Authentication en Firebase Console**:
-   - Ve a Authentication > Sign-in method
-   - Habilita Google como proveedor
-   - Agrega tu dominio local (localhost:5173) a los dominios autorizados
-
-### Estructura de Firebase
-
-El proyecto utiliza Firestore con las siguientes colecciones:
-- `routines`: Rutinas personalizables de cada usuario
-- `workoutSessions`: Registro de sesiones de entrenamiento completadas
-- `exerciseHistory`: Historial de pesos y récords por ejercicio
-- `exerciseLogs`: Logs detallados de cada ejercicio por sesión
-
-### Reglas de Firestore Recomendadas
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    // Permitir lectura de workouts para usuarios autenticados
-    match /workouts/{workoutId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // Los usuarios solo pueden leer/escribir sus propios logs
-    match /exerciseLogs/{logId} {
-      allow read, write: if request.auth != null 
-        && resource.data.userId == request.auth.uid;
-    }
-  }
-}
-```
+3. **Configura Google en Clerk**:
+   - Ve a Social/SSO Connections
+   - Habilita Google OAuth para sign-in/sign-up
+   - Configura correctamente el redirect URI de Clerk en Google Cloud
 
 ## 🛠️ Instalación y Uso
 
@@ -123,16 +91,16 @@ service cloud.firestore {
 
 - **Frontend**: React 18 + TypeScript + Vite
 - **Styling**: Tailwind CSS con sistema visual personalizado (app-*, mint/amber)
-- **Backend**: Firebase Firestore (NoSQL)
-- **Auth**: Firebase Authentication con Google Provider
+- **Backend**: API Bun + SQLite
+- **Auth**: Clerk (Google OAuth / OTP)
 - **Icons**: Lucide React
 - **State Management**: React Hooks personalizados
 
 ## 🔒 Seguridad
 
 - El archivo `.env` está incluido en `.gitignore` para prevenir que las credenciales se suban al repositorio
-- Las reglas de Firestore aseguran que los usuarios solo accedan a sus propios datos
-- Autenticación segura via Google OAuth 2.0
+- El backend valida JWT de Clerk por `issuer`/`audience`/JWKS
+- Autenticación segura via Clerk con Google OAuth 2.0 u OTP
 
 ## 🚢 Deployment
 
@@ -162,19 +130,15 @@ Si recibes errores sobre variables de entorno faltantes:
 3. Reinicia el servidor de desarrollo después de modificar el archivo `.env`
 
 ### Problemas de Autenticación
-- Verifica que Google Auth esté habilitado en Firebase Console
-- Asegúrate de que tu dominio esté en la lista de dominios autorizados
-- Revisa que las credenciales en `.env` sean correctas
+- Verifica que Google OAuth esté habilitado en Clerk
+- Confirma que `VITE_CLERK_PUBLISHABLE_KEY` esté definido durante el build
+- Verifica que `VITE_CLERK_JWT_TEMPLATE` coincida con el template configurado en Clerk
+- Revisa que `VITE_PUSH_API_ORIGIN` apunte a la API correcta
 
-#### Error: "missing initial state" en iPhone/PWA
-- Este error suele aparecer cuando `signInWithRedirect` usa un `authDomain` distinto al dominio de la app y Safari aplica particion de storage.
-- Recomendado para PWA iOS: usar un `VITE_FIREBASE_AUTH_DOMAIN` del mismo sitio de la app y configurar proxy de `__/auth/*` hacia `<tu-proyecto>.firebaseapp.com`.
-- Si no puedes alinear dominios, muestra al usuario una alternativa (abrir la web en Safari en vez de la app instalada).
-
-### Problemas de Firestore
-- Verifica que las reglas de Firestore permitan las operaciones necesarias
-- Asegúrate de que el proyecto Firebase tenga Firestore habilitado
-- Revisa la consola del navegador para errores específicos
+### Problemas de API
+- Verifica que la API responda en `VITE_PUSH_API_ORIGIN/health`
+- Revisa `CLERK_ISSUER`, `CLERK_JWKS_URL` y `CLERK_AUDIENCE` en el backend
+- Confirma que el JWT template incluya `legacy_uid` para usuarios migrados
 
 ### Problemas con service worker en desarrollo
 - Si aparecen errores de carga de modulos, limpia el service worker: DevTools > Application > Service Workers > Unregister

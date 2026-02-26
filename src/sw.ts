@@ -1,6 +1,6 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { CacheFirst, NetworkOnly } from 'workbox-strategies';
+import { CacheFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
@@ -20,16 +20,6 @@ self.addEventListener('message', (event) => {
 
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
-
-registerRoute(
-  ({ url }: { url: URL }) => url.pathname.startsWith('/__/auth/'),
-  new NetworkOnly()
-);
-
-registerRoute(
-  ({ url }: { url: URL }) => url.pathname === '/__/firebase/init.json',
-  new NetworkOnly()
-);
 
 registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',

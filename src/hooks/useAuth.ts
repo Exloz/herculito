@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth as useClerkAuth, useClerk, useUser } from '@clerk/clerk-react';
 import { User } from '../types';
+import { setTokenGetter } from '../utils/apiClient';
 
 const getBrowserOrigin = () => {
   if (typeof window === 'undefined') return 'https://herculito.exloz.site/';
@@ -8,7 +9,7 @@ const getBrowserOrigin = () => {
 };
 
 export function useAuth() {
-  const { isLoaded: isAuthLoaded } = useClerkAuth();
+  const { isLoaded: isAuthLoaded, getToken } = useClerkAuth();
   const { isLoaded: isUserLoaded, user: clerkUser } = useUser();
   const { openSignIn, signOut } = useClerk();
   const [error, setError] = useState<string | null>(null);
@@ -38,6 +39,20 @@ export function useAuth() {
       setError(null);
     }
   }, [user]);
+
+  useEffect(() => {
+    const template = import.meta.env.VITE_CLERK_JWT_TEMPLATE || 'herculito_api';
+
+    setTokenGetter(async () => {
+      const templateToken = await getToken({ template });
+      if (templateToken) return templateToken;
+      return getToken();
+    });
+
+    return () => {
+      setTokenGetter(null);
+    };
+  }, [getToken]);
 
   const signInWithGoogle = useCallback(async () => {
     try {

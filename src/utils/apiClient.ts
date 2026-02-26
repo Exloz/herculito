@@ -6,6 +6,14 @@ interface ClerkLike {
   session: ClerkSessionLike | null;
 }
 
+type TokenGetter = () => Promise<string | null>;
+
+let tokenGetter: TokenGetter | null = null;
+
+export const setTokenGetter = (getter: TokenGetter | null): void => {
+  tokenGetter = getter;
+};
+
 const getClerkInstance = (): ClerkLike | null => {
   if (typeof window === 'undefined') return null;
 
@@ -16,6 +24,11 @@ const getClerkInstance = (): ClerkLike | null => {
 };
 
 export const getIdToken = async (): Promise<string> => {
+  if (tokenGetter) {
+    const token = await tokenGetter();
+    if (token) return token;
+  }
+
   const clerk = getClerkInstance();
   const template = import.meta.env.VITE_CLERK_JWT_TEMPLATE || 'herculito_api';
 

@@ -1,11 +1,35 @@
-import { auth } from '../firebase/config';
+interface ClerkSessionLike {
+  getToken: (options?: { template?: string }) => Promise<string | null>;
+}
+
+interface ClerkLike {
+  session: ClerkSessionLike | null;
+}
+
+const getClerkInstance = (): ClerkLike | null => {
+  if (typeof window === 'undefined') return null;
+
+  const maybeClerk = (window as Window & { Clerk?: ClerkLike }).Clerk;
+  if (!maybeClerk || typeof maybeClerk !== 'object') return null;
+
+  return maybeClerk;
+};
 
 export const getIdToken = async (): Promise<string> => {
-  const user = auth.currentUser;
-  if (!user) {
+  const clerk = getClerkInstance();
+  const template = import.meta.env.VITE_CLERK_JWT_TEMPLATE || 'herculito_api';
+
+  if (!clerk?.session?.getToken) {
     throw new Error('Not authenticated');
   }
-  return user.getIdToken();
+
+  const templateToken = await clerk.session.getToken({ template });
+  if (templateToken) return templateToken;
+
+  const sessionToken = await clerk.session.getToken();
+  if (sessionToken) return sessionToken;
+
+  throw new Error('Not authenticated');
 };
 
 export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {

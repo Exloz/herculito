@@ -1,4 +1,11 @@
 import { useEffect } from 'react';
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton
+} from '@clerk/clerk-react';
 import { useUI } from '../contexts/ui-context';
 
 interface LoginProps {
@@ -131,6 +138,27 @@ export function Login({
                 </>
               )}
             </button>
+
+            <SignedOut>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <SignInButton mode="modal">
+                  <button type="button" className="btn-secondary w-full text-sm">
+                    Iniciar con Clerk
+                  </button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <button type="button" className="btn-ghost w-full text-sm">
+                    Crear cuenta
+                  </button>
+                </SignUpButton>
+              </div>
+            </SignedOut>
+
+            <SignedIn>
+              <div className="flex items-center justify-center pt-2">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            </SignedIn>
 
             <p className="text-xs text-slate-400 text-center">
               {requiresSafariForGoogleSignIn

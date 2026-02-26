@@ -10,7 +10,9 @@ import { getLastWeightsForRoutineFromSessions } from '../utils/workoutSessions';
 const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
 const SESSION_LOGS_MIGRATION_KEY = 'activeWorkoutSessionLogsMigration_v1';
-const COMPACT_SCROLL_THRESHOLD_Y = 72;
+const ENTER_COMPACT_SCROLL_THRESHOLD_Y = 88;
+const EXIT_COMPACT_SCROLL_THRESHOLD_Y = 52;
+const HEADER_TOGGLE_COOLDOWN_MS = 180;
 
 const toComparableDateValue = (value: unknown): number | null => {
   if (value instanceof Date) return value.getTime();
@@ -172,13 +174,9 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
   const [isHeaderCompact, setIsHeaderCompact] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const headerRef = useRef<HTMLElement | null>(null);
   const headerScrollFrameRef = useRef<number | null>(null);
   const isHeaderCompactRef = useRef(false);
-  const expandedHeaderHeightRef = useRef(176);
-  const compactHeaderHeightRef = useRef(76);
-  const pendingModeRef = useRef<boolean | null>(null);
-  const pendingFramesRef = useRef(0);
+  const lastHeaderToggleAtRef = useRef(0);
 
   useEffect(() => {
     isHeaderCompactRef.current = isHeaderCompact;
@@ -206,52 +204,29 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const updateMeasuredHeaderHeight = () => {
-      if (!headerRef.current) return;
-      const measuredHeight = headerRef.current.getBoundingClientRect().height;
-      if (!Number.isFinite(measuredHeight) || measuredHeight <= 0) return;
-
-      if (isHeaderCompactRef.current) {
-        compactHeaderHeightRef.current = measuredHeight;
-      } else {
-        expandedHeaderHeightRef.current = measuredHeight;
-      }
-    };
-
-    const applyModeChangeIfStable = (nextCompactMode: boolean) => {
-      if (nextCompactMode === isHeaderCompactRef.current) {
-        pendingModeRef.current = null;
-        pendingFramesRef.current = 0;
-        return;
-      }
-
-      if (pendingModeRef.current !== nextCompactMode) {
-        pendingModeRef.current = nextCompactMode;
-        pendingFramesRef.current = 1;
-        return;
-      }
-
-      pendingFramesRef.current += 1;
-      if (pendingFramesRef.current >= 2) {
-        isHeaderCompactRef.current = nextCompactMode;
-        setIsHeaderCompact(nextCompactMode);
-        pendingModeRef.current = null;
-        pendingFramesRef.current = 0;
-      }
-    };
-
     const updateCompactHeaderState = () => {
-      updateMeasuredHeaderHeight();
-
       const scrollY = Math.max(
         0,
         window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
       );
 
-      const headerDelta = Math.max(0, expandedHeaderHeightRef.current - compactHeaderHeightRef.current);
-      const normalizedScrollY = scrollY - (isHeaderCompactRef.current ? headerDelta : 0);
+      const currentMode = isHeaderCompactRef.current;
+      const shouldBeCompact = currentMode
+        ? scrollY > EXIT_COMPACT_SCROLL_THRESHOLD_Y
+        : scrollY > ENTER_COMPACT_SCROLL_THRESHOLD_Y;
 
-      applyModeChangeIfStable(normalizedScrollY > COMPACT_SCROLL_THRESHOLD_Y);
+      if (shouldBeCompact === currentMode) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastHeaderToggleAtRef.current < HEADER_TOGGLE_COOLDOWN_MS) {
+        return;
+      }
+
+      lastHeaderToggleAtRef.current = now;
+      isHeaderCompactRef.current = shouldBeCompact;
+      setIsHeaderCompact(shouldBeCompact);
     };
 
     const handleScroll = () => {
@@ -282,8 +257,8 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
 
   return (
     <header
-      ref={headerRef}
       className={`app-header px-4 sticky top-0 z-10 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'pt-[calc(0.55rem+env(safe-area-inset-top))] pb-2' : 'pt-[calc(1rem+env(safe-area-inset-top))] pb-4'}`}
+      style={{ overflowAnchor: 'none' }}
     >
       <div className="max-w-4xl mx-auto">
         <div className="relative flex items-center justify-between gap-2">

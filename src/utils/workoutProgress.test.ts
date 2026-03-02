@@ -106,7 +106,7 @@ describe('buildExerciseProgress', () => {
     expect(result[0].exerciseName).toBe('Face Pull');
   });
 
-  it('hides opaque identifiers behind friendly fallback names', () => {
+  it('skips opaque identifiers when no name can be resolved', () => {
     const sessions: WorkoutSession[] = [{
       id: 's1',
       routineId: 'routine-2',
@@ -123,7 +123,6 @@ describe('buildExerciseProgress', () => {
     }];
 
     const result = buildExerciseProgress(sessions, [makeRoutine()]);
-    expect(result).toHaveLength(1);
-    expect(result[0].exerciseName).toBe('Ejercicio personalizado');
+    expect(result).toHaveLength(0);
   });
 });

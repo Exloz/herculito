@@ -34,6 +34,11 @@ const isOpaqueIdentifier = (value: string): boolean => {
   return /^[0-9a-z:_-]{20,}$/i.test(value);
 };
 
+const isUnresolvableExerciseId = (exerciseId: string): boolean => {
+  const baseId = exerciseId.replace(/^custom:/, '').trim();
+  return isUuidLike(baseId) || isOpaqueIdentifier(baseId);
+};
+
 const fallbackExerciseName = (exerciseId: string): string => {
   const baseId = exerciseId.replace(/^custom:/, '').trim();
   if (isUuidLike(baseId) || isOpaqueIdentifier(baseId)) {
@@ -123,6 +128,11 @@ export const buildExerciseProgress = (
 
   const summaries: ExerciseProgressSummary[] = [];
   pointsByExerciseId.forEach((rawPoints, exerciseId) => {
+    const resolvedExerciseName = exerciseNames.get(exerciseId);
+    if (!resolvedExerciseName && isUnresolvableExerciseId(exerciseId)) {
+      return;
+    }
+
     const points = [...rawPoints].sort((a, b) => a.timestamp - b.timestamp);
     if (points.length === 0) return;
 
@@ -152,7 +162,7 @@ export const buildExerciseProgress = (
 
     summaries.push({
       exerciseId,
-      exerciseName: exerciseNames.get(exerciseId) ?? fallbackExerciseName(exerciseId),
+      exerciseName: resolvedExerciseName ?? fallbackExerciseName(exerciseId),
       points,
       totalSessions: points.length,
       personalRecord,

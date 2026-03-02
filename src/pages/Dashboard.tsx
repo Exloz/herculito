@@ -80,6 +80,20 @@ const mapLeaderboardEntry = (
   };
 };
 
+const CompetitionCardSkeleton = () => {
+  return (
+    <div className="app-surface-muted px-3 py-2.5" aria-hidden="true">
+      <div className="flex items-center justify-between mb-2">
+        <div className="skeleton-block h-3 w-24 rounded-lg" />
+        <div className="skeleton-block h-3 w-10 rounded-lg" />
+      </div>
+      <div className="skeleton-block h-3 w-4/5 rounded-lg mb-1.5" />
+      <div className="skeleton-block h-3 w-3/5 rounded-lg mb-2" />
+      <div className="skeleton-block h-3 w-2/3 rounded-lg" />
+    </div>
+  );
+};
+
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
   if (activeWorkout) {
     const data = {
@@ -389,15 +403,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   // Si hay un entrenamiento activo, mostrar la vista de entrenamiento
   if (activeWorkout && showActiveWorkout) {
     return (
-      <ActiveWorkout
-        user={user}
-        routine={activeWorkout.routine}
-        session={activeWorkout.session}
-        sessions={sessions}
-        onBackToDashboard={handleBackToDashboard}
-        onCompleteWorkout={handleCompleteWorkout}
-        onUpdateProgress={updateSessionProgress}
-      />
+      <div className="content-fade-in">
+        <ActiveWorkout
+          user={user}
+          routine={activeWorkout.routine}
+          session={activeWorkout.session}
+          sessions={sessions}
+          onBackToDashboard={handleBackToDashboard}
+          onCompleteWorkout={handleCompleteWorkout}
+          onUpdateProgress={updateSessionProgress}
+        />
+      </div>
     );
   }
 
@@ -515,63 +531,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
-                <div className="app-surface-muted px-3 py-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top semanal</span>
-                    <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userWeekRank)}</span>
-                  </div>
-
-                  {competitionStats.weekLeader ? (
-                    <>
-                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
-                        <Crown size={14} />
-                        <span className="font-semibold">Lider: {competitionStats.weekLeader.name}</span>
+                {competitionLoading ? (
+                  <>
+                    <CompetitionCardSkeleton />
+                    <CompetitionCardSkeleton />
+                  </>
+                ) : (
+                  <>
+                    <div className="app-surface-muted px-3 py-2.5 content-fade-in">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] uppercase tracking-wide text-slate-400">Top semanal</span>
+                        <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userWeekRank)}</span>
                       </div>
-                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.weekLeader.totalWorkouts} entrenamientos liderando</div>
-                    </>
-                  ) : (
-                    <div className="text-[11px] text-slate-400 mb-1.5">
-                      {competitionLoading ? 'Cargando ranking semanal...' : 'Sin datos suficientes esta semana'}
+
+                      {competitionStats.weekLeader ? (
+                        <>
+                          <div className="flex items-center gap-2 text-mint mb-1 text-xs">
+                            <Crown size={14} />
+                            <span className="font-semibold">Lider: {competitionStats.weekLeader.name}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.weekLeader.totalWorkouts} entrenamientos liderando</div>
+                        </>
+                      ) : (
+                        <div className="text-[11px] text-slate-400 mb-1.5">Sin datos suficientes esta semana</div>
+                      )}
+
+                      {competitionStats.userWeekRank ? (
+                        <div className="text-xs text-slate-300">Tu llevas {competitionStats.userWeekRank.totalWorkouts} entrenamientos</div>
+                      ) : (
+                        <div className="text-xs text-slate-400">Aun no registras entrenamientos esta semana</div>
+                      )}
                     </div>
-                  )}
 
-                  {competitionStats.userWeekRank ? (
-                    <div className="text-xs text-slate-300">Tu llevas {competitionStats.userWeekRank.totalWorkouts} entrenamientos</div>
-                  ) : (
-                    <div className="text-xs text-slate-400">
-                      {competitionLoading ? 'Calculando tu posición semanal...' : 'Aun no registras entrenamientos esta semana'}
-                    </div>
-                  )}
-                </div>
-
-                <div className="app-surface-muted px-3 py-2.5">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top mensual</span>
-                    <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userMonthRank)}</span>
-                  </div>
-
-                  {competitionStats.monthLeader ? (
-                    <>
-                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
-                        <Crown size={14} />
-                        <span className="font-semibold">Lider: {competitionStats.monthLeader.name}</span>
+                    <div className="app-surface-muted px-3 py-2.5 content-fade-in">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] uppercase tracking-wide text-slate-400">Top mensual</span>
+                        <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userMonthRank)}</span>
                       </div>
-                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.monthLeader.totalWorkouts} entrenamientos liderando</div>
-                    </>
-                  ) : (
-                    <div className="text-[11px] text-slate-400 mb-1.5">
-                      {competitionLoading ? 'Cargando ranking mensual...' : 'Sin datos suficientes este mes'}
-                    </div>
-                  )}
 
-                  {competitionStats.userMonthRank ? (
-                    <div className="text-xs text-slate-300">Tu llevas {competitionStats.userMonthRank.totalWorkouts} entrenamientos</div>
-                  ) : (
-                    <div className="text-xs text-slate-400">
-                      {competitionLoading ? 'Calculando tu posición mensual...' : 'Aun no registras entrenamientos este mes'}
+                      {competitionStats.monthLeader ? (
+                        <>
+                          <div className="flex items-center gap-2 text-mint mb-1 text-xs">
+                            <Crown size={14} />
+                            <span className="font-semibold">Lider: {competitionStats.monthLeader.name}</span>
+                          </div>
+                          <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.monthLeader.totalWorkouts} entrenamientos liderando</div>
+                        </>
+                      ) : (
+                        <div className="text-[11px] text-slate-400 mb-1.5">Sin datos suficientes este mes</div>
+                      )}
+
+                      {competitionStats.userMonthRank ? (
+                        <div className="text-xs text-slate-300">Tu llevas {competitionStats.userMonthRank.totalWorkouts} entrenamientos</div>
+                      ) : (
+                        <div className="text-xs text-slate-400">Aun no registras entrenamientos este mes</div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -633,8 +650,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         )}
 
         {/* Calendario al inicio */}
-        {showCalendar && (
-          <div className="mb-6">
+        <div
+          className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out ${showCalendar
+            ? 'max-h-[42rem] opacity-100 mb-6'
+            : 'max-h-0 opacity-0 mb-0'
+            }`}
+          aria-hidden={!showCalendar}
+        >
+          <div className={`transition-transform duration-300 ${showCalendar ? 'translate-y-0' : '-translate-y-2 pointer-events-none'}`}>
             <WorkoutCalendar
               sessions={sessions}
               currentMonth={currentMonth}
@@ -642,10 +665,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               onDayClick={handleDayClick}
             />
           </div>
-        )}
+        </div>
 
 
-         <div className="space-y-6 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0">
+         <div className="space-y-6 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0 content-fade-in">
            {/* Rutinas por grupo muscular - Columna principal */}
            <div className="lg:col-span-2 order-2 lg:order-1">
               <div className="mb-4 sm:mb-6">

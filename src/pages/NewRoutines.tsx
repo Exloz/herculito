@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Edit, Trash2, Target, User as UserIcon, Eye } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
@@ -15,6 +15,27 @@ import { PageSkeleton } from '../components/PageSkeleton';
 interface RoutinesProps {
   user: User;
 }
+
+const TAB_TRANSITION_MS = 320;
+
+const RoutinesListSkeleton = () => {
+  return (
+    <div className="space-y-4" aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="app-card p-4 sm:p-5">
+          <div className="skeleton-block h-6 w-48 mb-3 rounded-lg" />
+          <div className="skeleton-block h-4 w-full mb-2 rounded-lg" />
+          <div className="skeleton-block h-4 w-3/4 mb-4 rounded-lg" />
+          <div className="space-y-2">
+            <div className="skeleton-block h-3 w-2/3 rounded-lg" />
+            <div className="skeleton-block h-3 w-1/2 rounded-lg" />
+            <div className="skeleton-block h-3 w-3/5 rounded-lg" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const { showToast, confirm } = useUI();
@@ -37,8 +58,38 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const [editingRoutine, setEditingRoutine] = useState<Routine | undefined>();
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'my' | 'public'>('my');
+  const [tabTransitionDirection, setTabTransitionDirection] = useState<'forward' | 'backward'>('forward');
+  const [tabTransitionVersion, setTabTransitionVersion] = useState(0);
+  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
+  const tabTransitionTimerRef = useRef<number | null>(null);
   const [routineBackfillRunning, setRoutineBackfillRunning] = useState(false);
   const [routineBackfillMessage, setRoutineBackfillMessage] = useState('');
+
+  useEffect(() => {
+    return () => {
+      if (tabTransitionTimerRef.current !== null) {
+        window.clearTimeout(tabTransitionTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleTabChange = (nextTab: 'my' | 'public') => {
+    if (activeTab === nextTab) return;
+
+    setTabTransitionDirection(nextTab === 'public' ? 'forward' : 'backward');
+    setTabTransitionVersion((previous) => previous + 1);
+    setActiveTab(nextTab);
+    setIsTabTransitioning(true);
+
+    if (tabTransitionTimerRef.current !== null) {
+      window.clearTimeout(tabTransitionTimerRef.current);
+    }
+
+    tabTransitionTimerRef.current = window.setTimeout(() => {
+      setIsTabTransitioning(false);
+      tabTransitionTimerRef.current = null;
+    }, TAB_TRANSITION_MS);
+  };
 
   const handleCreateRoutine = () => {
     setEditingRoutine(undefined);
@@ -295,7 +346,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         {/* Tabs */}
         <div className="app-surface p-1 mb-6 flex gap-1">
           <button
-            onClick={() => setActiveTab('my')}
+            onClick={() => handleTabChange('my')}
             className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'my'
               ? 'bg-mint/15 text-mint'
               : 'text-slate-300 hover:text-white'
@@ -304,7 +355,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             Mis Rutinas ({myRoutines.length})
           </button>
           <button
-            onClick={() => setActiveTab('public')}
+            onClick={() => handleTabChange('public')}
             className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'public'
               ? 'bg-mint/15 text-mint'
               : 'text-slate-300 hover:text-white'
@@ -341,36 +392,41 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         )}
 
         {/* Lista de rutinas */}
-        {displayedRoutines.length === 0 ? (
-          <div className="text-center py-12">
-            <Target className="mx-auto mb-4 text-slate-500" size={48} />
-            <h3 className="text-lg font-semibold text-slate-300 mb-2">
-              {activeTab === 'my' ? 'No tienes rutinas' : 'No hay rutinas públicas'}
-            </h3>
-            <p className="text-slate-400 text-sm mb-4">
-              {activeTab === 'my'
-                ? 'Crea tu primera rutina de entrenamiento'
-                : 'Sé el primero en crear una rutina pública'
-              }
-            </p>
-            {activeTab === 'my' && (
-              <button
-                onClick={handleCreateRoutine}
-                className="btn-primary"
-              >
-                Crear Rutina
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {displayedRoutines.map((routine) => {
+        <div className="relative isolation-isolate min-h-[16rem]">
+          <div
+            key={`${activeTab}-${tabTransitionVersion}`}
+            className={tabTransitionDirection === 'forward' ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward'}
+          >
+            {displayedRoutines.length === 0 ? (
+              <div className="text-center py-12 content-fade-in">
+                <Target className="mx-auto mb-4 text-slate-500" size={48} />
+                <h3 className="text-lg font-semibold text-slate-300 mb-2">
+                  {activeTab === 'my' ? 'No tienes rutinas' : 'No hay rutinas públicas'}
+                </h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  {activeTab === 'my'
+                    ? 'Crea tu primera rutina de entrenamiento'
+                    : 'Sé el primero en crear una rutina pública'
+                  }
+                </p>
+                {activeTab === 'my' && (
+                  <button
+                    onClick={handleCreateRoutine}
+                    className="btn-primary"
+                  >
+                    Crear Rutina
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {displayedRoutines.map((routine) => {
               const isVisibleOnDashboard = isRoutineVisibleOnDashboard(routine.id);
 
               return (
                 <div
                   key={routine.id}
-                  className="app-card p-4 sm:p-5"
+                  className="app-card p-4 sm:p-5 content-fade-in"
                 >
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex-1">
@@ -488,9 +544,17 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                 )}
               </div>
               );
-            })}
+                })}
+              </div>
+            )}
           </div>
-        )}
+
+          {isTabTransitioning && (
+            <div className="absolute inset-0 z-10 page-loading-mask pointer-events-none">
+              <RoutinesListSkeleton />
+            </div>
+          )}
+        </div>
 
         {/* Editor Modal */}
         {showEditor && (

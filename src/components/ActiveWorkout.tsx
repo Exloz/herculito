@@ -354,6 +354,24 @@ const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.memo(({
   );
 });
 
+const ActiveWorkoutExerciseSkeleton = ({ count }: { count: number }) => {
+  return (
+    <div className="space-y-4" aria-hidden="true">
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index} className="app-card p-4 mb-4">
+          <div className="skeleton-block h-6 w-40 rounded-lg mb-3" />
+          <div className="skeleton-block h-2 w-full rounded-full mb-4" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((__, setIndex) => (
+              <div key={setIndex} className="skeleton-block h-12 w-full rounded-xl" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   user,
@@ -570,42 +588,46 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       <main
         className={`max-w-4xl mx-auto px-4 py-6 sm:py-8 transition-[padding-bottom] duration-200 ${showTimer ? 'pb-[calc(11.5rem+env(safe-area-inset-bottom))]' : 'pb-[calc(6rem+env(safe-area-inset-bottom))]'}`}
       >
-        <div className="space-y-4">
-          {routine.exercises.map((exercise, index) => {
-            const log = getLogForExerciseCustom(exercise.id, user.id) || {
-              exerciseId: exercise.id,
-              userId: user.id,
-              date: getCurrentDateString(),
-              sets: []
-            };
-            const isCompleted = isExerciseLogCompleted(log.sets, exercise.sets);
+        {logsLoading ? (
+          <ActiveWorkoutExerciseSkeleton count={Math.min(3, routine.exercises.length)} />
+        ) : (
+          <div className="space-y-4 content-fade-in">
+            {routine.exercises.map((exercise, index) => {
+              const log = getLogForExerciseCustom(exercise.id, user.id) || {
+                exerciseId: exercise.id,
+                userId: user.id,
+                date: getCurrentDateString(),
+                sets: []
+              };
+              const isCompleted = isExerciseLogCompleted(log.sets, exercise.sets);
 
-            return (
-              <div
-                key={exercise.id}
-                className={`transition-all duration-200 ${isCompleted ? 'opacity-75' : ''}`}
-              >
-                <div className="flex items-center space-x-2 mb-2">
-                  {isCompleted && (
-                    <CheckCircle size={20} className="text-mint" />
-                  )}
-                  <h3 className="text-lg font-semibold text-white">
-                    {index + 1}. {exercise.name}
-                  </h3>
+              return (
+                <div
+                  key={exercise.id}
+                  className={`transition-all duration-200 ${isCompleted ? 'opacity-75' : ''}`}
+                >
+                  <div className="flex items-center space-x-2 mb-2">
+                    {isCompleted && (
+                      <CheckCircle size={20} className="text-mint" />
+                    )}
+                    <h3 className="text-lg font-semibold text-white">
+                      {index + 1}. {exercise.name}
+                    </h3>
+                  </div>
+
+                  <ExerciseCard
+                    exercise={exercise}
+                    log={log}
+                    userId={user.id}
+                    onUpdateLog={handleUpdateLog}
+                    onStartTimer={handleStartRestTimer}
+                    previousWeights={lastWeights[exercise.id]}
+                  />
                 </div>
-
-                <ExerciseCard
-                  exercise={exercise}
-                  log={log}
-                  userId={user.id}
-                  onUpdateLog={handleUpdateLog}
-                  onStartTimer={handleStartRestTimer}
-                  previousWeights={lastWeights[exercise.id]}
-                />
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {hasProgress && (
           <div className="mt-7 text-center">

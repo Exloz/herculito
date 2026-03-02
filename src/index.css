@@ -131,6 +131,14 @@
   .section-subtitle {
     @apply text-sm sm:text-base text-slate-300;
   }
+
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] touch-manipulation;
+  }
+
+  .touch-target-sm {
+    @apply min-h-[40px] min-w-[40px] touch-manipulation;
+  }
 }
 
 @keyframes page-enter-forward {

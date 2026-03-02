@@ -98,7 +98,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
       <div className="flex items-center justify-between mb-3 sm:mb-4">
         <button
           onClick={() => navigateMonth('prev')}
-          className="btn-ghost p-2 touch-manipulation"
+          className="btn-ghost p-2 touch-target"
           aria-label="Mes anterior"
         >
           <ChevronLeft size={18} className="text-slate-300" />
@@ -110,7 +110,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
         <button
           onClick={() => navigateMonth('next')}
-          className="btn-ghost p-2 touch-manipulation"
+          className="btn-ghost p-2 touch-target"
           aria-label="Mes siguiente"
         >
           <ChevronRight size={18} className="text-slate-300" />
@@ -141,6 +141,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
               aria-label={`Día ${dayNumber}${hasWorkout ? `, ${day.workouts.length} entrenamiento(s)` : ''}`}
               className={`
                 relative aspect-square p-0.5 sm:p-1 rounded-lg cursor-pointer transition-colors touch-manipulation
+                min-h-[44px]
                 ${isCurrentDay
                   ? 'bg-mint text-ink'
                   : isInCurrentMonth

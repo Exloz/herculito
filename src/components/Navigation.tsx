@@ -66,7 +66,7 @@ export const Navigation: React.FC<NavigationProps> = ({
         <div className={`grid ${hasActiveWorkout ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
           <button
             onClick={() => onPageChange("dashboard")}
-            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
+            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
               currentPage === "dashboard"
                 ? "bg-mint/15 text-mint"
                 : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
@@ -80,7 +80,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           {hasActiveWorkout && (
             <button
               onClick={handleResumeClick}
-              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors text-amberGlow hover:text-amberGlow/80 hover:bg-amberGlow/10"
+              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors text-amberGlow hover:text-amberGlow/80 hover:bg-amberGlow/10 touch-target"
               aria-label="Reanudar entrenamiento activo"
             >
               <PlayCircle size={22} className="animate-pulse" />
@@ -90,7 +90,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           <button
             onClick={() => onPageChange("routines")}
-            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors ${
+            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
               currentPage === "routines"
                 ? "bg-mint/15 text-mint"
                 : "text-slate-300 hover:text-white hover:bg-slateDeep/60"

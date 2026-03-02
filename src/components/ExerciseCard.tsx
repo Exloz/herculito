@@ -2,6 +2,7 @@ import React from 'react';
 import { Check, Clock, Weight, Plus, Minus, Play } from 'lucide-react';
 import { Exercise, ExerciseLog, WorkoutSet, ExerciseVideo } from '../types';
 import { getCurrentDateString } from '../utils/dateUtils';
+import { vibrateLight, vibrateSuccess } from '../utils/mobileFeedback';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -181,6 +182,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
     onUpdateLog(updatedLog);
 
+    if (!wasCompleted) {
+      vibrateSuccess();
+    } else {
+      vibrateLight();
+    }
+
     // Si se completó la serie y hay tiempo de descanso, iniciar temporizador
     if (!wasCompleted && exercise.restTime && exercise.restTime > 0) {
       onStartTimer(exercise.restTime);
@@ -195,14 +202,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           <div className="flex items-center gap-3 min-w-0">
             <h3 className="text-lg font-semibold text-white truncate">{exercise.name}</h3>
             {exercise.video?.url && (
-              <button
-                type="button"
-                onClick={() => setShowVideo((prev) => !prev)}
-                className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${showVideo
-                  ? 'border-mint/70 text-mint bg-mint/10'
-                  : 'border-mist/60 text-slate-300 hover:text-white hover:border-mint/50'
-                  }`}
-              >
+                <button
+                  type="button"
+                  onClick={() => setShowVideo((prev) => !prev)}
+                  className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors touch-target-sm ${showVideo
+                    ? 'border-mint/70 text-mint bg-mint/10'
+                    : 'border-mist/60 text-slate-300 hover:text-white hover:border-mint/50'
+                    }`}
+                >
                 <Play size={12} />
                 <span>{showVideo ? 'Ocultar video' : 'Ver video'}</span>
               </button>
@@ -309,8 +316,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 <div className="flex items-center gap-2">
                   <div className="flex items-center bg-slateDeep rounded-lg border border-mist/60 overflow-hidden">
                     <button
+                      type="button"
                       onClick={() => adjustWeight(setNumber, -2.5)}
-                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
+                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60 touch-target-sm"
                       aria-label="Reducir peso 2.5kg"
                     >
                       <Minus size={14} />
@@ -333,8 +341,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                       )}
                     </div>
                     <button
+                      type="button"
                       onClick={() => adjustWeight(setNumber, 2.5)}
-                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
+                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60 touch-target-sm"
                       aria-label="Aumentar peso 2.5kg"
                     >
                       <Plus size={14} />
@@ -345,8 +354,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
               </div>
 
               <button
+                type="button"
                 onClick={() => toggleSetCompleted(setNumber)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 ${isCompleted
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 touch-target ${isCompleted
                   ? 'bg-mint text-ink hover:bg-mintDeep'
                   : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
                   }`}

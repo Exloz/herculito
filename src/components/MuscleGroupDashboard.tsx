@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Users, Calendar } from 'lucide-react';
 import { Routine, MuscleGroup, User } from '../types';
 import { MUSCLE_GROUPS, getRoutinesByMuscleGroup } from '../utils/muscleGroups';
+import { vibrateLight } from '../utils/mobileFeedback';
 import { MuscleGroupSelector } from './MuscleGroupSelector';
 import { MuscleGroupIcon } from './MuscleGroupIcon';
 
@@ -123,8 +124,12 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
 
             {/* Botón de iniciar */}
             <button
-              onClick={() => onStartWorkout(routine.id)}
-              className="btn-primary w-full flex items-center justify-center gap-2 text-sm"
+              type="button"
+              onClick={() => {
+                vibrateLight();
+                onStartWorkout(routine.id);
+              }}
+              className="btn-primary w-full flex items-center justify-center gap-2 text-sm touch-target"
             >
               <Play size={16} />
               <span className="hidden sm:inline">Iniciar Entrenamiento</span>

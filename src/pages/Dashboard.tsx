@@ -7,6 +7,7 @@ import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { WorkoutCalendar } from '../components/WorkoutCalendar';
 import { ActiveWorkout } from '../components/ActiveWorkout';
+import { ExerciseProgressPanel } from '../components/ExerciseProgressPanel';
 import { getRecommendedMuscleGroup } from '../utils/muscleGroups';
 import { useUI } from '../contexts/ui-context';
 import { formatDateInAppTimeZone } from '../utils/dateUtils';
@@ -423,7 +424,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             <div className="flex items-center gap-2 sm:gap-3 ml-4">
               <button
                 onClick={() => setShowCalendar(!showCalendar)}
-                className={`btn-secondary flex items-center gap-2 ${showCalendar ? 'border-mint/60 text-mint' : ''}`}
+                className={`btn-secondary flex items-center gap-2 touch-target ${showCalendar ? 'border-mint/60 text-mint' : ''}`}
                 title="Ver calendario"
                 aria-label={showCalendar ? "Ocultar calendario" : "Ver calendario"}
               >
@@ -433,7 +434,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
               <button
                 onClick={onLogout}
-                className="btn-danger flex items-center gap-2"
+                className="btn-danger flex items-center gap-2 touch-target"
                 title="Cerrar sesión"
                 aria-label="Cerrar sesión"
               >
@@ -591,13 +592,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   onClick={() => setShowActiveWorkout(true)}
-                  className="btn-primary"
+                  className="btn-primary touch-target"
                 >
                   Reanudar
                 </button>
                 <button
                   onClick={handleCancelActiveWorkout}
-                  className="btn-secondary text-crimson border-crimson/40 hover:text-crimson hover:border-crimson/60"
+                  className="btn-secondary text-crimson border-crimson/40 hover:text-crimson hover:border-crimson/60 touch-target"
                 >
                   Cancelar
                 </button>
@@ -623,7 +624,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
               <button
                 onClick={handleDismissIosGuide}
-                className="btn-secondary self-start"
+                className="btn-secondary self-start touch-target"
               >
                 Entendido
               </button>
@@ -666,10 +667,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
              />
            </div>
 
-           {/* Sidebar - Solo entrenamientos recientes */}
-            <div className="order-1 lg:order-2 space-y-4 sm:space-y-6">
-              {/* Entrenamientos recientes */}
-              <div className="app-card p-4 sm:p-5">
+            {/* Sidebar - Solo entrenamientos recientes */}
+             <div className="order-1 lg:order-2 space-y-4 sm:space-y-6">
+               <ExerciseProgressPanel sessions={sessions} routines={dashboardRoutines} />
+
+               {/* Entrenamientos recientes */}
+               <div className="app-card p-4 sm:p-5">
                 <h3 className="text-lg font-display text-white mb-4">
                   Entrenamientos Recientes
                 </h3>

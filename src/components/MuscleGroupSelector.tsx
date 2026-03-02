@@ -45,9 +45,11 @@ export const MuscleGroupSelector: React.FC<MuscleGroupSelectorProps> = ({
         <MuscleGroupIcon muscleGroup={currentGroup} size={14} />
         <span className="text-xs sm:text-sm text-slate-300 truncate">{groupInfo.name}</span>
         <button
+          type="button"
           onClick={() => setIsEditing(true)}
-          className="text-slate-400 hover:text-mint active:text-mintDeep transition-colors p-1 touch-manipulation"
+          className="text-slate-400 hover:text-mint active:text-mintDeep transition-colors p-1 touch-target-sm"
           title="Cambiar grupo muscular"
+          aria-label="Cambiar grupo muscular"
         >
           <Edit3 size={12} />
         </button>
@@ -69,16 +71,20 @@ export const MuscleGroupSelector: React.FC<MuscleGroupSelectorProps> = ({
         ))}
       </select>
       <button
+        type="button"
         onClick={handleSave}
-        className="text-mint hover:text-mintDeep active:text-mintDeep transition-colors p-1 touch-manipulation"
+        className="text-mint hover:text-mintDeep active:text-mintDeep transition-colors p-1 touch-target-sm"
         title="Guardar cambios"
+        aria-label="Guardar grupo muscular"
       >
         <Check size={12} />
       </button>
       <button
+        type="button"
         onClick={handleCancel}
-        className="text-crimson hover:text-red-400 active:text-red-400 transition-colors p-1 touch-manipulation"
+        className="text-crimson hover:text-red-400 active:text-red-400 transition-colors p-1 touch-target-sm"
         title="Cancelar"
+        aria-label="Cancelar cambio de grupo muscular"
       >
         <X size={12} />
       </button>

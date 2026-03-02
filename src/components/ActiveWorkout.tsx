@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { ArrowLeft, Clock, CheckCircle, Target, Dumbbell } from 'lucide-react';
 import { Routine, User, WorkoutSession, ExerciseLog, WorkoutSet } from '../types';
 import { useExerciseLogs } from '../hooks/useWorkouts';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import { ExerciseCard } from './ExerciseCard';
 import { Timer } from './Timer';
 import { getCurrentDateString } from '../utils/dateUtils';
@@ -389,6 +390,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     loading: logsLoading,
     flushPendingLogs
   } = useExerciseLogs(today, user.id, { deferRemoteSync: true });
+  const showExerciseSkeleton = useDelayedLoading(logsLoading, 140);
   const hasMigratedSessionLogsRef = useRef(false);
   const lastSentProgressRef = useRef<string>('');
 
@@ -588,7 +590,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       <main
         className={`max-w-4xl mx-auto px-4 py-6 sm:py-8 transition-[padding-bottom] duration-200 ${showTimer ? 'pb-[calc(11.5rem+env(safe-area-inset-bottom))]' : 'pb-[calc(6rem+env(safe-area-inset-bottom))]'}`}
       >
-        {logsLoading ? (
+        {showExerciseSkeleton ? (
           <ActiveWorkoutExerciseSkeleton count={Math.min(3, routine.exercises.length)} />
         ) : (
           <div className="space-y-4 content-fade-in">

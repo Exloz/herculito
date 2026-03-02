@@ -4,6 +4,7 @@ import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../type
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
 import { useWorkoutSessions } from '../hooks/useWorkoutSessions';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { WorkoutCalendar } from '../components/WorkoutCalendar';
 import { ActiveWorkout } from '../components/ActiveWorkout';
@@ -245,6 +246,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
   // Estadísticas de entrenamiento
   const stats = useMemo(() => getWorkoutStats(), [getWorkoutStats]);
+  const loadingDashboardData = routinesLoading || sessionsLoading;
+  const showDashboardSkeleton = useDelayedLoading(loadingDashboardData, 180);
+  const showCompetitionSkeleton = useDelayedLoading(competitionLoading, 160);
 
   useEffect(() => {
     let cancelled = false;
@@ -417,8 +421,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     );
   }
 
-  if (routinesLoading || sessionsLoading) {
-    return <PageSkeleton page="dashboard" />;
+  if (loadingDashboardData) {
+    if (showDashboardSkeleton) {
+      return <PageSkeleton page="dashboard" />;
+    }
+
+    return <div className="app-shell" aria-hidden="true" />;
   }
 
   return (
@@ -531,7 +539,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
-                {competitionLoading ? (
+                {showCompetitionSkeleton ? (
                   <>
                     <CompetitionCardSkeleton />
                     <CompetitionCardSkeleton />

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Suspense, lazy, useCallback } from 'react';
+import { useEffect, useState, Suspense, lazy, useCallback } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { Login } from './pages/Login';
 import { Navigation } from './components/Navigation';
@@ -9,14 +9,15 @@ import { useUI } from './contexts/ui-context';
 import { PageSkeleton } from './components/PageSkeleton';
 
 // Lazy load pages for better performance
-const Dashboard = lazy(() => import('./pages/Dashboard').then(module => ({ default: module.Dashboard })));
-const Routines = lazy(() => import('./pages/NewRoutines').then(module => ({ default: module.Routines })));
+const loadDashboardPage = () => import('./pages/Dashboard');
+const loadRoutinesPage = () => import('./pages/NewRoutines');
+
+const Dashboard = lazy(() => loadDashboardPage().then(module => ({ default: module.Dashboard })));
+const Routines = lazy(() => loadRoutinesPage().then(module => ({ default: module.Routines })));
 
 type AppPage = 'dashboard' | 'routines';
 
 type PageTransitionDirection = 'forward' | 'backward';
-
-const PAGE_TRANSITION_LOADING_MS = 420;
 
 const getPageFromPathname = (pathname: string): AppPage => {
   if (pathname.startsWith('/routines')) {
@@ -59,8 +60,6 @@ function AppContent() {
   });
   const [transitionDirection, setTransitionDirection] = useState<PageTransitionDirection>('forward');
   const [transitionVersion, setTransitionVersion] = useState(0);
-  const [isPageTransitionLoading, setIsPageTransitionLoading] = useState(false);
-  const transitionLoadingTimerRef = useRef<number | null>(null);
   const {
     user,
     loading,
@@ -73,25 +72,10 @@ function AppContent() {
   } = useAuth();
 
   useEffect(() => {
-    return () => {
-      if (transitionLoadingTimerRef.current !== null) {
-        window.clearTimeout(transitionLoadingTimerRef.current);
-      }
-    };
-  }, []);
-
-  const runTransitionLoading = useCallback(() => {
-    setIsPageTransitionLoading(true);
-
-    if (transitionLoadingTimerRef.current !== null) {
-      window.clearTimeout(transitionLoadingTimerRef.current);
-    }
-
-    transitionLoadingTimerRef.current = window.setTimeout(() => {
-      setIsPageTransitionLoading(false);
-      transitionLoadingTimerRef.current = null;
-    }, PAGE_TRANSITION_LOADING_MS);
-  }, []);
+    if (!user) return;
+    void loadDashboardPage();
+    void loadRoutinesPage();
+  }, [user]);
 
   const beginPageTransition = useCallback((nextPage: AppPage) => {
     setCurrentPage((previousPage) => {
@@ -101,11 +85,10 @@ function AppContent() {
 
       setTransitionDirection(getTransitionDirection(previousPage, nextPage));
       setTransitionVersion((previousVersion) => previousVersion + 1);
-      runTransitionLoading();
 
       return nextPage;
     });
-  }, [runTransitionLoading]);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.history.scrollRestoration) {
@@ -122,7 +105,6 @@ function AppContent() {
       setCurrentPage('dashboard');
       setTransitionDirection('backward');
       setTransitionVersion((previousVersion) => previousVersion + 1);
-      runTransitionLoading();
     }
 
     const handlePopState = () => {
@@ -133,7 +115,7 @@ function AppContent() {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [beginPageTransition, runTransitionLoading]);
+  }, [beginPageTransition]);
 
   const handlePageChange = useCallback((nextPage: AppPage) => {
     beginPageTransition(nextPage);
@@ -184,25 +166,17 @@ function AppContent() {
       <AuthErrorToast message={error} />
       <div className="app-shell">
         <Suspense
-          fallback={<PageSkeleton page={currentPage} />}
+          fallback={<PageSkeleton page={currentPage} compact className="content-fade-in" />}
         >
           <ScrollToTop trigger={currentPage} />
 
           <div className="relative overflow-x-clip isolation-isolate">
             <div
               key={`${currentPage}-${transitionVersion}`}
-              className={`${transitionDirection === 'forward' ? 'page-anim-enter-forward' : 'page-anim-enter-backward'} ${isPageTransitionLoading ? 'page-anim-loading-dim' : ''}`}
+              className={transitionDirection === 'forward' ? 'page-anim-enter-forward' : 'page-anim-enter-backward'}
             >
               {renderPage(currentPage)}
             </div>
-
-            {isPageTransitionLoading && (
-              <PageSkeleton
-                page={currentPage}
-                compact
-                className="absolute inset-0 z-10 page-loading-mask pointer-events-none"
-              />
-            )}
           </div>
         </Suspense>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} />

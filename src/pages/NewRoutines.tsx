@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Edit, Trash2, Target, User as UserIcon, Eye } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
@@ -11,31 +11,11 @@ import { updateExerciseTemplate } from '../utils/dataApi';
 import { toUserMessage } from '../utils/errorMessages';
 import { runWithConcurrency } from '../utils/promisePool';
 import { PageSkeleton } from '../components/PageSkeleton';
+import { useDelayedLoading } from '../hooks/useDelayedLoading';
 
 interface RoutinesProps {
   user: User;
 }
-
-const TAB_TRANSITION_MS = 320;
-
-const RoutinesListSkeleton = () => {
-  return (
-    <div className="space-y-4" aria-hidden="true">
-      {Array.from({ length: 3 }).map((_, index) => (
-        <div key={index} className="app-card p-4 sm:p-5">
-          <div className="skeleton-block h-6 w-48 mb-3 rounded-lg" />
-          <div className="skeleton-block h-4 w-full mb-2 rounded-lg" />
-          <div className="skeleton-block h-4 w-3/4 mb-4 rounded-lg" />
-          <div className="space-y-2">
-            <div className="skeleton-block h-3 w-2/3 rounded-lg" />
-            <div className="skeleton-block h-3 w-1/2 rounded-lg" />
-            <div className="skeleton-block h-3 w-3/5 rounded-lg" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
 
 export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const { showToast, confirm } = useUI();
@@ -60,18 +40,9 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'my' | 'public'>('my');
   const [tabTransitionDirection, setTabTransitionDirection] = useState<'forward' | 'backward'>('forward');
   const [tabTransitionVersion, setTabTransitionVersion] = useState(0);
-  const [isTabTransitioning, setIsTabTransitioning] = useState(false);
-  const tabTransitionTimerRef = useRef<number | null>(null);
   const [routineBackfillRunning, setRoutineBackfillRunning] = useState(false);
   const [routineBackfillMessage, setRoutineBackfillMessage] = useState('');
-
-  useEffect(() => {
-    return () => {
-      if (tabTransitionTimerRef.current !== null) {
-        window.clearTimeout(tabTransitionTimerRef.current);
-      }
-    };
-  }, []);
+  const showRoutinesSkeleton = useDelayedLoading(loading, 180);
 
   const handleTabChange = (nextTab: 'my' | 'public') => {
     if (activeTab === nextTab) return;
@@ -79,16 +50,6 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
     setTabTransitionDirection(nextTab === 'public' ? 'forward' : 'backward');
     setTabTransitionVersion((previous) => previous + 1);
     setActiveTab(nextTab);
-    setIsTabTransitioning(true);
-
-    if (tabTransitionTimerRef.current !== null) {
-      window.clearTimeout(tabTransitionTimerRef.current);
-    }
-
-    tabTransitionTimerRef.current = window.setTimeout(() => {
-      setIsTabTransitioning(false);
-      tabTransitionTimerRef.current = null;
-    }, TAB_TRANSITION_MS);
   };
 
   const handleCreateRoutine = () => {
@@ -322,7 +283,11 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   };
 
   if (loading) {
-    return <PageSkeleton page="routines" />;
+    if (showRoutinesSkeleton) {
+      return <PageSkeleton page="routines" />;
+    }
+
+    return <div className="app-shell" aria-hidden="true" />;
   }
 
   return (
@@ -549,11 +514,6 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             )}
           </div>
 
-          {isTabTransitioning && (
-            <div className="absolute inset-0 z-10 page-loading-mask pointer-events-none">
-              <RoutinesListSkeleton />
-            </div>
-          )}
         </div>
 
         {/* Editor Modal */}

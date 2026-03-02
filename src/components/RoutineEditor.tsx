@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Save, X, Pencil, Play, VideoOff } from 'lucide-react';
 import { Routine, Exercise, MuscleGroup } from '../types';
 import { ExerciseSelector } from './ExerciseSelector';
 import { MUSCLE_GROUPS } from '../utils/muscleGroups';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface ExerciseDraftValues {
   sets?: string;
@@ -23,6 +24,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   onCancel,
   loading = false
 }) => {
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const [name, setName] = useState(routine?.name || '');
   const [description, setDescription] = useState(routine?.description || '');
   const [exercises, setExercises] = useState<Exercise[]>(routine?.exercises || []);
@@ -32,6 +34,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [primaryMuscleGroup, setPrimaryMuscleGroup] = useState<MuscleGroup>(routine?.primaryMuscleGroup || 'fullbody');
   const [exerciseError, setExerciseError] = useState('');
   const [exerciseDrafts, setExerciseDrafts] = useState<Record<string, ExerciseDraftValues>>({});
+
+  useDialogA11y(dialogRef, { onClose: onCancel });
 
   const handleAddExercise = (exercise: Exercise) => {
     if (exercises.some((existing) => existing.id === exercise.id)) {
@@ -118,26 +122,15 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     onSave(name, description, exercises, isPublic, primaryMuscleGroup);
   };
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onCancel();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onCancel]);
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div
+        ref={dialogRef}
         className="app-card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
         role="dialog"
         aria-modal="true"
         aria-labelledby="routine-editor-title"
+        tabIndex={-1}
       >
         <div className="flex items-center justify-between mb-6">
           <h2 id="routine-editor-title" className="text-xl font-display text-white">

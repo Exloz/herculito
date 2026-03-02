@@ -8,6 +8,7 @@ import {
   updateSessionProgress as apiUpdateSessionProgress,
   type WorkoutSessionResponse
 } from '../utils/dataApi';
+import { toUserMessage } from '../utils/errorMessages';
 
 const toDate = (value: unknown): Date | undefined => {
   if (!value) return undefined;
@@ -98,11 +99,11 @@ export const useWorkoutSessions = (user: User) => {
         setSessions(ordered);
         setLoading(false);
         setError(null);
-      } catch {
+      } catch (error) {
         clearTimeout(loadingTimeout);
         setSessions([]);
         setLoading(false);
-        setError('No se pudieron cargar las sesiones (esto es normal si es tu primera vez)');
+        setError(toUserMessage(error, 'No se pudieron cargar las sesiones (esto es normal si es tu primera vez)'));
       }
     };
 

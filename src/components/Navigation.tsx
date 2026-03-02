@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Home, Settings, PlayCircle } from "lucide-react";
 
+const ACTIVE_WORKOUT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+
 interface NavigationProps {
   currentPage: "dashboard" | "routines";
   onPageChange: (page: "dashboard" | "routines") => void;
@@ -14,8 +16,28 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   useEffect(() => {
     const checkActiveWorkout = () => {
-      const stored = localStorage.getItem('activeWorkout');
-      setHasActiveWorkout(!!stored);
+      try {
+        const stored = localStorage.getItem('activeWorkout');
+        if (!stored) {
+          setHasActiveWorkout(false);
+          return;
+        }
+
+        const parsed = JSON.parse(stored) as { timestamp?: number; session?: { id?: string } };
+        const timestamp = typeof parsed?.timestamp === 'number' ? parsed.timestamp : 0;
+        const hasValidSession = typeof parsed?.session?.id === 'string' && parsed.session.id.length > 0;
+
+        if (!hasValidSession || Date.now() - timestamp > ACTIVE_WORKOUT_EXPIRATION_MS) {
+          localStorage.removeItem('activeWorkout');
+          setHasActiveWorkout(false);
+          return;
+        }
+
+        setHasActiveWorkout(true);
+      } catch {
+        localStorage.removeItem('activeWorkout');
+        setHasActiveWorkout(false);
+      }
     };
 
     checkActiveWorkout();
@@ -83,4 +105,3 @@ export const Navigation: React.FC<NavigationProps> = ({
     </div>
   );
 };
-

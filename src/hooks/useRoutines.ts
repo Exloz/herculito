@@ -8,6 +8,7 @@ import {
   incrementRoutineUsage as apiIncrementRoutineUsage,
   type RoutineResponse
 } from '../utils/dataApi';
+import { toUserMessage } from '../utils/errorMessages';
 
 const toDate = (value: unknown): Date => {
   if (value instanceof Date) return value;
@@ -50,9 +51,8 @@ export const useRoutines = (userId: string) => {
       const data = await fetchRoutines();
       const mapped = data.map(mapRoutine);
       setRoutines(mapped);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al cargar rutinas';
-      setError(`Error al cargar rutinas: ${message}`);
+    } catch (error) {
+      setError(toUserMessage(error, 'Error al cargar rutinas'));
     } finally {
       setLoading(false);
     }

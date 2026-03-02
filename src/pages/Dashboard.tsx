@@ -11,6 +11,8 @@ import { getRecommendedMuscleGroup } from '../utils/muscleGroups';
 import { useUI } from '../contexts/ui-context';
 import { formatDateInAppTimeZone } from '../utils/dateUtils';
 import { fetchCompetitiveLeaderboard, type LeaderboardEntryResponse } from '../utils/dataApi';
+import { toUserMessage } from '../utils/errorMessages';
+import { PageSkeleton } from '../components/PageSkeleton';
 import { version as appVersion } from '../../package.json';
 
 interface DashboardProps {
@@ -305,16 +307,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       } else {
         showToast('Rutina no encontrada', 'error');
       }
-    } catch {
-      showToast('Error al iniciar el entrenamiento. Inténtalo de nuevo.', 'error');
+    } catch (error) {
+      showToast(toUserMessage(error, 'Error al iniciar el entrenamiento. Intentalo de nuevo.'), 'error');
     }
   }, [startWorkoutSession, dashboardRoutines, showToast]);
 
   const handleRoutineMuscleGroupChange = useCallback(async (routineId: string, newMuscleGroup: MuscleGroup) => {
     try {
       await updateRoutine(routineId, { primaryMuscleGroup: newMuscleGroup });
-    } catch {
-      showToast('Error al cambiar el grupo muscular. Inténtalo de nuevo.', 'error');
+    } catch (error) {
+      showToast(toUserMessage(error, 'Error al cambiar el grupo muscular. Intentalo de nuevo.'), 'error');
     }
   }, [updateRoutine, showToast]);
 
@@ -360,7 +362,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         showToast('Entrenamiento completado', 'success');
       } catch (error) {
         console.error('Error completing workout:', error);
-        showToast('Error al completar el entrenamiento. Inténtalo de nuevo.', 'error');
+        showToast(toUserMessage(error, 'Error al completar el entrenamiento. Intentalo de nuevo.'), 'error');
       }
     };
 
@@ -399,14 +401,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   }
 
   if (routinesLoading || sessionsLoading) {
-    return (
-      <div className="app-shell flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-mint mx-auto mb-4"></div>
-          <p className="text-slate-300">Cargando dashboard...</p>
-        </div>
-      </div>
-    );
+    return <PageSkeleton page="dashboard" />;
   }
 
   return (

@@ -132,3 +132,80 @@
     @apply text-sm sm:text-base text-slate-300;
   }
 }
+
+@keyframes page-enter-forward {
+  from {
+    transform: translateX(16%);
+    opacity: 0.84;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes page-exit-forward {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(-16%);
+    opacity: 0.82;
+  }
+}
+
+@keyframes page-enter-backward {
+  from {
+    transform: translateX(-16%);
+    opacity: 0.84;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes page-exit-backward {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(16%);
+    opacity: 0.82;
+  }
+}
+
+.page-anim-enter-forward {
+  animation: page-enter-forward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.page-anim-exit-forward {
+  animation: page-exit-forward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.page-anim-enter-backward {
+  animation: page-enter-backward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.page-anim-exit-backward {
+  animation: page-exit-backward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-anim-enter-forward,
+  .page-anim-exit-forward,
+  .page-anim-enter-backward,
+  .page-anim-exit-backward {
+    animation-duration: 1ms;
+  }
+}

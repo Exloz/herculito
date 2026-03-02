@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Workout, ExerciseLog } from '../types';
 import { useUI } from '../contexts/ui-context';
 import { fetchWorkouts, upsertWorkout, upsertExerciseLog, fetchExerciseLogsForDate } from '../utils/dataApi';
+import { toUserMessage } from '../utils/errorMessages';
 
 export const useWorkouts = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
@@ -14,8 +15,8 @@ export const useWorkouts = () => {
       try {
         const data = await fetchWorkouts();
         setWorkouts(data);
-      } catch {
-        const message = 'Error al cargar entrenamientos';
+      } catch (error) {
+        const message = toUserMessage(error, 'Error al cargar entrenamientos');
         setError(message);
         showToast(message, 'error');
       } finally {
@@ -30,8 +31,8 @@ export const useWorkouts = () => {
     try {
       await upsertWorkout(workout);
       setWorkouts((prev) => prev.map((w) => (w.id === workout.id ? workout : w)));
-    } catch {
-      const message = 'Error al actualizar entrenamiento';
+    } catch (error) {
+      const message = toUserMessage(error, 'Error al actualizar entrenamiento');
       setError(message);
       showToast(message, 'error');
     }
@@ -40,10 +41,15 @@ export const useWorkouts = () => {
   return { workouts, loading, error, updateWorkout };
 };
 
-export const useExerciseLogs = (date: string, userId?: string) => {
+export const useExerciseLogs = (
+  date: string,
+  userId?: string,
+  options?: { deferRemoteSync?: boolean }
+) => {
   const [logs, setLogs] = useState<ExerciseLog[]>([]);
   const [loading, setLoading] = useState(false);
   const { showToast } = useUI();
+  const deferRemoteSync = options?.deferRemoteSync ?? false;
   const pendingWritesRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendingPayloadRef = useRef<Map<string, ExerciseLog>>(new Map());
   const loadErrorShownRef = useRef<string | null>(null);
@@ -121,6 +127,7 @@ export const useExerciseLogs = (date: string, userId?: string) => {
 
   const flushPendingWrites = useCallback(async () => {
     const payloads = Array.from(pendingPayloadRef.current.entries());
+    if (payloads.length === 0) return;
 
     const timeouts = Array.from(pendingWritesRef.current.values());
     pendingWritesRef.current.clear();
@@ -219,6 +226,11 @@ export const useExerciseLogs = (date: string, userId?: string) => {
 
       pendingPayloadRef.current.set(logId, logWithAllFields);
       persistPending();
+
+      if (deferRemoteSync) {
+        return;
+      }
+
       const existingTimeout = pendingWritesRef.current.get(logId);
       if (existingTimeout) {
         clearTimeout(existingTimeout);
@@ -262,5 +274,11 @@ export const useExerciseLogs = (date: string, userId?: string) => {
     return localLog;
   };
 
-  return { logs, loading, updateExerciseLog, getLogForExercise };
+  return {
+    logs,
+    loading,
+    updateExerciseLog,
+    getLogForExercise,
+    flushPendingLogs: flushPendingWrites
+  };
 };

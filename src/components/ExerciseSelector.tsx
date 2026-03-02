@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Search, ChevronDown, X, Loader, Play, Check, Pencil } from 'lucide-react';
 import { useExerciseTemplates } from '../hooks/useExerciseTemplates';
 import { useAuth } from '../hooks/useAuth';
@@ -8,6 +8,9 @@ import {
   fetchMusclewikiVideos,
   type MusclewikiSuggestion
 } from '../utils/musclewikiApi';
+import { useDialogA11y } from '../hooks/useDialogA11y';
+import { toUserMessage } from '../utils/errorMessages';
+import { runWithConcurrency } from '../utils/promisePool';
 
 interface ExerciseSelectorProps {
   onSelectExercise: (exercise: Exercise) => void;
@@ -37,6 +40,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   onUpdateExercise
 }) => {
   const isEditing = !!editingExercise;
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const { user } = useAuth();
 
   const {
@@ -61,6 +65,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [selectedVideo, setSelectedVideo] = useState<ExerciseVideo | null>(null);
   const [backfillRunning, setBackfillRunning] = useState(false);
   const [backfillMessage, setBackfillMessage] = useState('');
+
+  useDialogA11y(dialogRef, { onClose: onCancel });
 
   // Estado para ejercicio personalizado
   const [customExercise, setCustomExercise] = useState<CustomExerciseForm>({
@@ -96,19 +102,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     return () => {
     };
   }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onCancel();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onCancel]);
 
   // Obtener ejercicios filtrados
   const filteredExercises = searchExercises(searchTerm, selectedCategory);
@@ -223,8 +216,11 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
         onSelectExercise(exercise);
       }
-    } catch {
-      setError(isEditing ? 'Error al actualizar el ejercicio. Por favor, intenta de nuevo.' : 'Error al crear el ejercicio. Por favor, intenta de nuevo.');
+    } catch (error) {
+      const fallback = isEditing
+        ? 'Error al actualizar el ejercicio. Por favor, intenta de nuevo.'
+        : 'Error al crear el ejercicio. Por favor, intenta de nuevo.';
+      setError(toUserMessage(error, fallback));
     } finally {
       setCreatingExercise(false);
     }
@@ -247,8 +243,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       if (suggestions.length === 0) {
         setVideoError('No se encontraron sugerencias para este nombre');
       }
-    } catch {
-      setVideoError('No pudimos buscar videos en este momento');
+    } catch (error) {
+      setVideoError(toUserMessage(error, 'No pudimos buscar videos en este momento'));
     } finally {
       setVideoLoading(false);
     }
@@ -267,8 +263,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         pageUrl: data.pageUrl,
         variants: data.variants
       });
-    } catch {
-      setVideoError('No pudimos obtener el video seleccionado');
+    } catch (error) {
+      setVideoError(toUserMessage(error, 'No pudimos obtener el video seleccionado'));
     } finally {
       setVideoLoading(false);
     }
@@ -289,64 +285,73 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       return;
     }
 
+    type BackfillResult = 'updated' | 'skipped' | 'failed';
+
     const threshold = 0.45;
-    let updated = 0;
-    let skipped = 0;
-    let failed = 0;
+    let processed = 0;
 
     setBackfillRunning(true);
     setBackfillMessage(`Buscando videos... (0/${candidates.length})`);
 
-    for (let index = 0; index < candidates.length; index += 1) {
-      const exercise = candidates[index];
-      setBackfillMessage(`Buscando videos... (${index + 1}/${candidates.length})`);
+    try {
+      const results = await runWithConcurrency<ExerciseTemplate, BackfillResult>(
+        candidates,
+        3,
+        async (exercise) => {
+          try {
+            const existingSlug = exercise.video?.slug
+              || (exercise.video?.pageUrl?.includes('/exercise/')
+                ? exercise.video.pageUrl.split('/exercise/')[1]?.split('/')[0]
+                : undefined);
 
-      try {
-        const existingSlug = exercise.video?.slug
-          || (exercise.video?.pageUrl?.includes('/exercise/')
-            ? exercise.video.pageUrl.split('/exercise/')[1]?.split('/')[0]
-            : undefined);
+            if (exercise.video && existingSlug && (!exercise.video.variants || exercise.video.variants.length === 0)) {
+              const data = await fetchMusclewikiVideos(existingSlug);
+              const video: ExerciseVideo = {
+                ...exercise.video,
+                slug: existingSlug,
+                url: exercise.video.url || data.defaultVideoUrl,
+                pageUrl: exercise.video.pageUrl || data.pageUrl,
+                variants: data.variants
+              };
+              await updateExerciseTemplate(exercise.id, { video });
+              return 'updated';
+            }
 
-        if (exercise.video && existingSlug && (!exercise.video.variants || exercise.video.variants.length === 0)) {
-          const data = await fetchMusclewikiVideos(existingSlug);
-          const video: ExerciseVideo = {
-            ...exercise.video,
-            slug: existingSlug,
-            url: exercise.video.url || data.defaultVideoUrl,
-            pageUrl: exercise.video.pageUrl || data.pageUrl,
-            variants: data.variants
-          };
-          await updateExerciseTemplate(exercise.id, { video });
-          updated += 1;
-          continue;
+            const suggestions = await fetchMusclewikiSuggestions(exercise.name, 5);
+            const best = suggestions[0];
+            if (!best || best.score < threshold) {
+              return 'skipped';
+            }
+
+            const data = await fetchMusclewikiVideos(best.slug);
+            const video: ExerciseVideo = {
+              provider: 'musclewiki',
+              slug: best.slug,
+              url: data.defaultVideoUrl,
+              pageUrl: data.pageUrl,
+              variants: data.variants
+            };
+            await updateExerciseTemplate(exercise.id, { video });
+            return 'updated';
+          } catch {
+            return 'failed';
+          } finally {
+            processed += 1;
+            setBackfillMessage(`Buscando videos... (${processed}/${candidates.length})`);
+          }
         }
+      );
 
-        const suggestions = await fetchMusclewikiSuggestions(exercise.name, 5);
-        const best = suggestions[0];
-        if (!best || best.score < threshold) {
-          skipped += 1;
-          continue;
-        }
+      const updated = results.filter((result) => result === 'updated').length;
+      const skipped = results.filter((result) => result === 'skipped').length;
+      const failed = results.filter((result) => result === 'failed').length;
 
-        const data = await fetchMusclewikiVideos(best.slug);
-        const video: ExerciseVideo = {
-          provider: 'musclewiki',
-          slug: best.slug,
-          url: data.defaultVideoUrl,
-          pageUrl: data.pageUrl,
-          variants: data.variants
-        };
-        await updateExerciseTemplate(exercise.id, { video });
-        updated += 1;
-      } catch {
-        failed += 1;
-      }
+      const parts = [`${updated} actualizados`, `${skipped} omitidos`];
+      if (failed > 0) parts.push(`${failed} errores`);
+      setBackfillMessage(`Listo: ${parts.join(', ')}.`);
+    } finally {
+      setBackfillRunning(false);
     }
-
-    const parts = [`${updated} actualizados`, `${skipped} omitidos`];
-    if (failed > 0) parts.push(`${failed} errores`);
-    setBackfillMessage(`Listo: ${parts.join(', ')}.`);
-    setBackfillRunning(false);
   };
 
   const getPreviewUrls = (video: ExerciseVideo) => {
@@ -378,8 +383,15 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
   if (!user?.id) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="app-card p-6 text-center" role="dialog" aria-modal="true" aria-label="Verificando autenticación">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div
+          ref={dialogRef}
+          className="app-card p-6 text-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Verificando autenticación"
+          tabIndex={-1}
+        >
           <Loader className="animate-spin mx-auto mb-4 text-mint" size={32} />
           <p className="text-white">Verificando autenticación...</p>
         </div>
@@ -390,7 +402,14 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="app-card p-6 text-center" role="dialog" aria-modal="true" aria-label="Cargando ejercicios">
+        <div
+          ref={dialogRef}
+          className="app-card p-6 text-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Cargando ejercicios"
+          tabIndex={-1}
+        >
           <Loader className="animate-spin mx-auto mb-4 text-mint" size={32} />
           <p className="text-white">Cargando ejercicios...</p>
         </div>
@@ -401,10 +420,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div
+        ref={dialogRef}
         className="app-card w-full max-w-md max-h-[80vh] overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="exercise-selector-title"
+        tabIndex={-1}
       >
         <div className="p-4 border-b border-mist/60">
           <div className="flex items-center justify-between mb-4">

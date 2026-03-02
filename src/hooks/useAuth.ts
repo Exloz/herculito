@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth as useClerkAuth, useClerk, useSignIn, useUser } from '@clerk/clerk-react';
 import { User } from '../types';
 import { setTokenGetter } from '../utils/apiClient';
+import { toUserMessage } from '../utils/errorMessages';
 
 const getBrowserOrigin = () => {
   if (typeof window === 'undefined') return 'https://herculito.exloz.site/';
@@ -68,8 +69,8 @@ export function useAuth() {
         redirectUrl: `${origin}/sso-callback`,
         redirectUrlComplete: `${origin}/`
       });
-    } catch {
-      setError('No se pudo iniciar sesion con Clerk. Intentalo de nuevo.');
+    } catch (error) {
+      setError(toUserMessage(error, 'No se pudo iniciar sesion con Clerk. Intentalo de nuevo.'));
     }
   }, [isSignInLoaded, signIn]);
 
@@ -77,8 +78,8 @@ export function useAuth() {
     try {
       setError(null);
       await signOut({ redirectUrl: '/' });
-    } catch {
-      setError('No se pudo cerrar la sesion. Intentalo de nuevo.');
+    } catch (error) {
+      setError(toUserMessage(error, 'No se pudo cerrar la sesion. Intentalo de nuevo.'));
     }
   }, [signOut]);
 

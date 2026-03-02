@@ -11,6 +11,24 @@ type TokenGetter = () => Promise<string | null>;
 const DEFAULT_TIMEOUT_MS = 15000;
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
+export class ApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly details?: unknown;
+
+  constructor(message: string, options: { status: number; code?: string; details?: unknown }) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = options.status;
+    this.code = options.code;
+    this.details = options.details;
+  }
+}
+
+export const isApiError = (error: unknown): error is ApiError => {
+  return error instanceof ApiError;
+};
+
 let tokenGetter: TokenGetter | null = null;
 
 export const setTokenGetter = (getter: TokenGetter | null): void => {
@@ -48,6 +66,37 @@ export const getIdToken = async (): Promise<string> => {
   throw new Error('Not authenticated');
 };
 
+const parseErrorResponse = async (res: Response): Promise<{ message?: string; code?: string; details?: unknown }> => {
+  const contentType = res.headers.get('content-type') ?? '';
+
+  if (contentType.includes('application/json')) {
+    try {
+      const payload = (await res.json()) as unknown;
+      if (payload && typeof payload === 'object') {
+        const payloadRecord = payload as Record<string, unknown>;
+        const code = typeof payloadRecord.error === 'string' ? payloadRecord.error : undefined;
+        const message = typeof payloadRecord.message === 'string'
+          ? payloadRecord.message
+          : code;
+        return { message, code, details: payloadRecord };
+      }
+    } catch {
+      return {};
+    }
+  }
+
+  try {
+    const text = await res.text();
+    if (text.trim().length > 0) {
+      return { message: text.trim() };
+    }
+  } catch {
+    return {};
+  }
+
+  return {};
+};
+
 export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const method = (init?.method ?? 'GET').toUpperCase();
   const retries = method === 'GET' || method === 'HEAD' ? 1 : 0;
@@ -81,11 +130,17 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> 
         if (shouldRetry) {
           continue;
         }
-        throw new Error(`Request failed: ${res.status}`);
+
+        const parsedError = await parseErrorResponse(res);
+        throw new ApiError(parsedError.message ?? `Request failed: ${res.status}`, {
+          status: res.status,
+          code: parsedError.code,
+          details: parsedError.details
+        });
       }
 
       if (!contentType.includes('application/json')) {
-        throw new Error('Invalid response type');
+        throw new ApiError('Invalid response type', { status: 500 });
       }
 
       return (await res.json()) as T;
@@ -94,7 +149,7 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> 
         continue;
       }
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timed out');
+        throw new ApiError('Request timed out', { status: 408 });
       }
       throw error;
     } finally {
@@ -105,5 +160,5 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> 
     }
   }
 
-  throw new Error('Request failed');
+  throw new ApiError('Request failed', { status: 0 });
 };

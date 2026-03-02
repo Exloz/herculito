@@ -1,9 +1,13 @@
 import { useEffect } from 'react';
 
-export function ScrollToTop() {
+interface ScrollToTopProps {
+  trigger?: unknown;
+}
+
+export function ScrollToTop({ trigger }: ScrollToTopProps) {
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [trigger]);
 
   return null;
 }

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Dumbbell, Target, User as UserIcon, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Target, User as UserIcon, Eye } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
 import { RoutineEditor } from '../components/RoutineEditor';
@@ -8,6 +8,9 @@ import { useUI } from '../contexts/ui-context';
 import { formatDateInAppTimeZone } from '../utils/dateUtils';
 import { fetchMusclewikiSuggestions, fetchMusclewikiVideos } from '../utils/musclewikiApi';
 import { updateExerciseTemplate } from '../utils/dataApi';
+import { toUserMessage } from '../utils/errorMessages';
+import { runWithConcurrency } from '../utils/promisePool';
+import { PageSkeleton } from '../components/PageSkeleton';
 
 interface RoutinesProps {
   user: User;
@@ -66,8 +69,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
       setShowEditor(false);
       setEditingRoutine(undefined);
       showToast('Rutina guardada correctamente', 'success');
-    } catch {
-      showToast('Error guardando la rutina', 'error');
+    } catch (error) {
+      showToast(toUserMessage(error, 'Error guardando la rutina'), 'error');
     } finally {
       setSaving(false);
     }
@@ -84,8 +87,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         try {
           await deleteRoutine(routineId);
           showToast('Rutina eliminada', 'success');
-        } catch {
-          showToast('Error eliminando la rutina', 'error');
+        } catch (error) {
+          showToast(toUserMessage(error, 'Error eliminando la rutina'), 'error');
         }
       }
     });
@@ -94,8 +97,8 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const handleToggleRoutineVisibility = async (routineId: string, nextVisible: boolean) => {
     try {
       await setRoutineVisibilityOnDashboard(routineId, nextVisible);
-    } catch {
-      showToast('No se pudo guardar la visibilidad de la rutina', 'error');
+    } catch (error) {
+      showToast(toUserMessage(error, 'No se pudo guardar la visibilidad de la rutina'), 'error');
     }
   };
 
@@ -130,105 +133,145 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
       return;
     }
 
+    type BackfillTask = {
+      routineId: string;
+      exercise: Exercise;
+    };
+
+    type BackfillResult = {
+      routineId: string;
+      exerciseId: string;
+      status: 'updated' | 'skipped' | 'failed';
+      video?: ExerciseVideo;
+    };
+
+    const tasks: BackfillTask[] = routinesToUpdate.flatMap((routine) => {
+      return routine.exercises
+        .filter((exercise) => {
+          if (!exercise.name.trim()) return false;
+          if (!exercise.video) return true;
+          return !exercise.video.variants || exercise.video.variants.length === 0;
+        })
+        .map((exercise) => ({ routineId: routine.id, exercise }));
+    });
+
     const threshold = 0.45;
-    let updated = 0;
-    let skipped = 0;
-    let failed = 0;
+    let processed = 0;
 
     setRoutineBackfillRunning(true);
-    setRoutineBackfillMessage(`Buscando videos... (0/${candidates.length})`);
+    setRoutineBackfillMessage(`Buscando videos... (0/${tasks.length})`);
 
-    let processed = 0;
-    for (const routine of routinesToUpdate) {
-      let routineChanged = false;
-      const nextExercises: Exercise[] = [];
+    try {
+      const results = await runWithConcurrency<BackfillTask, BackfillResult>(
+        tasks,
+        3,
+        async (task) => {
+          try {
+            const { exercise } = task;
+            const needsVariants = !!exercise.video && (!exercise.video.variants || exercise.video.variants.length === 0);
+            const existingSlug = exercise.video?.slug
+              || (exercise.video?.pageUrl?.includes('/exercise/')
+                ? exercise.video.pageUrl.split('/exercise/')[1]?.split('/')[0]
+                : undefined);
 
-      for (const exercise of routine.exercises) {
-        if (exercise.name.trim().length === 0) {
-          nextExercises.push(exercise);
-          continue;
-        }
-
-        const needsVariants = !!exercise.video && (!exercise.video.variants || exercise.video.variants.length === 0);
-        const needsVideo = !exercise.video;
-
-        if (!needsVideo && !needsVariants) {
-          nextExercises.push(exercise);
-          continue;
-        }
-
-        try {
-          const existingSlug = exercise.video?.slug
-            || (exercise.video?.pageUrl?.includes('/exercise/')
-              ? exercise.video.pageUrl.split('/exercise/')[1]?.split('/')[0]
-              : undefined);
-
+            let video: ExerciseVideo | undefined;
             if (needsVariants && existingSlug) {
               const data = await fetchMusclewikiVideos(existingSlug);
-              const video: ExerciseVideo = {
+              video = {
                 provider: 'musclewiki',
                 slug: existingSlug,
                 url: exercise.video?.url || data.defaultVideoUrl,
                 pageUrl: exercise.video?.pageUrl || data.pageUrl,
                 variants: data.variants
               };
-              await updateExerciseTemplate(exercise.id, { video });
-              nextExercises.push({ ...exercise, video });
-              routineChanged = true;
-              updated += 1;
             } else {
               const suggestions = await fetchMusclewikiSuggestions(exercise.name, 5);
-            const best = suggestions[0];
-            if (!best || best.score < threshold) {
-              skipped += 1;
-              processed += 1;
-              setRoutineBackfillMessage(`Buscando videos... (${processed}/${candidates.length})`);
-              nextExercises.push(exercise);
-              continue;
-            }
+              const best = suggestions[0];
+              if (!best || best.score < threshold) {
+                return {
+                  routineId: task.routineId,
+                  exerciseId: exercise.id,
+                  status: 'skipped'
+                };
+              }
 
-            const data = await fetchMusclewikiVideos(best.slug);
-              const video: ExerciseVideo = {
+              const data = await fetchMusclewikiVideos(best.slug);
+              video = {
                 provider: 'musclewiki',
                 slug: best.slug,
                 url: data.defaultVideoUrl,
                 pageUrl: data.pageUrl,
                 variants: data.variants
               };
-              await updateExerciseTemplate(exercise.id, { video });
-              nextExercises.push({ ...exercise, video });
-              routineChanged = true;
-              updated += 1;
             }
-        } catch {
-          failed += 1;
-          nextExercises.push(exercise);
-        } finally {
-          processed += 1;
-          setRoutineBackfillMessage(`Buscando videos... (${processed}/${candidates.length})`);
-        }
-      }
 
-      if (routineChanged) {
+            await updateExerciseTemplate(exercise.id, { video });
+            return {
+              routineId: task.routineId,
+              exerciseId: exercise.id,
+              status: 'updated',
+              video
+            };
+          } catch {
+            return {
+              routineId: task.routineId,
+              exerciseId: task.exercise.id,
+              status: 'failed'
+            };
+          } finally {
+            processed += 1;
+            setRoutineBackfillMessage(`Buscando videos... (${processed}/${tasks.length})`);
+          }
+        }
+      );
+
+      const videosByRoutine = new Map<string, Map<string, ExerciseVideo>>();
+      let updated = 0;
+      let skipped = 0;
+      let failed = 0;
+
+      results.forEach((result) => {
+        if (result.status === 'updated' && result.video) {
+          const byExerciseId = videosByRoutine.get(result.routineId) ?? new Map<string, ExerciseVideo>();
+          byExerciseId.set(result.exerciseId, result.video);
+          videosByRoutine.set(result.routineId, byExerciseId);
+          updated += 1;
+          return;
+        }
+
+        if (result.status === 'skipped') {
+          skipped += 1;
+          return;
+        }
+
+        failed += 1;
+      });
+
+      for (const routine of routinesToUpdate) {
+        const routineVideos = videosByRoutine.get(routine.id);
+        if (!routineVideos || routineVideos.size === 0) {
+          continue;
+        }
+
+        const nextExercises = routine.exercises.map((exercise) => {
+          const video = routineVideos.get(exercise.id);
+          if (!video) return exercise;
+          return { ...exercise, video };
+        });
+
         await updateRoutine(routine.id, { exercises: nextExercises });
       }
-    }
 
-    const parts = [`${updated} actualizados`, `${skipped} omitidos`];
-    if (failed > 0) parts.push(`${failed} errores`);
-    setRoutineBackfillMessage(`Listo: ${parts.join(', ')}.`);
-    setRoutineBackfillRunning(false);
+      const parts = [`${updated} actualizados`, `${skipped} omitidos`];
+      if (failed > 0) parts.push(`${failed} errores`);
+      setRoutineBackfillMessage(`Listo: ${parts.join(', ')}.`);
+    } finally {
+      setRoutineBackfillRunning(false);
+    }
   };
 
   if (loading) {
-    return (
-      <div className="app-shell flex items-center justify-center">
-        <div className="text-center">
-          <Dumbbell className="mx-auto mb-4 text-mint animate-bounce" size={48} />
-          <div className="text-slate-100 text-lg">Cargando rutinas...</div>
-        </div>
-      </div>
-    );
+    return <PageSkeleton page="routines" />;
   }
 
   return (

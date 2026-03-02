@@ -8,6 +8,7 @@ import {
   incrementExerciseUsage as apiIncrementExerciseUsage,
   type ExerciseTemplateResponse
 } from '../utils/dataApi';
+import { toUserMessage } from '../utils/errorMessages';
 
 const toDate = (value: unknown): Date => {
   if (value instanceof Date) return value;
@@ -85,8 +86,8 @@ export const useExerciseTemplates = (userId: string) => {
       const mapped = data.map(mapExercise);
       const sorted = sortExercises(mapped);
       setExercises(sorted);
-    } catch {
-      setError('Error al cargar ejercicios');
+    } catch (error) {
+      setError(toUserMessage(error, 'Error al cargar ejercicios'));
     } finally {
       setLoading(false);
     }
@@ -126,7 +127,7 @@ export const useExerciseTemplates = (userId: string) => {
       setExercises((prev) => sortExercises([mapped, ...prev]));
       return created.id;
     } catch (error) {
-      setError('Error al crear ejercicio');
+      setError(toUserMessage(error, 'Error al crear ejercicio'));
       throw error;
     }
   };
@@ -164,9 +165,9 @@ export const useExerciseTemplates = (userId: string) => {
           exercise.id === exerciseId ? { ...exercise, ...updates } : exercise
         )
       );
-    } catch {
-      setError('Error al actualizar ejercicio');
-      throw new Error('update_failed');
+    } catch (error) {
+      setError(toUserMessage(error, 'Error al actualizar ejercicio'));
+      throw error;
     }
   };
 

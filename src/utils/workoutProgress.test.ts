@@ -81,4 +81,49 @@ describe('buildExerciseProgress', () => {
     const result = buildExerciseProgress(sessions, [makeRoutine()]);
     expect(result).toHaveLength(0);
   });
+
+  it('uses override names for exercises missing in routines', () => {
+    const sessions: WorkoutSession[] = [{
+      id: 's1',
+      routineId: 'routine-2',
+      routineName: 'Otro',
+      userId: 'u1',
+      startedAt: new Date('2026-01-01T10:00:00.000Z'),
+      completedAt: new Date('2026-01-01T11:00:00.000Z'),
+      exercises: [{
+        exerciseId: 'custom:123e4567-e89b-12d3-a456-426614174000',
+        userId: 'u1',
+        date: '2026-01-01',
+        sets: [{ setNumber: 1, weight: 25, completed: true }]
+      }]
+    }];
+
+    const result = buildExerciseProgress(sessions, [makeRoutine()], {
+      'custom:123e4567-e89b-12d3-a456-426614174000': 'Face Pull'
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].exerciseName).toBe('Face Pull');
+  });
+
+  it('hides opaque identifiers behind friendly fallback names', () => {
+    const sessions: WorkoutSession[] = [{
+      id: 's1',
+      routineId: 'routine-2',
+      routineName: 'Otro',
+      userId: 'u1',
+      startedAt: new Date('2026-01-01T10:00:00.000Z'),
+      completedAt: new Date('2026-01-01T11:00:00.000Z'),
+      exercises: [{
+        exerciseId: '123e4567-e89b-12d3-a456-426614174000',
+        userId: 'u1',
+        date: '2026-01-01',
+        sets: [{ setNumber: 1, weight: 20, completed: true }]
+      }]
+    }];
+
+    const result = buildExerciseProgress(sessions, [makeRoutine()]);
+    expect(result).toHaveLength(1);
+    expect(result[0].exerciseName).toBe('Ejercicio personalizado');
+  });
 });

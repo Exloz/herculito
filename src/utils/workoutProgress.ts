@@ -26,21 +26,63 @@ const roundWeight = (value: number): number => {
   return Math.round(value * 10) / 10;
 };
 
+const isUuidLike = (value: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+};
+
+const isOpaqueIdentifier = (value: string): boolean => {
+  return /^[0-9a-z:_-]{20,}$/i.test(value);
+};
+
 const fallbackExerciseName = (exerciseId: string): string => {
-  const normalized = exerciseId.replace(/^custom:/, '').replace(/[_-]+/g, ' ').trim();
+  const baseId = exerciseId.replace(/^custom:/, '').trim();
+  if (isUuidLike(baseId) || isOpaqueIdentifier(baseId)) {
+    return 'Ejercicio personalizado';
+  }
+
+  const normalized = baseId.replace(/[_-]+/g, ' ').trim();
   if (normalized.length === 0) return 'Ejercicio';
   return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 };
 
+const getOverrideName = (
+  overrides: Map<string, string> | Record<string, string> | undefined,
+  exerciseId: string
+): string | undefined => {
+  if (!overrides) return undefined;
+
+  if (overrides instanceof Map) {
+    const value = overrides.get(exerciseId);
+    return typeof value === 'string' ? value : undefined;
+  }
+
+  const value = overrides[exerciseId];
+  return typeof value === 'string' ? value : undefined;
+};
+
 export const buildExerciseProgress = (
   sessions: WorkoutSession[],
-  routines: Routine[]
+  routines: Routine[],
+  exerciseNameOverrides?: Map<string, string> | Record<string, string>
 ): ExerciseProgressSummary[] => {
   const exerciseNames = new Map<string, string>();
   routines.forEach((routine) => {
     routine.exercises.forEach((exercise) => {
       if (exercise.id && exercise.name) {
         exerciseNames.set(exercise.id, exercise.name);
+      }
+    });
+  });
+
+  sessions.forEach((session) => {
+    (session.exercises ?? []).forEach((log) => {
+      if (exerciseNames.has(log.exerciseId)) {
+        return;
+      }
+
+      const overrideName = getOverrideName(exerciseNameOverrides, log.exerciseId);
+      if (overrideName && overrideName.trim().length > 0) {
+        exerciseNames.set(log.exerciseId, overrideName.trim());
       }
     });
   });

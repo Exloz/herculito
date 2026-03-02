@@ -3,6 +3,7 @@ import { Activity, TrendingDown, TrendingUp } from 'lucide-react';
 import { Routine, WorkoutSession } from '../types';
 import { formatDateForDisplay, getDateStringInAppTimeZone } from '../utils/dateUtils';
 import { buildExerciseProgress } from '../utils/workoutProgress';
+import { useExerciseNameMap } from '../hooks/useExerciseNameMap';
 
 interface ExerciseProgressPanelProps {
   sessions: WorkoutSession[];
@@ -21,7 +22,10 @@ const formatKg = (value: number): string => {
 };
 
 export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({ sessions, routines }) => {
-  const summaries = useMemo(() => buildExerciseProgress(sessions, routines), [sessions, routines]);
+  const exerciseNameMap = useExerciseNameMap();
+  const summaries = useMemo(() => {
+    return buildExerciseProgress(sessions, routines, exerciseNameMap);
+  }, [sessions, routines, exerciseNameMap]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
   const [selectedRangeDays, setSelectedRangeDays] = useState<number>(30);
 

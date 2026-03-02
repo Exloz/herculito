@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Timer as TimerIcon, X, Pause, Play } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import { useTimer } from '../hooks/useTimer';
 
 interface TimerProps {
@@ -60,7 +61,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
     }
   };
 
-  return (
+  const timerUi = (
     <div className="fixed left-4 right-4 mx-auto max-w-sm app-card px-3 py-2.5 z-50 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] sm:bottom-4">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -118,4 +119,10 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
       )}
     </div>
   );
+
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  return createPortal(timerUi, document.body);
 };

@@ -143,8 +143,8 @@
 
 @keyframes page-enter-forward {
   from {
-    transform: translate3d(10%, 0, 0);
-    opacity: 0.84;
+    transform: translate3d(8%, 0, 0);
+    opacity: 0.88;
   }
 
   to {
@@ -167,8 +167,8 @@
 
 @keyframes page-enter-backward {
   from {
-    transform: translate3d(-10%, 0, 0);
-    opacity: 0.84;
+    transform: translate3d(-8%, 0, 0);
+    opacity: 0.88;
   }
 
   to {
@@ -190,7 +190,7 @@
 }
 
 .page-anim-enter-forward {
-  animation: page-enter-forward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: page-enter-forward 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translateZ(0);
@@ -203,11 +203,56 @@
 }
 
 .page-anim-enter-backward {
-  animation: page-enter-backward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: page-enter-backward 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translateZ(0);
   contain: layout paint;
+}
+
+@keyframes skeleton-wave {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton-block {
+  position: relative;
+  overflow: hidden;
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.skeleton-block::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(148, 163, 184, 0.15) 45%, transparent 100%);
+  animation: skeleton-wave 1.35s ease-in-out infinite;
+}
+
+@keyframes page-loading-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.page-loading-mask {
+  background: rgba(11, 15, 20, 0.2);
+  backdrop-filter: blur(1.5px);
+  animation: page-loading-fade 180ms ease-out both;
+}
+
+.page-anim-loading-dim {
+  filter: saturate(0.95) brightness(0.98);
 }
 
 .page-anim-exit-backward {
@@ -219,7 +264,9 @@
   .page-anim-enter-forward,
   .page-anim-exit-forward,
   .page-anim-enter-backward,
-  .page-anim-exit-backward {
+  .page-anim-exit-backward,
+  .skeleton-block::after,
+  .page-loading-mask {
     animation-duration: 1ms;
   }
 }

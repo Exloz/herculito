@@ -4,15 +4,17 @@ type PageSkeletonVariant = 'dashboard' | 'routines';
 
 interface PageSkeletonProps {
   page?: PageSkeletonVariant;
+  compact?: boolean;
+  className?: string;
 }
 
 const SkeletonBlock = ({ className }: { className: string }) => {
-  return <div className={`animate-pulse rounded-xl bg-slateDeep/80 ${className}`} aria-hidden="true" />;
+  return <div className={`skeleton-block rounded-xl ${className}`} aria-hidden="true" />;
 };
 
-const DashboardSkeleton = () => {
+const DashboardSkeleton = ({ compact = false }: { compact?: boolean }) => {
   return (
-    <div className="app-shell pb-28">
+    <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
       <header className="app-header px-4 pb-6 pt-[calc(0.5rem+env(safe-area-inset-top))]">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between gap-4">
@@ -51,9 +53,9 @@ const DashboardSkeleton = () => {
   );
 };
 
-const RoutinesSkeleton = () => {
+const RoutinesSkeleton = ({ compact = false }: { compact?: boolean }) => {
   return (
-    <div className="app-shell pb-28">
+    <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
       <div className="max-w-4xl mx-auto px-4 pb-8 pt-[calc(2rem+env(safe-area-inset-top))]">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -78,11 +80,11 @@ const RoutinesSkeleton = () => {
   );
 };
 
-export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard' }) => {
+export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard', compact = false, className = '' }) => {
   return (
-    <div role="status" aria-live="polite">
+    <div role="status" aria-live="polite" className={className}>
       <span className="sr-only">Cargando contenido</span>
-      {page === 'routines' ? <RoutinesSkeleton /> : <DashboardSkeleton />}
+      {page === 'routines' ? <RoutinesSkeleton compact={compact} /> : <DashboardSkeleton compact={compact} />}
     </div>
   );
 };

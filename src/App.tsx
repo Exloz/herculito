@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, Suspense, lazy, useCallback } from 'react';
+import { useEffect, useState, Suspense, lazy, useCallback } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { Login } from './pages/Login';
 import { Navigation } from './components/Navigation';
@@ -14,13 +14,7 @@ const Routines = lazy(() => import('./pages/NewRoutines').then(module => ({ defa
 
 type AppPage = 'dashboard' | 'routines';
 
-type PageTransitionState = {
-  from: AppPage;
-  to: AppPage;
-  direction: 'forward' | 'backward';
-};
-
-const PAGE_TRANSITION_MS = 240;
+type PageTransitionDirection = 'forward' | 'backward';
 
 const getPageFromPathname = (pathname: string): AppPage => {
   if (pathname.startsWith('/routines')) {
@@ -33,7 +27,7 @@ const getPathnameFromPage = (page: AppPage): string => {
   return page === 'routines' ? '/routines' : '/';
 };
 
-const getTransitionDirection = (from: AppPage, to: AppPage): PageTransitionState['direction'] => {
+const getTransitionDirection = (from: AppPage, to: AppPage): PageTransitionDirection => {
   if (from === to) return 'forward';
   return to === 'routines' ? 'forward' : 'backward';
 };
@@ -61,8 +55,8 @@ function AppContent() {
     }
     return getPageFromPathname(window.location.pathname);
   });
-  const [pageTransition, setPageTransition] = useState<PageTransitionState | null>(null);
-  const transitionTimeoutRef = useRef<number | null>(null);
+  const [transitionDirection, setTransitionDirection] = useState<PageTransitionDirection>('forward');
+  const [transitionVersion, setTransitionVersion] = useState(0);
   const {
     user,
     loading,
@@ -74,40 +68,14 @@ function AppContent() {
     logout
   } = useAuth();
 
-  useEffect(() => {
-    return () => {
-      if (transitionTimeoutRef.current !== null) {
-        window.clearTimeout(transitionTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!pageTransition) {
-      return;
-    }
-
-    if (transitionTimeoutRef.current !== null) {
-      window.clearTimeout(transitionTimeoutRef.current);
-    }
-
-    transitionTimeoutRef.current = window.setTimeout(() => {
-      setPageTransition(null);
-      transitionTimeoutRef.current = null;
-    }, PAGE_TRANSITION_MS);
-  }, [pageTransition]);
-
   const beginPageTransition = useCallback((nextPage: AppPage) => {
     setCurrentPage((previousPage) => {
       if (previousPage === nextPage) {
         return previousPage;
       }
 
-      setPageTransition({
-        from: previousPage,
-        to: nextPage,
-        direction: getTransitionDirection(previousPage, nextPage)
-      });
+      setTransitionDirection(getTransitionDirection(previousPage, nextPage));
+      setTransitionVersion((previousVersion) => previousVersion + 1);
 
       return nextPage;
     });
@@ -126,7 +94,8 @@ function AppContent() {
     if (!allowedPaths.has(window.location.pathname)) {
       window.history.replaceState({}, '', '/');
       setCurrentPage('dashboard');
-      setPageTransition(null);
+      setTransitionDirection('backward');
+      setTransitionVersion((previousVersion) => previousVersion + 1);
     }
 
     const handlePopState = () => {
@@ -192,22 +161,13 @@ function AppContent() {
         >
           <ScrollToTop trigger={currentPage} />
 
-          <div className={`relative overflow-x-hidden ${pageTransition ? 'pointer-events-none select-none' : ''}`}>
-            {pageTransition ? (
-              <>
-                <div className={pageTransition.direction === 'forward' ? 'page-anim-enter-forward' : 'page-anim-enter-backward'}>
-                  {renderPage(pageTransition.to)}
-                </div>
-                <div
-                  className={`absolute inset-0 ${pageTransition.direction === 'forward' ? 'page-anim-exit-forward' : 'page-anim-exit-backward'}`}
-                  aria-hidden="true"
-                >
-                  {renderPage(pageTransition.from)}
-                </div>
-              </>
-            ) : (
-              <div>{renderPage(currentPage)}</div>
-            )}
+          <div className="relative overflow-x-clip isolation-isolate">
+            <div
+              key={`${currentPage}-${transitionVersion}`}
+              className={transitionDirection === 'forward' ? 'page-anim-enter-forward' : 'page-anim-enter-backward'}
+            >
+              {renderPage(currentPage)}
+            </div>
           </div>
         </Suspense>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} />

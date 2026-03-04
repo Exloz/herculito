@@ -76,6 +76,7 @@ export interface Routine {
   updatedAt: Date;
   createdBy: string; // userId del creador
   createdByName?: string; // nombre del creador (para mostrar)
+  createdByAvatarUrl?: string;
   isPublic: boolean; // si otros usuarios pueden ver y usar esta rutina
   timesUsed?: number; // contador de cuántas veces se ha usado
   userId?: string; // compatibilidad con rutinas antiguas

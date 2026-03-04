@@ -99,8 +99,18 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
               )}
 
                {routine.createdBy && routine.createdBy !== currentUser.id && (
-                 <div className="text-xs text-slate-500">
-                   Por {routine.createdByName || 'Otro usuario'}
+                 <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                   {routine.createdByAvatarUrl ? (
+                     <img
+                       src={routine.createdByAvatarUrl}
+                       alt={`Foto de ${routine.createdByName || 'usuario'}`}
+                       className="h-4 w-4 rounded-full object-cover"
+                       referrerPolicy="no-referrer"
+                     />
+                   ) : (
+                     <Users size={12} />
+                   )}
+                   <span>Por {routine.createdByName || 'Otro usuario'}</span>
                  </div>
                )}
             </div>

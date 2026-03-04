@@ -21,6 +21,23 @@ export type CompetitiveLeaderboardResponse = {
   month: LeaderboardPeriodResponse;
 };
 
+export const syncUserProfile = async (payload: {
+  displayName?: string;
+  avatarUrl?: string;
+  email?: string;
+}): Promise<void> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/profile`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+};
+
 export const fetchExercises = async (): Promise<ExerciseTemplateResponse[]> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();

@@ -424,7 +424,16 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                       )}
                       {routine.createdBy !== user.id && (
                         <div className="flex items-center">
-                          <UserIcon size={14} className="mr-1" />
+                          {routine.createdByAvatarUrl ? (
+                            <img
+                              src={routine.createdByAvatarUrl}
+                              alt={`Foto de ${routine.createdByName || 'usuario'}`}
+                              className="mr-1 h-4 w-4 rounded-full object-cover"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <UserIcon size={14} className="mr-1" />
+                          )}
                           <span>Por {routine.createdByName || 'Otro usuario'}</span>
                         </div>
                       )}

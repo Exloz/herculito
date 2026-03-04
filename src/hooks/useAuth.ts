@@ -9,6 +9,21 @@ const getBrowserOrigin = () => {
   return `${window.location.origin}/`;
 };
 
+const resolveUserName = (clerkUser: NonNullable<ReturnType<typeof useUser>['user']>): string => {
+  const fullName = clerkUser.fullName?.trim();
+  if (fullName) return fullName;
+
+  const firstName = clerkUser.firstName?.trim() ?? '';
+  const lastName = clerkUser.lastName?.trim() ?? '';
+  const joined = `${firstName} ${lastName}`.trim();
+  if (joined) return joined;
+
+  if (firstName) return firstName;
+  if (lastName) return lastName;
+
+  return 'Usuario';
+};
+
 export function useAuth() {
   const { isLoaded: isAuthLoaded, getToken } = useClerkAuth();
   const { isLoaded: isUserLoaded, user: clerkUser } = useUser();
@@ -23,10 +38,7 @@ export function useAuth() {
       ?? clerkUser.emailAddresses[0]?.emailAddress
       ?? '';
 
-    const name = clerkUser.fullName?.trim()
-      || clerkUser.firstName?.trim()
-      || clerkUser.username?.trim()
-      || 'Usuario';
+    const name = resolveUserName(clerkUser);
 
     return {
       id: clerkUser.externalId ?? clerkUser.id,

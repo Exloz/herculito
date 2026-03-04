@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Calendar, TrendingUp, Award, Clock, LogOut, Dumbbell, Bell, Trophy, Crown } from 'lucide-react';
+import { UserButton } from '@clerk/clerk-react';
+import { Calendar, TrendingUp, Award, Clock, LogOut, Bell, Trophy, Crown } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../types';
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
@@ -25,6 +26,7 @@ interface DashboardProps {
 interface LeaderboardEntry {
   userId: string;
   name: string;
+  avatarUrl?: string;
   totalWorkouts: number;
   position: number;
 }
@@ -437,8 +439,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-display text-white flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-11 sm:h-11 bg-mint rounded-2xl flex items-center justify-center text-sm sm:text-base shadow-lift">
-                  <Dumbbell size={20} className="text-ink" />
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-lift ring-1 ring-white/20">
+                  <UserButton
+                    appearance={{
+                      elements: {
+                        avatarBox: 'w-9 h-9 sm:w-11 sm:h-11 rounded-2xl',
+                        userButtonTrigger: 'w-9 h-9 sm:w-11 sm:h-11 rounded-2xl'
+                      }
+                    }}
+                  />
                 </div>
                 <span>Herculito</span>
               </h1>

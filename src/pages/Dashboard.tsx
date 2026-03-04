@@ -439,12 +439,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-display text-white flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl overflow-hidden shadow-lift ring-1 ring-white/20">
+                <div className="w-9 h-9 sm:w-11 sm:h-11 shrink-0 rounded-2xl overflow-hidden shadow-lift ring-1 ring-white/20 flex items-center justify-center">
                   <UserButton
                     appearance={{
                       elements: {
                         avatarBox: 'w-9 h-9 sm:w-11 sm:h-11 rounded-2xl',
-                        userButtonTrigger: 'w-9 h-9 sm:w-11 sm:h-11 rounded-2xl'
+                        avatarImage: 'object-cover object-center',
+                        userButtonTrigger: 'w-9 h-9 sm:w-11 sm:h-11 rounded-2xl p-0 leading-none align-middle'
                       }
                     }}
                   />

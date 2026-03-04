@@ -547,7 +547,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                 <h2 className="text-xs sm:text-sm font-display text-white">Clasificacion global</h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3">
                 {showCompetitionSkeleton ? (
                   <>
                     <CompetitionCardSkeleton />
@@ -555,10 +555,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   </>
                 ) : (
                   <>
-                    <div className="app-surface-muted px-3 py-2.5 content-fade-in">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="app-surface-muted px-3 py-2.5 content-fade-in h-full flex flex-col">
+                      <div className="mb-1.5">
                         <span className="text-[11px] uppercase tracking-wide text-slate-400">Top semanal</span>
-                        <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userWeekRank)}</span>
                       </div>
 
                       {competitionStats.weekLeader ? (
@@ -574,16 +573,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                       )}
 
                       {competitionStats.userWeekRank ? (
-                        <div className="text-xs text-slate-300">Tu llevas {competitionStats.userWeekRank.totalWorkouts} entrenamientos</div>
+                        <div className="mt-auto text-xs text-slate-300">Tu llevas {competitionStats.userWeekRank.totalWorkouts} entrenamientos</div>
                       ) : (
-                        <div className="text-xs text-slate-400">Aun no registras entrenamientos esta semana</div>
+                        <div className="mt-auto text-xs text-slate-400">Aun no registras entrenamientos esta semana</div>
                       )}
                     </div>
 
-                    <div className="app-surface-muted px-3 py-2.5 content-fade-in">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div className="app-surface-muted px-3 py-2.5 content-fade-in h-full flex flex-col">
+                      <div className="mb-1.5">
                         <span className="text-[11px] uppercase tracking-wide text-slate-400">Top mensual</span>
-                        <span className="text-xs font-semibold text-mint">{formatPosition(competitionStats.userMonthRank)}</span>
                       </div>
 
                       {competitionStats.monthLeader ? (
@@ -599,9 +597,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                       )}
 
                       {competitionStats.userMonthRank ? (
-                        <div className="text-xs text-slate-300">Tu llevas {competitionStats.userMonthRank.totalWorkouts} entrenamientos</div>
+                        <div className="mt-auto text-xs text-slate-300">Tu llevas {competitionStats.userMonthRank.totalWorkouts} entrenamientos</div>
                       ) : (
-                        <div className="text-xs text-slate-400">Aun no registras entrenamientos este mes</div>
+                        <div className="mt-auto text-xs text-slate-400">Aun no registras entrenamientos este mes</div>
                       )}
                     </div>
                   </>

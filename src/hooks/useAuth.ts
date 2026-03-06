@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useAuth as useClerkAuth, useClerk, useSignIn, useUser } from '@clerk/clerk-react';
+import { useAuth as useClerkAuth, useClerk, useUser } from '@clerk/react';
+import { useSignIn } from '@clerk/react/legacy';
 import { User } from '../types';
 import { setTokenGetter } from '../utils/apiClient';
 import { syncUserProfile } from '../utils/dataApi';

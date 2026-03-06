@@ -1,5 +1,5 @@
 import { useEffect, useState, Suspense, lazy, useCallback } from 'react';
-import { AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
+import { AuthenticateWithRedirectCallback } from '@clerk/react';
 import { Login } from './pages/Login';
 import { Navigation } from './components/Navigation';
 import { useAuth } from './hooks/useAuth';

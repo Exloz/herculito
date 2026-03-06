@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { UserButton } from '@clerk/clerk-react';
+import { UserButton } from '@clerk/react';
 import { Calendar, TrendingUp, Award, Clock, LogOut, Bell, Trophy, Crown } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../types';
 import { useRoutines } from '../hooks/useRoutines';

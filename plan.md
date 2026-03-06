@@ -176,7 +176,7 @@ Reemplazar middleware Firebase por Clerk:
 
 ### 5.1 Dependencias y entorno
 
-1. Instalar `@clerk/clerk-react`.
+1. Instalar `@clerk/react`.
 2. Agregar en `.env` y `.env.example`:
    - `VITE_CLERK_PUBLISHABLE_KEY`
    - `VITE_PUSH_API_ORIGIN`
@@ -266,7 +266,7 @@ Reemplazar middleware Firebase por Clerk:
 - [ ] Implementar verificacion JWT Clerk en backend.
 - [ ] Exportar Firebase users.
 - [ ] Importar a Clerk con `external_id = legacy_firebase_uid`.
-- [ ] Migrar frontend a `@clerk/clerk-react`.
+- [ ] Migrar frontend a `@clerk/react`.
 - [ ] Quitar `firebase` del frontend.
 - [ ] Probar staging (desktop + iOS Safari + iOS PWA).
 - [ ] Deploy prod y monitoreo 72h.

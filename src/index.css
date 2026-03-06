@@ -191,7 +191,6 @@
 
 .page-anim-enter-forward {
   animation: page-enter-forward 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translateZ(0);
   contain: layout paint;
@@ -199,12 +198,10 @@
 
 .page-anim-exit-forward {
   animation: page-exit-forward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity;
 }
 
 .page-anim-enter-backward {
   animation: page-enter-backward 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity;
   backface-visibility: hidden;
   transform: translateZ(0);
   contain: layout paint;
@@ -302,7 +299,6 @@
 
 .page-anim-exit-backward {
   animation: page-exit-backward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {

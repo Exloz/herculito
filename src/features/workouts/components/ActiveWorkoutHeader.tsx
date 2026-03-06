@@ -135,8 +135,7 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
             className="pointer-events-none absolute left-1/2 min-w-0 -translate-x-1/2 px-2 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{
               opacity: isHeaderCompact ? 1 : 0,
-              transform: `translate(-50%, ${isHeaderCompact ? 0 : 10}px)`,
-              willChange: 'opacity, transform'
+              transform: `translate(-50%, ${isHeaderCompact ? 0 : 10}px)`
             }}
           >
             <div

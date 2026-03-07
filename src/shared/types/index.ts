@@ -1,8 +1,63 @@
 export interface User {
   id: string;
+  clerkUserId?: string;
   email: string;
   name: string;
   photoURL?: string;
+}
+
+export interface AdminSummary {
+  totalUsers: number;
+  totalRoutines: number;
+  totalCompletedSessions: number;
+  averageDurationMin: number;
+}
+
+export interface AdminUserOverview {
+  userId: string;
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+  createdRoutines: number;
+  completedSessions: number;
+  lastActivityAt?: number;
+}
+
+export interface AdminRoutineExerciseOverview {
+  exerciseId: string;
+  name: string;
+  sets: number;
+  reps: number;
+  restTime?: number;
+}
+
+export interface AdminRoutineOverview {
+  routineId: string;
+  name: string;
+  createdBy: string;
+  createdByName?: string;
+  timesUsed: number;
+  lastCompletedAt?: number;
+  exercises: AdminRoutineExerciseOverview[];
+}
+
+export interface AdminSessionOverview {
+  sessionId: string;
+  userId: string;
+  userName?: string;
+  routineId?: string;
+  routineName: string;
+  startedAt: number;
+  completedAt?: number;
+  totalDuration?: number;
+  exercises: unknown[];
+}
+
+export interface AdminOverview {
+  summary: AdminSummary;
+  users: AdminUserOverview[];
+  routines: AdminRoutineOverview[];
+  sessions: AdminSessionOverview[];
 }
 
 // Nuevos tipos para categorización muscular

@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Home, Settings, PlayCircle } from "lucide-react";
+import { Home, Settings, PlayCircle, Shield } from "lucide-react";
 
 const ACTIVE_WORKOUT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
 interface NavigationProps {
-  currentPage: "dashboard" | "routines";
-  onPageChange: (page: "dashboard" | "routines") => void;
+  currentPage: "dashboard" | "routines" | "admin";
+  onPageChange: (page: "dashboard" | "routines" | "admin") => void;
+  isAdmin: boolean;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   currentPage,
   onPageChange,
+  isAdmin
 }) => {
   const [hasActiveWorkout, setHasActiveWorkout] = useState(false);
 
@@ -63,7 +65,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 flex w-full justify-center pb-[env(safe-area-inset-bottom)] pointer-events-none">
       <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal/85 px-2 py-2 shadow-soft backdrop-blur">
-        <div className={`grid ${hasActiveWorkout ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
+        <div className={`grid ${isAdmin ? (hasActiveWorkout ? 'grid-cols-4' : 'grid-cols-3') : (hasActiveWorkout ? 'grid-cols-3' : 'grid-cols-2')} gap-2`}>
           <button
             onClick={() => onPageChange("dashboard")}
             className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
@@ -100,6 +102,21 @@ export const Navigation: React.FC<NavigationProps> = ({
             <Settings size={22} />
             <span className="text-xs font-semibold">Rutinas</span>
           </button>
+
+          {isAdmin && (
+            <button
+              onClick={() => onPageChange("admin")}
+              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
+                currentPage === "admin"
+                  ? "bg-mint/15 text-mint"
+                  : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
+              }`}
+              aria-label="Ir a Admin"
+            >
+              <Shield size={22} />
+              <span className="text-xs font-semibold">Admin</span>
+            </button>
+          )}
         </div>
       </nav>
     </div>

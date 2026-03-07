@@ -8,6 +8,7 @@ import { UIProvider } from './providers/UIProvider';
 import { useUI } from './providers/ui-context';
 import { PageSkeleton } from '../shared/ui/PageSkeleton';
 import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
+import { AdminPage } from '../features/admin/pages/AdminPage';
 
 // Lazy load pages for better performance
 const loadDashboardPage = () => import('../features/dashboard/pages/DashboardPage');
@@ -36,6 +37,7 @@ function AppContent() {
   const { currentPage, transitionDirection, transitionVersion, handlePageChange } = usePageNavigation();
   const {
     user,
+    isAdmin,
     loading,
     error,
     signInWithGoogle,
@@ -50,6 +52,11 @@ function AppContent() {
     void loadDashboardPage();
     void loadRoutinesPage();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || isAdmin || currentPage !== 'admin') return;
+    handlePageChange('dashboard');
+  }, [currentPage, handlePageChange, isAdmin, user]);
 
   if (typeof window !== 'undefined' && window.location.pathname === '/sso-callback') {
     return (
@@ -81,6 +88,10 @@ function AppContent() {
       return <Dashboard user={user} onLogout={logout} />;
     }
 
+    if (page === 'admin') {
+      return <AdminPage enabled={isAdmin} />;
+    }
+
     return <Routines user={user} />;
   };
 
@@ -102,7 +113,7 @@ function AppContent() {
             </div>
           </div>
         </Suspense>
-        <Navigation currentPage={currentPage} onPageChange={handlePageChange} />
+        <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} />
       </div>
     </>
   );

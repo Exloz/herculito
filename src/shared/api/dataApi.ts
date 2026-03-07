@@ -1,4 +1,4 @@
-import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup } from '../types';
+import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup, AdminOverview } from '../types';
 import { fetchJson, getIdToken } from './apiClient';
 import { getPushApiOrigin } from '../../features/workouts/api/pushApi';
 
@@ -215,6 +215,14 @@ export const fetchSessions = async (): Promise<WorkoutSessionResponse[]> => {
     headers: { authorization: `Bearer ${token}` }
   });
   return data.sessions ?? [];
+};
+
+export const fetchAdminOverview = async (): Promise<AdminOverview> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  return fetchJson<AdminOverview>(`${origin}/v1/data/admin/overview`, {
+    headers: { authorization: `Bearer ${token}` }
+  });
 };
 
 export const fetchCompetitiveLeaderboard = async (limit = 10): Promise<CompetitiveLeaderboardResponse> => {

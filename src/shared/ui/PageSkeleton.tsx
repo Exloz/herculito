@@ -1,6 +1,6 @@
 import React from 'react';
 
-type PageSkeletonVariant = 'dashboard' | 'routines';
+type PageSkeletonVariant = 'dashboard' | 'routines' | 'admin';
 
 interface PageSkeletonProps {
   page?: PageSkeletonVariant;

@@ -5,6 +5,7 @@ import { User } from '../../../shared/types';
 import { setTokenGetter } from '../../../shared/api/apiClient';
 import { syncUserProfile } from '../../../shared/api/dataApi';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
+import { isAdminUser } from '../../../shared/lib/admin';
 
 const getBrowserOrigin = () => {
   if (typeof window === 'undefined') return 'https://herculito.exloz.site/';
@@ -52,10 +53,18 @@ export function useAuth() {
 
     return {
       id: clerkUser.externalId ?? clerkUser.id,
+      clerkUserId: clerkUser.id,
       email,
       name,
       photoURL: resolveUserPhotoUrl(clerkUser)
     };
+  }, [clerkUser]);
+
+  const isAdmin = useMemo(() => {
+    return isAdminUser({
+      email: clerkUser?.primaryEmailAddress?.emailAddress ?? clerkUser?.emailAddresses[0]?.emailAddress,
+      clerkUserId: clerkUser?.id
+    });
   }, [clerkUser]);
 
   useEffect(() => {
@@ -119,6 +128,7 @@ export function useAuth() {
 
   return {
     user,
+    isAdmin,
     loading: !isAuthLoaded || !isUserLoaded,
     error,
     signInWithGoogle,

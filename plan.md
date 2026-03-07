@@ -1,284 +1,249 @@
-# Plan exacto de migracion total de Firebase Auth a Clerk
+# Plan: pantalla ADMIN
 
 ## Objetivo
 
-Migrar el login actual (Firebase Auth con Google) a Clerk, sin perder acceso de usuarios existentes y manteniendo login con Google despues del corte.
+Crear una pantalla exclusiva para ADMIN donde se pueda ver:
 
-## Resultado esperado
+- todos los usuarios
+- rutinas creadas
+- rutinas realizadas
+- duracion de cada rutina realizada
+- ejercicios asociados a cada rutina
 
-- Frontend sin SDK de Firebase Auth.
-- Backend sin verificacion de Firebase ID tokens.
-- Login con Google gestionado por Clerk.
-- API autenticada con JWT de Clerk (`Bearer`) para minimizar cambios.
-- Datos historicos preservados usando `legacy_firebase_uid` como identificador funcional.
+El acceso debe quedar restringido al ADMIN indicado:
 
----
+- email: `exloz26@gmail.com`
+- userId esperado: `user_3AC1fVPB8cpo0blGds7MPQHq7Fo`
 
-## 0) Arquitectura objetivo (simple y segura)
+## Progreso
 
-1. Clerk maneja sign-in, sesiones y UI de autenticacion.
-2. Frontend pide token a Clerk (`getToken`) y lo envia al backend en `Authorization: Bearer`.
-3. Backend verifica JWT de Clerk (JWKS) y resuelve `appUserId`.
-4. Para usuarios migrados: `appUserId = legacy_firebase_uid`.
-5. Para usuarios nuevos: `appUserId` nuevo y estable (sin tocar usuarios viejos).
+- [x] Fase 1 - Modelo y seguridad
+- [x] Fase 2 - Backend (`herculito-push-api`)
+- [x] Fase 3 - Frontend data layer (`herculito`)
+- [x] Fase 4 - Navegacion y pagina
+- [x] Fase 5 - UI de la pantalla ADMIN
+- [x] Fase 6 - Validacion
 
----
+## Estado actual detectado
 
-## 1) Configuracion en Clerk Dashboard (paso a paso)
+### Frontend (`herculito`)
 
-Haz `dev` y `prod` en ambientes separados.
+- La app solo navega entre `dashboard` y `routines`.
+- La autenticacion usa Clerk.
+- El hook `useAuth` hoy expone `user.id = clerkUser.externalId ?? clerkUser.id`.
+- No existe una pagina ADMIN ni navegacion para ella.
+- Los datos actuales de rutinas y sesiones se consumen con endpoints orientados al usuario autenticado.
 
-### 1.1 Crear aplicacion
+### Backend (`herculito-push-api`)
 
-1. Entrar a Clerk Dashboard.
-2. Crear application: `Herculito`.
-3. Guardar claves:
-   - `Publishable key` (frontend)
-   - `Secret key` (backend)
+- Ya existe `user_profiles`, porque el frontend sincroniza perfil a `/v1/data/profile`.
+- Las rutas actuales de `routines` y `sessions` filtran por el `uid` autenticado.
+- No hay endpoints administrativos globales para consultar usuarios + rutinas + sesiones de toda la plataforma.
 
-### 1.2 Configurar metodos de login
+## Alcance funcional propuesto
 
-1. Ir a `User & Authentication`.
-2. Habilitar `Google` en Social connections.
-3. Mantener deshabilitados otros metodos si quieres solo Google.
-4. Activar opcion de linking por email verificado (si esta disponible en tu plan/UI) para reducir duplicados.
+La primera version de la pantalla ADMIN mostraria:
 
-### 1.3 Configurar dominios y redirects
+1. Resumen general
+   - total de usuarios
+   - total de rutinas creadas
+   - total de rutinas realizadas (sesiones completadas)
+   - duracion promedio de entrenamientos
 
-1. En `Paths / Redirects` (o seccion equivalente):
-   - Sign-in URL de la app.
-   - After sign-in URL: `https://herculito.exloz.site/`
-   - After sign-out URL: `https://herculito.exloz.site/`
-2. Agregar dominio de produccion y localhost para desarrollo.
-3. Confirmar HTTPS en prod.
+2. Listado de usuarios
+   - nombre
+   - email
+   - userId
+   - cantidad de rutinas creadas
+   - cantidad de rutinas realizadas
+   - ultima actividad
 
-### 1.4 Crear JWT Template para API
+3. Listado de rutinas
+   - nombre de rutina
+   - creador
+   - cantidad de veces realizada
+   - ultima vez realizada
+   - ejercicios de la rutina
 
-Crear template `herculito_api` con claims minimos:
+4. Listado de sesiones realizadas
+   - usuario
+   - rutina
+   - fecha de inicio
+   - fecha de finalizacion
+   - duracion total
+   - ejercicios registrados en esa sesion
+
+## Decisiones tecnicas propuestas
+
+### 1) Control de acceso ADMIN
+
+Implementar control en dos capas:
+
+- frontend: mostrar pagina y navegacion solo al ADMIN
+- backend: proteger endpoints admin para que solo ese ADMIN pueda consultar datos globales
+
+Esto es obligatorio: ocultar la UI no es suficiente.
+
+### 2) Fuente de verdad del permiso
+
+Crear un helper reutilizable para validar ADMIN con allowlist fija.
+
+Decision confirmada:
+
+- validar email normalizado `exloz26@gmail.com`
+- validar `clerkUser.id === user_3AC1fVPB8cpo0blGds7MPQHq7Fo`
+- no depender de `externalId` para el permiso ADMIN
+- usar la misma regla en frontend y backend
+
+### 3) Nueva API administrativa
+
+Agregar un endpoint nuevo, por ejemplo:
+
+- `GET /v1/data/admin/overview`
+
+Respuesta sugerida:
 
 ```json
 {
-  "clerk_user_id": "{{user.id}}",
-  "legacy_uid": "{{user.external_id}}",
-  "email": "{{user.primary_email_address.email_address}}"
+  "summary": {
+    "totalUsers": 0,
+    "totalRoutines": 0,
+    "totalCompletedSessions": 0,
+    "averageDurationMin": 0
+  },
+  "users": [
+    {
+      "userId": "...",
+      "name": "...",
+      "email": "...",
+      "avatarUrl": "...",
+      "createdRoutines": 0,
+      "completedSessions": 0,
+      "lastActivityAt": 0
+    }
+  ],
+  "routines": [
+    {
+      "routineId": "...",
+      "name": "...",
+      "createdBy": "...",
+      "createdByName": "...",
+      "timesUsed": 0,
+      "lastCompletedAt": 0,
+      "exercises": [
+        {
+          "exerciseId": "...",
+          "name": "...",
+          "sets": 0,
+          "reps": 0,
+          "restTime": 0
+        }
+      ]
+    }
+  ],
+  "sessions": [
+    {
+      "sessionId": "...",
+      "userId": "...",
+      "userName": "...",
+      "routineId": "...",
+      "routineName": "...",
+      "startedAt": 0,
+      "completedAt": 0,
+      "totalDuration": 0,
+      "exercises": []
+    }
+  ]
 }
 ```
 
-Notas:
-- `legacy_uid` se usara para mantener continuidad de datos existentes.
-- Si `legacy_uid` viene vacio en usuarios nuevos, el backend hara fallback a `clerk_user_id`.
-
-### 1.5 Webhooks (recomendado)
-
-Configurar webhook hacia tu API para eventos:
-
-- `user.created`
-- `user.updated`
-- `user.deleted`
-
-Guardar `CLERK_WEBHOOK_SECRET` en backend.
-
----
-
-## 2) Google Cloud Console (solo si usas credenciales propias)
-
-Si usas Google managed by Clerk, puedes omitir esta seccion.
-
-Si usas credenciales propias:
-
-1. En Clerk Social connection de Google, elegir `Use custom credentials`.
-2. Copiar exactamente los Redirect URIs que Clerk te muestra.
-3. En Google Cloud Console:
-   - `APIs & Services` -> `OAuth consent screen`: configurar app y dominios.
-   - `Credentials` -> `OAuth client ID` tipo Web.
-   - Pegar los Redirect URIs de Clerk (exactos).
-4. Pegar `Client ID` y `Client Secret` en Clerk.
-
----
-
-## 3) Migracion de usuarios existentes (sin perder acceso)
-
-### 3.1 Exportar desde Firebase Auth
-
-Crear script temporal con Admin SDK (`listUsers`) y exportar:
-
-- `legacy_firebase_uid` (`uid` Firebase)
-- `email`
-- `emailVerified`
-- `displayName`
-- `photoURL`
-- `google_provider_uid` (si existe en `providerData`)
-
-### 3.2 Importar a Clerk
-
-Script de import usando Clerk Backend API:
-
-1. Crear/actualizar usuarios en Clerk por email.
-2. Setear `external_id = legacy_firebase_uid`.
-3. Marcar email verificado cuando aplique.
-4. Guardar reporte de:
-   - total exportados
-   - total importados
-   - conflictos
-
-### 3.3 Regla de continuidad de identidad
-
-En backend usar:
-
-- `appUserId = token.claims.legacy_uid` cuando exista.
-- Fallback `appUserId = token.claims.clerk_user_id` para usuarios nuevos.
-
-Con esto, los usuarios historicos siguen leyendo/escribiendo en sus datos antiguos sin migrar colecciones/tablas de negocio.
-
----
-
-## 4) Cambios en backend (`herculito-push-api`)
-
-### 4.1 Variables de entorno nuevas
-
-- `CLERK_SECRET_KEY`
-- `CLERK_PUBLISHABLE_KEY` (opcional en backend)
-- `CLERK_JWKS_URL` (o derivado del issuer)
-- `CLERK_ISSUER`
-- `CLERK_AUDIENCE` (si defines audience en template)
-- `CLERK_WEBHOOK_SECRET`
-
-### 4.2 Middleware auth nuevo
-
-Reemplazar middleware Firebase por Clerk:
-
-1. Leer `Authorization: Bearer <token>`.
-2. Verificar JWT con `jose` + JWKS de Clerk.
-3. Extraer claims `legacy_uid`, `clerk_user_id`, `email`.
-4. Resolver `request.userId = legacy_uid || clerk_user_id`.
-5. Mantener rutas actuales:
-   - `/v1/data/*`
-   - `/v1/push/*`
-   - `/v1/rest/*`
-
-### 4.3 Endpoint de sincronizacion (opcional pero util)
-
-`POST /v1/auth/sync`:
-
-- Requiere token valido Clerk.
-- Garantiza perfil local en DB (nombre/foto/email).
-- Sirve para reconciliar datos tras primer login.
-
-### 4.4 Seguridad
-
-- Validar `iss`, `aud`, `exp` del JWT.
-- Cache de JWKS con rotacion automatica.
-- Rechazar tokens sin firma valida o sin subject.
-
----
-
-## 5) Cambios en frontend (`herculito`)
-
-### 5.1 Dependencias y entorno
-
-1. Instalar `@clerk/react`.
-2. Agregar en `.env` y `.env.example`:
-   - `VITE_CLERK_PUBLISHABLE_KEY`
-   - `VITE_PUSH_API_ORIGIN`
-3. Eliminar variables Firebase Auth.
-
-### 5.2 Integracion base
-
-1. En `src/main.tsx`, envolver app con `ClerkProvider`.
-2. Reemplazar `src/hooks/useAuth.ts` para usar Clerk hooks.
-3. Mantener interfaz `User` actual mapeando:
-   - `id = user.externalId || user.id`
-   - `email`, `name`, `photoURL` desde Clerk user.
-
-### 5.3 Login UI
-
-1. `src/pages/Login.tsx` mantiene boton "Continuar con Google".
-2. `onGoogleLogin` abre flujo Clerk (redirect/modal).
-3. `logout` usa `signOut` de Clerk.
-
-### 5.4 API token en cliente
-
-1. Reemplazar `getIdToken()` en `src/utils/apiClient.ts` por token de Clerk:
-   - `getToken({ template: 'herculito_api' })`.
-2. Mantener patron actual de `Authorization: Bearer` para minimizar cambios en:
-   - `src/utils/dataApi.ts`
-   - `src/utils/pushApi.ts`
-
-### 5.5 Limpieza Firebase
-
-1. Eliminar uso de `src/firebase/config.ts`.
-2. Remover dependencia `firebase` de `package.json` cuando compile limpio.
-
----
-
-## 6) Runbook de despliegue (corte total)
-
-### Fase A - Preparacion
-
-1. Configurar Clerk en `dev` y `prod`.
-2. Implementar middleware Clerk en backend.
-3. Importar usuarios Firebase a Clerk con `external_id`.
-4. Validar JWT template `herculito_api`.
-
-### Fase B - Staging
-
-1. Deploy frontend con Clerk.
-2. Probar login Google en desktop + iOS Safari + iOS PWA.
-3. Confirmar que usuario historico conserva datos (mismo `legacy_uid`).
-
-### Fase C - Produccion
-
-1. Deploy backend con auth Clerk.
-2. Deploy frontend Clerk-only.
-3. Usuarios cerraran sesion una vez (esperado) y entraran de nuevo con Google.
-4. Monitorear 72h.
-
-### Fase D - Apagado Firebase Auth
-
-1. Desactivar Firebase Auth en app cliente.
-2. Retirar secretos y config Firebase residual.
-3. Mantener export de usuarios como backup de auditoria.
-
----
-
-## 7) Validaciones obligatorias
-
-1. Login con Google funciona en web y PWA.
-2. `Authorization: Bearer` con token Clerk llega y valida en API.
-3. Usuario migrado ve historico completo (sin cuenta duplicada).
-4. Push endpoints siguen funcionando con nuevo auth.
-5. Tasa de error de login <= 1% durante 7 dias.
-
----
-
-## 8) Rollback rapido
-
-1. Re-deploy frontend anterior (Firebase) si falla masivo.
-2. Mantener backend en modo dual temporal (Firebase + Clerk) durante ventana de seguridad.
-3. No borrar import de Clerk ni backups de export Firebase.
-
----
-
-## 9) Checklist de ejecucion
-
-- [ ] Crear app en Clerk y configurar Google.
-- [ ] Crear JWT template `herculito_api`.
-- [ ] Implementar verificacion JWT Clerk en backend.
-- [ ] Exportar Firebase users.
-- [ ] Importar a Clerk con `external_id = legacy_firebase_uid`.
-- [ ] Migrar frontend a `@clerk/react`.
-- [ ] Quitar `firebase` del frontend.
-- [ ] Probar staging (desktop + iOS Safari + iOS PWA).
-- [ ] Deploy prod y monitoreo 72h.
-- [ ] Apagar Firebase Auth por completo.
-
----
-
-## 10) Criterio de exito
-
-Migracion completada cuando:
-
-- 100% de autenticacion entra por Clerk.
-- 0 verificaciones de token Firebase en backend.
-- 0 usuarios historicos sin acceso por cambio de login.
-- Sin degradacion funcional en rutas de datos y push.
+## Plan de implementacion por fases
+
+### Fase 1 - Modelo y seguridad
+
+- definir helper `isAdminUser(...)` en frontend
+- definir helper equivalente en backend usando datos del token Clerk
+- usar `clerkUser.id` + email como regla oficial de acceso
+- bloquear acceso backend con respuesta `403` para no-admin
+
+### Fase 2 - Backend (`herculito-push-api`)
+
+- crear modulo/ruta admin nueva
+- agregar consultas SQL agregadas sobre:
+  - `user_profiles`
+  - `routines`
+  - `routine_exercises`
+  - `workout_sessions`
+- devolver resumen global
+- devolver usuarios con metricas agregadas
+- devolver rutinas con ejercicios y metricas
+- devolver sesiones completadas con duracion y detalle
+- mantener limite razonable inicial para evitar payloads excesivos
+
+### Fase 3 - Frontend data layer (`herculito`)
+
+- crear tipos TS para la respuesta admin
+- agregar función `fetchAdminOverview()` en `src/shared/api/dataApi.ts`
+- crear hook `useAdminOverview()` para carga, error y estado de refresco
+
+### Fase 4 - Navegacion y pagina
+
+- extender `AppPage` para soportar `admin`
+- permitir ruta `/admin`
+- agregar item de navegacion visible solo para ADMIN
+- no renderizar ninguna opcion de menu ADMIN para usuarios no-admin
+- proteger acceso directo por URL redirigiendo a inicio si no es ADMIN
+
+### Fase 5 - UI de la pantalla ADMIN
+
+- crear pagina nueva, por ejemplo `src/features/admin/pages/AdminPage.tsx`
+- usar el estilo visual existente de la app (`app-shell`, `app-card`, `app-surface`)
+- incluir bloques:
+  - tarjetas de resumen
+  - tabla/lista de usuarios
+  - tabla/lista de rutinas
+  - tabla/lista de sesiones
+- usar acordeones o paneles expandibles para mostrar ejercicios por rutina/sesion sin saturar la vista en mobile
+
+### Fase 6 - Validacion
+
+- verificar que un usuario normal no vea el tab ni pueda abrir `/admin`
+- verificar que un usuario normal reciba `403` en el endpoint admin
+- verificar que el ADMIN vea datos reales consistentes
+- correr `pnpm lint` y `pnpm build` en frontend
+- correr `bun check` en backend
+
+## Archivos que probablemente se tocaran despues
+
+### Frontend
+
+- `src/features/auth/hooks/useAuth.ts`
+- `src/app/hooks/usePageNavigation.ts`
+- `src/app/App.tsx`
+- `src/app/navigation/Navigation.tsx`
+- `src/shared/api/dataApi.ts`
+- `src/shared/types/index.ts`
+- `src/features/admin/pages/AdminPage.tsx`
+- `src/features/admin/hooks/useAdminOverview.ts`
+
+### Backend
+
+- `../herculito-push-api/src/shared/auth/clerk-auth.ts` o helper nuevo relacionado
+- `../herculito-push-api/src/shared/persistence/data-store.ts`
+- `../herculito-push-api/src/modules/*/routes.ts` o un nuevo `src/modules/admin/routes.ts`
+- `../herculito-push-api/src/index.ts` o el punto donde se registren rutas
+
+## Riesgos y puntos a cuidar
+
+1. El `userId` visible en frontend hoy puede no coincidir con el `clerkUser.id` porque se prioriza `externalId`; para ADMIN hay que usar el id real de Clerk.
+2. Si el endpoint devuelve todas las sesiones sin limite, la carga puede crecer rapido.
+3. La UI debe seguir siendo usable en mobile, porque las tablas largas pueden romper el layout.
+4. La seguridad real debe resolverse en backend, no solo en frontend.
+
+## Criterio de terminado para la futura implementacion
+
+- solo el ADMIN definido puede acceder a la pantalla
+- el backend rechaza cualquier acceso no autorizado
+- la pantalla muestra usuarios, rutinas, sesiones realizadas, duracion y ejercicios
+- la pagina funciona bien en desktop y mobile
+- frontend y backend pasan sus chequeos principales

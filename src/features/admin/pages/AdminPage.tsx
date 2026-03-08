@@ -32,10 +32,20 @@ interface AdminPageProps {
 interface AggregatedExerciseActivity {
   exerciseId: string;
   exerciseName: string;
+  targetSets?: number;
+  targetReps?: number;
+  sessionCount: number;
   completedSets: number;
   totalLoggedSets: number;
   topWeight: number;
+  firstTopWeight: number;
+  latestTopWeight: number;
+  firstPerformedAt?: number;
   lastPerformedAt?: number;
+  history: Array<{
+    timestamp: number;
+    topWeight: number;
+  }>;
 }
 
 interface AggregatedRoutineActivity {
@@ -89,6 +99,62 @@ const getTopWeight = (sets: WorkoutSet[]): number => {
   return sets.reduce((max, set) => Math.max(max, set.weight || 0), 0);
 };
 
+const formatWeight = (weight?: number): string => {
+  return weight && weight > 0 ? `${weight} kg` : '-';
+};
+
+const formatWeightDelta = (current: number, previous: number): string => {
+  const delta = current - previous;
+  if (!Number.isFinite(delta) || delta === 0) return 'sin cambio';
+  return `${delta > 0 ? '+' : ''}${delta} kg`;
+};
+
+const Sparkline = ({
+  points,
+  strokeClassName = 'stroke-mint',
+  fillClassName = 'fill-mint/10'
+}: {
+  points: Array<{ timestamp: number; topWeight: number }>;
+  strokeClassName?: string;
+  fillClassName?: string;
+}) => {
+  const safePoints = points.length > 0 ? points : [{ timestamp: Date.now(), topWeight: 0 }];
+  const width = 220;
+  const height = 72;
+  const padding = 8;
+  const values = safePoints.map((point) => point.topWeight);
+  const min = Math.min(...values, 0);
+  const max = Math.max(...values, 1);
+  const range = max - min || 1;
+  const step = safePoints.length > 1 ? (width - padding * 2) / (safePoints.length - 1) : 0;
+
+  const coordinates = safePoints.map((point, index) => {
+    const x = padding + index * step;
+    const normalized = (point.topWeight - min) / range;
+    const y = height - padding - normalized * (height - padding * 2);
+    return { x, y };
+  });
+
+  const linePath = coordinates.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+  const areaPath = `${linePath} L ${coordinates[coordinates.length - 1].x} ${height - padding} L ${coordinates[0].x} ${height - padding} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="h-20 w-full overflow-visible">
+      <path d={areaPath} className={fillClassName} />
+      <path d={linePath} className={`fill-none stroke-[2.5] ${strokeClassName}`} strokeLinecap="round" strokeLinejoin="round" />
+      {coordinates.map((point, index) => (
+        <circle
+          key={`${safePoints[index].timestamp}-${index}`}
+          cx={point.x}
+          cy={point.y}
+          r="3"
+          className={`stroke-[1.5] ${strokeClassName} fill-ink`}
+        />
+      ))}
+    </svg>
+  );
+};
+
 const isWithinRange = (timestamp: number | undefined, range: string): boolean => {
   if (!timestamp || range === 'all') return true;
 
@@ -123,6 +189,20 @@ const getRoutineExerciseName = (
   if (!routineId) return exerciseId;
   const routine = routinesById.get(routineId);
   return routine?.exercises.find((exercise) => exercise.exerciseId === exerciseId)?.name ?? exerciseId;
+};
+
+const getRoutineExerciseConfig = (
+  routinesById: Map<string, AdminRoutineOverview>,
+  routineId: string | undefined,
+  exerciseId: string
+): { sets?: number; reps?: number } => {
+  if (!routineId) return {};
+  const routine = routinesById.get(routineId);
+  const exercise = routine?.exercises.find((item) => item.exerciseId === exerciseId);
+  return {
+    sets: exercise?.sets,
+    reps: exercise?.reps
+  };
 };
 
 const compareUsers = (left: AdminUserOverview, right: AdminUserOverview, sortBy: string): number => {
@@ -202,6 +282,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
   const [routineSort, setRoutineSort] = useState<'usage' | 'lastCompleted' | 'name'>('usage');
   const [sessionSort, setSessionSort] = useState<'recent' | 'duration' | 'user'>('recent');
   const [visibleSessions, setVisibleSessions] = useState(SESSION_PAGE_SIZE);
+  const [openUserIds, setOpenUserIds] = useState<Set<string>>(new Set());
 
   const routinesById = useMemo(() => {
     return new Map((data?.routines ?? []).map((routine) => [routine.routineId, routine]));
@@ -277,22 +358,55 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
 
       session.exercises.filter(isExerciseLog).forEach((exerciseLog) => {
         const exerciseName = getRoutineExerciseName(routinesById, session.routineId, exerciseLog.exerciseId);
+        const exerciseConfig = getRoutineExerciseConfig(routinesById, session.routineId, exerciseLog.exerciseId);
+        const sessionTopWeight = getTopWeight(exerciseLog.sets);
+        const performedAt = session.completedAt ?? session.startedAt;
         let exercise = routine!.exercises.find((entry) => entry.exerciseId === exerciseLog.exerciseId);
         if (!exercise) {
           exercise = {
             exerciseId: exerciseLog.exerciseId,
             exerciseName,
+            targetSets: exerciseConfig.sets,
+            targetReps: exerciseConfig.reps,
+            sessionCount: 0,
             completedSets: 0,
             totalLoggedSets: 0,
             topWeight: 0,
-            lastPerformedAt: undefined
+            firstTopWeight: sessionTopWeight,
+            latestTopWeight: sessionTopWeight,
+            firstPerformedAt: performedAt,
+            lastPerformedAt: undefined,
+            history: []
           };
           routine!.exercises.push(exercise);
         }
 
+        if (exercise.targetSets === undefined && exerciseConfig.sets !== undefined) {
+          exercise.targetSets = exerciseConfig.sets;
+        }
+        if (exercise.targetReps === undefined && exerciseConfig.reps !== undefined) {
+          exercise.targetReps = exerciseConfig.reps;
+        }
+
+        exercise.sessionCount += 1;
         exercise.completedSets += getCompletedSetsCount(exerciseLog.sets);
         exercise.totalLoggedSets += exerciseLog.sets.length;
-        exercise.topWeight = Math.max(exercise.topWeight, getTopWeight(exerciseLog.sets));
+        exercise.topWeight = Math.max(exercise.topWeight, sessionTopWeight);
+
+        if (!exercise.firstPerformedAt || performedAt < exercise.firstPerformedAt) {
+          exercise.firstPerformedAt = performedAt;
+          exercise.firstTopWeight = sessionTopWeight;
+        }
+
+        if (!exercise.lastPerformedAt || performedAt >= exercise.lastPerformedAt) {
+          exercise.lastPerformedAt = performedAt;
+          exercise.latestTopWeight = sessionTopWeight;
+        }
+
+        exercise.history.push({
+          timestamp: performedAt,
+          topWeight: sessionTopWeight
+        });
 
         exerciseLog.sets.forEach((set) => {
           if (set.completedAt instanceof Date) {
@@ -308,6 +422,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
       summary.routines.sort((left, right) => (right.lastCompletedAt ?? 0) - (left.lastCompletedAt ?? 0));
       summary.routines.forEach((routine) => {
         routine.exercises.sort((left, right) => (right.lastPerformedAt ?? 0) - (left.lastPerformedAt ?? 0));
+        routine.exercises.forEach((exercise) => {
+          exercise.history.sort((left, right) => left.timestamp - right.timestamp);
+        });
       });
     });
 
@@ -386,6 +503,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
   const userOptions = (data?.users ?? []).map((user) => ({ value: user.userId, label: userDisplayNameById.get(user.userId) ?? 'Usuario sin nombre' }));
 
   const routineOptions = data?.routines ?? [];
+
+  const areAllUsersExpanded = filteredUsers.length > 0 && filteredUsers.every((user) => openUserIds.has(user.userId));
+
+  const handleToggleAllUsers = () => {
+    if (areAllUsersExpanded) {
+      setOpenUserIds(new Set());
+      return;
+    }
+
+    setOpenUserIds(new Set(filteredUsers.map((user) => user.userId)));
+  };
 
   if (loading) {
     return <PageSkeleton page="dashboard" />;
@@ -562,12 +690,17 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
         >
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-400">Vista principal de auditoria por usuario.</p>
-            <select value={userSort} onChange={(event) => setUserSort(event.target.value as typeof userSort)} className="input input-sm bg-white/[0.03] text-sm sm:w-auto">
-              <option value="activity">Mas activos</option>
-              <option value="completed">Mas entrenan</option>
-              <option value="created">Mas crean</option>
-              <option value="name">Nombre</option>
-            </select>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <button type="button" onClick={handleToggleAllUsers} className="btn-secondary text-sm">
+                {areAllUsersExpanded ? 'Colapsar todos' : 'Expandir todos'}
+              </button>
+              <select value={userSort} onChange={(event) => setUserSort(event.target.value as typeof userSort)} className="input input-sm bg-white/[0.03] text-sm sm:w-auto">
+                <option value="activity">Mas activos</option>
+                <option value="completed">Mas entrenan</option>
+                <option value="created">Mas crean</option>
+                <option value="name">Nombre</option>
+              </select>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -578,7 +711,23 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
               const subtitle = user.email && user.email !== displayName ? user.email : 'Sin email visible';
 
               return (
-                <details key={user.userId} className="group overflow-hidden rounded-[1.5rem] border border-mist/20 bg-[linear-gradient(180deg,rgba(20,26,39,0.94),rgba(9,14,25,0.94))] shadow-soft" open={selectedUserId === user.userId}>
+                <details
+                  key={user.userId}
+                  className="group overflow-hidden rounded-[1.5rem] border border-mist/20 bg-[linear-gradient(180deg,rgba(20,26,39,0.94),rgba(9,14,25,0.94))] shadow-soft"
+                  open={openUserIds.has(user.userId) || selectedUserId === user.userId}
+                  onToggle={(event) => {
+                    const element = event.currentTarget;
+                    setOpenUserIds((current) => {
+                      const next = new Set(current);
+                      if (element.open) {
+                        next.add(user.userId);
+                      } else {
+                        next.delete(user.userId);
+                      }
+                      return next;
+                    });
+                  }}
+                >
                   <summary className="flex cursor-pointer list-none flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 xl:flex-row xl:items-start xl:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -649,7 +798,24 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
                                         <div className="text-sm font-semibold text-white">{exercise.exerciseName}</div>
                                         <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-500">Actividad agregada</div>
 
+                                        <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                                          {exercise.targetSets !== undefined && exercise.targetReps !== undefined && (
+                                            <div className="rounded-full border border-mint/20 bg-mint/10 px-2 py-1 text-mint/90">
+                                              Objetivo: {exercise.targetSets}x{exercise.targetReps}
+                                            </div>
+                                          )}
+                                          {exercise.targetReps !== undefined && (
+                                            <div className="rounded-full border border-white/10 bg-white/[0.03] px-2 py-1 text-slate-300">
+                                              Reps completadas aprox.: {exercise.completedSets * exercise.targetReps}
+                                            </div>
+                                          )}
+                                        </div>
+
                                         <div className="mt-4 grid grid-cols-2 gap-2">
+                                          <div className="rounded-xl bg-ink/45 px-3 py-2">
+                                            <div className="text-[11px] uppercase tracking-wide text-slate-400">Sesiones</div>
+                                            <div className="mt-1 text-base font-display text-white">{exercise.sessionCount}</div>
+                                          </div>
                                           <div className="rounded-xl bg-ink/45 px-3 py-2">
                                             <div className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-slate-400">
                                               <CheckCircle2 size={12} /> Series
@@ -658,13 +824,43 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
                                           </div>
                                           <div className="rounded-xl bg-ink/45 px-3 py-2">
                                             <div className="flex items-center gap-1 text-[11px] uppercase tracking-wide text-slate-400">
-                                              <Weight size={12} /> Top
+                                              <Weight size={12} /> PR
                                             </div>
-                                            <div className="mt-1 text-base font-display text-white">{exercise.topWeight > 0 ? `${exercise.topWeight} kg` : '-'}</div>
+                                            <div className="mt-1 text-base font-display text-white">{formatWeight(exercise.topWeight)}</div>
+                                          </div>
+                                          <div className="rounded-xl bg-ink/45 px-3 py-2">
+                                            <div className="text-[11px] uppercase tracking-wide text-slate-400">Ultima carga</div>
+                                            <div className="mt-1 text-base font-display text-white">{formatWeight(exercise.latestTopWeight)}</div>
                                           </div>
                                         </div>
 
-                                        <div className="mt-3 text-xs text-slate-400">Ultima ejecucion: {formatDateTime(exercise.lastPerformedAt)}</div>
+                                        <div className="mt-3 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-3">
+                                          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Evolucion</div>
+                                          <div className="mt-2 flex items-center justify-between gap-3 text-sm">
+                                            <div>
+                                              <div className="text-slate-400">Primera carga</div>
+                                              <div className="font-semibold text-white">{formatWeight(exercise.firstTopWeight)}</div>
+                                            </div>
+                                            <div className="text-right">
+                                              <div className="text-slate-400">Cambio</div>
+                                              <div className={`font-semibold ${exercise.latestTopWeight > exercise.firstTopWeight ? 'text-mint' : exercise.latestTopWeight < exercise.firstTopWeight ? 'text-amberGlow' : 'text-white'}`}>
+                                                {formatWeightDelta(exercise.latestTopWeight, exercise.firstTopWeight)}
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          <div className="mt-3 rounded-xl border border-mint/10 bg-[linear-gradient(180deg,rgba(72,229,163,0.08),rgba(72,229,163,0.02))] px-2 py-2">
+                                            <Sparkline points={exercise.history} />
+                                            <div className="mt-1 flex items-center justify-between px-1 text-[11px] text-slate-400">
+                                              <span>{exercise.firstPerformedAt ? formatDateInAppTimeZone(new Date(exercise.firstPerformedAt)) : 'Inicio'}</span>
+                                              <span>{exercise.lastPerformedAt ? formatDateInAppTimeZone(new Date(exercise.lastPerformedAt)) : 'Actual'}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <div className="mt-3 text-xs text-slate-400">
+                                          Ultima ejecucion: {formatDateTime(exercise.lastPerformedAt)}
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -685,7 +881,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
                           <div className="mt-4 grid grid-cols-2 gap-3">
                             <div className="rounded-xl bg-ink/40 px-3 py-3 text-center">
                               <div className="text-base font-display text-white">{activity?.routines.length ?? 0}</div>
-                              <div className="text-[11px] text-slate-400">rutinas activas</div>
+                              <div className="text-[11px] text-slate-400">rutinas realizadas</div>
                             </div>
                             <div className="rounded-xl bg-ink/40 px-3 py-3 text-center">
                               <div className="text-base font-display text-white">{formatDuration(activity?.totalDuration)}</div>

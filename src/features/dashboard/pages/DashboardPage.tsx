@@ -223,7 +223,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   const { competitionStats, competitionLoading } = useCompetitionStats(
     user.id,
     user.name,
-    stats.totalWorkouts + stats.thisWeekWorkouts + stats.thisMonthWorkouts
+    stats.totalWorkouts,
+    !sessionsLoading
   );
   const showCompetitionSkeleton = useDelayedLoading(competitionLoading, 160);
 

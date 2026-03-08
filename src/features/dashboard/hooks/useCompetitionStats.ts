@@ -41,22 +41,63 @@ const EMPTY_STATS: CompetitionStats = {
   userMonthRank: null
 };
 
+const LEADERBOARD_CACHE_TTL_MS = 30 * 1000;
+
+let cachedLeaderboard:
+  | {
+    expiresAt: number;
+    data: Awaited<ReturnType<typeof fetchCompetitiveLeaderboard>>;
+  }
+  | null = null;
+let leaderboardPromise: Promise<Awaited<ReturnType<typeof fetchCompetitiveLeaderboard>>> | null = null;
+
+const getLeaderboard = async () => {
+  const now = Date.now();
+  if (cachedLeaderboard && cachedLeaderboard.expiresAt > now) {
+    return cachedLeaderboard.data;
+  }
+
+  if (leaderboardPromise) {
+    return leaderboardPromise;
+  }
+
+  leaderboardPromise = fetchCompetitiveLeaderboard(25)
+    .then((data) => {
+      cachedLeaderboard = {
+        data,
+        expiresAt: Date.now() + LEADERBOARD_CACHE_TTL_MS
+      };
+      return data;
+    })
+    .finally(() => {
+      leaderboardPromise = null;
+    });
+
+  return leaderboardPromise;
+};
+
 export const useCompetitionStats = (
   userId: string,
   userName: string,
-  refreshKey: number
+  refreshKey: number,
+  enabled: boolean
 ) => {
   const [loading, setLoading] = useState(false);
   const [competitionStats, setCompetitionStats] = useState<CompetitionStats>(EMPTY_STATS);
 
   useEffect(() => {
+    if (!enabled || refreshKey < 0) {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const loadCompetitionStats = async () => {
       setLoading(true);
 
       try {
-        const leaderboard = await fetchCompetitiveLeaderboard(25);
+        const leaderboard = await getLeaderboard();
         if (cancelled) return;
 
         const currentUserName = userName.trim();
@@ -83,7 +124,7 @@ export const useCompetitionStats = (
     return () => {
       cancelled = true;
     };
-  }, [refreshKey, userId, userName]);
+  }, [enabled, refreshKey, userId, userName]);
 
   return {
     competitionStats,

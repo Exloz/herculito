@@ -3,7 +3,6 @@ import { useAuth as useClerkAuth, useClerk, useUser } from '@clerk/react';
 import { useSignIn } from '@clerk/react/legacy';
 import { User } from '../../../shared/types';
 import { setTokenGetter } from '../../../shared/api/apiClient';
-import { syncUserProfile } from '../../../shared/api/dataApi';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { isAdminUser } from '../../../shared/lib/admin';
 
@@ -86,18 +85,6 @@ export function useAuth() {
       setTokenGetter(null);
     };
   }, [getToken]);
-
-  useEffect(() => {
-    if (!user) return;
-
-    void syncUserProfile({
-      displayName: user.name,
-      avatarUrl: user.photoURL,
-      email: user.email
-    }).catch(() => {
-      // ignore profile sync failures; auth remains functional
-    });
-  }, [user]);
 
   const signInWithGoogle = useCallback(async () => {
     try {

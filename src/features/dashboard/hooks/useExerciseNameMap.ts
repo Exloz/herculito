@@ -39,19 +39,40 @@ export const useExerciseNameMap = (): Map<string, string> => {
   const [nameMap, setNameMap] = useState<Map<string, string>>(() => cachedExerciseNameMap ?? new Map());
 
   useEffect(() => {
-    let cancelled = false;
+    if (cachedExerciseNameMap) {
+      setNameMap(cachedExerciseNameMap);
+      return;
+    }
 
-    void loadExerciseNameMap()
-      .then((loadedMap) => {
-        if (cancelled) return;
-        setNameMap(loadedMap);
-      })
-      .catch(() => {
-        // ignore failures, panel still has routine-based names and safe fallbacks
-      });
+    let cancelled = false;
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+
+    const scheduleLoad = () => {
+      void loadExerciseNameMap()
+        .then((loadedMap) => {
+          if (cancelled) return;
+          setNameMap(loadedMap);
+        })
+        .catch(() => {
+          // ignore failures, panel still has routine-based names and safe fallbacks
+        });
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(scheduleLoad, { timeout: 1500 });
+    } else {
+      timeoutId = setTimeout(scheduleLoad, 500);
+    }
 
     return () => {
       cancelled = true;
+      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+      }
     };
   }, []);
 

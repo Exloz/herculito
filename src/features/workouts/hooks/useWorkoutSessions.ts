@@ -88,15 +88,7 @@ export const useWorkoutSessions = (user: User) => {
       try {
         const data = await fetchSessions();
         clearTimeout(loadingTimeout);
-        const mapped = data.map(mapSession);
-        const ordered = mapped
-          .sort((a, b) => {
-            const aTime = a.startedAt ? a.startedAt.getTime() : 0;
-            const bTime = b.startedAt ? b.startedAt.getTime() : 0;
-            return bTime - aTime;
-          })
-          .slice(0, 500);
-        setSessions(ordered);
+        setSessions(data.map(mapSession));
         setLoading(false);
         setError(null);
       } catch (error) {

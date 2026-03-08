@@ -8,14 +8,15 @@ import { UIProvider } from './providers/UIProvider';
 import { useUI } from './providers/ui-context';
 import { PageSkeleton } from '../shared/ui/PageSkeleton';
 import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
-import { AdminPage } from '../features/admin/pages/AdminPage';
 
 // Lazy load pages for better performance
 const loadDashboardPage = () => import('../features/dashboard/pages/DashboardPage');
 const loadRoutinesPage = () => import('../features/routines/pages/RoutinesPage');
+const loadAdminPage = () => import('../features/admin/pages/AdminPage');
 
 const Dashboard = lazy(() => loadDashboardPage().then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => loadRoutinesPage().then(module => ({ default: module.Routines })));
+const AdminPage = lazy(() => loadAdminPage().then(module => ({ default: module.AdminPage })));
 
 const LoadingScreen = () => (
   <PageSkeleton page="dashboard" />
@@ -49,8 +50,17 @@ function AppContent() {
 
   useEffect(() => {
     if (!user) return;
-    void loadDashboardPage();
-    void loadRoutinesPage();
+    const preloadRoutines = () => {
+      void loadRoutinesPage();
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const idleId = window.requestIdleCallback(preloadRoutines, { timeout: 1500 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = setTimeout(preloadRoutines, 600);
+    return () => clearTimeout(timeoutId);
   }, [user]);
 
   useEffect(() => {

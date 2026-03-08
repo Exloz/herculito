@@ -41,12 +41,9 @@ function AppContent() {
   const {
     user,
     isAdmin,
+    isAdminResolved,
     loading,
     error,
-    signInWithGoogle,
-    requiresSafariForGoogleSignIn,
-    safariLoginUrl,
-    openSafariForGoogleLogin,
     logout
   } = useAuth();
 
@@ -73,9 +70,9 @@ function AppContent() {
   }, [canPreloadRoutines, user]);
 
   useEffect(() => {
-    if (!user || isAdmin || currentPage !== 'admin') return;
+    if (!user || isAdmin || currentPage !== 'admin' || !isAdminResolved) return;
     handlePageChange('dashboard');
-  }, [currentPage, handlePageChange, isAdmin, user]);
+  }, [currentPage, handlePageChange, isAdmin, isAdminResolved, user]);
 
   if (typeof window !== 'undefined' && window.location.pathname === '/sso-callback') {
     return (
@@ -92,14 +89,7 @@ function AppContent() {
   if (!user) {
     return (
       <Suspense fallback={<LoadingScreen />}>
-        <Login
-          onGoogleLogin={signInWithGoogle}
-          loading={loading}
-          errorMessage={error}
-          requiresSafariForGoogleSignIn={requiresSafariForGoogleSignIn}
-          safariLoginUrl={safariLoginUrl}
-          onOpenSafariForGoogleLogin={openSafariForGoogleLogin}
-        />
+        <Login errorMessage={error} />
       </Suspense>
     );
   }

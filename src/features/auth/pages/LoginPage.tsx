@@ -1,39 +1,37 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useUI } from '../../../app/providers/ui-context';
+import { useGoogleSignIn } from '../hooks/useGoogleSignIn';
 
 const ClerkAuthOptions = lazy(() => import('../components/ClerkAuthOptions'));
 
 interface LoginProps {
-  onGoogleLogin: () => void;
-  loading: boolean;
   errorMessage?: string | null;
-  requiresSafariForGoogleSignIn?: boolean;
-  safariLoginUrl?: string;
-  onOpenSafariForGoogleLogin?: () => void | Promise<void>;
 }
 
-export function Login({
-  onGoogleLogin,
-  loading,
-  errorMessage,
-  requiresSafariForGoogleSignIn = false,
-  safariLoginUrl,
-  onOpenSafariForGoogleLogin
-}: LoginProps) {
+export function Login({ errorMessage }: LoginProps) {
   const { showToast } = useUI();
   const [showClerkOptions, setShowClerkOptions] = useState(false);
+  const {
+    loading,
+    error: googleSignInError,
+    signInWithGoogle,
+    requiresSafariForGoogleSignIn,
+    safariLoginUrl,
+    openSafariForGoogleLogin
+  } = useGoogleSignIn();
+  const effectiveErrorMessage = errorMessage || googleSignInError;
 
   const handleGoogleAction = () => {
-    if (requiresSafariForGoogleSignIn && onOpenSafariForGoogleLogin) {
-      void onOpenSafariForGoogleLogin();
+    if (requiresSafariForGoogleSignIn) {
+      void openSafariForGoogleLogin();
       return;
     }
 
-    onGoogleLogin();
+    void signInWithGoogle();
   };
 
   const handleCopyError = async () => {
-    if (!errorMessage) return;
+    if (!effectiveErrorMessage) return;
 
     if (typeof navigator === 'undefined' || !navigator.clipboard) {
       showToast('No se pudo copiar el error automaticamente.', 'error');
@@ -41,7 +39,7 @@ export function Login({
     }
 
     try {
-      await navigator.clipboard.writeText(errorMessage);
+      await navigator.clipboard.writeText(effectiveErrorMessage);
       showToast('Error copiado. Pegalo al reportarlo.', 'success');
     } catch {
       showToast('No se pudo copiar el error automaticamente.', 'error');
@@ -49,10 +47,10 @@ export function Login({
   };
 
   useEffect(() => {
-    if (errorMessage) {
-      showToast(errorMessage, 'error');
+    if (effectiveErrorMessage) {
+      showToast(effectiveErrorMessage, 'error');
     }
-  }, [errorMessage, showToast]);
+  }, [effectiveErrorMessage, showToast]);
 
   return (
     <div className="app-shell flex items-center justify-center p-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
@@ -79,9 +77,9 @@ export function Login({
               </p>
             </div>
 
-            {errorMessage && (
+            {effectiveErrorMessage && (
               <div className="rounded-xl border border-crimson/40 bg-crimson/10 px-4 py-3 text-sm text-crimson">
-                <p className="break-words">{errorMessage}</p>
+                <p className="break-words">{effectiveErrorMessage}</p>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <p className="text-[11px] text-crimson/80">Incluye este mensaje al reportar el problema.</p>
                   <button
@@ -101,11 +99,11 @@ export function Login({
               </div>
             )}
 
-            <button
-              onClick={handleGoogleAction}
-              disabled={loading || (requiresSafariForGoogleSignIn && !onOpenSafariForGoogleLogin)}
-              className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
+              <button
+                onClick={handleGoogleAction}
+                disabled={loading}
+                className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-ink border-t-transparent rounded-full animate-spin" />
               ) : requiresSafariForGoogleSignIn ? (

@@ -1,14 +1,49 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth as useClerkAuth, useClerk, useUser } from '@clerk/react';
-import { useSignIn } from '@clerk/react/legacy';
 import { User } from '../../../shared/types';
 import { setTokenGetter } from '../../../shared/api/apiClient';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { isAdminUser } from '../../../shared/lib/admin';
 
-const getBrowserOrigin = () => {
-  if (typeof window === 'undefined') return 'https://herculito.exloz.site/';
-  return `${window.location.origin}/`;
+const AUTH_PROFILE_CACHE_KEY = 'auth-user-profile-cache';
+
+interface CachedUserProfile {
+  id: string;
+  email: string;
+  name: string;
+  photoURL?: string;
+}
+
+const readCachedUserProfile = (userId: string): CachedUserProfile | null => {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const raw = window.localStorage.getItem(AUTH_PROFILE_CACHE_KEY);
+    if (!raw) return null;
+
+    const cachedProfiles = JSON.parse(raw) as Record<string, CachedUserProfile>;
+    const cachedProfile = cachedProfiles[userId];
+    if (!cachedProfile || cachedProfile.id !== userId) {
+      return null;
+    }
+
+    return cachedProfile;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedUserProfile = (profile: CachedUserProfile): void => {
+  if (typeof window === 'undefined') return;
+
+  try {
+    const raw = window.localStorage.getItem(AUTH_PROFILE_CACHE_KEY);
+    const cachedProfiles = raw ? JSON.parse(raw) as Record<string, CachedUserProfile> : {};
+    cachedProfiles[profile.id] = profile;
+    window.localStorage.setItem(AUTH_PROFILE_CACHE_KEY, JSON.stringify(cachedProfiles));
+  } catch {
+    // ignore cache write failures
+  }
 };
 
 const resolveUserName = (clerkUser: NonNullable<ReturnType<typeof useUser>['user']>): string => {
@@ -35,14 +70,50 @@ const resolveUserPhotoUrl = (clerkUser: NonNullable<ReturnType<typeof useUser>['
 };
 
 export function useAuth() {
-  const { isLoaded: isAuthLoaded, getToken } = useClerkAuth();
-  const { isLoaded: isUserLoaded, user: clerkUser } = useUser();
-  const { isLoaded: isSignInLoaded, signIn } = useSignIn();
+  const { isLoaded: isAuthLoaded, isSignedIn, userId, getToken } = useClerkAuth();
+  const { user: clerkUser } = useUser();
   const { signOut } = useClerk();
   const [error, setError] = useState<string | null>(null);
+  const [cachedProfile, setCachedProfile] = useState<CachedUserProfile | null>(null);
+
+  useEffect(() => {
+    if (!userId) {
+      setCachedProfile(null);
+      return;
+    }
+
+    setCachedProfile(readCachedUserProfile(userId));
+  }, [userId]);
+
+  useEffect(() => {
+    if (!clerkUser) {
+      return;
+    }
+
+    const profile: CachedUserProfile = {
+      id: clerkUser.id,
+      email: clerkUser.primaryEmailAddress?.emailAddress ?? clerkUser.emailAddresses[0]?.emailAddress ?? '',
+      name: resolveUserName(clerkUser),
+      photoURL: resolveUserPhotoUrl(clerkUser)
+    };
+
+    setCachedProfile(profile);
+    writeCachedUserProfile(profile);
+  }, [clerkUser]);
 
   const user = useMemo<User | null>(() => {
-    if (!clerkUser) return null;
+    if (!isAuthLoaded) return null;
+    if (!isSignedIn || !userId) return null;
+
+    if (!clerkUser) {
+      return {
+        id: userId,
+        clerkUserId: userId,
+        email: cachedProfile?.email ?? '',
+        name: cachedProfile?.name ?? 'Usuario',
+        photoURL: cachedProfile?.photoURL
+      };
+    }
 
     const email = clerkUser.primaryEmailAddress?.emailAddress
       ?? clerkUser.emailAddresses[0]?.emailAddress
@@ -57,14 +128,22 @@ export function useAuth() {
       name,
       photoURL: resolveUserPhotoUrl(clerkUser)
     };
-  }, [clerkUser]);
+  }, [cachedProfile, clerkUser, isAuthLoaded, isSignedIn, userId]);
 
   const isAdmin = useMemo(() => {
     return isAdminUser({
-      email: clerkUser?.primaryEmailAddress?.emailAddress ?? clerkUser?.emailAddresses[0]?.emailAddress,
-      clerkUserId: clerkUser?.id
+      email: clerkUser?.primaryEmailAddress?.emailAddress ?? clerkUser?.emailAddresses[0]?.emailAddress ?? cachedProfile?.email,
+      clerkUserId: clerkUser?.id ?? userId
     });
-  }, [clerkUser]);
+  }, [cachedProfile?.email, clerkUser, userId]);
+
+  const isAdminResolved = useMemo(() => {
+    if (!isAuthLoaded || !isSignedIn || !userId) {
+      return isAuthLoaded;
+    }
+
+    return Boolean(clerkUser) || Boolean(cachedProfile);
+  }, [cachedProfile, clerkUser, isAuthLoaded, isSignedIn, userId]);
 
   useEffect(() => {
     if (user) {
@@ -86,24 +165,6 @@ export function useAuth() {
     };
   }, [getToken]);
 
-  const signInWithGoogle = useCallback(async () => {
-    try {
-      setError(null);
-      if (!isSignInLoaded || !signIn) {
-        throw new Error('clerk_signin_not_ready');
-      }
-
-      const origin = typeof window === 'undefined' ? 'https://herculito.exloz.site' : window.location.origin;
-      await signIn.authenticateWithRedirect({
-        strategy: 'oauth_google',
-        redirectUrl: `${origin}/sso-callback`,
-        redirectUrlComplete: `${origin}/`
-      });
-    } catch (error) {
-      setError(toUserMessage(error, 'No se pudo iniciar sesion con Clerk. Intentalo de nuevo.'));
-    }
-  }, [isSignInLoaded, signIn]);
-
   const logout = useCallback(async () => {
     try {
       setError(null);
@@ -116,12 +177,9 @@ export function useAuth() {
   return {
     user,
     isAdmin,
-    loading: !isAuthLoaded || !isUserLoaded,
+    isAdminResolved,
+    loading: !isAuthLoaded || (isSignedIn === true && !user),
     error,
-    signInWithGoogle,
-    requiresSafariForGoogleSignIn: false,
-    safariLoginUrl: getBrowserOrigin(),
-    openSafariForGoogleLogin: signInWithGoogle,
     logout
   };
 }

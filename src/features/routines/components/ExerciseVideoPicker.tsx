@@ -28,7 +28,7 @@ export const ExerciseVideoPicker: React.FC<ExerciseVideoPickerProps> = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="block text-sm text-slate-300">Video (MuscleWiki)</label>
+        <div className="block text-sm text-slate-300">Video (MuscleWiki)</div>
         <button
           type="button"
           onClick={onSuggestVideos}

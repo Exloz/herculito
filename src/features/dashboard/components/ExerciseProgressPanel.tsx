@@ -141,12 +141,12 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({ se
 
             {chartPoints.length > 0 ? (
               <div className="h-24 flex items-end gap-1.5" role="img" aria-label="Grafica de progresion de carga">
-                {chartPoints.map((point, index) => {
+                {chartPoints.map((point) => {
                   const normalized = maxWeight > 0 ? point.bestWeight / maxWeight : 0;
                   const height = Math.max(18, Math.round(normalized * 88));
 
                   return (
-                    <div key={`${point.timestamp}-${index}`} className="flex-1 min-w-0">
+                    <div key={`${point.timestamp}-${point.bestWeight}-${point.completedSets}`} className="flex-1 min-w-0">
                       <div
                         className="w-full rounded-md bg-gradient-to-t from-mint/70 to-mint h-full"
                         style={{ height }}

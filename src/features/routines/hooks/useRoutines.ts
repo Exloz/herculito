@@ -33,7 +33,7 @@ const mapRoutine = (routine: RoutineResponse): Routine => {
   };
 };
 
-export const useRoutines = (userId: string) => {
+export const useRoutines = (userId: string, options?: { includeVideos?: boolean }) => {
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export const useRoutines = (userId: string) => {
     setError(null);
 
     try {
-      const data = await fetchRoutines();
+        const data = await fetchRoutines({ includeVideos: options?.includeVideos });
       const mapped = data.map(mapRoutine);
       setRoutines(mapped);
     } catch (error) {
@@ -56,7 +56,7 @@ export const useRoutines = (userId: string) => {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [options?.includeVideos, userId]);
 
   useEffect(() => {
     void loadRoutines();

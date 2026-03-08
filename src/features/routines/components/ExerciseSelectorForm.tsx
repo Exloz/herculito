@@ -58,14 +58,14 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
     <div className="p-4">
       <div className="space-y-4">
         <div>
-          <label className="block text-sm text-slate-300 mb-1">Nombre del ejercicio *</label>
+          <label htmlFor="custom-exercise-name" className="block text-sm text-slate-300 mb-1">Nombre del ejercicio *</label>
           <input
+            id="custom-exercise-name"
             type="text"
             value={customExercise.name}
             onChange={(event) => onCustomExerciseChange({ name: event.target.value })}
             className="input text-sm"
             placeholder="Ej: Press de banca"
-            autoFocus
           />
         </div>
 
@@ -78,8 +78,9 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
         )}
 
         <div>
-          <label className="block text-sm text-slate-300 mb-1">Categoría</label>
+          <label htmlFor="custom-exercise-category" className="block text-sm text-slate-300 mb-1">Categoría</label>
           <input
+            id="custom-exercise-category"
             type="text"
             value={customExercise.category}
             onChange={(event) => onCustomExerciseChange({ category: event.target.value })}
@@ -95,8 +96,9 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
         </div>
 
         <div>
-          <label className="block text-sm text-slate-300 mb-1">Descripción (opcional)</label>
+          <label htmlFor="custom-exercise-description" className="block text-sm text-slate-300 mb-1">Descripción (opcional)</label>
           <textarea
+            id="custom-exercise-description"
             value={customExercise.description}
             onChange={(event) => onCustomExerciseChange({ description: event.target.value })}
             className="input text-sm"
@@ -118,8 +120,9 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Series</label>
+            <label htmlFor="custom-exercise-sets" className="block text-sm text-slate-300 mb-1">Series</label>
             <input
+              id="custom-exercise-sets"
               type="number"
               value={customExercise.sets}
               onChange={(event) => handleNumberChange('sets', event.target.value)}
@@ -128,8 +131,9 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Reps</label>
+            <label htmlFor="custom-exercise-reps" className="block text-sm text-slate-300 mb-1">Reps</label>
             <input
+              id="custom-exercise-reps"
               type="number"
               value={customExercise.reps}
               onChange={(event) => handleNumberChange('reps', event.target.value)}
@@ -138,8 +142,9 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             />
           </div>
           <div>
-            <label className="block text-sm text-slate-300 mb-1">Descanso (seg)</label>
+            <label htmlFor="custom-exercise-rest" className="block text-sm text-slate-300 mb-1">Descanso (seg)</label>
             <input
+              id="custom-exercise-rest"
               type="number"
               value={customExercise.restTime}
               onChange={(event) => handleNumberChange('restTime', event.target.value)}

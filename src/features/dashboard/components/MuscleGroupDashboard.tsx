@@ -119,8 +119,8 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
             <div className="mb-3">
               <div className="text-xs text-slate-400 mb-1">Ejercicios:</div>
               <div className="text-xs text-slate-300 space-y-1">
-                {routine.exercises.slice(0, 3).map((exercise, idx) => (
-                  <div key={idx} className="truncate">
+                {routine.exercises.slice(0, 3).map((exercise) => (
+                  <div key={exercise.id} className="truncate">
                     • {exercise.name} ({exercise.sets}×{exercise.reps})
                   </div>
                 ))}

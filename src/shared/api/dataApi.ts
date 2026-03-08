@@ -108,10 +108,14 @@ export const incrementExerciseUsage = async (id: string): Promise<void> => {
   });
 };
 
-export const fetchRoutines = async (): Promise<RoutineResponse[]> => {
+export const fetchRoutines = async (options?: { includeVideos?: boolean; limit?: number }): Promise<RoutineResponse[]> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();
-  const data = await fetchJson<{ routines: RoutineResponse[] }>(`${origin}/v1/data/routines`, {
+  const searchParams = new URLSearchParams();
+  if (options?.includeVideos) searchParams.set('includeVideos', '1');
+  if (options?.limit) searchParams.set('limit', String(options.limit));
+  const query = searchParams.toString();
+  const data = await fetchJson<{ routines: RoutineResponse[] }>(`${origin}/v1/data/routines${query ? `?${query}` : ''}`, {
     headers: { authorization: `Bearer ${token}` }
   });
   return data.routines ?? [];
@@ -208,10 +212,19 @@ export const updateRoutineVisibility = async (routineId: string, visible: boolea
   });
 };
 
-export const fetchSessions = async (): Promise<WorkoutSessionResponse[]> => {
+export const fetchSessions = async (options?: {
+  limit?: number;
+  includeExercises?: boolean;
+  completedOnly?: boolean;
+}): Promise<WorkoutSessionResponse[]> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();
-  const data = await fetchJson<{ sessions: WorkoutSessionResponse[] }>(`${origin}/v1/data/sessions`, {
+  const searchParams = new URLSearchParams();
+  if (options?.limit) searchParams.set('limit', String(options.limit));
+  if (options?.includeExercises) searchParams.set('includeExercises', '1');
+  if (options?.completedOnly) searchParams.set('completedOnly', '1');
+  const query = searchParams.toString();
+  const data = await fetchJson<{ sessions: WorkoutSessionResponse[] }>(`${origin}/v1/data/sessions${query ? `?${query}` : ''}`, {
     headers: { authorization: `Bearer ${token}` }
   });
   return data.sessions ?? [];

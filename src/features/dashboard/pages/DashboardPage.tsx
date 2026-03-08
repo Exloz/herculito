@@ -200,7 +200,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   }, []);
 
 
-   const { routines, loading: routinesLoading, updateRoutine, incrementRoutineUsage } = useRoutines(user.id);
+   const { routines, loading: routinesLoading, updateRoutine, incrementRoutineUsage } = useRoutines(user.id, { includeVideos: false });
   const { isRoutineVisibleOnDashboard } = usePublicRoutineVisibility(user.id);
   const {
     sessions,

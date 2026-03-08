@@ -25,7 +25,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
     canEditRoutine,
     getUserRoutines,
     getPublicRoutines
-  } = useRoutines(user.id);
+  } = useRoutines(user.id, { includeVideos: true });
   const {
     isRoutineVisibleOnDashboard,
     isRoutineVisibilityLoading,

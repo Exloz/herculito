@@ -126,7 +126,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
-        {days.map((day, index) => {
+        {days.map((day) => {
           const dayNumber = new Date(day.date + 'T12:00:00').getDate();
           const hasWorkout = day.workouts.length > 0;
           const isCurrentDay = isToday(day.date);
@@ -134,7 +134,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
           return (
             <button
-              key={index}
+                key={day.date}
               onClick={() => onDayClick?.(day.date)}
               type="button"
               disabled={!onDayClick}
@@ -159,11 +159,11 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
               {hasWorkout && (
                 <div className="absolute bottom-0.5 sm:bottom-1 left-0.5 sm:left-1 right-0.5 sm:right-1">
                   <div className="flex justify-center space-x-0.5">
-                    {day.workouts.slice(0, 3).map((workout, idx) => {
+                    {day.workouts.slice(0, 3).map((workout) => {
                       const muscleGroup = MUSCLE_GROUPS[workout.muscleGroup];
                       return (
                         <div
-                          key={idx}
+                          key={workout.sessionId}
                           className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full"
                           style={{ backgroundColor: muscleGroup.color }}
                           title={`${muscleGroup.name} - ${workout.routineName}`}

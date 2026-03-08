@@ -149,10 +149,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
           {/* Información básica */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="routine-name" className="block text-sm font-medium text-slate-300 mb-2">
                 Nombre de la rutina
               </label>
               <input
+                id="routine-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -163,10 +164,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="routine-description" className="block text-sm font-medium text-slate-300 mb-2">
                 Descripción (opcional)
               </label>
               <textarea
+                id="routine-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="input"
@@ -177,10 +179,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
             {/* Grupo muscular */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
+              <label htmlFor="routine-primary-muscle-group" className="block text-sm font-medium text-slate-300 mb-2">
                 Grupo muscular principal
               </label>
               <select
+                id="routine-primary-muscle-group"
                 value={primaryMuscleGroup}
                 onChange={(e) => setPrimaryMuscleGroup(e.target.value as MuscleGroup)}
                 className="input"
@@ -271,8 +274,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
                     <div className="grid grid-cols-3 gap-3 text-sm">
                       <div>
-                        <label className="block text-slate-300 mb-1">Series</label>
+                        <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="block text-slate-300 mb-1">Series</label>
                         <input
+                          id={`routine-exercise-${exercise.id}-sets`}
                           type="number"
                           value={exerciseDrafts[exercise.id]?.sets ?? String(exercise.sets)}
                           onChange={(e) => handleExerciseNumberChange(exercise.id, 'sets', e.target.value)}
@@ -282,8 +286,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 mb-1">Reps</label>
+                        <label htmlFor={`routine-exercise-${exercise.id}-reps`} className="block text-slate-300 mb-1">Reps</label>
                         <input
+                          id={`routine-exercise-${exercise.id}-reps`}
                           type="number"
                           value={exerciseDrafts[exercise.id]?.reps ?? String(exercise.reps)}
                           onChange={(e) => handleExerciseNumberChange(exercise.id, 'reps', e.target.value)}
@@ -293,8 +298,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 mb-1">Desc. (s)</label>
+                        <label htmlFor={`routine-exercise-${exercise.id}-rest`} className="block text-slate-300 mb-1">Desc. (s)</label>
                         <input
+                          id={`routine-exercise-${exercise.id}-rest`}
                           type="number"
                           value={exerciseDrafts[exercise.id]?.restTime ?? String(exercise.restTime ?? 90)}
                           onChange={(e) => handleExerciseNumberChange(exercise.id, 'restTime', e.target.value)}

@@ -10,6 +10,9 @@ import {
 } from '../../../shared/api/dataApi';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
+const SESSION_SUMMARY_LIMIT = 500;
+const SESSION_DETAILS_LIMIT = 200;
+
 const toDate = (value: unknown): Date | undefined => {
   if (!value) return undefined;
   if (value instanceof Date) return value;
@@ -86,11 +89,28 @@ export const useWorkoutSessions = (user: User) => {
 
     const loadSessions = async () => {
       try {
-        const data = await fetchSessions();
+        const data = await fetchSessions({ limit: SESSION_SUMMARY_LIMIT, includeExercises: false });
         clearTimeout(loadingTimeout);
         setSessions(data.map(mapSession));
         setLoading(false);
         setError(null);
+
+        void fetchSessions({
+          limit: SESSION_DETAILS_LIMIT,
+          includeExercises: true,
+          completedOnly: true
+        }).then((detailedData) => {
+          const detailedSessions = detailedData.map(mapSession);
+          setSessions((previous) => {
+            const detailsById = new Map(detailedSessions.map((session) => [session.id, session]));
+            return previous.map((session) => {
+              const detailed = detailsById.get(session.id);
+              return detailed ? { ...session, exercises: detailed.exercises } : session;
+            });
+          });
+        }).catch(() => {
+          // ignore detail hydration failures; summary sessions already loaded
+        });
       } catch (error) {
         clearTimeout(loadingTimeout);
         setSessions([]);

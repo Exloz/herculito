@@ -10,9 +10,7 @@ import {
 } from '../../../shared/api/dataApi';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
-import { WorkoutCalendar } from '../components/WorkoutCalendar';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
-import { ExerciseProgressPanel } from '../components/ExerciseProgressPanel';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { getRecommendedMuscleGroup } from '../lib/muscleGroups';
 import { useUI } from '../../../app/providers/ui-context';
@@ -32,8 +30,12 @@ const ACTIVE_WORKOUT_PROGRESS_KEY = 'activeWorkoutProgress';
 const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in ms
 const CLERK_USER_BUTTON_DELAY_MS = 1800;
+const CALENDAR_PANEL_DELAY_MS = 700;
+const PROGRESS_PANEL_DELAY_MS = 1400;
 
 const DeferredClerkUserButton = lazy(() => import('../../auth/components/ClerkUserButton'));
+const DeferredWorkoutCalendar = lazy(() => import('../components/WorkoutCalendar').then((module) => ({ default: module.WorkoutCalendar })));
+const DeferredExerciseProgressPanel = lazy(() => import('../components/ExerciseProgressPanel').then((module) => ({ default: module.ExerciseProgressPanel })));
 
 const isIOSDevice = () => {
   if (typeof navigator === 'undefined') return false;
@@ -82,6 +84,20 @@ const getUserInitials = (name: string): string => {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return 'H';
   return words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? '').join('') || 'H';
+};
+
+const PanelSkeleton = ({ heightClass, title }: { heightClass: string; title: string }) => {
+  return (
+    <div className="app-card p-4 sm:p-5" aria-hidden="true">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm text-slate-400">{title}</div>
+        </div>
+        <div className="skeleton-block h-4 w-14 rounded-lg" />
+      </div>
+      <div className={`skeleton-block w-full rounded-2xl ${heightClass}`} />
+    </div>
+  );
 };
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
@@ -143,6 +159,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
   const [showClerkUserButton, setShowClerkUserButton] = useState(false);
+  const [showDeferredCalendar, setShowDeferredCalendar] = useState(false);
+  const [showDeferredProgressPanel, setShowDeferredProgressPanel] = useState(false);
   const hasTriggeredBackgroundPreload = useRef(false);
   const { showToast, confirm } = useUI();
 
@@ -269,6 +287,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     hasTriggeredBackgroundPreload.current = true;
     onReadyForBackgroundPreload?.();
   }, [dashboardData, dashboardLoading, onReadyForBackgroundPreload]);
+
+  useEffect(() => {
+    if (!dashboardData) {
+      setShowDeferredCalendar(false);
+      setShowDeferredProgressPanel(false);
+      return;
+    }
+
+    let calendarTimeoutId: number | null = null;
+    let progressTimeoutId: number | null = null;
+    let calendarIdleId: number | null = null;
+    let progressIdleId: number | null = null;
+
+    const revealCalendar = () => setShowDeferredCalendar(true);
+    const revealProgress = () => setShowDeferredProgressPanel(true);
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      calendarIdleId = window.requestIdleCallback(revealCalendar, { timeout: CALENDAR_PANEL_DELAY_MS });
+      progressIdleId = window.requestIdleCallback(revealProgress, { timeout: PROGRESS_PANEL_DELAY_MS });
+    } else {
+      calendarTimeoutId = setTimeout(revealCalendar, CALENDAR_PANEL_DELAY_MS);
+      progressTimeoutId = setTimeout(revealProgress, PROGRESS_PANEL_DELAY_MS);
+    }
+
+    return () => {
+      if (calendarIdleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(calendarIdleId);
+      }
+      if (progressIdleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(progressIdleId);
+      }
+      if (calendarTimeoutId !== null) {
+        window.clearTimeout(calendarTimeoutId);
+      }
+      if (progressTimeoutId !== null) {
+        window.clearTimeout(progressTimeoutId);
+      }
+    };
+  }, [dashboardData]);
 
   const formatPosition = (entry: LeaderboardEntry | null): string => {
     if (!entry) return 'Sin ranking';
@@ -477,7 +534,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
             <div className="flex items-center gap-2 sm:gap-3 ml-4">
               <button
-                onClick={() => setShowCalendar(!showCalendar)}
+                onClick={() => {
+                  setShowCalendar((previousValue) => {
+                    const nextValue = !previousValue;
+                    if (nextValue) {
+                      setShowDeferredCalendar(true);
+                    }
+                    return nextValue;
+                  });
+                }}
                 className={`btn-secondary flex items-center gap-2 touch-target ${showCalendar ? 'border-mint/60 text-mint' : ''}`}
                 title="Ver calendario"
                 aria-label={showCalendar ? "Ocultar calendario" : "Ver calendario"}
@@ -685,12 +750,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           aria-hidden={!showCalendar}
         >
           <div className={`transition-transform duration-300 ${showCalendar ? 'translate-y-0' : '-translate-y-2 pointer-events-none'}`}>
-            <WorkoutCalendar
-              calendar={dashboardData.calendar}
-              currentMonth={currentMonth}
-              onMonthChange={setCurrentMonth}
-              onDayClick={handleDayClick}
-            />
+            {showDeferredCalendar ? (
+              <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
+                <DeferredWorkoutCalendar
+                  calendar={dashboardData.calendar}
+                  currentMonth={currentMonth}
+                  onMonthChange={setCurrentMonth}
+                  onDayClick={handleDayClick}
+                />
+              </Suspense>
+            ) : (
+              <PanelSkeleton title="Calendario" heightClass="h-[22rem]" />
+            )}
           </div>
         </div>
 
@@ -717,9 +788,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
              />
            </div>
 
-             {/* Sidebar - Solo entrenamientos recientes */}
-              <div className="order-1 lg:order-2 space-y-4 sm:space-y-6">
-                <ExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+              {/* Sidebar - Solo entrenamientos recientes */}
+               <div className="order-1 lg:order-2 space-y-4 sm:space-y-6">
+                 {showDeferredProgressPanel ? (
+                   <Suspense fallback={<PanelSkeleton title="Historico y progresion" heightClass="h-64" />}>
+                     <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+                   </Suspense>
+                 ) : (
+                   <PanelSkeleton title="Historico y progresion" heightClass="h-64" />
+                 )}
 
                {/* Entrenamientos recientes */}
                <div className="app-card p-4 sm:p-5">

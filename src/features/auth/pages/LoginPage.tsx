@@ -1,9 +1,7 @@
-import { useEffect } from 'react';
-import {
-  SignInButton,
-  SignUpButton
-} from '@clerk/react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { useUI } from '../../../app/providers/ui-context';
+
+const ClerkAuthOptions = lazy(() => import('../components/ClerkAuthOptions'));
 
 interface LoginProps {
   onGoogleLogin: () => void;
@@ -23,6 +21,7 @@ export function Login({
   onOpenSafariForGoogleLogin
 }: LoginProps) {
   const { showToast } = useUI();
+  const [showClerkOptions, setShowClerkOptions] = useState(false);
 
   const handleGoogleAction = () => {
     if (requiresSafariForGoogleSignIn && onOpenSafariForGoogleLogin) {
@@ -136,18 +135,26 @@ export function Login({
               )}
             </button>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <SignInButton mode="modal">
-                <button type="button" className="btn-secondary w-full text-sm">
-                  Iniciar con Clerk
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button type="button" className="btn-ghost w-full text-sm">
-                  Crear cuenta
-                </button>
-              </SignUpButton>
-            </div>
+            {showClerkOptions ? (
+              <Suspense
+                fallback={
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-hidden="true">
+                    <div className="skeleton-block h-11 rounded-xl" />
+                    <div className="skeleton-block h-11 rounded-xl" />
+                  </div>
+                }
+              >
+                <ClerkAuthOptions />
+              </Suspense>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowClerkOptions(true)}
+                className="btn-secondary w-full text-sm"
+              >
+                Ver mas opciones de acceso
+              </button>
+            )}
 
             <p className="text-xs text-slate-400 text-center">
               {requiresSafariForGoogleSignIn

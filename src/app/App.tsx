@@ -1,6 +1,5 @@
 import { useEffect, Suspense, lazy, useState } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/react';
-import { Login } from '../features/auth/pages/LoginPage';
 import { Navigation } from './navigation/Navigation';
 import { useAuth } from '../features/auth/hooks/useAuth';
 import { ScrollToTop } from './navigation/ScrollToTop';
@@ -10,10 +9,12 @@ import { PageSkeleton } from '../shared/ui/PageSkeleton';
 import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
 
 // Lazy load pages for better performance
+const loadLoginPage = () => import('../features/auth/pages/LoginPage');
 const loadDashboardPage = () => import('../features/dashboard/pages/DashboardPage');
 const loadRoutinesPage = () => import('../features/routines/pages/RoutinesPage');
 const loadAdminPage = () => import('../features/admin/pages/AdminPage');
 
+const Login = lazy(() => loadLoginPage().then(module => ({ default: module.Login })));
 const Dashboard = lazy(() => loadDashboardPage().then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => loadRoutinesPage().then(module => ({ default: module.Routines })));
 const AdminPage = lazy(() => loadAdminPage().then(module => ({ default: module.AdminPage })));
@@ -90,14 +91,16 @@ function AppContent() {
 
   if (!user) {
     return (
-      <Login
-        onGoogleLogin={signInWithGoogle}
-        loading={loading}
-        errorMessage={error}
-        requiresSafariForGoogleSignIn={requiresSafariForGoogleSignIn}
-        safariLoginUrl={safariLoginUrl}
-        onOpenSafariForGoogleLogin={openSafariForGoogleLogin}
-      />
+      <Suspense fallback={<LoadingScreen />}>
+        <Login
+          onGoogleLogin={signInWithGoogle}
+          loading={loading}
+          errorMessage={error}
+          requiresSafariForGoogleSignIn={requiresSafariForGoogleSignIn}
+          safariLoginUrl={safariLoginUrl}
+          onOpenSafariForGoogleLogin={openSafariForGoogleLogin}
+        />
+      </Suspense>
     );
   }
 

@@ -7,6 +7,29 @@ import '../index.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
+const scheduleNonCriticalWork = (callback: () => void, timeoutMs: number) => {
+  if (typeof window === 'undefined') {
+    callback();
+    return;
+  }
+
+  const runWhenPossible = () => {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => callback(), { timeout: timeoutMs });
+      return;
+    }
+
+    setTimeout(callback, timeoutMs);
+  };
+
+  if (document.readyState === 'complete') {
+    runWhenPossible();
+    return;
+  }
+
+  window.addEventListener('load', runWhenPossible, { once: true });
+};
+
 if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk Publishable Key');
 }
@@ -14,35 +37,37 @@ if (!PUBLISHABLE_KEY) {
 if (import.meta.env.PROD) {
   let refreshing = false;
 
-  const updateSW = registerSW({
-    immediate: true,
-    onRegisteredSW(_swUrl, registration) {
-      if (!registration) {
-        return;
-      }
-
-      const checkForUpdates = () => {
-        void registration.update();
-      };
-
-      setInterval(checkForUpdates, 60 * 60 * 1000);
-
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-          checkForUpdates();
+  scheduleNonCriticalWork(() => {
+    const updateSW = registerSW({
+      immediate: true,
+      onRegisteredSW(_swUrl, registration) {
+        if (!registration) {
+          return;
         }
-      });
-    },
-    onNeedRefresh() {
-      const shouldRefresh = window.confirm(
-        'Hay una nueva version de Herculito. Presiona "Aceptar" para actualizar ahora.'
-      );
 
-      if (shouldRefresh) {
-        void updateSW(true);
+        const checkForUpdates = () => {
+          void registration.update();
+        };
+
+        setInterval(checkForUpdates, 60 * 60 * 1000);
+
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            checkForUpdates();
+          }
+        });
+      },
+      onNeedRefresh() {
+        const shouldRefresh = window.confirm(
+          'Hay una nueva version de Herculito. Presiona "Aceptar" para actualizar ahora.'
+        );
+
+        if (shouldRefresh) {
+          void updateSW(true);
+        }
       }
-    }
-  });
+    });
+  }, 3000);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {

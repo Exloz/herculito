@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { UserButton } from '@clerk/react';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Calendar, TrendingUp, Award, Clock, LogOut, Bell, Trophy, Crown } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog, LeaderboardEntry } from '../../../shared/types';
 import {
@@ -25,12 +24,16 @@ import { version as appVersion } from '../../../../package.json';
 interface DashboardProps {
   user: User;
   onLogout: () => void;
+  onReadyForBackgroundPreload?: () => void;
 }
 
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
 const ACTIVE_WORKOUT_PROGRESS_KEY = 'activeWorkoutProgress';
 const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in ms
+const CLERK_USER_BUTTON_DELAY_MS = 1800;
+
+const DeferredClerkUserButton = lazy(() => import('../../auth/components/ClerkUserButton'));
 
 const isIOSDevice = () => {
   if (typeof navigator === 'undefined') return false;
@@ -73,6 +76,12 @@ const toDate = (value: unknown): Date | undefined => {
     if (Number.isFinite(parsed)) return new Date(parsed);
   }
   return undefined;
+};
+
+const getUserInitials = (name: string): string => {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'H';
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? '').join('') || 'H';
 };
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
@@ -124,7 +133,7 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
   }
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload }) => {
    const [currentMonth, setCurrentMonth] = useState(new Date());
    const [showCalendar, setShowCalendar] = useState(true);
   const [activeWorkout, setActiveWorkout] = useState<{
@@ -133,6 +142,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
   } | null>(null);
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
+  const [showClerkUserButton, setShowClerkUserButton] = useState(false);
+  const hasTriggeredBackgroundPreload = useRef(false);
   const { showToast, confirm } = useUI();
 
 
@@ -222,10 +233,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     );
   }, [recentSessions, user.id]);
 
+  useEffect(() => {
+    if (showClerkUserButton) {
+      return;
+    }
+
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+
+    const revealClerkUserButton = () => {
+      setShowClerkUserButton(true);
+    };
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      idleId = window.requestIdleCallback(revealClerkUserButton, { timeout: CLERK_USER_BUTTON_DELAY_MS });
+    } else {
+      timeoutId = setTimeout(revealClerkUserButton, CLERK_USER_BUTTON_DELAY_MS);
+    }
+
+    return () => {
+      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [showClerkUserButton]);
+
+  useEffect(() => {
+    if (!dashboardData || dashboardLoading || hasTriggeredBackgroundPreload.current) {
+      return;
+    }
+
+    hasTriggeredBackgroundPreload.current = true;
+    onReadyForBackgroundPreload?.();
+  }, [dashboardData, dashboardLoading, onReadyForBackgroundPreload]);
+
   const formatPosition = (entry: LeaderboardEntry | null): string => {
     if (!entry) return 'Sin ranking';
     return `#${entry.position}`;
   };
+
+  const userInitials = useMemo(() => getUserInitials(user.name || 'Usuario'), [user.name]);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
@@ -397,15 +447,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-display text-white flex items-center gap-3">
                 <div className="w-9 h-9 sm:w-11 sm:h-11 shrink-0 rounded-2xl overflow-hidden shadow-lift ring-1 ring-white/20 flex items-center justify-center">
-                  <UserButton
-                    appearance={{
-                      elements: {
-                        avatarBox: 'w-9 h-9 sm:w-11 sm:h-11 rounded-2xl',
-                        avatarImage: 'object-cover object-center',
-                        userButtonTrigger: 'w-9 h-9 sm:w-11 sm:h-11 rounded-2xl p-0 leading-none align-middle'
-                      }
-                    }}
-                  />
+                  {showClerkUserButton ? (
+                    <Suspense
+                      fallback={(
+                        <div className="flex h-full w-full items-center justify-center bg-slateDeep text-xs font-semibold text-slate-200">
+                          {userInitials}
+                        </div>
+                      )}
+                    >
+                      <DeferredClerkUserButton />
+                    </Suspense>
+                  ) : (
+                    <button
+                      type="button"
+                      onPointerEnter={() => setShowClerkUserButton(true)}
+                      onFocus={() => setShowClerkUserButton(true)}
+                      onClick={() => setShowClerkUserButton(true)}
+                      aria-label="Cargando menu de usuario"
+                      className="flex h-full w-full items-center justify-center bg-slateDeep text-xs font-semibold text-slate-200"
+                    >
+                      {userInitials}
+                    </button>
+                  )}
                 </div>
                 <span>Herculito</span>
               </h1>

@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy } from 'react';
+import { useEffect, Suspense, lazy, useState } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/react';
 import { Login } from '../features/auth/pages/LoginPage';
 import { Navigation } from './navigation/Navigation';
@@ -36,6 +36,7 @@ const AuthErrorToast = ({ message }: { message: string | null }) => {
 
 function AppContent() {
   const { currentPage, transitionDirection, transitionVersion, handlePageChange } = usePageNavigation();
+  const [canPreloadRoutines, setCanPreloadRoutines] = useState(false);
   const {
     user,
     isAdmin,
@@ -49,19 +50,26 @@ function AppContent() {
   } = useAuth();
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setCanPreloadRoutines(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !canPreloadRoutines) return;
+
     const preloadRoutines = () => {
       void loadRoutinesPage();
     };
 
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(preloadRoutines, { timeout: 1500 });
+      const idleId = window.requestIdleCallback(preloadRoutines, { timeout: 4000 });
       return () => window.cancelIdleCallback(idleId);
     }
 
-    const timeoutId = setTimeout(preloadRoutines, 600);
+    const timeoutId = setTimeout(preloadRoutines, 2200);
     return () => clearTimeout(timeoutId);
-  }, [user]);
+  }, [canPreloadRoutines, user]);
 
   useEffect(() => {
     if (!user || isAdmin || currentPage !== 'admin') return;
@@ -95,7 +103,13 @@ function AppContent() {
 
   const renderPage = (page: AppPage) => {
     if (page === 'dashboard') {
-      return <Dashboard user={user} onLogout={logout} />;
+      return (
+        <Dashboard
+          user={user}
+          onLogout={logout}
+          onReadyForBackgroundPreload={() => setCanPreloadRoutines(true)}
+        />
+      );
     }
 
     if (page === 'admin') {

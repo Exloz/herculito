@@ -22,7 +22,8 @@ interface ActiveWorkoutProps {
   user: User;
   routine: Routine;
   session: WorkoutSession;
-  sessions: WorkoutSession[];
+  sessions?: WorkoutSession[];
+  previousWeightsByExercise?: Record<string, number[]>;
   onBackToDashboard: (hasProgress: boolean) => void;
   onCompleteWorkout: (exerciseLogs: ExerciseLog[]) => void | Promise<void>;
   onUpdateProgress: (sessionId: string, exerciseLogs: ExerciseLog[]) => void | Promise<void>;
@@ -50,7 +51,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   user,
   routine,
   session,
-  sessions,
+  sessions = [],
+  previousWeightsByExercise,
   onBackToDashboard,
   onCompleteWorkout,
   onUpdateProgress
@@ -122,8 +124,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   }, [exerciseLogs, onUpdateProgress, session.id]);
 
   const lastWeights = useMemo(() => {
+    if (previousWeightsByExercise) {
+      return previousWeightsByExercise;
+    }
+
     return getLastWeightsForRoutineFromSessions(sessions, routine.id);
-  }, [routine.id, sessions]);
+  }, [previousWeightsByExercise, routine.id, sessions]);
 
   const getLogForExerciseCustom = useCallback((exerciseId: string, userId: string): ExerciseLog | undefined => {
     const localLog = exerciseLogs.find((log) => log.exerciseId === exerciseId);

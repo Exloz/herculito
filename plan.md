@@ -1,249 +1,419 @@
-# Plan: pantalla ADMIN
+# Plan: optimizacion de carga inicial con endpoint dedicado de dashboard
 
 ## Objetivo
 
-Crear una pantalla exclusiva para ADMIN donde se pueda ver:
+Reducir al maximo el tiempo de carga inicial de la app, especialmente en `dashboard`, evitando que el frontend tenga que pedir y procesar payloads grandes de:
 
-- todos los usuarios
-- rutinas creadas
-- rutinas realizadas
-- duracion de cada rutina realizada
-- ejercicios asociados a cada rutina
+- `GET /v1/data/sessions`
+- `GET /v1/data/routines`
 
-El acceso debe quedar restringido al ADMIN indicado:
+La idea principal es crear un endpoint especializado para inicio, por ejemplo:
 
-- email: `exloz26@gmail.com`
-- userId esperado: `user_3AC1fVPB8cpo0blGds7MPQHq7Fo`
+- `GET /v1/data/dashboard`
 
-## Progreso
+Ese endpoint debe devolver solo los datos minimos y precisos que el dashboard necesita para renderizar rapido, dejando los detalles pesados para cargas posteriores o pantallas especificas.
 
-- [x] Fase 1 - Modelo y seguridad
-- [x] Fase 2 - Backend (`herculito-push-api`)
-- [x] Fase 3 - Frontend data layer (`herculito`)
-- [x] Fase 4 - Navegacion y pagina
-- [x] Fase 5 - UI de la pantalla ADMIN
-- [x] Fase 6 - Validacion
+## Problema actual
 
-## Estado actual detectado
+### 1) `/sessions` esta haciendo demasiado trabajo
 
-### Frontend (`herculito`)
+Hoy `GET /v1/data/sessions` termina funcionando como un endpoint mixto:
 
-- La app solo navega entre `dashboard` y `routines`.
-- La autenticacion usa Clerk.
-- El hook `useAuth` hoy expone `user.id = clerkUser.externalId ?? clerkUser.id`.
-- No existe una pagina ADMIN ni navegacion para ella.
-- Los datos actuales de rutinas y sesiones se consumen con endpoints orientados al usuario autenticado.
+- historial de sesiones
+- resumen para dashboard
+- fuente de datos para progresion por ejercicio
+- fuente de datos para pesos anteriores en entrenamiento activo
 
-### Backend (`herculito-push-api`)
+Eso provoca que pueda enviar:
 
-- Ya existe `user_profiles`, porque el frontend sincroniza perfil a `/v1/data/profile`.
-- Las rutas actuales de `routines` y `sessions` filtran por el `uid` autenticado.
-- No hay endpoints administrativos globales para consultar usuarios + rutinas + sesiones de toda la plataforma.
+- hasta cientos de sesiones
+- `exercises_json` completo por sesion
+- arreglos anidados con ejercicios, series, pesos y timestamps
 
-## Alcance funcional propuesto
+Aunque parte de esa informacion es util, no toda se necesita para pintar el dashboard inicial.
 
-La primera version de la pantalla ADMIN mostraria:
+### 2) `/routines` tambien envia mas de lo necesario
 
-1. Resumen general
-   - total de usuarios
-   - total de rutinas creadas
-   - total de rutinas realizadas (sesiones completadas)
-   - duracion promedio de entrenamientos
+`GET /v1/data/routines` puede incluir:
 
-2. Listado de usuarios
-   - nombre
-   - email
-   - userId
-   - cantidad de rutinas creadas
-   - cantidad de rutinas realizadas
-   - ultima actividad
+- todas las rutinas del usuario y publicas visibles
+- todos los ejercicios por rutina
+- `video_json` por ejercicio
 
-3. Listado de rutinas
-   - nombre de rutina
-   - creador
-   - cantidad de veces realizada
-   - ultima vez realizada
-   - ejercicios de la rutina
+Eso tiene sentido para la pantalla de rutinas, pero no para el dashboard inicial.
 
-4. Listado de sesiones realizadas
-   - usuario
-   - rutina
-   - fecha de inicio
-   - fecha de finalizacion
-   - duracion total
-   - ejercicios registrados en esa sesion
+### 3) El dashboard depende de varias fuentes a la vez
 
-## Decisiones tecnicas propuestas
+Actualmente el inicio construye su UI combinando varios hooks y endpoints, lo que puede causar:
 
-### 1) Control de acceso ADMIN
+- multiples requests simultaneas
+- mas parseo en frontend
+- mas re-renders
+- mas tiempo hasta que el usuario ve contenido util
 
-Implementar control en dos capas:
+## Objetivo tecnico del cambio
 
-- frontend: mostrar pagina y navegacion solo al ADMIN
-- backend: proteger endpoints admin para que solo ese ADMIN pueda consultar datos globales
+Separar claramente dos tipos de datos:
 
-Esto es obligatorio: ocultar la UI no es suficiente.
+1. datos de primer render
+   - pequeños
+   - agregados
+   - listos para mostrar
+   - optimizados para latencia
 
-### 2) Fuente de verdad del permiso
+2. datos de detalle
+   - mas completos
+   - usados solo cuando el usuario entra a pantallas o flujos especificos
 
-Crear un helper reutilizable para validar ADMIN con allowlist fija.
+## Principio de diseño
 
-Decision confirmada:
+El dashboard no debe pedir todo el historial ni todas las rutinas completas para poder abrir.
 
-- validar email normalizado `exloz26@gmail.com`
-- validar `clerkUser.id === user_3AC1fVPB8cpo0blGds7MPQHq7Fo`
-- no depender de `externalId` para el permiso ADMIN
-- usar la misma regla en frontend y backend
+En su lugar:
 
-### 3) Nueva API administrativa
+- el dashboard pide un payload resumido y precomputado
+- la pantalla de rutinas pide rutinas completas cuando realmente se visita
+- el historial completo de sesiones se pide solo cuando hace falta
+- el detalle de ejercicios por sesion se hidrata bajo demanda o en background
 
-Agregar un endpoint nuevo, por ejemplo:
+## Propuesta de nueva API
 
-- `GET /v1/data/admin/overview`
+### Endpoint nuevo
 
-Respuesta sugerida:
+- `GET /v1/data/dashboard`
+
+### Contenido esperado
+
+Debe concentrar la informacion necesaria para el primer render del inicio.
+
+#### Respuesta sugerida
 
 ```json
 {
   "summary": {
-    "totalUsers": 0,
-    "totalRoutines": 0,
-    "totalCompletedSessions": 0,
+    "totalWorkouts": 0,
+    "thisWeekWorkouts": 0,
+    "thisMonthWorkouts": 0,
+    "currentStreak": 0,
+    "longestStreak": 0,
     "averageDurationMin": 0
   },
-  "users": [
+  "recentSessions": [
     {
-      "userId": "...",
-      "name": "...",
-      "email": "...",
-      "avatarUrl": "...",
-      "createdRoutines": 0,
-      "completedSessions": 0,
-      "lastActivityAt": 0
+      "id": "...",
+      "routineId": "...",
+      "routineName": "...",
+      "primaryMuscleGroup": "...",
+      "completedAt": 0,
+      "totalDuration": 0
     }
   ],
-  "routines": [
+  "calendar": [
     {
-      "routineId": "...",
-      "name": "...",
-      "createdBy": "...",
-      "createdByName": "...",
-      "timesUsed": 0,
-      "lastCompletedAt": 0,
-      "exercises": [
+      "date": "2026-03-07",
+      "workouts": [
         {
-          "exerciseId": "...",
-          "name": "...",
-          "sets": 0,
-          "reps": 0,
-          "restTime": 0
+          "sessionId": "...",
+          "routineName": "...",
+          "muscleGroup": "..."
         }
       ]
     }
   ],
-  "sessions": [
+  "dashboardRoutines": [
     {
-      "sessionId": "...",
-      "userId": "...",
-      "userName": "...",
-      "routineId": "...",
-      "routineName": "...",
-      "startedAt": 0,
-      "completedAt": 0,
-      "totalDuration": 0,
-      "exercises": []
+      "id": "...",
+      "name": "...",
+      "exerciseCount": 0,
+      "primaryMuscleGroup": "...",
+      "timesUsed": 0,
+      "createdBy": "...",
+      "createdByName": "...",
+      "createdByAvatarUrl": "...",
+      "isPublic": true
     }
-  ]
+  ],
+  "competition": {
+    "weekLeader": null,
+    "monthLeader": null,
+    "userWeekRank": null,
+    "userMonthRank": null
+  },
+  "lastWeightsByRoutine": {
+    "routine_id": {
+      "exercise_id": [40, 45, 45]
+    }
+  }
 }
 ```
 
+## Que debe entrar y que no debe entrar
+
+### Debe entrar
+
+- metricas agregadas del usuario
+- sesiones recientes completadas, solo con campos resumen
+- informacion minima para el calendario del dashboard
+- rutinas visibles en inicio con conteo de ejercicios, pero no con todos sus detalles pesados
+- leaderboard resumido si sigue siendo parte del inicio
+- mapa de ultimos pesos por rutina si eso evita otro fetch caro durante `ActiveWorkout`
+
+### No debe entrar
+
+- `exercises_json` completo de todas las sesiones
+- videos de ejercicios
+- detalle completo de todas las rutinas
+- payloads pensados para pantalla ADMIN
+- historial completo del usuario si solo se muestran ultimas sesiones o resumenes
+
+## Estrategia de optimizacion
+
+### 1) Especializar responsabilidades por endpoint
+
+#### `GET /v1/data/dashboard`
+
+Uso:
+
+- primer render del dashboard
+
+Debe ser:
+
+- rapido
+- pequeño
+- estable
+- predecible
+
+#### `GET /v1/data/sessions`
+
+Uso:
+
+- historial detallado
+- progreso por ejercicio
+- auditoria de sesiones
+- vistas secundarias o cargas posteriores
+
+Debe soportar modos claros:
+
+- resumen
+- detalle con ejercicios
+- completed only
+- limit configurable
+
+#### `GET /v1/data/routines`
+
+Uso:
+
+- pantalla de rutinas
+- edicion
+- entrenamiento activo
+
+Debe permitir:
+
+- incluir o no videos
+- incluir o no detalle completo de ejercicios si en algun punto se quiere resumir aun mas
+
+### 2) Mover agregaciones al backend
+
+En lugar de descargar mucha data y derivar todo en React, el backend debe devolver:
+
+- conteos ya calculados
+- listas ya acotadas
+- estructuras ya adaptadas a la UI del dashboard
+
+Esto reduce:
+
+- bytes de red
+- parseo JSON
+- trabajo de `useMemo`
+- trabajo de reconciliacion React
+
+### 3) Priorizar primer paint y luego hidratar detalle
+
+Orden ideal:
+
+1. cargar `dashboard`
+2. renderizar tarjetas, rutinas visibles, calendario y sesiones recientes
+3. si hace falta, hidratar detalles en segundo plano
+
 ## Plan de implementacion por fases
 
-### Fase 1 - Modelo y seguridad
+### Fase 1 - Definir contrato del endpoint dashboard
 
-- definir helper `isAdminUser(...)` en frontend
-- definir helper equivalente en backend usando datos del token Clerk
-- usar `clerkUser.id` + email como regla oficial de acceso
-- bloquear acceso backend con respuesta `403` para no-admin
+- definir exactamente que datos consume `DashboardPage`
+- listar que componentes dependen de esos datos:
+  - resumen estadistico
+  - recomendaciones musculares
+  - calendario
+  - rutinas visibles
+  - leaderboard
+  - pesos anteriores por rutina
+- traducir esas necesidades a una respuesta compacta de backend
+- documentar los campos obligatorios y opcionales
 
-### Fase 2 - Backend (`herculito-push-api`)
+### Fase 2 - Crear capa backend dedicada
 
-- crear modulo/ruta admin nueva
-- agregar consultas SQL agregadas sobre:
-  - `user_profiles`
-  - `routines`
-  - `routine_exercises`
-  - `workout_sessions`
-- devolver resumen global
-- devolver usuarios con metricas agregadas
-- devolver rutinas con ejercicios y metricas
-- devolver sesiones completadas con duracion y detalle
-- mantener limite razonable inicial para evitar payloads excesivos
+#### En `herculito-push-api`
 
-### Fase 3 - Frontend data layer (`herculito`)
+- crear un modulo o ruta nueva para `GET /v1/data/dashboard`
+- reutilizar consultas existentes donde convenga, pero sin arrastrar payload innecesario
+- agregar consultas SQL especializadas para:
+  - resumen global del usuario
+  - sesiones recientes completadas
+  - sesiones del rango necesario para calendario
+  - rutinas visibles para dashboard
+  - ranking resumido
+  - ultimos pesos por rutina o por ejercicio, si aplica
 
-- crear tipos TS para la respuesta admin
-- agregar función `fetchAdminOverview()` en `src/shared/api/dataApi.ts`
-- crear hook `useAdminOverview()` para carga, error y estado de refresco
+#### Reglas importantes
 
-### Fase 4 - Navegacion y pagina
+- no leer ni parsear `exercises_json` masivamente si no es necesario
+- si se necesita ultimos pesos, derivarlos con una consulta acotada solo a sesiones completadas recientes
+- usar `LIMIT` bajos y razonables por defecto
+- devolver solo columnas necesarias
 
-- extender `AppPage` para soportar `admin`
-- permitir ruta `/admin`
-- agregar item de navegacion visible solo para ADMIN
-- no renderizar ninguna opcion de menu ADMIN para usuarios no-admin
-- proteger acceso directo por URL redirigiendo a inicio si no es ADMIN
+### Fase 3 - Afinar endpoints existentes en paralelo
 
-### Fase 5 - UI de la pantalla ADMIN
+#### `/sessions`
 
-- crear pagina nueva, por ejemplo `src/features/admin/pages/AdminPage.tsx`
-- usar el estilo visual existente de la app (`app-shell`, `app-card`, `app-surface`)
-- incluir bloques:
-  - tarjetas de resumen
-  - tabla/lista de usuarios
-  - tabla/lista de rutinas
-  - tabla/lista de sesiones
-- usar acordeones o paneles expandibles para mostrar ejercicios por rutina/sesion sin saturar la vista en mobile
+- mantenerlo como endpoint detallado
+- asegurar que soporte parametros como:
+  - `limit`
+  - `includeExercises`
+  - `completedOnly`
+- revisar si el default de `500` sigue siendo adecuado o si debe bajar para casos generales
 
-### Fase 6 - Validacion
+#### `/routines`
 
-- verificar que un usuario normal no vea el tab ni pueda abrir `/admin`
-- verificar que un usuario normal reciba `403` en el endpoint admin
-- verificar que el ADMIN vea datos reales consistentes
-- correr `pnpm lint` y `pnpm build` en frontend
-- correr `bun check` en backend
+- mantener soporte para:
+  - `includeVideos`
+- considerar agregar, si hace falta despues:
+  - `summaryOnly`
+  - `includeExercises`
 
-## Archivos que probablemente se tocaran despues
+### Fase 4 - Crear nueva capa de datos frontend para dashboard
+
+#### En `herculito`
+
+- crear tipos TS para la respuesta de `/v1/data/dashboard`
+- agregar `fetchDashboardData()` en `src/shared/api/dataApi.ts`
+- crear hook dedicado, por ejemplo:
+  - `src/features/dashboard/hooks/useDashboardData.ts`
+
+Ese hook debe exponer:
+
+- `data`
+- `loading`
+- `error`
+- `refresh`
+
+Y debe ser la fuente principal del dashboard.
+
+### Fase 5 - Migrar `DashboardPage` al endpoint nuevo
+
+- reemplazar dependencias iniciales pesadas del dashboard por `useDashboardData()`
+- reducir o eliminar fetches paralelos que hoy existen solo para el inicio
+- dejar los datos detallados fuera del primer render
+- conservar comportamiento actual de UI y negocio
+
+### Fase 6 - Revisar entrenamiento activo
+
+Uno de los puntos sensibles es `ActiveWorkout`, porque usa historico para sugerir pesos previos.
+
+Hay dos caminos posibles:
+
+#### Opcion recomendada
+
+- incluir en `/v1/data/dashboard` un mapa pequeño de ultimos pesos por rutina/ejercicio para las rutinas visibles o recientes
+
+Ventajas:
+
+- evita pedir sesiones completas solo para precargar pesos
+- hace que abrir entrenamiento tambien se sienta rapido
+
+#### Opcion alternativa
+
+- mantener el calculo desde `/sessions`, pero cargarlo luego del primer render
+
+Desventaja:
+
+- el dashboard puede abrir rapido, pero el entrenamiento activo seguiria dependiendo de una hidratacion posterior
+
+### Fase 7 - Ajustar experiencia de usuario
+
+- mantener skeletons livianos y coherentes con el nuevo flujo
+- priorizar mostrar contenido util antes que esperar datos secundarios
+- evitar flickers por rehidratar demasiadas partes al mismo tiempo
+- si el dashboard ya tiene su payload principal, no bloquearlo por leaderboard o detalles secundarios si pueden llegar despues
+
+### Fase 8 - Validacion tecnica y de performance
+
+#### Medir antes y despues
+
+- tamaño del payload de `/sessions`
+- tamaño del payload de `/routines`
+- tamaño del nuevo payload `/dashboard`
+- tiempo de respuesta del backend
+- tiempo hasta primer contenido visible en el dashboard
+
+#### Validar funcionalmente
+
+- el dashboard sigue mostrando la misma informacion esperada
+- el calendario sigue correcto
+- las rutinas visibles en inicio siguen correctas
+- el leaderboard sigue correcto
+- `ActiveWorkout` sigue mostrando pesos previos si asi se decide
+
+#### Validar proyecto
+
+- `pnpm lint`
+- `pnpm build`
+- `bun check`
+
+## Archivos que probablemente se tocaran
 
 ### Frontend
 
-- `src/features/auth/hooks/useAuth.ts`
-- `src/app/hooks/usePageNavigation.ts`
-- `src/app/App.tsx`
-- `src/app/navigation/Navigation.tsx`
+- `src/features/dashboard/pages/DashboardPage.tsx`
+- `src/features/dashboard/hooks/useDashboardData.ts`
+- `src/features/workouts/hooks/useWorkoutSessions.ts`
+- `src/features/routines/hooks/useRoutines.ts`
 - `src/shared/api/dataApi.ts`
 - `src/shared/types/index.ts`
-- `src/features/admin/pages/AdminPage.tsx`
-- `src/features/admin/hooks/useAdminOverview.ts`
 
 ### Backend
 
-- `../herculito-push-api/src/shared/auth/clerk-auth.ts` o helper nuevo relacionado
+- `../herculito-push-api/src/modules/dashboard/routes.ts` o equivalente
 - `../herculito-push-api/src/shared/persistence/data-store.ts`
-- `../herculito-push-api/src/modules/*/routes.ts` o un nuevo `src/modules/admin/routes.ts`
-- `../herculito-push-api/src/index.ts` o el punto donde se registren rutas
+- `../herculito-push-api/src/index.ts` o registro de rutas
+- `../herculito-push-api/src/modules/sessions/routes.ts`
+- `../herculito-push-api/src/modules/routines/routes.ts`
 
-## Riesgos y puntos a cuidar
+## Riesgos y consideraciones
 
-1. El `userId` visible en frontend hoy puede no coincidir con el `clerkUser.id` porque se prioriza `externalId`; para ADMIN hay que usar el id real de Clerk.
-2. Si el endpoint devuelve todas las sesiones sin limite, la carga puede crecer rapido.
-3. La UI debe seguir siendo usable en mobile, porque las tablas largas pueden romper el layout.
-4. La seguridad real debe resolverse en backend, no solo en frontend.
+1. No duplicar demasiada logica entre `/dashboard`, `/sessions` y `/routines`.
+2. No romper `ActiveWorkout` al cambiar la fuente de ultimos pesos.
+3. Mantener consistencia entre resumenes del dashboard y datos detallados de sesiones/rutinas.
+4. Evitar que el nuevo endpoint termine creciendo hasta convertirse otra vez en un endpoint demasiado pesado.
+5. Definir limites claros desde el inicio para que el payload del dashboard siga siendo pequeno.
 
-## Criterio de terminado para la futura implementacion
+## Criterio de terminado
 
-- solo el ADMIN definido puede acceder a la pantalla
-- el backend rechaza cualquier acceso no autorizado
-- la pantalla muestra usuarios, rutinas, sesiones realizadas, duracion y ejercicios
-- la pagina funciona bien en desktop y mobile
+- el dashboard renderiza con un endpoint dedicado y liviano
+- la carga inicial ya no depende de descargar sesiones completas ni rutinas con videos
+- `/sessions` queda reservado para detalle e historial
+- `/routines` entrega payload adaptado segun el contexto
+- la experiencia percibida mejora de forma clara en apertura inicial
 - frontend y backend pasan sus chequeos principales
+
+## Orden recomendado de ejecucion
+
+1. definir contrato exacto de `/v1/data/dashboard`
+2. implementar backend del endpoint
+3. crear tipos y hook frontend
+4. migrar `DashboardPage`
+5. conectar pesos previos para `ActiveWorkout`
+6. medir antes/despues y ajustar
+
+## Nota importante
+
+Este plan reemplaza el plan anterior del archivo y ahora se enfoca exclusivamente en optimizacion de carga inicial y arquitectura de datos para dashboard.

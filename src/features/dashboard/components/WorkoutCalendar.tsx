@@ -5,14 +5,16 @@ import { MUSCLE_GROUPS } from '../lib/muscleGroups';
 import { getCurrentDateString, getDateStringInAppTimeZone } from '../../../shared/lib/dateUtils';
 
 interface WorkoutCalendarProps {
-  sessions: WorkoutSession[];
+  sessions?: WorkoutSession[];
+  calendar?: WorkoutCalendarDay[];
   currentMonth: Date;
   onMonthChange: (month: Date) => void;
   onDayClick?: (date: string) => void;
 }
 
 export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
-  sessions,
+  sessions = [],
+  calendar,
   currentMonth,
   onMonthChange,
   onDayClick
@@ -27,6 +29,14 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   const daysInMonth = lastDayOfMonth.getDate();
 
   const workoutsByDate = useMemo(() => {
+    if (calendar) {
+      const map = new Map<string, WorkoutCalendarDay['workouts']>();
+      calendar.forEach((day) => {
+        map.set(day.date, day.workouts);
+      });
+      return map;
+    }
+
     const map = new Map<string, WorkoutCalendarDay['workouts']>();
     sessions.forEach((session) => {
       // Only show completed sessions (where user clicked "Finalizar Entrenamiento")
@@ -42,7 +52,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
       map.set(dateStr, workouts);
     });
     return map;
-  }, [sessions]);
+  }, [calendar, sessions]);
 
   const days: WorkoutCalendarDay[] = [];
 

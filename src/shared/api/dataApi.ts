@@ -1,4 +1,4 @@
-import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup, AdminOverview } from '../types';
+import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup, AdminOverview, WorkoutCalendarDay } from '../types';
 import { fetchJson, getIdToken } from './apiClient';
 import { getPushApiOrigin } from '../../features/workouts/api/pushApi';
 
@@ -19,6 +19,54 @@ export type LeaderboardPeriodResponse = {
 export type CompetitiveLeaderboardResponse = {
   week: LeaderboardPeriodResponse;
   month: LeaderboardPeriodResponse;
+};
+export type DashboardRecentSessionResponse = {
+  id: string;
+  routineId?: string;
+  routineName: string;
+  primaryMuscleGroup?: MuscleGroup;
+  completedAt: number;
+  totalDuration?: number;
+};
+export type DashboardCompetitionResponse = {
+  weekLeader: LeaderboardEntryResponse | null;
+  monthLeader: LeaderboardEntryResponse | null;
+  userWeekRank: LeaderboardEntryResponse | null;
+  userMonthRank: LeaderboardEntryResponse | null;
+};
+export type DashboardExerciseProgressPointResponse = {
+  timestamp: number;
+  bestWeight: number;
+  completedSets: number;
+  totalWeight: number;
+};
+export type DashboardExerciseProgressSummaryResponse = {
+  exerciseId: string;
+  exerciseName: string;
+  points: DashboardExerciseProgressPointResponse[];
+  totalSessions: number;
+  personalRecord: number;
+  lastWeight: number;
+  previousWeight: number | null;
+  trend: 'up' | 'down' | 'flat' | 'neutral';
+  lastCompletedAt: number;
+  weeklyVolumeKg: number;
+};
+export type DashboardDataResponse = {
+  summary: {
+    totalWorkouts: number;
+    thisWeekWorkouts: number;
+    thisMonthWorkouts: number;
+    currentStreak: number;
+    longestStreak: number;
+    averageDurationMin: number;
+  };
+  recentSessions: DashboardRecentSessionResponse[];
+  calendar: WorkoutCalendarDay[];
+  dashboardRoutines: Array<RoutineResponse & { exerciseCount: number }>;
+  competition: DashboardCompetitionResponse;
+  lastWeightsByRoutine: Record<string, Record<string, number[]>>;
+  exerciseProgress: DashboardExerciseProgressSummaryResponse[];
 };
 
 export const syncUserProfile = async (payload: {
@@ -234,6 +282,14 @@ export const fetchAdminOverview = async (): Promise<AdminOverview> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();
   return fetchJson<AdminOverview>(`${origin}/v1/data/admin/overview`, {
+    headers: { authorization: `Bearer ${token}` }
+  });
+};
+
+export const fetchDashboardData = async (): Promise<DashboardDataResponse> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  return fetchJson<DashboardDataResponse>(`${origin}/v1/data/dashboard`, {
     headers: { authorization: `Bearer ${token}` }
   });
 };

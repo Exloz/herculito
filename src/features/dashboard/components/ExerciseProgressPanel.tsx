@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Activity, TrendingDown, TrendingUp } from 'lucide-react';
-import { Routine, WorkoutSession } from '../../../shared/types';
+import { DashboardExerciseProgressSummary, Routine, WorkoutSession } from '../../../shared/types';
 import { formatDateForDisplay, getDateStringInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { buildExerciseProgress } from '../lib/workoutProgress';
 import { useExerciseNameMap } from '../hooks/useExerciseNameMap';
 
 interface ExerciseProgressPanelProps {
-  sessions: WorkoutSession[];
-  routines: Routine[];
+  sessions?: WorkoutSession[];
+  routines?: Routine[];
+  summaries?: DashboardExerciseProgressSummary[];
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -21,11 +22,19 @@ const formatKg = (value: number): string => {
   return `${value.toLocaleString('es-CO', { maximumFractionDigits: 1 })} kg`;
 };
 
-export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({ sessions, routines }) => {
-  const exerciseNameMap = useExerciseNameMap();
+export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
+  sessions = [],
+  routines = [],
+  summaries: precomputedSummaries
+}) => {
+  const exerciseNameMap = useExerciseNameMap(!precomputedSummaries);
   const summaries = useMemo(() => {
+    if (precomputedSummaries) {
+      return precomputedSummaries;
+    }
+
     return buildExerciseProgress(sessions, routines, exerciseNameMap);
-  }, [sessions, routines, exerciseNameMap]);
+  }, [exerciseNameMap, precomputedSummaries, routines, sessions]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
   const [selectedRangeDays, setSelectedRangeDays] = useState<number>(30);
 

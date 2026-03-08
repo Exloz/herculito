@@ -60,6 +60,32 @@ export interface AdminOverview {
   sessions: AdminSessionOverview[];
 }
 
+export interface LeaderboardEntry {
+  userId: string;
+  name: string;
+  avatarUrl?: string;
+  totalWorkouts: number;
+  position: number;
+}
+
+export interface DashboardSummary {
+  totalWorkouts: number;
+  thisWeekWorkouts: number;
+  thisMonthWorkouts: number;
+  currentStreak: number;
+  longestStreak: number;
+  averageDurationMin: number;
+}
+
+export interface DashboardRecentSession {
+  id: string;
+  routineId?: string;
+  routineName: string;
+  primaryMuscleGroup?: MuscleGroup;
+  completedAt: Date;
+  totalDuration?: number;
+}
+
 // Nuevos tipos para categorización muscular
 export type MuscleGroup = 'pecho' | 'espalda' | 'piernas' | 'hombros' | 'brazos' | 'core' | 'fullbody';
 
@@ -170,6 +196,47 @@ export interface WorkoutCalendarDay {
     routineName: string;
     sessionId: string;
   }[];
+}
+
+export interface DashboardExerciseProgressPoint {
+  timestamp: number;
+  bestWeight: number;
+  completedSets: number;
+  totalWeight: number;
+}
+
+export interface DashboardExerciseProgressSummary {
+  exerciseId: string;
+  exerciseName: string;
+  points: DashboardExerciseProgressPoint[];
+  totalSessions: number;
+  personalRecord: number;
+  lastWeight: number;
+  previousWeight: number | null;
+  trend: 'up' | 'down' | 'flat' | 'neutral';
+  lastCompletedAt: Date;
+  weeklyVolumeKg: number;
+}
+
+export interface DashboardCompetition {
+  weekLeader: LeaderboardEntry | null;
+  monthLeader: LeaderboardEntry | null;
+  userWeekRank: LeaderboardEntry | null;
+  userMonthRank: LeaderboardEntry | null;
+}
+
+export interface DashboardRoutine extends Routine {
+  exerciseCount: number;
+}
+
+export interface DashboardData {
+  summary: DashboardSummary;
+  recentSessions: DashboardRecentSession[];
+  calendar: WorkoutCalendarDay[];
+  dashboardRoutines: DashboardRoutine[];
+  competition: DashboardCompetition;
+  lastWeightsByRoutine: Record<string, Record<string, number[]>>;
+  exerciseProgress: DashboardExerciseProgressSummary[];
 }
 
 export interface ExerciseHistory {

@@ -35,10 +35,14 @@ const loadExerciseNameMap = async (): Promise<Map<string, string>> => {
   }
 };
 
-export const useExerciseNameMap = (): Map<string, string> => {
+export const useExerciseNameMap = (enabled: boolean = true): Map<string, string> => {
   const [nameMap, setNameMap] = useState<Map<string, string>>(() => cachedExerciseNameMap ?? new Map());
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     if (cachedExerciseNameMap) {
       setNameMap(cachedExerciseNameMap);
       return;
@@ -74,7 +78,7 @@ export const useExerciseNameMap = (): Map<string, string> => {
         clearTimeout(timeoutId);
       }
     };
-  }, []);
+  }, [enabled]);
 
   return nameMap;
 };

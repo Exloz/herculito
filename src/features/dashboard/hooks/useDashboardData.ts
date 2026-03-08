@@ -9,6 +9,61 @@ import {
 import type { DashboardData, DashboardExerciseProgressSummary, DashboardRoutine, LeaderboardEntry } from '../../../shared/types';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
+const DASHBOARD_CACHE_KEY = 'dashboard-data-cache';
+const DASHBOARD_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+type CachedDashboardEntry = {
+  savedAt: number;
+  response: DashboardDataResponse;
+};
+
+const readDashboardCache = (userId: string): DashboardDataResponse | null => {
+  if (!userId || typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const rawCache = window.localStorage.getItem(DASHBOARD_CACHE_KEY);
+    if (!rawCache) {
+      return null;
+    }
+
+    const parsedCache = JSON.parse(rawCache) as Record<string, CachedDashboardEntry>;
+    const cacheEntry = parsedCache[userId];
+    if (!cacheEntry) {
+      return null;
+    }
+
+    if (Date.now() - cacheEntry.savedAt > DASHBOARD_CACHE_MAX_AGE_MS) {
+      delete parsedCache[userId];
+      window.localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(parsedCache));
+      return null;
+    }
+
+    return cacheEntry.response;
+  } catch {
+    return null;
+  }
+};
+
+const writeDashboardCache = (userId: string, response: DashboardDataResponse): void => {
+  if (!userId || typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    const rawCache = window.localStorage.getItem(DASHBOARD_CACHE_KEY);
+    const parsedCache = rawCache ? JSON.parse(rawCache) as Record<string, CachedDashboardEntry> : {};
+    parsedCache[userId] = {
+      savedAt: Date.now(),
+      response
+    };
+    window.localStorage.setItem(DASHBOARD_CACHE_KEY, JSON.stringify(parsedCache));
+  } catch {
+    // ignore cache write failures
+  }
+};
+
 const toDate = (value: unknown): Date => {
   if (value instanceof Date) return value;
   if (typeof value === 'number') {
@@ -86,8 +141,11 @@ const mapDashboardData = (
 };
 
 export const useDashboardData = (userId: string, userName: string) => {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<DashboardData | null>(() => {
+    const cachedResponse = readDashboardCache(userId);
+    return cachedResponse ? mapDashboardData(cachedResponse, userId, userName) : null;
+  });
+  const [loading, setLoading] = useState(() => !readDashboardCache(userId));
   const [error, setError] = useState<string | null>(null);
 
   const loadDashboard = useCallback(async (preserveData: boolean) => {
@@ -98,16 +156,24 @@ export const useDashboardData = (userId: string, userName: string) => {
       return;
     }
 
+    const cachedResponse = readDashboardCache(userId);
+
     if (!preserveData) {
+      if (cachedResponse) {
+        setData(mapDashboardData(cachedResponse, userId, userName));
+        setLoading(false);
+      } else {
       setLoading(true);
+      }
     }
     setError(null);
 
     try {
       const response = await fetchDashboardData();
+      writeDashboardCache(userId, response);
       setData(mapDashboardData(response, userId, userName));
     } catch (loadError) {
-      if (!preserveData) {
+      if (!preserveData && !cachedResponse) {
         setData(null);
       }
       setError(toUserMessage(loadError, 'No se pudo cargar el dashboard'));

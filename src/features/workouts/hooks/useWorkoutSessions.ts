@@ -9,6 +9,7 @@ import {
   type WorkoutSessionResponse
 } from '../../../shared/api/dataApi';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
+import { getLastWeightsForRoutineFromSessions } from '../lib/workoutSessions';
 
 const SESSION_SUMMARY_LIMIT = 500;
 const SESSION_DETAILS_LIMIT = 200;
@@ -272,29 +273,7 @@ export const useWorkoutSessions = (user: User) => {
   }, [sessions, getThisWeekSessions, getThisMonthSessions, calculateWorkoutStreak, calculateLongestWorkoutStreak]);
 
   const getLastWeightsForRoutine = useCallback((routineId: string): Record<string, number[]> => {
-    const lastCompletedSession = sessions
-      .filter((s) => s.routineId === routineId && s.completedAt && s.exercises && s.exercises.length > 0)
-      .sort((a, b) => b.completedAt!.getTime() - a.completedAt!.getTime())[0];
-
-    if (!lastCompletedSession || !lastCompletedSession.exercises) {
-      return {};
-    }
-
-    const lastWeights: Record<string, number[]> = {};
-
-    (lastCompletedSession.exercises as ExerciseLog[]).forEach((exerciseLog) => {
-      if (exerciseLog.sets && exerciseLog.sets.length > 0) {
-        const weights = exerciseLog.sets
-          .filter((set) => set.completed && set.weight > 0)
-          .map((set) => set.weight);
-
-        if (weights.length > 0) {
-          lastWeights[exerciseLog.exerciseId] = weights;
-        }
-      }
-    });
-
-    return lastWeights;
+    return getLastWeightsForRoutineFromSessions(sessions, routineId);
   }, [sessions]);
 
   return {

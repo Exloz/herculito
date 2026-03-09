@@ -10,7 +10,7 @@ import type { DashboardData, DashboardExerciseProgressSummary, DashboardRoutine,
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
 const DASHBOARD_CACHE_KEY = 'dashboard-data-cache';
-const DASHBOARD_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const DASHBOARD_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 type CachedDashboardEntry = {
   savedAt: number;

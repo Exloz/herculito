@@ -191,7 +191,7 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
             {hasLastWeights && (
               <div className="mt-2 text-xs text-mint flex items-center gap-2">
                 <div className="w-2 h-2 bg-mint rounded-full"></div>
-                <span>Se han cargado los pesos de tu última sesión</span>
+                <span>Se han cargado tus ultimos pesos con carga</span>
               </div>
             )}
           </div>

@@ -283,7 +283,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           {/* Información sobre pesos anteriores */}
           {previousWeights && previousWeights.length > 0 && (
             <span className="ml-2 text-mint">
-              • Pesos precargados de la sesión anterior
+              • Pesos precargados de tu ultimo registro con peso
             </span>
           )}
         </div>

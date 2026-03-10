@@ -1,5 +1,20 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, TrendingUp, Award, Clock, LogOut, Bell, Trophy, Crown } from 'lucide-react';
+import {
+  Activity,
+  Award,
+  Bell,
+  Calendar,
+  Clock,
+  Crown,
+  Dumbbell,
+  Flame,
+  LogOut,
+  Sparkles,
+  Target,
+  Trophy,
+  TrendingUp,
+  X
+} from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog, LeaderboardEntry } from '../../../shared/types';
 import {
   completeSession as apiCompleteSession,
@@ -12,11 +27,16 @@ import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
 import { useDashboardData } from '../hooks/useDashboardData';
-import { getRecommendedMuscleGroup } from '../lib/muscleGroups';
+import { getRecommendedMuscleGroup, MUSCLE_GROUPS } from '../lib/muscleGroups';
 import { useUI } from '../../../app/providers/ui-context';
-import { formatDateInAppTimeZone } from '../../../shared/lib/dateUtils';
+import {
+  formatDateForDisplay,
+  formatDateInAppTimeZone,
+  getDateStringInAppTimeZone
+} from '../../../shared/lib/dateUtils';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
+import { useDialogA11y } from '../../../shared/hooks/useDialogA11y';
 import { version as appVersion } from '../../../../package.json';
 
 interface DashboardProps {
@@ -84,6 +104,62 @@ const getUserInitials = (name: string): string => {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return 'H';
   return words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? '').join('') || 'H';
+};
+
+const capitalize = (value: string): string => {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const formatDurationValue = (minutes: number | undefined): string => {
+  if (!minutes || !Number.isFinite(minutes) || minutes <= 0) return '--';
+
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const remainder = minutes % 60;
+    return remainder > 0 ? `${hours}h ${remainder}m` : `${hours}h`;
+  }
+
+  return `${minutes} min`;
+};
+
+const getRelativeSessionDateLabel = (date: Date): string => {
+  return capitalize(formatDateForDisplay(getDateStringInAppTimeZone(date)));
+};
+
+const getCompetitionInsight = (
+  leader: LeaderboardEntry | null,
+  rank: LeaderboardEntry | null,
+  periodLabel: string
+): string => {
+  if (!leader) {
+    return `Aun no hay un lider claro en ${periodLabel}.`;
+  }
+
+  if (!rank) {
+    return `Registra una sesion para entrar al ranking de ${periodLabel}.`;
+  }
+
+  if (rank.position === 1) {
+    return `Vas liderando ${periodLabel}. Manten el ritmo.`;
+  }
+
+  const gap = Math.max(leader.totalWorkouts - rank.totalWorkouts, 0);
+  if (gap === 0) {
+    return `Estas empatado con el lider de ${periodLabel}.`;
+  }
+
+  return `Te faltan ${gap} entrenamiento${gap === 1 ? '' : 's'} para alcanzar al lider de ${periodLabel}.`;
+};
+
+const formatCalendarPanelDate = (dateString: string): string => {
+  const date = new Date(`${dateString}T12:00:00`);
+
+  return capitalize(date.toLocaleDateString('es-CO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  }));
 };
 
 const PanelSkeleton = ({ heightClass, title }: { heightClass: string; title: string }) => {
@@ -161,7 +237,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const [showClerkUserButton, setShowClerkUserButton] = useState(false);
   const [showDeferredCalendar, setShowDeferredCalendar] = useState(false);
   const [showDeferredProgressPanel, setShowDeferredProgressPanel] = useState(false);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
   const hasTriggeredBackgroundPreload = useRef(false);
+  const calendarDrawerRef = useRef<HTMLDivElement | null>(null);
   const { showToast, confirm } = useUI();
 
 
@@ -234,6 +312,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     userWeekRank: null,
     userMonthRank: null
   };
+  const weeklyGoal = 4;
+  const weeklyProgress = Math.min(stats.thisWeekWorkouts / weeklyGoal, 1);
 
   const recommendedGroup = useMemo(() => {
     return getRecommendedMuscleGroup(
@@ -250,6 +330,145 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       }))
     );
   }, [recentSessions, user.id]);
+  const recommendedGroupInfo = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup] : null;
+
+  const heroInsight = useMemo(() => {
+    if (recentSessions.length === 0) {
+      return 'Tu dashboard esta listo para arrancar. Activa una rutina y empieza a construir tu historial con mas contexto visual.';
+    }
+
+    if (stats.thisWeekWorkouts >= weeklyGoal) {
+      return 'Ya cumpliste tu meta semanal. Aprovecha el impulso para consolidar tecnica, volumen y recuperacion.';
+    }
+
+    if (stats.currentStreak >= 5) {
+      return `Vienes con ${stats.currentStreak} dias seguidos. Este es un gran momento para sostener consistencia sin perder calidad.`;
+    }
+
+    if (recommendedGroupInfo) {
+      return `Tu historial reciente sugiere enfocarte en ${recommendedGroupInfo.name.toLowerCase()}. El tablero ahora te ayuda a verlo mas rapido.`;
+    }
+
+    return 'Aqui tienes una lectura mas clara de tu actividad, tu frecuencia y el impulso de las ultimas sesiones.';
+  }, [recommendedGroupInfo, recentSessions.length, stats.currentStreak, stats.thisWeekWorkouts, weeklyGoal]);
+
+  const weeklyGoalCopy = useMemo(() => {
+    const remaining = Math.max(weeklyGoal - stats.thisWeekWorkouts, 0);
+
+    if (remaining === 0) {
+      return 'Meta semanal cumplida';
+    }
+
+    return `Te faltan ${remaining} entrenamiento${remaining === 1 ? '' : 's'} para completar ${weeklyGoal}`;
+  }, [stats.thisWeekWorkouts, weeklyGoal]);
+
+  const overviewCards = useMemo(() => {
+    return [
+      {
+        title: 'Total acumulado',
+        value: String(stats.totalWorkouts),
+        subtitle: 'Historial completo',
+        Icon: Award,
+        iconTone: 'bg-amberGlow/15 text-amberGlow'
+      },
+      {
+        title: 'Esta semana',
+        value: String(stats.thisWeekWorkouts),
+        subtitle: `${Math.round(weeklyProgress * 100)}% de la meta`,
+        Icon: Target,
+        iconTone: 'bg-mint/15 text-mint'
+      },
+      {
+        title: 'Racha actual',
+        value: String(stats.currentStreak),
+        subtitle: `Mejor marca: ${stats.longestStreak} dias`,
+        Icon: Flame,
+        iconTone: 'bg-amberGlow/15 text-amberGlow'
+      },
+      {
+        title: 'Este mes',
+        value: String(stats.thisMonthWorkouts),
+        subtitle: 'Volumen del mes',
+        Icon: Dumbbell,
+        iconTone: 'bg-sky-400/15 text-sky-300'
+      },
+      {
+        title: 'Duracion media',
+        value: formatDurationValue(stats.averageDurationMin),
+        subtitle: 'Promedio por sesion',
+        Icon: Activity,
+        iconTone: 'bg-white/10 text-slate-100'
+      }
+    ];
+  }, [stats.averageDurationMin, stats.currentStreak, stats.longestStreak, stats.thisMonthWorkouts, stats.thisWeekWorkouts, stats.totalWorkouts, weeklyProgress]);
+
+  const competitionPanels = useMemo(() => {
+    return [
+      {
+        title: 'Top semanal',
+        leader: competitionStats.weekLeader,
+        rank: competitionStats.userWeekRank,
+        emptyLabel: 'Sin datos suficientes esta semana',
+        insight: getCompetitionInsight(competitionStats.weekLeader, competitionStats.userWeekRank, 'esta semana'),
+        accentTone: 'from-mint/20 to-transparent'
+      },
+      {
+        title: 'Top mensual',
+        leader: competitionStats.monthLeader,
+        rank: competitionStats.userMonthRank,
+        emptyLabel: 'Sin datos suficientes este mes',
+        insight: getCompetitionInsight(competitionStats.monthLeader, competitionStats.userMonthRank, 'este mes'),
+        accentTone: 'from-amberGlow/20 to-transparent'
+      }
+    ];
+  }, [competitionStats.monthLeader, competitionStats.userMonthRank, competitionStats.userWeekRank, competitionStats.weekLeader]);
+
+  const recentSessionsMeta = useMemo(() => {
+    const visibleSessions = recentSessions.slice(0, 5);
+    const durations = visibleSessions
+      .map((session) => session.totalDuration)
+      .filter((duration): duration is number => typeof duration === 'number' && Number.isFinite(duration) && duration > 0);
+    const averageRecentDuration = durations.length > 0
+      ? Math.round(durations.reduce((sum, duration) => sum + duration, 0) / durations.length)
+      : null;
+    const groupCounts = new Map<MuscleGroup, number>();
+
+    visibleSessions.forEach((session) => {
+      const group = session.primaryMuscleGroup ?? 'fullbody';
+      groupCounts.set(group, (groupCounts.get(group) ?? 0) + 1);
+    });
+
+    const topGroup = [...groupCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    return {
+      visibleSessions,
+      averageRecentDuration,
+      topGroupInfo: topGroup ? MUSCLE_GROUPS[topGroup] : null,
+      latestSessionLabel: visibleSessions[0] ? getRelativeSessionDateLabel(visibleSessions[0].completedAt) : null
+    };
+  }, [recentSessions]);
+
+  const selectedCalendarDay = useMemo(() => {
+    if (!selectedCalendarDate) return null;
+
+    return dashboardData?.calendar.find((day) => day.date === selectedCalendarDate) ?? {
+      date: selectedCalendarDate,
+      workouts: []
+    };
+  }, [dashboardData, selectedCalendarDate]);
+
+  const selectedCalendarDayLabel = selectedCalendarDay
+    ? formatCalendarPanelDate(selectedCalendarDay.date)
+    : '';
+
+  const handleCloseCalendarDrawer = useCallback(() => {
+    setSelectedCalendarDate(null);
+  }, []);
+
+  useDialogA11y(calendarDrawerRef, {
+    enabled: selectedCalendarDate !== null,
+    onClose: handleCloseCalendarDrawer
+  });
 
   useEffect(() => {
     if (showClerkUserButton) {
@@ -373,9 +592,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     }
   }, [refresh, showToast]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDayClick = useCallback((_date: string) => {
-    // Aquí podrías mostrar detalles del entrenamiento de ese día
+  const handleDayClick = useCallback((date: string) => {
+    setSelectedCalendarDate(date);
   }, []);
 
   const handleBackToDashboard = useCallback(() => {
@@ -565,123 +783,124 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         </div>
       </header>
 
-      {/* Stats Bar */}
       <div className="px-4 py-3 sm:py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="app-surface p-3 sm:p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Award className="text-amberGlow" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Total</span>
+        <div className="mx-auto max-w-7xl">
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(72,229,163,0.18),_transparent_36%),radial-gradient(circle_at_90%_0%,_rgba(245,158,11,0.16),_transparent_30%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(2,6,23,0.92))] p-4 shadow-[0_24px_90px_rgba(2,6,23,0.32)] sm:p-6">
+            <div className="absolute -right-16 top-0 h-40 w-40 rounded-full bg-amberGlow/10 blur-3xl" />
+            <div className="absolute -left-10 bottom-0 h-32 w-32 rounded-full bg-mint/10 blur-3xl" />
+
+            <div className="relative grid gap-4 xl:grid-cols-[1.2fr_1fr]">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200">
+                  <Sparkles size={14} className="text-mint" />
+                  <span>Pulso del entrenamiento</span>
                 </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.totalWorkouts}</div>
-                <div className="text-[11px] text-slate-400">entrenamientos</div>
+
+                <div>
+                  <h2 className="font-display text-2xl text-white sm:text-3xl">Tu centro de control</h2>
+                  <p className="mt-2 max-w-2xl text-sm text-slate-300 sm:text-base">{heroInsight}</p>
+                </div>
+
+                <div className="rounded-[1.6rem] border border-white/10 bg-black/15 p-4 backdrop-blur-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <div className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Meta semanal</div>
+                      <div className="mt-1 font-display text-3xl text-white">{stats.thisWeekWorkouts}/{weeklyGoal}</div>
+                    </div>
+
+                    <div className="text-sm text-slate-200 sm:max-w-xs sm:text-right">{weeklyGoalCopy}</div>
+                  </div>
+
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amberGlow via-amberGlow to-mint transition-[width] duration-500"
+                      style={{ width: `${Math.max(weeklyProgress * 100, stats.thisWeekWorkouts > 0 ? 12 : 0)}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-200">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                      <TrendingUp size={13} className="text-mint" />
+                      {stats.currentStreak > 0 ? `${stats.currentStreak} dias seguidos` : 'Activa una nueva racha'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                      <Clock size={13} className="text-amberGlow" />
+                      Duracion media: {formatDurationValue(stats.averageDurationMin)}
+                    </span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                      <Trophy size={13} className="text-mint" />
+                      {competitionPanels[1].insight}
+                    </span>
+                    {recommendedGroupInfo ? (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: recommendedGroupInfo.color }} />
+                        Foco sugerido: {recommendedGroupInfo.name}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
               </div>
 
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Calendar className="text-mint" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Esta semana</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.thisWeekWorkouts}</div>
-                <div className="text-[11px] text-slate-400">entrenamientos</div>
-              </div>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
+                {overviewCards.map((card) => {
+                  const Icon = card.Icon;
 
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <TrendingUp className="text-mint" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Racha</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.currentStreak}</div>
-                <div className="text-[11px] text-slate-400">dias consecutivos</div>
-              </div>
+                  return (
+                    <div key={card.title} className="group rounded-[1.4rem] border border-white/8 bg-white/[0.04] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:bg-white/[0.06]">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">{card.title}</div>
+                          <div className="mt-2 font-display text-2xl text-white">{card.value}</div>
+                          <div className="mt-1 text-xs text-slate-400">{card.subtitle}</div>
+                        </div>
 
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <TrendingUp className="text-amberGlow" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Racha larga</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.longestStreak}</div>
-                <div className="text-[11px] text-slate-400">dias record</div>
-              </div>
-
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Clock className="text-amberGlow" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Este mes</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.thisMonthWorkouts}</div>
-                <div className="text-[11px] text-slate-400">entrenamientos</div>
-              </div>
-
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Trophy className="text-mint" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Top mensual</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">
-                  {formatPosition(competitionStats.userMonthRank)}
-                </div>
-                <div className="text-[11px] text-slate-400">tu posicion</div>
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${card.iconTone}`}>
+                          <Icon size={18} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-mist/40">
-              <div className="flex items-center gap-2 mb-2">
-                <Trophy className="text-amberGlow" size={18} />
-                <h2 className="text-xs sm:text-sm font-display text-white">Clasificacion global</h2>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <div className="app-surface-muted px-3 py-2.5 content-fade-in h-full flex flex-col">
-                  <div className="mb-1.5">
-                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top semanal</span>
-                  </div>
-
-                  {competitionStats.weekLeader ? (
-                    <>
-                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
-                        <Crown size={14} />
-                        <span className="font-semibold">Lider: {competitionStats.weekLeader.name}</span>
+            <div className="relative mt-4 grid gap-3 lg:grid-cols-2">
+              {competitionPanels.map((panel) => (
+                <div key={panel.title} className="relative overflow-hidden rounded-[1.5rem] border border-white/10 bg-black/15 p-4 backdrop-blur-sm">
+                  <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${panel.accentTone}`} />
+                  <div className="relative flex h-full flex-col gap-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Clasificacion</div>
+                        <div className="mt-1 font-display text-xl text-white">{panel.title}</div>
                       </div>
-                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.weekLeader.totalWorkouts} entrenamientos liderando</div>
-                    </>
-                  ) : (
-                    <div className="text-[11px] text-slate-400 mb-1.5">Sin datos suficientes esta semana</div>
-                  )}
 
-                  {competitionStats.userWeekRank ? (
-                    <div className="mt-auto text-xs text-slate-300">Tu llevas {competitionStats.userWeekRank.totalWorkouts} entrenamientos</div>
-                  ) : (
-                    <div className="mt-auto text-xs text-slate-400">Aun no registras entrenamientos esta semana</div>
-                  )}
-                </div>
-
-                <div className="app-surface-muted px-3 py-2.5 content-fade-in h-full flex flex-col">
-                  <div className="mb-1.5">
-                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top mensual</span>
-                  </div>
-
-                  {competitionStats.monthLeader ? (
-                    <>
-                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
-                        <Crown size={14} />
-                        <span className="font-semibold">Lider: {competitionStats.monthLeader.name}</span>
+                      <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200">
+                        {panel.rank ? formatPosition(panel.rank) : '--'}
                       </div>
-                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.monthLeader.totalWorkouts} entrenamientos liderando</div>
-                    </>
-                  ) : (
-                    <div className="text-[11px] text-slate-400 mb-1.5">Sin datos suficientes este mes</div>
-                  )}
+                    </div>
 
-                  {competitionStats.userMonthRank ? (
-                    <div className="mt-auto text-xs text-slate-300">Tu llevas {competitionStats.userMonthRank.totalWorkouts} entrenamientos</div>
-                  ) : (
-                    <div className="mt-auto text-xs text-slate-400">Aun no registras entrenamientos este mes</div>
-                  )}
+                    {panel.leader ? (
+                      <div className="rounded-2xl border border-white/8 bg-white/[0.04] p-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-mint">
+                          <Crown size={14} />
+                          <span>Lider: {panel.leader.name}</span>
+                        </div>
+                        <div className="mt-1 text-sm text-white">{panel.leader.totalWorkouts} entrenamientos liderando</div>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.03] p-3 text-sm text-slate-400">
+                        {panel.emptyLabel}
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-2 rounded-2xl border border-white/8 bg-white/[0.03] p-3 text-sm text-slate-300">
+                      <Trophy size={16} className="mt-0.5 shrink-0 text-amberGlow" />
+                      <span>{panel.insight}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -744,14 +963,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         {/* Calendario al inicio */}
         <div
           className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out ${showCalendar
-            ? 'max-h-[42rem] opacity-100 mb-6'
+            ? 'max-h-[72rem] opacity-100 mb-6'
             : 'max-h-0 opacity-0 mb-0'
             }`}
           aria-hidden={!showCalendar}
         >
           <div className={`transition-transform duration-300 ${showCalendar ? 'translate-y-0' : '-translate-y-2 pointer-events-none'}`}>
             {showDeferredCalendar ? (
-              <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
+              <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[30rem]" />}>
                 <DeferredWorkoutCalendar
                   calendar={dashboardData.calendar}
                   currentMonth={currentMonth}
@@ -760,7 +979,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 />
               </Suspense>
             ) : (
-              <PanelSkeleton title="Calendario" heightClass="h-[22rem]" />
+              <PanelSkeleton title="Calendario" heightClass="h-[30rem]" />
             )}
           </div>
         </div>
@@ -798,63 +1017,183 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     <PanelSkeleton title="Historial y progreso" heightClass="h-64" />
                   )}
 
-               {/* Entrenamientos recientes */}
-               <div className="app-card p-4 sm:p-5">
-                <h3 className="text-lg font-display text-white mb-4">
-                  Entrenamientos Recientes
-                </h3>
-
-                {recentSessions.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentSessions.slice(0, 5).map((session) => (
-                      <div
-                        key={session.id}
-                        className="app-surface-muted p-3"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-white text-sm">
-                            {session.routineName}
-                          </h4>
-                          {session.completedAt && (
-                            <span className="text-xs text-slate-400">
-                              {formatDateInAppTimeZone(session.completedAt)}
-                            </span>
-                          )}
-                        </div>
-
-                        {session.primaryMuscleGroup && (
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{
-                                backgroundColor:
-                                  session.primaryMuscleGroup ?
-                                    '#48e5a3' : '#6b7280'
-                              }}
-                            />
-                            <span className="text-xs text-slate-400">
-                              {session.primaryMuscleGroup || 'Sin categoría'}
-                            </span>
-                          </div>
-                        )}
+                <div className="app-card overflow-hidden p-4 sm:p-5">
+                  <div className="relative mb-4 overflow-hidden rounded-[1.6rem] border border-white/8 bg-[radial-gradient(circle_at_top_left,_rgba(72,229,163,0.14),_transparent_42%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(17,24,39,0.86))] p-4">
+                    <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-mint/10 blur-3xl" />
+                    <div className="relative">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200">
+                        <Activity size={13} className="text-mint" />
+                        <span>Actividad reciente</span>
                       </div>
-                    ))}
+                      <h3 className="mt-3 text-lg font-display text-white">Entrenamientos recientes</h3>
+                      <p className="mt-1 text-sm text-slate-300">
+                        Una vista mas util para detectar frecuencia, foco muscular y ritmo de tus ultimas sesiones.
+                      </p>
+
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <div className="rounded-2xl border border-white/8 bg-white/[0.05] p-3">
+                          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Ultimo registro</div>
+                          <div className="mt-1 font-display text-xl text-white">{recentSessionsMeta.latestSessionLabel ?? '--'}</div>
+                        </div>
+                        <div className="rounded-2xl border border-white/8 bg-white/[0.05] p-3">
+                          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Ritmo reciente</div>
+                          <div className="mt-1 font-display text-xl text-white">
+                            {recentSessionsMeta.averageRecentDuration ? formatDurationValue(recentSessionsMeta.averageRecentDuration) : '--'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-200">
+                        {recentSessionsMeta.topGroupInfo ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: recentSessionsMeta.topGroupInfo.color }} />
+                            Enfoque dominante: {recentSessionsMeta.topGroupInfo.name}
+                          </span>
+                        ) : null}
+                        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1">
+                          <Dumbbell size={13} className="text-amberGlow" />
+                          {recentSessionsMeta.visibleSessions.length} sesiones visibles
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {recentSessionsMeta.visibleSessions.length > 0 ? (
+                    <div className="space-y-3">
+                      {recentSessionsMeta.visibleSessions.map((session, index) => {
+                        const groupInfo = MUSCLE_GROUPS[session.primaryMuscleGroup ?? 'fullbody'];
+
+                        return (
+                          <div
+                            key={session.id}
+                            className="group relative overflow-hidden rounded-[1.3rem] border border-white/8 bg-[linear-gradient(135deg,rgba(15,23,42,0.72),rgba(30,41,59,0.46))] p-3 pl-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/15 hover:shadow-[0_16px_40px_rgba(2,6,23,0.22)]"
+                          >
+                            <div className="absolute inset-y-3 left-0 w-1 rounded-r-full" style={{ backgroundColor: groupInfo.color }} />
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-white/8 bg-white/5 px-2 py-1 text-slate-200">
+                                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: groupInfo.color }} />
+                                    {groupInfo.name}
+                                  </span>
+                                  <span>{getRelativeSessionDateLabel(session.completedAt)}</span>
+                                  {index === 0 ? (
+                                    <span className="rounded-full border border-mint/20 bg-mint/10 px-2 py-1 text-mint">Mas reciente</span>
+                                  ) : null}
+                                </div>
+
+                                <h4 className="mt-2 truncate text-sm font-semibold text-white">{session.routineName}</h4>
+                                <p className="mt-1 text-xs text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</p>
+                              </div>
+
+                              <div className="text-right">
+                                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Duracion</div>
+                                <div className="mt-1 font-display text-lg text-white">{formatDurationValue(session.totalDuration)}</div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="rounded-[1.4rem] border border-dashed border-mist/50 bg-white/[0.03] px-4 py-8 text-center">
+                      <div className="text-sm text-slate-200">No hay entrenamientos recientes</div>
+                      <p className="mt-1 text-xs text-slate-400">Comienza tu primer entrenamiento para activar esta linea de tiempo.</p>
+                    </div>
+                  )}
+                </div>
+          </div>
+
+          </div>
+        </main>
+
+        {selectedCalendarDay ? (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/65 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+            <button
+              type="button"
+              className="absolute inset-0 cursor-default"
+              aria-label="Cerrar detalle del dia"
+              onClick={handleCloseCalendarDrawer}
+            />
+
+            <div
+              ref={calendarDrawerRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="calendar-day-detail-title"
+              className="relative z-10 w-full max-w-2xl overflow-hidden rounded-[1.9rem] border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(72,229,163,0.16),_transparent_42%),linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.96))] shadow-[0_24px_100px_rgba(2,6,23,0.45)] content-fade-in"
+            >
+              <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-mint/10 blur-3xl" />
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-mint/40 to-transparent" />
+
+              <div className="relative p-4 sm:p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200">
+                      <Calendar size={13} className="text-mint" />
+                      <span>Detalle del dia</span>
+                    </div>
+                    <h3 id="calendar-day-detail-title" className="mt-3 font-display text-2xl text-white">
+                      {selectedCalendarDayLabel}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-300">
+                      {selectedCalendarDay.workouts.length > 0
+                        ? `Registraste ${selectedCalendarDay.workouts.length} sesion${selectedCalendarDay.workouts.length === 1 ? '' : 'es'} en esta fecha.`
+                        : 'No hay sesiones en esta fecha. Puedes usar esta vista para detectar huecos en tu semana.'}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCloseCalendarDrawer}
+                    className="btn-ghost rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 touch-target"
+                    aria-label="Cerrar detalle"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {selectedCalendarDay.workouts.length > 0 ? (
+                  <div className="mt-5 space-y-3">
+                    {selectedCalendarDay.workouts.map((workout, index) => {
+                      const groupInfo = MUSCLE_GROUPS[workout.muscleGroup];
+
+                      return (
+                        <div
+                          key={workout.sessionId}
+                          className="relative overflow-hidden rounded-[1.35rem] border border-white/8 bg-white/[0.04] p-4 pl-5"
+                        >
+                          <div className="absolute inset-y-4 left-0 w-1 rounded-r-full" style={{ backgroundColor: groupInfo.color }} />
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                                <span className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-slate-200">Sesion {index + 1}</span>
+                                <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-slate-200">
+                                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: groupInfo.color }} />
+                                  {groupInfo.name}
+                                </span>
+                              </div>
+                              <div className="mt-2 text-base font-semibold text-white">{workout.routineName}</div>
+                            </div>
+
+                            <div className="rounded-full border border-mint/20 bg-mint/10 px-3 py-1 text-xs font-semibold text-mint">
+                              Registrado
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <div className="text-center py-6">
-                    <div className="text-slate-300 text-sm">
-                      No hay entrenamientos recientes
-                    </div>
-                    <p className="text-slate-400 text-xs mt-1">
-                      Comienza tu primer entrenamiento.
-                    </p>
+                  <div className="mt-5 rounded-[1.4rem] border border-dashed border-white/10 bg-white/[0.03] px-4 py-8 text-center text-sm text-slate-400">
+                    Sin entrenamientos registrados en esta fecha.
                   </div>
                 )}
               </div>
             </div>
+          </div>
+        ) : null}
 
-         </div>
-        </main>
         <div className="px-4 pb-8">
           <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
             Version {appVersion}

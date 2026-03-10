@@ -791,12 +791,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
               {/* Sidebar - Solo entrenamientos recientes */}
                <div className="order-1 lg:order-2 space-y-4 sm:space-y-6">
                  {showDeferredProgressPanel ? (
-                   <Suspense fallback={<PanelSkeleton title="Historico y progresion" heightClass="h-64" />}>
-                     <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
-                   </Suspense>
-                 ) : (
-                   <PanelSkeleton title="Historico y progresion" heightClass="h-64" />
-                 )}
+                    <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
+                      <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+                    </Suspense>
+                  ) : (
+                    <PanelSkeleton title="Historial y progreso" heightClass="h-64" />
+                  )}
 
                {/* Entrenamientos recientes */}
                <div className="app-card p-4 sm:p-5">

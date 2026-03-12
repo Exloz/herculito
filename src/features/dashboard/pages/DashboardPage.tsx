@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, History, Trophy } from 'lucide-react';
+import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, Trophy } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
 import {
   completeSession as apiCompleteSession,
@@ -97,6 +97,19 @@ const PanelSkeleton = ({ heightClass, title }: { heightClass: string; title: str
     </div>
   );
 };
+
+type HomeTab = 'routines' | 'progress' | 'calendar';
+
+const HOME_TABS: Array<{
+  id: HomeTab;
+  label: string;
+  icon: typeof Dumbbell;
+  tone: string;
+}> = [
+  { id: 'routines', label: 'Rutinas', icon: Dumbbell, tone: 'text-mint' },
+  { id: 'progress', label: 'Progreso', icon: BarChart3, tone: 'text-amberGlow' },
+  { id: 'calendar', label: 'Calendario + historial', icon: CalendarRange, tone: 'text-mint' }
+];
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
   if (activeWorkout) {
@@ -215,6 +228,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     refresh
   } = useDashboardData(user.id, user.name);
   const showDashboardSkeleton = useDelayedLoading(dashboardLoading, 180);
+  const [activeHomeTab, setActiveHomeTab] = useState<HomeTab>('routines');
+  const [previousHomeTab, setPreviousHomeTab] = useState<HomeTab>('routines');
 
   const dashboardRoutines = useMemo(() => dashboardData?.dashboardRoutines ?? [], [dashboardData]);
   const recentSessions = useMemo(() => dashboardData?.recentSessions ?? [], [dashboardData]);
@@ -252,10 +267,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   }, [dashboardData, dashboardLoading, onReadyForBackgroundPreload]);
 
   const userInitials = useMemo(() => getUserInitials(user.name || 'Usuario'), [user.name]);
-  const routinesSectionRef = useRef<HTMLElement | null>(null);
-  const progressSectionRef = useRef<HTMLElement | null>(null);
-  const calendarSectionRef = useRef<HTMLElement | null>(null);
-  const historySectionRef = useRef<HTMLDivElement | null>(null);
   const dashboardStatusMessage = useMemo(() => {
     if (dashboardError && dashboardData) {
       return isOffline
@@ -277,11 +288,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     return dashboardRoutines.filter((routine) => routine.primaryMuscleGroup === recommendedGroup).length;
   }, [dashboardRoutines, recommendedGroup]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
-  const latestSessionDate = recentSessions[0]?.completedAt ? formatDateInAppTimeZone(recentSessions[0].completedAt) : null;
   const competition = dashboardData?.competition;
-  const scrollToSection = useCallback((element: HTMLElement | null) => {
-    element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
+  const activeTabIndex = HOME_TABS.findIndex((tab) => tab.id === activeHomeTab);
+  const previousTabIndex = HOME_TABS.findIndex((tab) => tab.id === previousHomeTab);
+  const homeTabAnimationClass = activeTabIndex >= previousTabIndex ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward';
+  const handleHomeTabChange = useCallback((tab: HomeTab) => {
+    if (tab === activeHomeTab) return;
+    setPreviousHomeTab(activeHomeTab);
+    setActiveHomeTab(tab);
+  }, [activeHomeTab]);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
@@ -466,12 +481,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={onLogout}
-                className="btn-secondary flex h-14 w-14 items-center justify-center rounded-[1.35rem] touch-target sm:h-auto sm:w-auto sm:px-4"
+                className="btn-secondary flex h-11 w-11 items-center justify-center rounded-[1rem] px-0 touch-target"
                 title="Cerrar sesión"
                 aria-label="Cerrar sesión"
               >
                 <LogOut size={18} />
-                <span className="hidden sm:inline">Cerrar sesión</span>
               </button>
             </div>
           </div>
@@ -535,52 +549,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
                 <div className="mt-3 grid grid-cols-3 gap-2">
                   <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                    <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts}</div>
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Total</div>
+                    <div className="mt-1 font-semibold text-white">{stats.totalWorkouts}</div>
                   </div>
                   <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha</div>
-                    <div className="mt-1 font-semibold text-white">{stats.currentStreak}</div>
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha larga</div>
+                    <div className="mt-1 font-semibold text-white">{stats.longestStreak}</div>
                   </div>
                   <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Última</div>
-                    <div className="mt-1 truncate font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Este mes</div>
+                    <div className="mt-1 truncate font-semibold text-white">{stats.thisMonthWorkouts}</div>
                   </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(routinesSectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
-                  >
-                    <Dumbbell size={14} className="text-mint" />
-                    <span>Rutinas</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(progressSectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
-                  >
-                    <BarChart3 size={14} className="text-amberGlow" />
-                    <span>Progreso</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(calendarSectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
-                  >
-                    <CalendarRange size={14} className="text-mint" />
-                    <span>Calendario</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(historySectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
-                  >
-                    <History size={14} className="text-amberGlow" />
-                    <span>Historial</span>
-                  </button>
                 </div>
               </div>
 
@@ -615,6 +594,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {!activeWorkout && (
+          <section className="mb-6 content-fade-in">
+            <div className="rounded-[1.4rem] border border-white/6 bg-slateDeep/45 p-1.5 shadow-lift">
+              <div className="grid grid-cols-3 gap-1">
+                {HOME_TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeHomeTab === tab.id;
+
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => handleHomeTabChange(tab.id)}
+                      aria-pressed={isActive}
+                      className={`flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-3 py-3 text-sm font-medium transition-all duration-300 ${isActive
+                        ? 'bg-[linear-gradient(180deg,rgba(24,33,46,0.98),rgba(14,20,30,0.98))] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)]'
+                        : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
+                        }`}
+                    >
+                      <Icon size={15} className={isActive ? tab.tone : 'text-slate-500'} />
+                      <span className="truncate">{tab.id === 'calendar' ? 'Calendario + historial' : tab.label}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </section>
@@ -667,109 +675,106 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           </section>
         )}
 
-        <section ref={routinesSectionRef} className="content-fade-in scroll-mt-24">
-          <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
-              <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">
-                {recommendedGroupName ? `${recommendedGroupName} al frente` : 'Empieza una rutina'}
-              </h2>
-            </div>
-            <p className="max-w-sm text-sm text-slate-300">
-              {recommendedGroupName
-                ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina disponible' : 'rutinas disponibles'} para empezar sin rodeos.`
-                : 'Empieza directo o abre detalles solo cuando haga falta.'}
-            </p>
-          </div>
-
-          <MuscleGroupDashboard
-            routines={dashboardRoutines}
-            currentUser={user}
-            onStartWorkout={handleStartWorkout}
-            onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
-            recommendedGroup={recommendedGroup}
-          />
-        </section>
-
-        <section className="mt-8 space-y-8">
-          <section ref={progressSectionRef} className="scroll-mt-24">
-            <div className="mb-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
-              <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Tu progreso está a la vista</h2>
-            </div>
-            <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
-              <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
-            </Suspense>
-          </section>
-
-          <section ref={calendarSectionRef} className="scroll-mt-24">
-            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="font-display text-xl uppercase text-white sm:text-2xl">Calendario y actividad reciente</h2>
-              </div>
-            </div>
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
-              <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
-                <DeferredWorkoutCalendar
-                  calendar={dashboardData.calendar}
-                  currentMonth={currentMonth}
-                  onMonthChange={setCurrentMonth}
-                />
-              </Suspense>
-
-              <div ref={historySectionRef} className="rounded-[1.6rem] bg-graphite p-4 shadow-lift sm:p-5">
-                <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
+        {!activeWorkout && (
+          <section className={`mt-2 ${homeTabAnimationClass}`} key={activeHomeTab}>
+            {activeHomeTab === 'routines' && (
+              <section className="space-y-4">
+                <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
-                    <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
-                    <h3 className="mt-1 font-display text-lg uppercase text-white sm:text-xl">Actividad reciente</h3>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
+                    <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">
+                      {recommendedGroupName ? `${recommendedGroupName} al frente` : 'Empieza una rutina'}
+                    </h2>
                   </div>
-                  <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
+                  <p className="max-w-sm text-sm text-slate-300">
+                    {recommendedGroupName
+                      ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina disponible' : 'rutinas disponibles'} para empezar sin rodeos.`
+                      : 'Empieza directo o abre detalles solo cuando haga falta.'}
+                  </p>
                 </div>
 
-                {recentSessions.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {recentSessions.slice(0, 3).map((session, index) => (
-                      <div
-                        key={session.id}
-                        className={`rounded-[0.95rem] border px-3 py-2.5 ${index === 0
-                          ? 'border-mint/20 bg-mint/8'
-                          : 'border-white/5 bg-slateDeep/45'
-                          }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-slate-400">
-                              <span>{session.primaryMuscleGroup || 'Sin categoría'}</span>
-                              {session.totalDuration && <span className="text-slate-500">{session.totalDuration} min</span>}
+                <MuscleGroupDashboard
+                  routines={dashboardRoutines}
+                  currentUser={user}
+                  onStartWorkout={handleStartWorkout}
+                  onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
+                  recommendedGroup={recommendedGroup}
+                />
+              </section>
+            )}
+
+            {activeHomeTab === 'progress' && (
+              <section>
+                <div className="mb-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
+                  <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Tu progreso está a la vista</h2>
+                </div>
+                <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
+                  <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+                </Suspense>
+              </section>
+            )}
+
+            {activeHomeTab === 'calendar' && (
+              <section>
+                <div className="mb-4">
+                  <h2 className="font-display text-xl uppercase text-white sm:text-2xl">Calendario y actividad reciente</h2>
+                </div>
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
+                  <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
+                    <DeferredWorkoutCalendar
+                      calendar={dashboardData.calendar}
+                      currentMonth={currentMonth}
+                      onMonthChange={setCurrentMonth}
+                    />
+                  </Suspense>
+
+                  <div className="rounded-[1.6rem] bg-graphite p-4 shadow-lift sm:p-5">
+                    <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
+                      <div>
+                        <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
+                        <h3 className="mt-1 font-display text-lg uppercase text-white sm:text-xl">Actividad reciente</h3>
+                      </div>
+                      <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
+                    </div>
+
+                    {recentSessions.length > 0 ? (
+                      <div className="space-y-1.5">
+                        {recentSessions.slice(0, 3).map((session, index) => (
+                          <div
+                            key={session.id}
+                            className={`rounded-[0.95rem] border px-3 py-2.5 ${index === 0
+                              ? 'border-mint/20 bg-mint/8'
+                              : 'border-white/5 bg-slateDeep/45'
+                              }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
+                                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                                  <span>{session.primaryMuscleGroup || 'Sin categoría'}</span>
+                                  {session.totalDuration && <span className="text-slate-500">{session.totalDuration} min</span>}
+                                </div>
+                              </div>
+                              {session.completedAt && (
+                                <div className="shrink-0 text-right text-xs font-medium text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
+                              )}
                             </div>
                           </div>
-                          {session.completedAt && (
-                            <div className="shrink-0 text-right text-xs font-medium text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                    {recentSessions.length > 3 && (
-                      <button
-                        type="button"
-                        onClick={() => scrollToSection(progressSectionRef.current)}
-                        className="w-full rounded-[0.95rem] border border-dashed border-white/10 px-3 py-2 text-sm text-slate-300 transition-colors hover:border-mint/30 hover:text-white"
-                      >
-                        Ver el detalle completo en progreso e historial
-                      </button>
+                    ) : (
+                      <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">
+                        <div className="font-display text-lg uppercase text-white">Aún no hay actividad</div>
+                        <p className="mt-2 text-sm text-slate-400">Empieza una rutina para llenar tu calendario y registrar tu ritmo.</p>
+                      </div>
                     )}
                   </div>
-                ) : (
-                  <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">
-                    <div className="font-display text-lg uppercase text-white">Aún no hay actividad</div>
-                    <p className="mt-2 text-sm text-slate-400">Empieza una rutina para llenar tu calendario y registrar tu ritmo.</p>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
+              </section>
+            )}
           </section>
-        </section>
+        )}
       </main>
       <div className="px-4 pb-8">
         <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">

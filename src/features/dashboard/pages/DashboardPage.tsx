@@ -276,17 +276,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
     return dashboardRoutines.filter((routine) => routine.primaryMuscleGroup === recommendedGroup).length;
   }, [dashboardRoutines, recommendedGroup]);
-  const primarySummary = useMemo(() => {
-    if (activeWorkout) {
-      return 'Tienes un entrenamiento en curso.';
-    }
-
-    if (dashboardRoutines.length === 0) {
-      return 'Crea una rutina para empezar a entrenar.';
-    }
-
-    return `${stats.thisWeekWorkouts} esta semana · racha de ${stats.currentStreak} días`;
-  }, [activeWorkout, dashboardRoutines.length, stats.currentStreak, stats.thisWeekWorkouts]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
   const latestSessionDate = recentSessions[0]?.completedAt ? formatDateInAppTimeZone(recentSessions[0].completedAt) : null;
   const scrollToSection = useCallback((element: HTMLElement | null) => {
@@ -515,123 +504,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         {!activeWorkout && (
-          <section className="mb-6 overflow-hidden rounded-[1.9rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] shadow-lift">
-            <div className="border-b border-white/8 px-4 py-3 sm:px-5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">
-                    {recommendedGroupName ? `Sugerido: ${recommendedGroupName}` : 'Listo para entrenar'}
-                  </div>
-                  {latestSessionDate && (
-                    <div className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-slate-300">
-                      Última sesión: {latestSessionDate}
-                    </div>
-                  )}
-                </div>
-                <div className="text-xs text-slate-400">{dashboardRoutines.length} rutinas disponibles</div>
-              </div>
+          <section className="mb-5 rounded-[1.5rem] bg-graphite/80 px-4 py-4 shadow-lift sm:px-5">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+              {recommendedGroupName && (
+                <span className="rounded-full bg-mint/12 px-2.5 py-1 font-semibold uppercase tracking-[0.18em] text-mint/85">
+                  Hoy: {recommendedGroupName}
+                </span>
+              )}
+              <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{dashboardRoutines.length} rutinas</span>
+              <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{stats.thisWeekWorkouts} esta semana</span>
+              <span className="rounded-full bg-white/[0.04] px-2.5 py-1">racha {stats.currentStreak}</span>
+              {latestSessionDate && (
+                <span className="rounded-full bg-white/[0.04] px-2.5 py-1">ultima {latestSessionDate}</span>
+              )}
             </div>
 
-            <div className="grid gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:grid-cols-[minmax(0,1.18fr)_minmax(280px,0.9fr)]">
-              <div className="space-y-4">
-                <div>
-                  <h2 className="font-display text-[2rem] uppercase leading-[0.94] text-white sm:text-[2.5rem]">
-                    {recommendedGroupName ? `${recommendedGroupName} hoy` : 'Listo para entrenar'}
-                  </h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">{primarySummary}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-3 py-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Rutinas</div>
-                    <div className="mt-1 font-display text-xl text-white sm:text-2xl">{dashboardRoutines.length}</div>
-                    <div className="text-xs text-slate-300">listas</div>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-mint/20 bg-mint/10 px-3 py-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Semana</div>
-                    <div className="mt-1 font-display text-xl text-white sm:text-2xl">{stats.thisWeekWorkouts}</div>
-                    <div className="text-xs text-mint/80">sesiones</div>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-3 py-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Racha</div>
-                    <div className="mt-1 font-display text-xl text-white sm:text-2xl">{stats.currentStreak}</div>
-                    <div className="text-xs text-slate-300">días</div>
-                  </div>
-                  <div className="rounded-[1.2rem] border border-amberGlow/20 bg-amberGlow/10 px-3 py-3">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Historial</div>
-                    <div className="mt-1 text-sm font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
-                    <div className="text-xs text-slate-300">última actividad</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-[1.5rem] border border-white/8 bg-slateDeep/70 p-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Acceso directo</div>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(routinesSectionRef.current)}
-                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-mint/30 hover:bg-white/[0.05]"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint/12 text-mint">
-                      <Dumbbell size={16} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white">Rutinas</div>
-                      <div className="text-[11px] text-slate-400">Empieza rápido</div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(progressSectionRef.current)}
-                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-amberGlow/30 hover:bg-white/[0.05]"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amberGlow/12 text-amberGlow">
-                      <BarChart3 size={16} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white">Progreso</div>
-                      <div className="text-[11px] text-slate-400">Carga visible</div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(calendarSectionRef.current)}
-                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-mint/30 hover:bg-white/[0.05]"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint/12 text-mint">
-                      <CalendarRange size={16} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white">Calendario</div>
-                      <div className="text-[11px] text-slate-400">Tu ritmo</div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollToSection(historySectionRef.current)}
-                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-amberGlow/30 hover:bg-white/[0.05]"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amberGlow/12 text-amberGlow">
-                      <History size={16} />
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-white">Historial</div>
-                      <div className="text-[11px] text-slate-400">Sesiones recientes</div>
-                    </div>
-                  </button>
-                </div>
-
-                <div className="mt-3 rounded-[1.15rem] border border-white/8 bg-white/[0.03] px-3 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">En foco</div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {recommendedGroupName
-                      ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina disponible' : 'rutinas disponibles'} en ${recommendedGroupName}`
-                      : `${dashboardRoutines.length} rutinas listas para hoy`}
-                  </div>
-                  <div className="mt-1 text-xs text-slate-400">Las tarjetas ahora se mantienen compactas y al tocar puedes abrir detalles sin perder el acceso directo a iniciar.</div>
-                </div>
-              </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => scrollToSection(routinesSectionRef.current)}
+                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
+              >
+                <Dumbbell size={15} className="text-mint" />
+                <span>Rutinas</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection(progressSectionRef.current)}
+                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
+              >
+                <BarChart3 size={15} className="text-amberGlow" />
+                <span>Progreso</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection(calendarSectionRef.current)}
+                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
+              >
+                <CalendarRange size={15} className="text-mint" />
+                <span>Calendario</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollToSection(historySectionRef.current)}
+                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
+              >
+                <History size={15} className="text-amberGlow" />
+                <span>Historial</span>
+              </button>
             </div>
           </section>
         )}
@@ -687,10 +607,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
               <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">
-                {recommendedGroupName ? `Empieza por ${recommendedGroupName}` : 'Empieza una rutina'}
+                {recommendedGroupName ? `${recommendedGroupName} al frente` : 'Empieza una rutina'}
               </h2>
             </div>
-            <p className="max-w-sm text-sm text-slate-300">Cambia de grupo sin recorrer toda la pantalla y abre detalles solo cuando los necesites.</p>
+            <p className="max-w-sm text-sm text-slate-300">
+              {recommendedGroupName
+                ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina disponible' : 'rutinas disponibles'} para empezar sin rodeos.`
+                : 'Empieza directo o abre detalles solo cuando haga falta.'}
+            </p>
           </div>
 
           <MuscleGroupDashboard

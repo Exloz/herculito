@@ -201,7 +201,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
     const domainMin = Math.max(0, minWeight - domainPadding);
     const domainMax = maxWeight + domainPadding;
     const plotHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
-    const plotWidth = Math.max(240, pointsInRange.length === 1 ? 240 : (pointsInRange.length - 1) * 64);
+    const plotWidth = Math.max(220, pointsInRange.length === 1 ? 220 : (pointsInRange.length - 1) * 42);
     const width = CHART_PADDING.left + CHART_PADDING.right + plotWidth;
     const yRange = Math.max(domainMax - domainMin, 1);
 
@@ -264,7 +264,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </div>
               <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
                 <span className="rounded-full bg-white/[0.05] px-2.5 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
-                <span className="rounded-full bg-white/[0.05] px-2.5 py-1">Ultimo: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
+                <span className="rounded-full bg-white/[0.05] px-2.5 py-1">Último: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${trendCopy.tone}`}>
                   <trendCopy.Icon size={13} />
                   {trendCopy.label}
@@ -272,7 +272,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </div>
             </div>
 
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:min-w-[22rem]">
+            <div className="xl:min-w-[18rem] xl:max-w-[20rem] xl:flex-1">
               <label className="block min-w-0" htmlFor="exercise-progress-selector">
                 <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ejercicio</span>
                 <select
@@ -288,11 +288,6 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   ))}
                 </select>
               </label>
-
-              <div className="rounded-[1rem] bg-slateDeep/70 px-3 py-2.5 text-right">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Vista</div>
-                <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-              </div>
             </div>
           </div>
 
@@ -320,37 +315,37 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-3 gap-2">
             <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Ultimo registro</div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Último</div>
               <div className="mt-1.5 flex items-center gap-2">
-                <div className="font-display text-xl text-white">{formatKg(displayedLastWeight)}</div>
-                {rangeTrend === 'up' && <TrendingUp size={15} className="text-mint" />}
-                {rangeTrend === 'down' && <TrendingDown size={15} className="text-crimson" />}
-                {rangeTrend === 'flat' && <Minus size={15} className="text-slate-300" />}
+                <div className="font-display text-lg text-white sm:text-xl">{formatKg(displayedLastWeight)}</div>
+                {rangeTrend === 'up' && <TrendingUp size={14} className="text-mint" />}
+                {rangeTrend === 'down' && <TrendingDown size={14} className="text-crimson" />}
+                {rangeTrend === 'flat' && <Minus size={14} className="text-slate-300" />}
               </div>
-              <div className="mt-1 text-xs text-slate-400">
-                {displayedComparisonWeight !== null ? `${formatDelta(displayedLastWeight - displayedComparisonWeight)} vs anterior` : 'Sin comparacion previa'}
+              <div className="mt-1 text-[11px] leading-tight text-slate-400">
+                {displayedComparisonWeight !== null ? `${formatDelta(displayedLastWeight - displayedComparisonWeight)} vs anterior` : 'Sin comparación previa'}
               </div>
             </div>
 
             <div className="rounded-[1rem] bg-mint/10 px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-mint/75">Record personal</div>
-              <div className="mt-1.5 font-display text-xl text-white">{formatKg(selectedSummary.personalRecord)}</div>
-              <div className="mt-1 text-xs text-slate-300">Mejor marca total</div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-mint/75">Récord</div>
+              <div className="mt-1.5 font-display text-lg text-white sm:text-xl">{formatKg(selectedSummary.personalRecord)}</div>
+              <div className="mt-1 text-[11px] leading-tight text-slate-300">Mejor marca total</div>
             </div>
 
             <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Cambio visible</div>
-              <div className={`mt-1.5 font-display text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Cambio</div>
+              <div className={`mt-1.5 font-display text-lg sm:text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
                 {rangeDelta !== null ? formatDelta(rangeDelta) : 'Sin datos'}
               </div>
-              <div className="mt-1 text-xs text-slate-400">Desde el inicio del rango</div>
+              <div className="mt-1 text-[11px] leading-tight text-slate-400">Desde el inicio</div>
             </div>
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">
-            <div className="rounded-[1.2rem] bg-slateDeep/55 p-3.5">
+            <div className="min-w-0 rounded-[1.2rem] bg-slateDeep/55 p-3.5">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
@@ -474,7 +469,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               )}
             </div>
 
-            <div className="rounded-[1.2rem] bg-slateDeep/55 p-3.5">
+            <div className="min-w-0 rounded-[1.2rem] bg-slateDeep/55 p-3.5">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
@@ -487,7 +482,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </div>
 
               {historyItems.length > 0 ? (
-                <div className="max-h-[22rem] space-y-1.5 overflow-y-auto pr-1">
+                <div className="max-h-[20rem] space-y-1.5 overflow-y-auto pr-1">
                   {historyItems.map((point) => {
                     const deltaTone = point.deltaFromPrevious === null || Math.abs(point.deltaFromPrevious) < 0.05
                       ? 'text-slate-300 bg-white/[0.06]'
@@ -496,22 +491,22 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                         : 'text-crimson bg-crimson/10';
 
                     const deltaLabel = point.deltaFromPrevious === null
-                      ? 'Primer registro'
+                      ? 'Inicio'
                       : Math.abs(point.deltaFromPrevious) < 0.05
                         ? 'Sin cambio'
-                        : `${formatDelta(point.deltaFromPrevious)} vs anterior`;
+                        : formatDelta(point.deltaFromPrevious);
 
                     return (
                       <div key={point.timestamp} className="rounded-[0.95rem] bg-white/[0.04] px-3 py-2.5">
-                        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                           <div className="min-w-0">
                             <div className="text-sm font-medium text-white">{point.dateLabel}</div>
-                            <div className="mt-1 text-xs text-slate-400">
+                            <div className="mt-1 text-[11px] text-slate-400">
                               {formatSetCount(point.completedSets)} completadas · Volumen {formatKg(point.totalWeight)}
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="font-display text-lg text-white">{formatKg(point.bestWeight)}</div>
+                            <div className="font-display text-base text-white sm:text-lg">{formatKg(point.bestWeight)}</div>
                             <div className={`mt-1 rounded-full px-2 py-1 text-[10px] font-semibold ${deltaTone}`}>
                               {deltaLabel}
                             </div>

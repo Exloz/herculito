@@ -112,16 +112,16 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   }, 0);
 
   return (
-    <div className="overflow-hidden rounded-[1.8rem] border border-mist/60 bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-3 shadow-lift sm:p-4">
-      <div className="mb-4 flex items-start justify-between gap-3 border-b border-white/8 pb-3 sm:mb-5">
-        <div>
+    <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-3 shadow-lift sm:p-4">
+      <div className="mb-3 grid gap-3 border-b border-white/8 pb-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Calendario</div>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <h3 className="font-display text-xl uppercase text-white sm:text-2xl">
+          <div className="mt-1 flex items-center justify-between gap-3">
+            <h3 className="min-w-0 truncate font-display text-xl uppercase text-white sm:text-2xl">
               {monthNames[month]} {year}
             </h3>
 
-            <div className="inline-flex items-center gap-1 rounded-full border border-white/8 bg-white/[0.03] px-1.5 py-1">
+            <div className="inline-flex shrink-0 items-center gap-1 rounded-[0.95rem] bg-white/[0.04] px-1.5 py-1">
               <button
                 onClick={() => navigateMonth('prev')}
                 className="btn-ghost p-1.5 touch-target-sm"
@@ -129,7 +129,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
               >
                 <ChevronLeft size={16} className="text-slate-300" />
               </button>
-              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Mes</span>
+              <span className="px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Mes</span>
               <button
                 onClick={() => navigateMonth('next')}
                 className="btn-ghost p-1.5 touch-target-sm"
@@ -141,7 +141,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
           </div>
         </div>
 
-        <div className="rounded-[1.1rem] border border-amberGlow/20 bg-amberGlow/10 px-3 py-2 text-right">
+        <div className="justify-self-start rounded-[1rem] bg-amberGlow/10 px-3 py-2 text-right sm:justify-self-end">
           <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Sesiones</div>
           <div className="mt-1 text-sm font-semibold text-white">{workoutsThisMonth}</div>
         </div>
@@ -149,7 +149,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
       <div className="mb-2 grid grid-cols-7 gap-1">
         {weekDays.map(day => (
-          <div key={day} className="py-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:py-2">
+          <div key={day} className="py-1 text-center text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 sm:py-2 sm:text-[11px]">
             {day}
           </div>
         ))}
@@ -170,7 +170,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
               disabled={!onDayClick}
               aria-label={`Día ${dayNumber}${hasWorkout ? `, ${day.workouts.length} entrenamiento(s)` : ''}`}
               className={`
-                relative aspect-square p-0.5 sm:p-1 rounded-lg cursor-pointer transition-colors touch-manipulation
+                relative aspect-square rounded-[0.9rem] p-0.5 sm:p-1 cursor-pointer transition-colors touch-manipulation
                 min-h-[44px]
                 ${isCurrentDay
                   ? 'bg-mint text-ink shadow-[0_8px_24px_rgba(72,229,163,0.28)]'
@@ -213,9 +213,9 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
       <div className="mt-4 border-t border-mist/60 pt-3">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Grupos musculares</div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
-            <div key={key} className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1.5">
+            <div key={key} className="flex min-w-0 items-center gap-1.5 rounded-[0.95rem] bg-white/[0.04] px-2.5 py-2">
               <div
                 className="w-2 h-2 rounded-full"
                 style={{ backgroundColor: group.color }}

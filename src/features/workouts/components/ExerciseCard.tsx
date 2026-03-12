@@ -216,12 +216,12 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   };
 
   return (
-    <div className="app-card p-4 mb-4">
+    <div className="app-card mb-3 p-3.5 sm:p-4">
       {/* Header del ejercicio */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2 gap-3">
+      <div className="mb-3">
+        <div className="mb-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <h3 className="text-lg font-semibold text-white truncate">{exercise.name}</h3>
+            <h3 className="truncate text-lg font-semibold text-white">{exercise.name}</h3>
             {exercise.video?.url && (
                 <button
                   type="button"
@@ -236,7 +236,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
               </button>
             )}
           </div>
-          <div className="flex items-center space-x-2 text-sm text-slate-400 shrink-0">
+          <div className="flex shrink-0 items-center gap-2 text-sm text-slate-400">
             <Weight size={16} />
             <span>{exercise.sets} × {exercise.reps}</span>
           </div>
@@ -299,19 +299,16 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
-        <div className="text-sm text-slate-400">
-          {completedSets} de {exercise.sets} series completadas
-          {/* Información sobre pesos anteriores */}
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm text-slate-400">
+          <span>{completedSets} de {exercise.sets} series completadas</span>
           {previousWeights && previousWeights.length > 0 && (
-            <span className="ml-2 text-mint">
-              • Pesos precargados de tu ultimo registro con peso
-            </span>
+            <span className="text-mint">• Pesos precargados de tu último registro con peso</span>
           )}
         </div>
       </div>
 
       {/* Lista de series */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {Array.from({ length: exercise.sets }, (_, index) => {
           const setNumber = index + 1;
           const currentSet = currentSets.find(s => s.setNumber === setNumber);
@@ -322,20 +319,20 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           return (
             <div
               key={setNumber}
-              className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 ${isCompleted
-                ? 'bg-mint/10 border-mint/50'
-                : 'bg-slateDeep border-mist/60 hover:border-mint/40'
-                }`}
+               className={`flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-200 ${isCompleted
+                 ? 'bg-mint/10 border-mint/50'
+                 : 'bg-slateDeep border-mist/60 hover:border-mint/40'
+                 }`}
             >
               {/* Numero de serie */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${isCompleted ? 'bg-mint text-ink' : 'bg-charcoal text-slate-300'
-                }`}>
+               <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${isCompleted ? 'bg-mint text-ink' : 'bg-charcoal text-slate-300'
+                 }`}>
                 {setNumber}
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-slateDeep rounded-lg border border-mist/60 overflow-hidden">
+                 <div className="flex items-center gap-2">
+                   <div className="flex items-center overflow-hidden rounded-lg border border-mist/60 bg-slateDeep">
                     <button
                       type="button"
                       onClick={() => adjustWeight(setNumber, -2.5)}
@@ -371,17 +368,17 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                       <Plus size={14} />
                     </button>
                   </div>
-                  <span className="text-slate-400 text-xs sm:text-sm whitespace-nowrap">kg × {exercise.reps}</span>
-                </div>
-              </div>
+                   <span className="whitespace-nowrap text-xs text-slate-400 sm:text-sm">kg × {exercise.reps}</span>
+                 </div>
+               </div>
 
               <button
                 type="button"
                 onClick={() => toggleSetCompleted(setNumber)}
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 shrink-0 touch-target ${isCompleted
-                  ? 'bg-mint text-ink hover:bg-mintDeep'
-                  : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
-                  }`}
+                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 touch-target ${isCompleted
+                   ? 'bg-mint text-ink hover:bg-mintDeep'
+                   : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
+                   }`}
                 aria-label={isCompleted ? "Marcar serie como incompleta" : "Marcar serie como completada"}
               >
                 <Check size={20} />
@@ -393,10 +390,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
       {/* Información de descanso */}
       {exercise.restTime && (
-        <div className="mt-3 flex items-center gap-2 text-sm text-slate-400 bg-slateDeep rounded-xl p-2">
-          <Clock size={16} />
-          <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
-        </div>
+         <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-slateDeep px-3 py-2 text-sm text-slate-400">
+           <Clock size={16} />
+           <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
+         </div>
       )}
     </div>
   );

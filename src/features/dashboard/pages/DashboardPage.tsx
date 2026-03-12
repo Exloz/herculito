@@ -612,14 +612,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
         {activeWorkout && (
           <section className="mb-6">
-            <div className="overflow-hidden rounded-[1.8rem] border border-mint/20 bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="chip mb-2">Entrenamiento activo</div>
-                  <div className="font-display text-2xl uppercase text-white sm:text-3xl">{activeWorkout.routine.name}</div>
-                  <p className="mt-2 text-sm text-slate-300">Sigue donde lo dejaste y termina la sesión sin perder el ritmo.</p>
+                  <div className="font-display text-[2rem] uppercase leading-none text-white sm:text-[2.35rem]">{activeWorkout.routine.name}</div>
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Sigue donde lo dejaste y termina la sesión sin perder el ritmo.</p>
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
+
+                <div className="grid gap-2 sm:min-w-[15rem]">
                   <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
                     Reanudar
                   </button>
@@ -708,8 +709,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 />
               </Suspense>
 
-              <div ref={historySectionRef} className="rounded-[1.8rem] border border-mist/60 bg-graphite p-4 shadow-lift sm:p-5">
-                <div className="mb-4 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
+              <div ref={historySectionRef} className="rounded-[1.6rem] bg-graphite p-4 shadow-lift sm:p-5">
+                <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
                   <div>
                     <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
                     <h3 className="mt-1 font-display text-xl uppercase text-white">Actividad reciente</h3>
@@ -718,16 +719,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 </div>
 
                 {recentSessions.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {recentSessions.slice(0, 5).map((session, index) => (
-                      <div key={session.id} className={`rounded-[1.25rem] border px-4 py-3 ${index === 0 ? 'border-mint/25 bg-mint/10' : 'border-mist/30 bg-slateDeep/65'}`}>
-                        <div className="flex items-start justify-between gap-3">
+                      <div key={session.id} className={`rounded-[1rem] px-3 py-3 ${index === 0 ? 'bg-mint/10' : 'bg-slateDeep/65'}`}>
+                        <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
-                            <div className="mt-1 text-xs text-slate-300">{session.primaryMuscleGroup || 'Sin categoría'}</div>
+                            <div className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">{session.primaryMuscleGroup || 'Sin categoría'}</div>
                           </div>
                           {session.completedAt && (
-                            <div className="shrink-0 text-right text-xs text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
+                            <div className="shrink-0 text-right text-xs font-medium text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
                           )}
                         </div>
                       </div>

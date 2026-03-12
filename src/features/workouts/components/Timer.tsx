@@ -62,8 +62,8 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
   };
 
   const timerUi = (
-    <div className="fixed left-4 right-4 mx-auto max-w-sm app-card px-3 py-2.5 z-50 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] sm:bottom-4">
-      <div className="flex items-center justify-between gap-2 mb-2">
+    <div className="fixed left-4 right-4 z-50 mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)] sm:bottom-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <TimerIcon className="text-mint" size={18} />
           <span className="text-sm text-white font-medium">Descanso</span>
@@ -93,7 +93,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
 
         <button
           onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
-          className="rounded-lg bg-mint text-ink font-semibold px-3 py-2 text-sm flex items-center justify-center gap-1.5 transition-colors hover:bg-mintDeep touch-manipulation min-w-[120px]"
+          className="flex min-w-[112px] touch-manipulation items-center justify-center gap-1.5 rounded-lg bg-mint px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-mintDeep"
           aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
         >
           {isActive ? <Pause size={16} /> : <Play size={16} />}

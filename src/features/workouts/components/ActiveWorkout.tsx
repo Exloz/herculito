@@ -271,7 +271,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         {showExerciseSkeleton ? (
           <ActiveWorkoutExerciseSkeleton count={Math.min(3, routine.exercises.length)} />
         ) : (
-          <div className="space-y-4 content-fade-in">
+          <div className="space-y-3.5 content-fade-in">
             {routine.exercises.map((exercise, index) => {
               const log = getLogForExerciseCustom(exercise.id, user.id) || {
                 exerciseId: exercise.id,
@@ -283,9 +283,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
               return (
                 <div key={exercise.id} className={`transition-all duration-200 ${isCompleted ? 'opacity-75' : ''}`}>
-                  <div className="flex items-center space-x-2 mb-2">
+                  <div className="mb-2 flex items-center space-x-2">
                     {isCompleted && <CheckCircle size={20} className="text-mint" />}
-                    <h3 className="text-lg font-semibold text-white">
+                    <h3 className="text-lg font-semibold text-white sm:text-xl">
                       {index + 1}. {exercise.name}
                     </h3>
                   </div>
@@ -305,10 +305,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         )}
 
         {hasProgress && (
-          <div className="mt-7 text-center">
+          <div className="mt-6 text-center">
             <button
               onClick={handleCompleteWorkout}
-              className="btn-primary inline-flex items-center gap-2 px-8"
+              className="btn-primary inline-flex w-full items-center justify-center gap-2 px-8 sm:w-auto"
               aria-label={workoutProgress === 100 ? 'Completar entrenamiento' : 'Finalizar entrenamiento incompleto'}
             >
               <CheckCircle size={20} />

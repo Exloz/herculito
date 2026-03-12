@@ -270,49 +270,59 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div
         ref={dialogRef}
-        className="app-card w-full max-w-md max-h-[80vh] overflow-hidden"
+        className="w-full max-w-2xl max-h-[84vh] overflow-hidden rounded-[2rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift"
         role="dialog"
         aria-modal="true"
         aria-labelledby="exercise-selector-title"
         tabIndex={-1}
       >
-        <div className="p-4 border-b border-mist/60">
-          <div className="flex items-center justify-between mb-4">
-            <h3 id="exercise-selector-title" className="text-lg font-bold text-white">
+        <div className="border-b border-white/8 p-5">
+          <div className="mb-5 flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amberGlow/85">
+                {isEditing ? 'Editar ejercicio' : 'Añadir ejercicio'}
+              </div>
+              <h3 id="exercise-selector-title" className="mt-2 font-display text-[2rem] uppercase leading-[0.94] text-white sm:text-[2.5rem]">
               {isEditing ? (
-                <span className="flex items-center gap-2">
-                  <Pencil size={18} className="text-mint" />
-                  Editar Ejercicio
+                  <span className="flex items-center gap-2">
+                    <Pencil size={20} className="text-mint" />
+                    Afina el ejercicio
                 </span>
               ) : (
-                'Añadir Ejercicio'
+                'Elige o crea uno'
               )}
-            </h3>
+              </h3>
+              <p className="mt-3 max-w-lg text-sm leading-relaxed text-slate-300">
+                Busca una base rápida o crea un ejercicio propio con series, reps, descanso y video listo para usar.
+              </p>
+            </div>
             <button
               type="button"
               onClick={onCancel}
-              className="btn-ghost"
+              className="btn-ghost border border-white/8 bg-white/[0.03]"
               aria-label="Cerrar selector de ejercicios"
             >
               <X size={20} />
             </button>
           </div>
 
-          <div className="flex space-x-2">
+          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => {
                 setShowCustomForm(false);
                 clearMessages();
               }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
-                !showCustomForm ? 'bg-mint/15 text-mint' : 'bg-slateDeep text-slate-300 hover:text-white'
+              className={`rounded-[1.35rem] border px-4 py-4 text-left transition-colors ${
+                !showCustomForm ? 'border-mint/30 bg-mint/10 text-white' : 'border-mist/50 bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
-              Ejercicios ({exercises.length})
+              <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Biblioteca</div>
+              <div className="mt-1 font-display text-xl uppercase">{exercises.length}</div>
+              <div className="mt-1 text-sm text-current/80">Añade uno existente con un toque.</div>
             </button>
             <button
               type="button"
@@ -320,16 +330,18 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setShowCustomForm(true);
                 clearMessages();
               }}
-              className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${
-                showCustomForm ? 'bg-mint/15 text-mint' : 'bg-slateDeep text-slate-300 hover:text-white'
+              className={`rounded-[1.35rem] border px-4 py-4 text-left transition-colors ${
+                showCustomForm ? 'border-amberGlow/30 bg-amberGlow/10 text-white' : 'border-mist/50 bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
-              Crear Nuevo
+              <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Nuevo</div>
+              <div className="mt-1 font-display text-xl uppercase">Crear</div>
+              <div className="mt-1 text-sm text-current/80">Guarda un ejercicio propio y reutilízalo.</div>
             </button>
           </div>
         </div>
 
-        <div className="overflow-y-auto max-h-[60vh]">
+        <div className="max-h-[60vh] overflow-y-auto">
           {!showCustomForm ? (
             <ExerciseSelectorTemplateList
               searchTerm={searchTerm}

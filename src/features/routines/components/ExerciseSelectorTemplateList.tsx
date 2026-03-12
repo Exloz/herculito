@@ -38,8 +38,10 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
   const hasActiveFilters = searchTerm.trim().length > 0 || selectedCategory.length > 0;
 
   return (
-    <div className="p-4">
-      <div className="space-y-3 mb-4">
+    <div className="p-4 sm:p-5">
+      <div className="mb-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Encuentra una base</div>
+        <div className="space-y-3">
         <div className="relative">
           <label htmlFor="exercise-template-search" className="sr-only">Buscar ejercicios</label>
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -87,6 +89,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
           <div className="text-xs text-slate-400">{backfillMessage}</div>
         )}
       </div>
+      </div>
 
       <div className="space-y-2">
         {filteredExercises.map((exercise) => (
@@ -95,12 +98,12 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
             type="button"
             onClick={() => void onSelectTemplate(exercise)}
             disabled={Boolean(pendingTemplateId)}
-            className="w-full rounded-xl bg-slateDeep p-3 text-left transition-colors hover:bg-charcoal disabled:cursor-wait disabled:opacity-60"
+            className="w-full rounded-[1.35rem] border border-white/8 bg-slateDeep/85 p-3.5 text-left transition-colors hover:border-mint/30 hover:bg-charcoal disabled:cursor-wait disabled:opacity-60"
           >
             <div className="flex items-center justify-between">
               <div className="min-w-0 pr-3">
-                <h4 dir="auto" className="text-sm font-medium text-white break-words" style={{ overflowWrap: 'anywhere' }}>{exercise.name}</h4>
-                <div className="flex items-center text-xs text-slate-400 space-x-2">
+                <h4 dir="auto" className="break-words font-semibold text-white text-sm" style={{ overflowWrap: 'anywhere' }}>{exercise.name}</h4>
+                <div className="mt-1 flex items-center space-x-2 text-xs text-slate-400">
                   <span>{exercise.category}</span>
                   {exercise.timesUsed > 0 && (
                     <>
@@ -110,13 +113,13 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
                   )}
                 </div>
               </div>
-              <div className="shrink-0 text-xs text-slate-400">{exercise.sets} x {exercise.reps}</div>
+              <div className="shrink-0 rounded-full border border-white/8 px-2.5 py-1 text-xs text-slate-300">{exercise.sets} x {exercise.reps}</div>
             </div>
           </button>
         ))}
 
         {filteredExercises.length === 0 && (
-          <div className="text-center py-8 text-slate-400">
+          <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-10 text-center text-slate-400">
             <p>
               {hasAnyExercises
                 ? hasActiveFilters
@@ -124,7 +127,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
                   : 'No se encontraron ejercicios disponibles.'
                 : 'Todavia no hay ejercicios guardados.'}
             </p>
-            <p className="mt-1 text-xs">
+            <p className="mt-2 text-sm">
               {hasAnyExercises
                 ? hasActiveFilters
                   ? 'Prueba con otro termino, cambia la categoria o reinicia los filtros.'

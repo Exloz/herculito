@@ -148,34 +148,56 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div
         ref={dialogRef}
-        className={`app-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
+        className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] p-5 shadow-lift sm:p-6 ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
         role="dialog"
         aria-modal={!showExerciseSelector}
         aria-labelledby="routine-editor-title"
         aria-hidden={showExerciseSelector}
         tabIndex={-1}
       >
-        <div className="flex items-center justify-between mb-6">
-          <h2 id="routine-editor-title" className="text-xl font-display text-white">
-            {routine ? 'Editar Rutina' : 'Nueva Rutina'}
-          </h2>
+        <div className="mb-6 border-b border-white/8 pb-5">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-mint/85">
+                {routine ? 'Edición de rutina' : 'Nueva rutina'}
+              </div>
+              <h2 id="routine-editor-title" className="mt-2 font-display text-[2.2rem] uppercase leading-[0.92] text-white sm:text-[2.8rem]">
+                {routine ? 'Afina tu rutina' : 'Construye tu rutina'}
+              </h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300">
+                Define el enfoque principal, ordena tus ejercicios y deja la sesión lista para empezar desde el dashboard.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="hidden rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-3 py-2 text-right sm:block">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ejercicios</div>
+                <div className="mt-1 font-display text-xl text-white">{exercises.length}</div>
+              </div>
           <button
             onClick={onCancel}
-            className="btn-ghost"
+                className="btn-ghost border border-white/8 bg-white/[0.03]"
             aria-label="Cerrar editor de rutina"
           >
             <X size={24} />
           </button>
+            </div>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Información básica */}
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="routine-name" className="block text-sm font-medium text-slate-300 mb-2">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+            <div className="space-y-4 rounded-[1.7rem] border border-white/8 bg-white/[0.03] p-4 sm:p-5">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Identidad</div>
+                <h3 className="mt-1 font-display text-xl uppercase text-white">Base de la rutina</h3>
+              </div>
+
+              <div>
+                <label htmlFor="routine-name" className="mb-2 block text-sm font-medium text-slate-300">
                 Nombre de la rutina
               </label>
               <input
@@ -192,11 +214,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 required
                 dir="auto"
               />
-              <div className="mt-1 text-xs text-slate-400">{name.length}/{MAX_ROUTINE_NAME_LENGTH}</div>
-            </div>
+                <div className="mt-1 text-xs text-slate-400">{name.length}/{MAX_ROUTINE_NAME_LENGTH}</div>
+              </div>
 
-            <div>
-              <label htmlFor="routine-description" className="block text-sm font-medium text-slate-300 mb-2">
+              <div>
+                <label htmlFor="routine-description" className="mb-2 block text-sm font-medium text-slate-300">
                 Descripción (opcional)
               </label>
               <textarea
@@ -209,12 +231,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 maxLength={MAX_ROUTINE_DESCRIPTION_LENGTH}
                 dir="auto"
               />
-              <div className="mt-1 text-xs text-slate-400">{description.length}/{MAX_ROUTINE_DESCRIPTION_LENGTH}</div>
-            </div>
+                <div className="mt-1 text-xs text-slate-400">{description.length}/{MAX_ROUTINE_DESCRIPTION_LENGTH}</div>
+              </div>
 
-            {/* Grupo muscular */}
-            <div>
-              <label htmlFor="routine-primary-muscle-group" className="block text-sm font-medium text-slate-300 mb-2">
+              <div>
+                <label htmlFor="routine-primary-muscle-group" className="mb-2 block text-sm font-medium text-slate-300">
                 Grupo muscular principal
               </label>
               <select
@@ -229,54 +250,71 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   </option>
                 ))}
               </select>
-            </div>
+              </div>
 
-            {/* Visibilidad */}
-            <div className="flex items-center space-x-3">
-              <input
+              <label htmlFor="isPublic" className="flex items-start gap-3 rounded-[1.2rem] border border-white/8 bg-slateDeep/60 px-4 py-3">
+                <input
                 type="checkbox"
                 id="isPublic"
                 checked={isPublic}
                 onChange={(e) => setIsPublic(e.target.checked)}
                 className="w-4 h-4 text-mint bg-slateDeep border-mist/60 rounded focus:ring-mint/50"
               />
-              <label htmlFor="isPublic" className="text-sm text-slate-300">
-                Hacer esta rutina pública (otros usuarios podrán usarla)
+                <span>
+                  <span className="block text-sm font-semibold text-slate-100">Compartir con la comunidad</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-slate-400">Otros usuarios podrán usar esta rutina y activarla en su Inicio.</span>
+                </span>
               </label>
             </div>
-          </div>
 
-          {/* Lista de ejercicios */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-white">
-                Ejercicios ({exercises.length})
-              </h3>
-              <button
+            <div className="rounded-[1.7rem] border border-mist/15 bg-mint/8 p-4 sm:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/80">Preparación</div>
+                  <h3 className="mt-1 font-display text-xl uppercase text-white">Lista de ejercicios</h3>
+                </div>
+                <div className="rounded-[1rem] border border-white/8 bg-white/[0.04] px-3 py-2 text-right">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Total</div>
+                  <div className="mt-1 font-display text-lg text-white">{exercises.length}</div>
+                </div>
+              </div>
+
+              <div className="mb-4 rounded-[1.3rem] border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-slate-300">
+                Ajusta orden, volumen y descanso antes de guardar. Lo ideal es salir de aquí con una sesión lista para tocar y entrenar.
+              </div>
+
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-white">
+                 Ejercicios ({exercises.length})
+                </h3>
+                <button
                 type="button"
                 onClick={() => {
                   setFormError('');
                   setShowExerciseSelector(true);
                 }}
-                className="btn-secondary flex items-center gap-2"
-              >
+                  className="btn-primary flex items-center gap-2"
+                >
                 <Plus size={16} />
                 <span>Añadir Ejercicio</span>
               </button>
-            </div>
+              </div>
 
             {exercises.length === 0 ? (
-              <div className="text-center py-8 text-slate-400">
-                <p>No hay ejercicios en esta rutina</p>
-                <p className="text-sm mt-1">Añade al menos un ejercicio</p>
+                <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-10 text-center text-slate-400">
+                  <p className="font-display text-lg uppercase text-white">Todavía no hay ejercicios</p>
+                  <p className="mt-2 text-sm">Añade al menos uno para convertir esta idea en una rutina real.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {exercises.map((exercise, index) => (
-                  <div key={exercise.id} className="app-surface-muted p-4">
+                    <div key={exercise.id} className="rounded-[1.45rem] border border-white/8 bg-slateDeep/85 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="min-w-0 flex items-center gap-2">
-                        <h4 dir="auto" className="min-w-0 break-words font-semibold text-white" style={{ overflowWrap: 'anywhere' }}>
+                          <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                            {index + 1}
+                          </span>
+                        <h4 dir="auto" className="min-w-0 break-words font-display text-xl uppercase text-white" style={{ overflowWrap: 'anywhere' }}>
                           {index + 1}. {exercise.name}
                         </h4>
                         {exercise.video?.url ? (
@@ -310,9 +348,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div className="grid grid-cols-3 gap-3 text-sm">
                       <div>
-                        <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="block text-slate-300 mb-1">Series</label>
+                          <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="mb-1 block text-slate-300">Series</label>
                         <input
                           id={`routine-exercise-${exercise.id}-sets`}
                           type="number"
@@ -357,26 +395,26 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               </div>
             )}
             {exerciseError && (
-              <div className="mt-3 text-sm text-amberGlow">
+                <div className="mt-3 text-sm text-amberGlow">
                 {exerciseError}
               </div>
             )}
             {formError && (
-              <div className="mt-3 rounded-xl border border-crimson/40 bg-crimson/10 px-3 py-2 text-sm text-crimson" role="alert">
+                <div className="mt-3 rounded-xl border border-crimson/40 bg-crimson/10 px-3 py-2 text-sm text-crimson" role="alert">
                 {formError}
               </div>
             )}
+            </div>
           </div>
 
-          {/* Botones de acción */}
-          <div className="flex space-x-3 pt-6">
+          <div className="flex space-x-3 border-t border-white/8 pt-6">
             <button
               type="submit"
               disabled={loading || showExerciseSelector || !name.trim() || exercises.length === 0}
-              className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-60"
+              className="btn-primary flex flex-1 items-center justify-center gap-2 disabled:opacity-60"
             >
               <Save size={18} />
-              <span>{loading ? 'Guardando...' : 'Guardar Rutina'}</span>
+              <span>{loading ? 'Guardando...' : 'Guardar rutina'}</span>
             </button>
             <button
               type="button"

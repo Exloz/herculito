@@ -67,8 +67,17 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 sm:p-5">
       <div className="space-y-4">
+        <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+            {isEditing ? 'Edición manual' : 'Crear desde cero'}
+          </div>
+          <p className="mt-2 text-sm leading-relaxed text-slate-300">
+            Define nombre, volumen y video para que este ejercicio quede listo para reutilizarse en futuras rutinas.
+          </p>
+        </div>
+
         <div>
           <label htmlFor="custom-exercise-name" className="block text-sm text-slate-300 mb-1">Nombre del ejercicio *</label>
           <input
@@ -179,7 +188,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
           </div>
         </div>
 
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 border-t border-white/8 pt-4">
           <button type="button" onClick={onClearForm} className="btn-secondary flex-1">Cancelar</button>
 
           <button

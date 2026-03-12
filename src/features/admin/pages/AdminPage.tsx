@@ -168,30 +168,28 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
   return (
     <div className="app-shell pb-28">
       <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:py-8">
-        <section className="overflow-hidden rounded-[2rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.16),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(245,158,11,0.14),transparent_30%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] shadow-lift">
-          <div className="border-b border-white/8 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-mint/85 sm:px-6">
-            Centro de control
-          </div>
-          <div className="space-y-6 px-5 py-5 sm:px-6 sm:py-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  <Shield size={14} className="text-mint" /> Admin overview
-                </div>
-                <h1 className="mt-3 font-display text-[2.6rem] uppercase leading-[0.9] text-white sm:text-[3.6rem]">
-                  Observa el sistema completo.
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-300">
-                  Revisa usuarios, rutinas y sesiones desde una vista operativa clara, con filtros rápidos y bloques que priorizan lectura antes que ruido.
-                </p>
+        <section className="rounded-[1.6rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">
+                <Shield size={14} className="text-mint" />
+                <span>Centro de control</span>
               </div>
-
-              <button type="button" onClick={() => void refresh()} disabled={refreshing} className="btn-primary inline-flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap sm:w-auto disabled:opacity-60">
-                <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
-                <span>{refreshing ? 'Actualizando...' : 'Actualizar datos'}</span>
-              </button>
+              <h1 className="mt-2 font-display text-[2rem] uppercase leading-[0.92] text-white sm:text-[2.5rem]">
+                Admin
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
+                Revisa usuarios, rutinas y sesiones con una lectura más directa y menos bloques gigantes.
+              </p>
             </div>
 
+            <button type="button" onClick={() => void refresh()} disabled={refreshing} className="btn-primary inline-flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap sm:w-auto disabled:opacity-60">
+              <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
+              <span>{refreshing ? 'Actualizando...' : 'Actualizar datos'}</span>
+            </button>
+          </div>
+
+          <div className="mt-4">
             <AdminSummaryCards summary={data?.summary} />
           </div>
         </section>

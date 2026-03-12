@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Target } from 'lucide-react';
+import { Bookmark, Globe2, Plus, Target } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
 import { RoutineEditor } from '../components/RoutineEditor';
@@ -144,7 +144,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             <p className="mt-2 max-w-xl text-sm text-slate-300">
               {activeTab === 'my'
                 ? 'Edita tus sesiones frecuentes sin llenar la pantalla de bloques enormes.'
-                : 'Activa solo las rutinas publicas que quieres tener visibles en Inicio.'}
+                : 'Activa solo las rutinas públicas que quieres tener visibles en Inicio.'}
             </p>
           </div>
 
@@ -160,12 +160,14 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
 
         <div className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300">
           <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{myRoutines.length} propias</span>
-          <span className="rounded-full bg-mint/12 px-2.5 py-1 text-mint/85">{publicRoutines.length} publicas</span>
+          <span className="rounded-full bg-mint/12 px-2.5 py-1 text-mint/85">{publicRoutines.length} públicas</span>
           <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{routinesMissingVideos} sin video</span>
           <span className="rounded-full bg-amberGlow/12 px-2.5 py-1 text-amberGlow">{visiblePublicRoutinesCount} en Inicio</span>
         </div>
 
-        <div className="mb-5 grid grid-cols-2 gap-1 rounded-[1.15rem] bg-graphite/80 p-1 shadow-soft" role="tablist" aria-label="Tipos de rutinas">
+        <div className="mb-5 rounded-[1.2rem] bg-graphite/80 p-1.5 shadow-soft" role="tablist" aria-label="Tipos de rutinas">
+          <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Vista</div>
+          <div className="grid grid-cols-2 gap-1">
           <button
             id="routines-tab-my"
             role="tab"
@@ -173,11 +175,14 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             aria-controls="routines-panel-my"
             onClick={() => handleTabChange('my')}
             className={`rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'my'
-              ? 'bg-mint/12 text-white'
+              ? 'bg-mint/12 text-white shadow-soft'
               : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
               }`}
           >
-            <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Mis rutinas</div>
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-current/70">
+              <Bookmark size={13} />
+              <span>Mis rutinas</span>
+            </div>
             <div className="mt-1 font-display text-xl uppercase">{myRoutines.length}</div>
             <div className="mt-1 text-xs text-current/75">Edita y repite.</div>
           </button>
@@ -188,14 +193,18 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             aria-controls="routines-panel-public"
             onClick={() => handleTabChange('public')}
             className={`rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'public'
-              ? 'bg-amberGlow/12 text-white'
+              ? 'bg-amberGlow/12 text-white shadow-soft'
               : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
               }`}
           >
-            <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Públicas</div>
+            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-current/70">
+              <Globe2 size={13} />
+              <span>Públicas</span>
+            </div>
             <div className="mt-1 font-display text-xl uppercase">{publicRoutines.length}</div>
-            <div className="mt-1 text-xs text-current/75">Activa solo las utiles.</div>
+            <div className="mt-1 text-xs text-current/75">Activa solo las útiles.</div>
           </button>
+          </div>
         </div>
 
         {activeTab === 'my' && (

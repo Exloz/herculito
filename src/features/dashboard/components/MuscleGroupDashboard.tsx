@@ -27,7 +27,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
   isRecommended
 }) => {
   const groupInfo = MUSCLE_GROUPS[muscleGroup];
-  const [expandedRoutineId, setExpandedRoutineId] = useState<string | null>(groupRoutines[0]?.id ?? null);
+  const [expandedRoutineId, setExpandedRoutineId] = useState<string | null>(null);
 
   useEffect(() => {
     setExpandedRoutineId((current) => {
@@ -35,7 +35,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
         return current;
       }
 
-      return groupRoutines[0]?.id ?? null;
+      return null;
     });
   }, [groupRoutines]);
 
@@ -57,14 +57,12 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
               </div>
 
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  <span>{isRecommended ? 'Sugerido hoy' : 'Grupo muscular'}</span>
-                  {isRecommended && (
-                    <span className="rounded-full bg-mint/12 px-2 py-1 text-[10px] text-mint">Hoy</span>
-                  )}
+                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  <span>{isRecommended ? 'Primero hoy' : 'Grupo activo'}</span>
+                  {isRecommended && <span className="rounded-full bg-mint/12 px-2 py-1 text-[10px] text-mint">Hoy</span>}
                 </div>
-                <h3 className="truncate font-display text-2xl uppercase text-white sm:text-[1.8rem]">{groupInfo.name}</h3>
-                <p className="mt-1 text-sm text-slate-300">
+                <h3 className="mt-1 truncate font-display text-xl uppercase text-white sm:text-[1.55rem]">{groupInfo.name}</h3>
+                <p className="mt-1 text-sm text-slate-400">
                   {formatCountLabel(groupRoutines.length, 'rutina disponible', 'rutinas disponibles')}
                 </p>
               </div>
@@ -87,7 +85,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                     aria-expanded={isExpanded}
                   >
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-                      {routine.isPublic && <span className="rounded-full bg-white/[0.05] px-2.5 py-1 uppercase tracking-[0.16em]">Publica</span>}
+                      {routine.isPublic && <span className="rounded-full bg-white/[0.05] px-2.5 py-1 uppercase tracking-[0.16em]">Pública</span>}
                       <span className="rounded-full bg-white/[0.05] px-2.5 py-1">
                         {formatCountLabel(routine.exercises.length, 'ejercicio', 'ejercicios')}
                       </span>
@@ -105,7 +103,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                         <div className="mt-1 text-sm text-slate-400">
                           {previewExercises.length > 0
                             ? previewExercises.map((exercise) => `${exercise.name} (${exercise.sets}x${exercise.reps})`).join(' - ')
-                            : 'Sin ejercicios todavia'}
+                            : 'Sin ejercicios todavía'}
                         </div>
                         {routine.createdBy && routine.createdBy !== currentUser.id && (
                           <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500">
@@ -163,7 +161,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                             </div>
                           ))}
                           {routine.exercises.length > 4 && (
-                            <div className="text-xs text-slate-500">+{routine.exercises.length - 4} ejercicios mas</div>
+                            <div className="text-xs text-slate-500">+{routine.exercises.length - 4} ejercicios más</div>
                           )}
                         </div>
                         {routine.description && (
@@ -182,7 +180,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                         </div>
                         <div className="mt-3 text-xs text-slate-500">
                           {routine.createdBy === currentUser.id
-                            ? 'Puedes ajustar la clasificacion sin salir del dashboard.'
+                            ? 'Puedes ajustar la clasificación sin salir del dashboard.'
                             : 'Puedes revisar la rutina y empezarla directo.'}
                         </div>
                       </div>
@@ -240,7 +238,7 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
   if (availableGroups.length === 0) {
     return (
       <div className="rounded-[1.6rem] bg-slateDeep/45 px-4 py-8 text-center">
-        <div className="font-display text-lg uppercase text-white">No hay rutinas todavia</div>
+        <div className="font-display text-lg uppercase text-white">No hay rutinas todavía</div>
         <p className="mt-2 text-sm text-slate-400">Crea tu primera rutina para verla organizada por grupo muscular.</p>
       </div>
     );

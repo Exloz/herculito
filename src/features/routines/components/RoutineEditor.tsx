@@ -151,29 +151,29 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div
         ref={dialogRef}
-        className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[2rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] p-5 shadow-lift sm:p-6 ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
+        className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[1.7rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] p-4 shadow-lift sm:p-5 ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
         role="dialog"
         aria-modal={!showExerciseSelector}
         aria-labelledby="routine-editor-title"
         aria-hidden={showExerciseSelector}
         tabIndex={-1}
       >
-        <div className="mb-6 border-b border-white/8 pb-5">
+        <div className="mb-5 pb-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-mint/85">
                 {routine ? 'Edición de rutina' : 'Nueva rutina'}
               </div>
-              <h2 id="routine-editor-title" className="mt-2 font-display text-[2.2rem] uppercase leading-[0.92] text-white sm:text-[2.8rem]">
-                {routine ? 'Afina tu rutina' : 'Construye tu rutina'}
+              <h2 id="routine-editor-title" className="mt-1 font-display text-[1.8rem] uppercase leading-[0.94] text-white sm:text-[2.2rem]">
+                {routine ? 'Afina tu rutina' : 'Nueva rutina'}
               </h2>
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-300">
-                Define el enfoque principal, ordena tus ejercicios y deja la sesión lista para empezar desde el dashboard.
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
+                Define el enfoque, agrega ejercicios y deja la sesión lista para empezar desde Inicio.
               </p>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="hidden rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-3 py-2 text-right sm:block">
+              <div className="hidden rounded-[1rem] bg-white/[0.04] px-3 py-2 text-right sm:block">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ejercicios</div>
                 <div className="mt-1 font-display text-xl text-white">{exercises.length}</div>
               </div>
@@ -188,9 +188,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
-            <div className="space-y-4 rounded-[1.7rem] border border-white/8 bg-white/[0.03] p-4 sm:p-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+            <div className="space-y-4 rounded-[1.35rem] bg-white/[0.03] p-4">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Identidad</div>
                 <h3 className="mt-1 font-display text-xl uppercase text-white">Base de la rutina</h3>
@@ -267,20 +267,20 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               </label>
             </div>
 
-            <div className="rounded-[1.7rem] border border-mist/15 bg-mint/8 p-4 sm:p-5">
+            <div className="rounded-[1.35rem] bg-mint/8 p-4">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/80">Preparación</div>
                   <h3 className="mt-1 font-display text-xl uppercase text-white">Lista de ejercicios</h3>
                 </div>
-                <div className="rounded-[1rem] border border-white/8 bg-white/[0.04] px-3 py-2 text-right">
+                <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2 text-right">
                   <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Total</div>
                   <div className="mt-1 font-display text-lg text-white">{exercises.length}</div>
                 </div>
               </div>
 
-              <div className="mb-4 rounded-[1.3rem] border border-white/8 bg-white/[0.04] px-4 py-3 text-sm text-slate-300">
-                Ajusta orden, volumen y descanso antes de guardar. Lo ideal es salir de aquí con una sesión lista para tocar y entrenar.
+              <div className="mb-4 rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300">
+                Ajusta volumen y descanso antes de guardar.
               </div>
 
               <div className="mb-4 flex items-center justify-between">
@@ -301,20 +301,20 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               </div>
 
             {exercises.length === 0 ? (
-                <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-10 text-center text-slate-400">
+                <div className="rounded-[1.2rem] bg-slateDeep/45 px-4 py-8 text-center text-slate-400">
                   <p className="font-display text-lg uppercase text-white">Todavía no hay ejercicios</p>
                   <p className="mt-2 text-sm">Añade al menos uno para convertir esta idea en una rutina real.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {exercises.map((exercise, index) => (
-                    <div key={exercise.id} className="rounded-[1.45rem] border border-white/8 bg-slateDeep/85 p-4">
-                    <div className="flex items-center justify-between mb-3">
+                    <div key={exercise.id} className="rounded-[1.15rem] bg-slateDeep/85 p-3">
+                    <div className="mb-3 flex items-center justify-between">
                       <div className="min-w-0 flex items-center gap-2">
-                          <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                          <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
                             {index + 1}
                           </span>
-                        <h4 dir="auto" className="min-w-0 break-words font-display text-xl uppercase text-white" style={{ overflowWrap: 'anywhere' }}>
+                        <h4 dir="auto" className="min-w-0 break-words font-display text-lg uppercase text-white" style={{ overflowWrap: 'anywhere' }}>
                           {index + 1}. {exercise.name}
                         </h4>
                         {exercise.video?.url ? (
@@ -348,7 +348,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                       </div>
                     </div>
 
-                      <div className="grid grid-cols-3 gap-3 text-sm">
+                       <div className="grid grid-cols-3 gap-2 text-sm">
                       <div>
                           <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="mb-1 block text-slate-300">Series</label>
                         <input
@@ -407,7 +407,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             </div>
           </div>
 
-          <div className="flex space-x-3 border-t border-white/8 pt-6">
+           <div className="flex space-x-3 border-t border-white/8 pt-5">
             <button
               type="submit"
               disabled={loading || showExerciseSelector || !name.trim() || exercises.length === 0}

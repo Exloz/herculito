@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, History } from 'lucide-react';
+import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, History, Trophy } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
 import {
   completeSession as apiCompleteSession,
@@ -278,6 +278,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   }, [dashboardRoutines, recommendedGroup]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
   const latestSessionDate = recentSessions[0]?.completedAt ? formatDateInAppTimeZone(recentSessions[0].completedAt) : null;
+  const competition = dashboardData?.competition;
   const scrollToSection = useCallback((element: HTMLElement | null) => {
     element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
@@ -505,53 +506,106 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         {!activeWorkout && (
           <section className="mb-5 rounded-[1.5rem] bg-graphite/80 px-4 py-4 shadow-lift sm:px-5">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
-              {recommendedGroupName && (
-                <span className="rounded-full bg-mint/12 px-2.5 py-1 font-semibold uppercase tracking-[0.18em] text-mint/85">
-                  Hoy: {recommendedGroupName}
-                </span>
-              )}
-              <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{dashboardRoutines.length} rutinas</span>
-              <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{stats.thisWeekWorkouts} esta semana</span>
-              <span className="rounded-full bg-white/[0.04] px-2.5 py-1">racha {stats.currentStreak}</span>
-              {latestSessionDate && (
-                <span className="rounded-full bg-white/[0.04] px-2.5 py-1">ultima {latestSessionDate}</span>
-              )}
-            </div>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Hoy</div>
+                <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-2">
+                  <h2 className="font-display text-[2rem] uppercase leading-none text-white sm:text-[2.4rem]">
+                    {recommendedGroupName ?? 'Listo para entrenar'}
+                  </h2>
+                  {recommendedGroupName && (
+                    <span className="rounded-full bg-mint/12 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint/85">
+                      Sugerido
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm text-slate-300">
+                  {recommendedGroupName
+                    ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina lista' : 'rutinas listas'} para empezar ahora.`
+                    : 'Elige una rutina y entra directo a entrenar.'}
+                </p>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => scrollToSection(routinesSectionRef.current)}
-                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
-              >
-                <Dumbbell size={15} className="text-mint" />
-                <span>Rutinas</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection(progressSectionRef.current)}
-                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
-              >
-                <BarChart3 size={15} className="text-amberGlow" />
-                <span>Progreso</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection(calendarSectionRef.current)}
-                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
-              >
-                <CalendarRange size={15} className="text-mint" />
-                <span>Calendario</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollToSection(historySectionRef.current)}
-                className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-sm text-white transition-colors hover:bg-slateDeep"
-              >
-                <History size={15} className="text-amberGlow" />
-                <span>Historial</span>
-              </button>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Rutinas</div>
+                    <div className="mt-1 font-semibold text-white">{dashboardRoutines.length}</div>
+                  </div>
+                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                    <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts}</div>
+                  </div>
+                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha</div>
+                    <div className="mt-1 font-semibold text-white">{stats.currentStreak}</div>
+                  </div>
+                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Última</div>
+                    <div className="mt-1 font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(routinesSectionRef.current)}
+                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                  >
+                    <Dumbbell size={15} className="text-mint" />
+                    <span>Rutinas</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(progressSectionRef.current)}
+                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                  >
+                    <BarChart3 size={15} className="text-amberGlow" />
+                    <span>Progreso</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(calendarSectionRef.current)}
+                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                  >
+                    <CalendarRange size={15} className="text-mint" />
+                    <span>Calendario</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(historySectionRef.current)}
+                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                  >
+                    <History size={15} className="text-amberGlow" />
+                    <span>Historial</span>
+                  </button>
+                </div>
+
+                {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
+                  <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
+                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      <Trophy size={13} className="text-amberGlow" />
+                      <span>Ranking</span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                        <div className="mt-1 text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin lider'}</div>
+                        <div className="mt-1 text-xs text-slate-400">
+                          Tu puesto: {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posicion'}
+                        </div>
+                      </div>
+                      <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Mes</div>
+                        <div className="mt-1 text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin lider'}</div>
+                        <div className="mt-1 text-xs text-slate-400">
+                          Tu puesto: {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posicion'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         )}

@@ -95,7 +95,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
             <div className="mt-3 text-sm text-slate-300">
               {previewExercises.length > 0
                 ? previewExercises.map((exercise) => `${exercise.name} (${exercise.sets}x${exercise.reps})`).join(' - ')
-                : 'Sin ejercicios todavia'}
+                : 'Sin ejercicios todavía'}
             </div>
           </div>
 
@@ -186,7 +186,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
                     </div>
                   ))}
                   {routine.exercises.length > 4 && (
-                    <div className="text-xs text-slate-500">... y {routine.exercises.length - 4} mas</div>
+                    <div className="text-xs text-slate-500">... y {routine.exercises.length - 4} más</div>
                   )}
                 </div>
               </div>

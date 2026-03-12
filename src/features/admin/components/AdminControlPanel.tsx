@@ -36,18 +36,17 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   onReset
 }) => {
   return (
-    <section className="relative overflow-hidden rounded-[1.85rem] border border-mint/15 bg-[radial-gradient(circle_at_top_left,rgba(72,229,163,0.14),transparent_28%),radial-gradient(circle_at_top_right,rgba(255,191,71,0.16),transparent_24%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.94))] p-4 shadow-soft sm:p-5">
-      <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.03)_25%,transparent_50%)]" aria-hidden="true" />
+    <section className="relative overflow-hidden rounded-[1.4rem] bg-[linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.94))] p-4 shadow-soft">
       <div className="relative">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-mint/80">
               <Filter size={14} /> Centro de control
             </div>
-            <p className="mt-2 max-w-2xl text-sm text-slate-300">Filtra rápido por usuario, rutina y rango para leer el sistema sin perder contexto.</p>
+            <p className="mt-1 max-w-2xl text-sm text-slate-300">Filtra por usuario, rutina y rango sin romper el flujo de lectura.</p>
           </div>
 
-          <button type="button" onClick={onReset} className="btn-secondary inline-flex h-12 items-center justify-center gap-2 self-start sm:self-auto">
+          <button type="button" onClick={onReset} className="btn-secondary inline-flex h-11 items-center justify-center gap-2 self-start sm:self-auto">
             <ArrowDownAZ size={16} /> Reiniciar
           </button>
         </div>
@@ -93,18 +92,18 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
           </label>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-3">
+        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2.5">
             <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Usuarios visibles</div>
-            <div className="mt-1 text-xl font-display text-white">{visibleUsers}</div>
+            <div className="mt-1 text-lg font-display text-white">{visibleUsers}</div>
           </div>
-          <div className="rounded-[1.35rem] border border-mint/20 bg-mint/10 px-4 py-3">
+          <div className="rounded-[1rem] bg-mint/10 px-3 py-2.5">
             <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Rutinas visibles</div>
-            <div className="mt-1 text-xl font-display text-white">{visibleRoutines}</div>
+            <div className="mt-1 text-lg font-display text-white">{visibleRoutines}</div>
           </div>
-          <div className="rounded-[1.35rem] border border-amberGlow/20 bg-amberGlow/10 px-4 py-3">
+          <div className="rounded-[1rem] bg-amberGlow/10 px-3 py-2.5">
             <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Actividad visible</div>
-            <div className="mt-1 text-xl font-display text-white">{visibleSessions} sesiones</div>
+            <div className="mt-1 text-lg font-display text-white">{visibleSessions} sesiones</div>
           </div>
         </div>
       </div>

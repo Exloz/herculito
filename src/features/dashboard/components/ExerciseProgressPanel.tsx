@@ -250,83 +250,49 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [pointsInRange]);
 
   return (
-    <div className="overflow-hidden rounded-[1.9rem] border border-mist/60 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_24%),linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
-      <div className="mb-5 border-b border-white/8 pb-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">
-              <Activity className="text-mint" size={14} />
-              <span>Historial y progreso</span>
-            </div>
-            <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-300">Revisa tu carga real, detecta subidas de nivel y abre el historial de cada ejercicio sin cambiar de pantalla.</p>
-          </div>
-
-          {selectedSummary ? (
-            <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold ${trendCopy.tone}`}>
-              <trendCopy.Icon size={14} />
-              <span>{trendCopy.label}</span>
-            </div>
-          ) : null}
-        </div>
-
-        {selectedSummary ? (
-          <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1.15fr)_repeat(3,minmax(0,0.6fr))]">
-            <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ejercicio activo</div>
-              <div className="mt-2 font-display text-[1.9rem] uppercase leading-none text-white sm:text-[2.3rem]">{selectedSummary.exerciseName}</div>
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
-                <span className="rounded-full border border-mist/40 px-2.5 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
-                <span className="rounded-full border border-mist/40 px-2.5 py-1">Último: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
-              </div>
-            </div>
-
-            <div className="rounded-[1.45rem] border border-mint/20 bg-mint/10 px-4 py-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Mejor marca</div>
-              <div className="mt-2 font-display text-2xl text-white">
-                {pointsInRange.length > 0 ? formatKg(Math.max(...pointsInRange.map((point) => point.bestWeight))) : formatKg(selectedSummary.personalRecord)}
-              </div>
-              <div className="mt-1 text-xs text-slate-300">Dentro del rango visible</div>
-            </div>
-
-            <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Récord</div>
-              <div className="mt-2 font-display text-2xl text-white">{formatKg(selectedSummary.personalRecord)}</div>
-              <div className="mt-1 text-xs text-slate-300">Mejor marca total</div>
-            </div>
-
-            <div className="rounded-[1.45rem] border border-amberGlow/20 bg-amberGlow/10 px-4 py-4">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Vista</div>
-              <div className="mt-2 font-display text-2xl text-white">{getRangeLabel(selectedRangeDays)}</div>
-              <div className="mt-1 text-xs text-slate-300">{formatSessionCount(pointsInRange.length)}</div>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
+    <div className="overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_24%),linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
       {selectedSummary ? (
-        <div className="space-y-5">
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-            <div>
-              <label htmlFor="exercise-progress-selector" className="mb-1.5 block text-xs text-slate-400">
-                Ejercicio
-              </label>
-              <select
-                id="exercise-progress-selector"
-                className="input input-sm"
-                value={selectedSummary.exerciseId}
-                onChange={(event) => setSelectedExerciseId(event.target.value)}
-              >
-                {summaries.map((summary) => (
-                  <option key={summary.exerciseId} value={summary.exerciseId}>
-                    {summary.exerciseName}
-                  </option>
-                ))}
-              </select>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">
+                <Activity className="text-mint" size={14} />
+                <span>Historial y progreso</span>
+              </div>
+              <div className="mt-2 font-display text-[1.6rem] uppercase leading-none text-white sm:text-[2rem]">
+                {selectedSummary.exerciseName}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
+                <span className="rounded-full bg-white/[0.05] px-2.5 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
+                <span className="rounded-full bg-white/[0.05] px-2.5 py-1">Ultimo: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
+                <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${trendCopy.tone}`}>
+                  <trendCopy.Icon size={13} />
+                  {trendCopy.label}
+                </span>
+              </div>
             </div>
 
-            <div className="rounded-xl border border-mist/50 bg-slateDeep/70 px-3 py-2 text-right">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Vista</div>
-              <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] xl:min-w-[22rem]">
+              <label className="block min-w-0" htmlFor="exercise-progress-selector">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ejercicio</span>
+                <select
+                  id="exercise-progress-selector"
+                  className="input input-sm"
+                  value={selectedSummary.exerciseId}
+                  onChange={(event) => setSelectedExerciseId(event.target.value)}
+                >
+                  {summaries.map((summary) => (
+                    <option key={summary.exerciseId} value={summary.exerciseId}>
+                      {summary.exerciseName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="rounded-[1rem] bg-slateDeep/70 px-3 py-2.5 text-right">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Vista</div>
+                <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
+              </div>
             </div>
           </div>
 
@@ -335,77 +301,75 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               <span>Rango</span>
               <span>{formatSessionCount(pointsInRange.length)} visibles</span>
             </div>
-            <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-mist/40 bg-slateDeep/70 p-1.5" role="group" aria-label="Rango de progresion">
+            <div className="grid grid-cols-4 gap-1 rounded-[1rem] bg-slateDeep/70 p-1" role="group" aria-label="Rango de progresion">
               {RANGE_OPTIONS.map((option) => (
                 <button
                   key={option.label}
                   type="button"
                   onClick={() => setSelectedRangeDays(option.value)}
-                  className={`touch-target-sm rounded-xl border px-2 py-2 text-center transition-all ${selectedRangeDays === option.value
-                    ? 'border-mint/40 bg-mint/15 text-mint shadow-[0_0_0_1px_rgba(72,229,163,0.12)]'
-                    : 'border-transparent text-slate-300 hover:border-mist/60 hover:bg-white/5 hover:text-white'
+                  className={`touch-target-sm rounded-[0.85rem] px-2 py-2 text-center transition-colors ${selectedRangeDays === option.value
+                    ? 'bg-mint/18 text-mint'
+                    : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
                     }`}
                   aria-pressed={selectedRangeDays === option.value}
                 >
                   <span className="block text-xs font-semibold">{option.label}</span>
-                  <span className="mt-0.5 block text-[10px] uppercase tracking-[0.16em] text-current/70">{option.description}</span>
+                  <span className="mt-0.5 block text-[10px] uppercase tracking-[0.14em] text-current/70">{option.description}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[1.3rem] border border-white/8 bg-white/[0.03] p-3.5">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Último registro</div>
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="text-base font-display text-white sm:text-xl">{formatKg(displayedLastWeight)}</div>
-                  {rangeTrend === 'up' && <TrendingUp size={16} className="text-mint" />}
-                  {rangeTrend === 'down' && <TrendingDown size={16} className="text-crimson" />}
-                  {rangeTrend === 'flat' && <Minus size={16} className="text-slate-300" />}
-                </div>
-                <div className="mt-1 text-xs text-slate-400">
-                  {displayedComparisonWeight !== null ? `${formatDelta(displayedLastWeight - displayedComparisonWeight)} vs registro anterior` : 'Aún no hay comparación previa'}
-                </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Ultimo registro</div>
+              <div className="mt-1.5 flex items-center gap-2">
+                <div className="font-display text-xl text-white">{formatKg(displayedLastWeight)}</div>
+                {rangeTrend === 'up' && <TrendingUp size={15} className="text-mint" />}
+                {rangeTrend === 'down' && <TrendingDown size={15} className="text-crimson" />}
+                {rangeTrend === 'flat' && <Minus size={15} className="text-slate-300" />}
               </div>
-
-            <div className="rounded-[1.3rem] border border-white/8 bg-white/[0.03] p-3.5">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Récord personal</div>
-              <div className="mt-2 text-base font-display text-amberGlow sm:text-xl">{formatKg(selectedSummary.personalRecord)}</div>
-              <div className="mt-1 text-xs text-slate-400">Mejor marca de toda la historia</div>
+              <div className="mt-1 text-xs text-slate-400">
+                {displayedComparisonWeight !== null ? `${formatDelta(displayedLastWeight - displayedComparisonWeight)} vs anterior` : 'Sin comparacion previa'}
+              </div>
             </div>
 
-            <div className="rounded-[1.3rem] border border-white/8 bg-white/[0.03] p-3.5">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Cambio visible</div>
-              <div className={`mt-2 text-base font-display sm:text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
+            <div className="rounded-[1rem] bg-mint/10 px-3 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-mint/75">Record personal</div>
+              <div className="mt-1.5 font-display text-xl text-white">{formatKg(selectedSummary.personalRecord)}</div>
+              <div className="mt-1 text-xs text-slate-300">Mejor marca total</div>
+            </div>
+
+            <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">
+              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Cambio visible</div>
+              <div className={`mt-1.5 font-display text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
                 {rangeDelta !== null ? formatDelta(rangeDelta) : 'Sin datos'}
               </div>
-              <div className="mt-1 text-xs text-slate-400">Desde el primer punto del rango actual</div>
+              <div className="mt-1 text-xs text-slate-400">Desde el inicio del rango</div>
             </div>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]">
-            <div className="overflow-hidden rounded-[1.6rem] border border-mist/40 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(15,23,42,0.72))] p-4">
+          <div className="grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">
+            <div className="rounded-[1.2rem] bg-slateDeep/55 p-3.5">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                    <BarChart3 size={14} className="text-mint" />
+                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    <BarChart3 size={13} className="text-mint" />
                     <span>Mapa de carga</span>
                   </div>
                   <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-                  <div className="mt-1 text-xs text-slate-400">Escala real en kg. Cada punto representa el mejor set de una sesión.</div>
                 </div>
 
-                <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
-                  <div className="flex items-center justify-end gap-1.5 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                <div className="rounded-[0.9rem] bg-white/[0.05] px-2.5 py-2 text-right text-xs text-slate-400">
+                  <div className="flex items-center justify-end gap-1">
                     <CalendarRange size={12} />
-                    <span>Rango</span>
+                    <span>{getRangeLabel(selectedRangeDays)}</span>
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-white">{getRangeLabel(selectedRangeDays)}</div>
                 </div>
               </div>
 
               {chartData ? (
-                <div className="overflow-x-auto pb-2" role="img" aria-label="Gráfica de progresión de carga con escala en kilogramos">
+                <div className="overflow-x-auto pb-1" role="img" aria-label="Gráfica de progresión de carga con escala en kilogramos">
                   <svg
                     width={chartData.width}
                     height={CHART_HEIGHT}
@@ -499,62 +463,56 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                     })}
                   </svg>
                   <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-                    <span>Escala visible: {formatKg(chartData.minWeight)} - {formatKg(chartData.maxWeight)}</span>
+                    <span>Escala: {formatKg(chartData.minWeight)} - {formatKg(chartData.maxWeight)}</span>
                     <span>{formatSessionCount(pointsInRange.length)}</span>
                   </div>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-mist/50 bg-white/5 px-4 py-8 text-center text-xs text-slate-400">
-                  No hay sesiones con carga en este rango. Cambia a <button type="button" className="font-semibold text-mint" onClick={() => setSelectedRangeDays('all')}>Todo</button> para revisar el historial completo.
+                <div className="rounded-[1rem] bg-white/[0.05] px-4 py-8 text-center text-xs text-slate-400">
+                  No hay sesiones con carga en este rango. Cambia a <button type="button" className="font-semibold text-mint" onClick={() => setSelectedRangeDays('all')}>Todo</button> para ver el historial completo.
                 </div>
               )}
             </div>
 
-            <div className="overflow-hidden rounded-[1.6rem] border border-mist/40 bg-[linear-gradient(180deg,rgba(2,6,23,0.55),rgba(15,23,42,0.9))] p-4">
+            <div className="rounded-[1.2rem] bg-slateDeep/55 p-3.5">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                    <History size={14} className="text-amberGlow" />
-                    <span>Historial visible</span>
+                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    <History size={13} className="text-amberGlow" />
+                    <span>Historial</span>
                   </div>
                   <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-                  <div className="mt-1 text-xs text-slate-400">Lista del rango seleccionado, ordenada del más reciente al más antiguo.</div>
                 </div>
-
-                <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Entradas</div>
-                  <div className="mt-1 text-sm font-semibold text-white">{pointsInRange.length}</div>
-                </div>
+                <div className="text-xs text-slate-400">{pointsInRange.length} entradas</div>
               </div>
 
               {historyItems.length > 0 ? (
-                <div className="max-h-[24rem] space-y-2 overflow-y-auto pr-1">
+                <div className="max-h-[22rem] space-y-1.5 overflow-y-auto pr-1">
                   {historyItems.map((point) => {
                     const deltaTone = point.deltaFromPrevious === null || Math.abs(point.deltaFromPrevious) < 0.05
-                      ? 'text-slate-300 bg-white/5 border-white/8'
+                      ? 'text-slate-300 bg-white/[0.06]'
                       : point.deltaFromPrevious > 0
-                        ? 'text-mint bg-mint/10 border-mint/20'
-                        : 'text-crimson bg-crimson/10 border-crimson/20';
+                        ? 'text-mint bg-mint/10'
+                        : 'text-crimson bg-crimson/10';
 
                     const deltaLabel = point.deltaFromPrevious === null
-                      ? 'Primer registro visible'
+                      ? 'Primer registro'
                       : Math.abs(point.deltaFromPrevious) < 0.05
-                        ? 'Sin cambio vs anterior'
+                        ? 'Sin cambio'
                         : `${formatDelta(point.deltaFromPrevious)} vs anterior`;
 
                     return (
-                      <div key={point.timestamp} className="rounded-[1.15rem] border border-white/8 bg-white/[0.03] p-3 shadow-[0_10px_30px_rgba(2,6,23,0.16)]">
-                        <div className="flex items-start justify-between gap-3">
+                      <div key={point.timestamp} className="rounded-[0.95rem] bg-white/[0.04] px-3 py-2.5">
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3">
                           <div className="min-w-0">
                             <div className="text-sm font-medium text-white">{point.dateLabel}</div>
                             <div className="mt-1 text-xs text-slate-400">
                               {formatSetCount(point.completedSets)} completadas · Volumen {formatKg(point.totalWeight)}
                             </div>
                           </div>
-
                           <div className="text-right">
-                            <div className="font-display text-xl text-white">{formatKg(point.bestWeight)}</div>
-                            <div className={`mt-1 inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold ${deltaTone}`}>
+                            <div className="font-display text-lg text-white">{formatKg(point.bestWeight)}</div>
+                            <div className={`mt-1 rounded-full px-2 py-1 text-[10px] font-semibold ${deltaTone}`}>
                               {deltaLabel}
                             </div>
                           </div>
@@ -564,7 +522,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   })}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-mist/50 bg-white/5 px-4 py-8 text-center text-xs text-slate-400">
+                <div className="rounded-[1rem] bg-white/[0.05] px-4 py-8 text-center text-xs text-slate-400">
                   No hay registros en {getRangeTitle(selectedRangeDays).toLowerCase()}.
                 </div>
               )}
@@ -572,9 +530,9 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
           </div>
         </div>
       ) : (
-        <div className="rounded-[1.6rem] border border-dashed border-mist/50 bg-white/[0.03] px-4 py-10 text-center">
+        <div className="rounded-[1.2rem] bg-white/[0.04] px-4 py-10 text-center">
           <div className="font-display text-xl uppercase text-white">Sin progreso visible todavía</div>
-          <p className="mt-2 text-sm text-slate-400">Completa algunas sesiones con peso para desbloquear tu mapa de carga y el historial por ejercicio.</p>
+          <p className="mt-2 text-sm text-slate-400">Completa algunas sesiones con peso para desbloquear el historial por ejercicio.</p>
         </div>
       )}
     </div>

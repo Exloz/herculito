@@ -141,14 +141,15 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         <div className="flex items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-display text-white">Rutinas</h1>
-            <p className="text-slate-300 text-sm">Gestiona tus entrenamientos</p>
+            <p className="text-sm text-slate-300">Crea, ajusta y reutiliza tus entrenamientos.</p>
           </div>
           <button
             onClick={handleCreateRoutine}
-            className="btn-primary"
+            className="btn-primary inline-flex items-center gap-2"
             aria-label="Crear nueva rutina"
           >
             <Plus size={18} />
+            <span>Nueva rutina</span>
           </button>
         </div>
 
@@ -175,7 +176,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         </div>
 
         {activeTab === 'my' && (
-          <div className="flex items-center justify-between text-xs text-slate-400 mb-4">
+          <div className="mb-4 flex items-center justify-between text-xs text-slate-400">
             <span>{routinesMissingVideos} ejercicios sin video</span>
             <button
               type="button"
@@ -189,7 +190,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         )}
 
         {activeTab === 'public' && publicRoutines.length > 0 && (
-          <div className="text-xs text-slate-400 mb-4">
+          <div className="mb-4 text-xs text-slate-400">
             {visiblePublicRoutinesCount} de {publicRoutines.length} rutinas públicas visibles en Inicio
           </div>
         )}

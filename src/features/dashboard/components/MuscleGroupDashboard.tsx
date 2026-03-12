@@ -182,17 +182,11 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
     <div className="space-y-6">
       {/* Información de recomendación */}
       {recommendedGroup && (
-        <div className="app-surface p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="chip">Recomendado hoy</span>
-          </div>
-          <p className="text-slate-300 text-sm">
-            Basado en tu historial de entrenamientos, te recomendamos entrenar{' '}
-            <span className="font-semibold text-mint">
-              {MUSCLE_GROUPS[recommendedGroup].name}
-            </span>{' '}
-            hoy.
-          </p>
+        <div className="flex items-center gap-2 text-sm text-slate-300">
+          <span className="chip">Sugerido hoy</span>
+          <span>
+            {MUSCLE_GROUPS[recommendedGroup].name}
+          </span>
         </div>
       )}
 

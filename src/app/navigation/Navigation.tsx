@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Home, Settings, PlayCircle, Shield } from "lucide-react";
+import { Dumbbell, Home, PlayCircle, Shield } from "lucide-react";
 
 const ACTIVE_WORKOUT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
@@ -64,7 +64,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 flex w-full justify-center pb-[env(safe-area-inset-bottom)] pointer-events-none">
-      <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal/85 px-2 py-2 shadow-soft backdrop-blur">
+      <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal px-2 py-2 shadow-soft">
         <div className={`grid ${isAdmin ? (hasActiveWorkout ? 'grid-cols-4' : 'grid-cols-3') : (hasActiveWorkout ? 'grid-cols-3' : 'grid-cols-2')} gap-2`}>
           <button
             onClick={() => onPageChange("dashboard")}
@@ -82,10 +82,10 @@ export const Navigation: React.FC<NavigationProps> = ({
           {hasActiveWorkout && (
             <button
               onClick={handleResumeClick}
-              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors text-amberGlow hover:text-amberGlow/80 hover:bg-amberGlow/10 touch-target"
+              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-amberGlow transition-colors hover:bg-amberGlow/10 hover:text-amberGlow/80 touch-target"
               aria-label="Reanudar entrenamiento activo"
             >
-              <PlayCircle size={22} className="animate-pulse" />
+              <PlayCircle size={22} />
               <span className="text-xs font-semibold">Entrenando</span>
             </button>
           )}
@@ -99,7 +99,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             }`}
             aria-label="Ir a Rutinas"
           >
-            <Settings size={22} />
+            <Dumbbell size={22} />
             <span className="text-xs font-semibold">Rutinas</span>
           </button>
 

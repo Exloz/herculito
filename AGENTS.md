@@ -74,7 +74,9 @@ bun run backfill:sessions # Backfill session data
 - Inputs: `input`, `input-sm`; chips: `chip`, `chip-warm`
 - Palette: `ink/charcoal/graphite` surfaces with `mint` and `amberGlow` accents
 - Typography: use `font-display` for headings
-- Mobile-first responsive design
+- Always design UI/UX mobile first, using phone layouts and touch interactions as the default baseline
+- Prioritize the mobile experience over desktop enhancements when making product, layout, navigation, and interaction decisions
+- Scale up progressively for tablet and desktop without compromising mobile clarity, reachability, or performance
 
 #### Firebase Patterns
 - Use `merge: true` for document updates
@@ -110,6 +112,15 @@ bun run backfill:sessions # Backfill session data
 - Return `{ data, loading, error, actions }` pattern
 - Use local state for UI, Firebase for persistence
 - Optimize with `useMemo`, `useCallback` for expensive operations
+
+---
+
+## UI/UX Priority
+
+- Treat mobile as the primary platform for every frontend feature, flow, and visual decision
+- Start every screen, component, and interaction from small-screen constraints before adding larger breakpoints
+- Favor thumb-friendly navigation, large tap targets, concise content hierarchy, and fast perceived performance
+- Only add desktop-specific complexity when it clearly improves the experience without weakening the mobile-first baseline
 
 ---
 
@@ -158,3 +169,4 @@ bun run backfill:sessions # Backfill session data
 - Document IDs pattern: `${exerciseId}_${userId}_${date}` for exercise logs
 - Always use `merge: true` for Firestore updates
 - Dark theme UI with gray-900 backgrounds and blue-400 accents
+- UI/UX decisions must always prioritize mobile-first behavior, layout, readability, and touch ergonomics

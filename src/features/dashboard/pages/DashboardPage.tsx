@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Calendar, TrendingUp, Award, Clock, LogOut, Bell, Trophy, Crown } from 'lucide-react';
-import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog, LeaderboardEntry } from '../../../shared/types';
+import { LogOut, Bell } from 'lucide-react';
+import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
 import {
   completeSession as apiCompleteSession,
   incrementRoutineUsage as apiIncrementRoutineUsage,
@@ -30,9 +30,6 @@ const ACTIVE_WORKOUT_KEY = 'activeWorkout';
 const ACTIVE_WORKOUT_PROGRESS_KEY = 'activeWorkoutProgress';
 const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in ms
-const CLERK_USER_BUTTON_DELAY_MS = 1800;
-const CALENDAR_PANEL_DELAY_MS = 700;
-const PROGRESS_PANEL_DELAY_MS = 1400;
 
 const DeferredClerkUserButton = lazy(() => import('../../auth/components/ClerkUserButton'));
 const DeferredWorkoutCalendar = lazy(() => import('../components/WorkoutCalendar').then((module) => ({ default: module.WorkoutCalendar })));
@@ -151,17 +148,13 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
 };
 
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload }) => {
-   const [currentMonth, setCurrentMonth] = useState(new Date());
-   const [showCalendar, setShowCalendar] = useState(true);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeWorkout, setActiveWorkout] = useState<{
     routine: Routine;
     session: WorkoutSession;
   } | null>(null);
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
-  const [showClerkUserButton, setShowClerkUserButton] = useState(false);
-  const [showDeferredCalendar, setShowDeferredCalendar] = useState(false);
-  const [showDeferredProgressPanel, setShowDeferredProgressPanel] = useState(false);
   const hasTriggeredBackgroundPreload = useRef(false);
   const { showToast, confirm } = useUI();
 
@@ -233,13 +226,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     longestStreak: 0,
     averageDurationMin: 0
   };
-  const competitionStats = dashboardData?.competition ?? {
-    weekLeader: null,
-    monthLeader: null,
-    userWeekRank: null,
-    userMonthRank: null
-  };
-
   const recommendedGroup = useMemo(() => {
     return getRecommendedMuscleGroup(
       recentSessions.map((session) => ({
@@ -257,34 +243,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   }, [recentSessions, user.id]);
 
   useEffect(() => {
-    if (showClerkUserButton) {
-      return;
-    }
-
-    let timeoutId: number | null = null;
-    let idleId: number | null = null;
-
-    const revealClerkUserButton = () => {
-      setShowClerkUserButton(true);
-    };
-
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      idleId = window.requestIdleCallback(revealClerkUserButton, { timeout: CLERK_USER_BUTTON_DELAY_MS });
-    } else {
-      timeoutId = setTimeout(revealClerkUserButton, CLERK_USER_BUTTON_DELAY_MS);
-    }
-
-    return () => {
-      if (idleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, [showClerkUserButton]);
-
-  useEffect(() => {
     if (!dashboardData || dashboardLoading || hasTriggeredBackgroundPreload.current) {
       return;
     }
@@ -292,50 +250,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     hasTriggeredBackgroundPreload.current = true;
     onReadyForBackgroundPreload?.();
   }, [dashboardData, dashboardLoading, onReadyForBackgroundPreload]);
-
-  useEffect(() => {
-    if (!dashboardData) {
-      setShowDeferredCalendar(false);
-      setShowDeferredProgressPanel(false);
-      return;
-    }
-
-    let calendarTimeoutId: number | null = null;
-    let progressTimeoutId: number | null = null;
-    let calendarIdleId: number | null = null;
-    let progressIdleId: number | null = null;
-
-    const revealCalendar = () => setShowDeferredCalendar(true);
-    const revealProgress = () => setShowDeferredProgressPanel(true);
-
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      calendarIdleId = window.requestIdleCallback(revealCalendar, { timeout: CALENDAR_PANEL_DELAY_MS });
-      progressIdleId = window.requestIdleCallback(revealProgress, { timeout: PROGRESS_PANEL_DELAY_MS });
-    } else {
-      calendarTimeoutId = setTimeout(revealCalendar, CALENDAR_PANEL_DELAY_MS);
-      progressTimeoutId = setTimeout(revealProgress, PROGRESS_PANEL_DELAY_MS);
-    }
-
-    return () => {
-      if (calendarIdleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(calendarIdleId);
-      }
-      if (progressIdleId !== null && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(progressIdleId);
-      }
-      if (calendarTimeoutId !== null) {
-        window.clearTimeout(calendarTimeoutId);
-      }
-      if (progressTimeoutId !== null) {
-        window.clearTimeout(progressTimeoutId);
-      }
-    };
-  }, [dashboardData]);
-
-  const formatPosition = (entry: LeaderboardEntry | null): string => {
-    if (!entry) return 'Sin ranking';
-    return `#${entry.position}`;
-  };
 
   const userInitials = useMemo(() => getUserInitials(user.name || 'Usuario'), [user.name]);
   const dashboardStatusMessage = useMemo(() => {
@@ -351,6 +265,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
     return null;
   }, [dashboardData, dashboardError, isOffline]);
+  const primarySummary = useMemo(() => {
+    if (activeWorkout) {
+      return 'Tienes un entrenamiento en curso.';
+    }
+
+    if (dashboardRoutines.length === 0) {
+      return 'Crea una rutina para empezar a entrenar.';
+    }
+
+    return `${stats.thisWeekWorkouts} esta semana · racha de ${stats.currentStreak} dias`;
+  }, [activeWorkout, dashboardRoutines.length, stats.currentStreak, stats.thisWeekWorkouts]);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
@@ -515,68 +440,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
   return (
     <div className="app-shell pb-28">
-      {/* Header */}
       <header className="app-header px-4 pb-5 pt-[calc(0.25rem+env(safe-area-inset-top))] sm:pb-6 sm:pt-[calc(0.5rem+env(safe-area-inset-top))]">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-display text-white flex items-center gap-3">
                 <div className="w-9 h-9 sm:w-11 sm:h-11 shrink-0 rounded-2xl overflow-hidden shadow-lift ring-1 ring-white/20 flex items-center justify-center">
-                  {showClerkUserButton ? (
-                    <Suspense
-                      fallback={(
-                        <div className="flex h-full w-full items-center justify-center bg-slateDeep text-xs font-semibold text-slate-200">
-                          {userInitials}
-                        </div>
-                      )}
-                    >
-                      <DeferredClerkUserButton />
-                    </Suspense>
-                  ) : (
-                    <button
-                      type="button"
-                      onPointerEnter={() => setShowClerkUserButton(true)}
-                      onFocus={() => setShowClerkUserButton(true)}
-                      onClick={() => setShowClerkUserButton(true)}
-                      aria-label="Cargando menu de usuario"
-                      className="flex h-full w-full items-center justify-center bg-slateDeep text-xs font-semibold text-slate-200"
-                    >
-                      {userInitials}
-                    </button>
-                  )}
+                  <Suspense
+                    fallback={(
+                      <div className="flex h-full w-full items-center justify-center bg-slateDeep text-xs font-semibold text-slate-200">
+                        {userInitials}
+                      </div>
+                    )}
+                  >
+                    <DeferredClerkUserButton />
+                  </Suspense>
                 </div>
                 <span>Herculito</span>
               </h1>
-              <p className="text-slate-300 mt-1 text-sm truncate">Bienvenido, {user.name || 'Usuario'}</p>
+              <p className="mt-1 truncate text-sm text-slate-300">Bienvenido, {user.name || 'Usuario'}</p>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 ml-4">
-              <button
-                onClick={() => {
-                  setShowCalendar((previousValue) => {
-                    const nextValue = !previousValue;
-                    if (nextValue) {
-                      setShowDeferredCalendar(true);
-                    }
-                    return nextValue;
-                  });
-                }}
-                className={`btn-secondary flex items-center gap-2 touch-target ${showCalendar ? 'border-mint/60 text-mint' : ''}`}
-                title="Ver calendario"
-                aria-label={showCalendar ? "Ocultar calendario" : "Ver calendario"}
-              >
-                <Calendar size={18} />
-                <span className="hidden sm:inline">Calendario</span>
-              </button>
-
+            <div className="ml-4 flex items-center gap-2 sm:gap-3">
               <button
                 onClick={onLogout}
-                className="btn-danger flex items-center gap-2 touch-target"
+                className="btn-secondary flex items-center gap-2 touch-target"
                 title="Cerrar sesión"
                 aria-label="Cerrar sesión"
               >
                 <LogOut size={18} />
-                <span className="hidden sm:inline">Salir</span>
+                <span className="hidden sm:inline">Cerrar sesión</span>
               </button>
             </div>
           </div>
@@ -610,160 +503,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         </div>
       )}
 
-      {/* Stats Bar */}
-      <div className="px-4 py-3 sm:py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="app-surface p-3 sm:p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Award className="text-amberGlow" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Total</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.totalWorkouts}</div>
-                <div className="text-[11px] text-slate-400">entrenamientos</div>
-              </div>
-
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Calendar className="text-mint" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Esta semana</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.thisWeekWorkouts}</div>
-                <div className="text-[11px] text-slate-400">entrenamientos</div>
-              </div>
-
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <TrendingUp className="text-mint" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Racha</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.currentStreak}</div>
-                <div className="text-[11px] text-slate-400">dias consecutivos</div>
-              </div>
-
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <TrendingUp className="text-amberGlow" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Racha larga</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.longestStreak}</div>
-                <div className="text-[11px] text-slate-400">dias record</div>
-              </div>
-
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Clock className="text-amberGlow" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Este mes</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">{stats.thisMonthWorkouts}</div>
-                <div className="text-[11px] text-slate-400">entrenamientos</div>
-              </div>
-
-              <div className="app-surface-muted p-2.5 sm:p-3 text-center">
-                <div className="flex items-center justify-center gap-2 mb-1.5">
-                  <Trophy className="text-mint" size={16} />
-                  <span className="text-[11px] sm:text-xs font-semibold text-slate-300">Top mensual</span>
-                </div>
-                <div className="text-lg sm:text-xl font-display text-white leading-tight">
-                  {formatPosition(competitionStats.userMonthRank)}
-                </div>
-                <div className="text-[11px] text-slate-400">tu posicion</div>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-mist/40">
-              <div className="flex items-center gap-2 mb-2">
-                <Trophy className="text-amberGlow" size={18} />
-                <h2 className="text-xs sm:text-sm font-display text-white">Clasificacion global</h2>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                <div className="app-surface-muted px-3 py-2.5 content-fade-in h-full flex flex-col">
-                  <div className="mb-1.5">
-                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top semanal</span>
-                  </div>
-
-                  {competitionStats.weekLeader ? (
-                    <>
-                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
-                        <Crown size={14} />
-                        <span className="font-semibold">Lider: {competitionStats.weekLeader.name}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.weekLeader.totalWorkouts} entrenamientos liderando</div>
-                    </>
-                  ) : (
-                    <div className="text-[11px] text-slate-400 mb-1.5">Sin datos suficientes esta semana</div>
-                  )}
-
-                  {competitionStats.userWeekRank ? (
-                    <div className="mt-auto text-xs text-slate-300">Tu llevas {competitionStats.userWeekRank.totalWorkouts} entrenamientos</div>
-                  ) : (
-                    <div className="mt-auto text-xs text-slate-400">Aun no registras entrenamientos esta semana</div>
-                  )}
-                </div>
-
-                <div className="app-surface-muted px-3 py-2.5 content-fade-in h-full flex flex-col">
-                  <div className="mb-1.5">
-                    <span className="text-[11px] uppercase tracking-wide text-slate-400">Top mensual</span>
-                  </div>
-
-                  {competitionStats.monthLeader ? (
-                    <>
-                      <div className="flex items-center gap-2 text-mint mb-1 text-xs">
-                        <Crown size={14} />
-                        <span className="font-semibold">Lider: {competitionStats.monthLeader.name}</span>
-                      </div>
-                      <div className="text-[11px] text-slate-400 mb-1.5">{competitionStats.monthLeader.totalWorkouts} entrenamientos liderando</div>
-                    </>
-                  ) : (
-                    <div className="text-[11px] text-slate-400 mb-1.5">Sin datos suficientes este mes</div>
-                  )}
-
-                  {competitionStats.userMonthRank ? (
-                    <div className="mt-auto text-xs text-slate-300">Tu llevas {competitionStats.userMonthRank.totalWorkouts} entrenamientos</div>
-                  ) : (
-                    <div className="mt-auto text-xs text-slate-400">Aun no registras entrenamientos este mes</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-        {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+        {!activeWorkout && (
+          <section className="mb-6 app-card p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-xl font-display text-white sm:text-2xl">Entrena sin distracciones</h2>
+                <p className="mt-1 text-sm text-slate-300">{primarySummary}</p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs text-slate-300">
+                <span className="rounded-full border border-mist/50 px-3 py-1.5">{dashboardRoutines.length} rutinas listas</span>
+                <span className="rounded-full border border-mist/50 px-3 py-1.5">{stats.totalWorkouts} entrenamientos totales</span>
+              </div>
+            </div>
+          </section>
+        )}
+
         {activeWorkout && (
-          <div className="mb-6">
-            <div className="app-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <section className="mb-6">
+            <div className="app-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
               <div>
                 <div className="chip mb-2">Entrenamiento activo</div>
-                <div className="text-lg font-display text-white">
-                  {activeWorkout.routine.name}
-                </div>
+                <div className="text-lg font-display text-white">{activeWorkout.routine.name}</div>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => setShowActiveWorkout(true)}
-                  className="btn-primary touch-target"
-                >
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
                   Reanudar
                 </button>
                 <button
                   onClick={handleCancelActiveWorkout}
-                  className="btn-secondary text-crimson border-crimson/40 hover:text-crimson hover:border-crimson/60 touch-target"
+                  className="btn-secondary border-crimson/40 text-crimson hover:border-crimson/60 hover:text-crimson touch-target"
                 >
                   Cancelar
                 </button>
               </div>
             </div>
-          </div>
+          </section>
         )}
 
         {showIosNotificationGuide && (
-          <div className="mb-6">
-            <div className="app-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <section className="mb-6">
+            <div className="app-card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-mint/15 text-mint">
                   <Bell size={18} />
@@ -771,31 +551,49 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 <div>
                   <div className="text-sm font-semibold text-white">Notificaciones en iOS</div>
                   <p className="text-sm text-slate-300">
-                    En iOS las notificaciones de descanso solo funcionan si instalas la app en Pantalla de inicio.
-                    Cuando el teléfono está bloqueado o la app en segundo plano, los timers no pueden alertar.
+                    Instala la app en Pantalla de inicio para recibir alertas de descanso cuando cierres la app o bloquees el telefono.
                   </p>
                 </div>
               </div>
-              <button
-                onClick={handleDismissIosGuide}
-                className="btn-secondary self-start touch-target"
-              >
+              <button onClick={handleDismissIosGuide} className="btn-secondary self-start touch-target">
                 Entendido
               </button>
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Calendario al inicio */}
-        <div
-          className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out ${showCalendar
-            ? 'max-h-[42rem] opacity-100 mb-6'
-            : 'max-h-0 opacity-0 mb-0'
-            }`}
-          aria-hidden={!showCalendar}
-        >
-          <div className={`transition-transform duration-300 ${showCalendar ? 'translate-y-0' : '-translate-y-2 pointer-events-none'}`}>
-            {showDeferredCalendar ? (
+        <section className="content-fade-in">
+          <div className="mb-4 sm:mb-5">
+            <h2 className="section-title mb-1">Empieza una rutina</h2>
+            <p className="text-sm text-slate-300">Elige tu entrenamiento de hoy y entra directo a la sesion.</p>
+          </div>
+
+          <MuscleGroupDashboard
+            routines={dashboardRoutines}
+            currentUser={user}
+            onStartWorkout={handleStartWorkout}
+            onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
+            recommendedGroup={recommendedGroup}
+          />
+        </section>
+
+        <section className="mt-8 space-y-4">
+          <details className="app-surface overflow-hidden">
+            <summary className="cursor-pointer list-none px-4 py-4 text-sm font-semibold text-white sm:px-5">
+              Ver progreso por ejercicio
+            </summary>
+            <div className="border-t border-mist/40 px-4 py-4 sm:px-5 sm:py-5">
+              <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
+                <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+              </Suspense>
+            </div>
+          </details>
+
+          <details className="app-surface overflow-hidden">
+            <summary className="cursor-pointer list-none px-4 py-4 text-sm font-semibold text-white sm:px-5">
+              Ver calendario y actividad reciente
+            </summary>
+            <div className="space-y-5 border-t border-mist/40 px-4 py-4 sm:px-5 sm:py-5">
               <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
                 <DeferredWorkoutCalendar
                   calendar={dashboardData.calendar}
@@ -804,102 +602,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                   onDayClick={handleDayClick}
                 />
               </Suspense>
-            ) : (
-              <PanelSkeleton title="Calendario" heightClass="h-[22rem]" />
-            )}
-          </div>
-        </div>
 
-
-         <div className="space-y-6 lg:grid lg:grid-cols-3 lg:gap-6 lg:space-y-0 content-fade-in">
-           {/* Rutinas por grupo muscular - Columna principal */}
-           <div className="lg:col-span-2 order-2 lg:order-1">
-              <div className="mb-4 sm:mb-6">
-                <h2 className="section-title mb-2">
-                  Rutinas de Entrenamiento
-                </h2>
-                <p className="section-subtitle">
-                  Selecciona una rutina para comenzar tu entrenamiento
-                </p>
-              </div>
-
-
-              <MuscleGroupDashboard
-                routines={dashboardRoutines}
-                currentUser={user}
-                onStartWorkout={handleStartWorkout}
-                onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
-               recommendedGroup={recommendedGroup}
-             />
-           </div>
-
-              {/* Sidebar - Solo entrenamientos recientes */}
-               <div className="order-1 lg:order-2 space-y-4 sm:space-y-6">
-                 {showDeferredProgressPanel ? (
-                    <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
-                      <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
-                    </Suspense>
-                  ) : (
-                    <PanelSkeleton title="Historial y progreso" heightClass="h-64" />
-                  )}
-
-               {/* Entrenamientos recientes */}
-               <div className="app-card p-4 sm:p-5">
-                <h3 className="text-lg font-display text-white mb-4">
-                  Entrenamientos Recientes
-                </h3>
-
+              <div>
+                <h3 className="text-sm font-semibold text-white">Entrenamientos recientes</h3>
                 {recentSessions.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="mt-3 space-y-3">
                     {recentSessions.slice(0, 5).map((session) => (
-                      <div
-                        key={session.id}
-                        className="app-surface-muted p-3"
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-white text-sm">
-                            {session.routineName}
-                          </h4>
+                      <div key={session.id} className="border-b border-mist/30 pb-3 last:border-b-0 last:pb-0">
+                        <div className="flex items-center justify-between gap-3">
+                          <h4 className="min-w-0 truncate text-sm font-medium text-white">{session.routineName}</h4>
                           {session.completedAt && (
-                            <span className="text-xs text-slate-400">
-                              {formatDateInAppTimeZone(session.completedAt)}
-                            </span>
+                            <span className="shrink-0 text-xs text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</span>
                           )}
                         </div>
-
                         {session.primaryMuscleGroup && (
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{
-                                backgroundColor:
-                                  session.primaryMuscleGroup ?
-                                    '#48e5a3' : '#6b7280'
-                              }}
-                            />
-                            <span className="text-xs text-slate-400">
-                              {session.primaryMuscleGroup || 'Sin categoría'}
-                            </span>
-                          </div>
+                          <div className="mt-1 text-xs text-slate-400">{session.primaryMuscleGroup}</div>
                         )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6">
-                    <div className="text-slate-300 text-sm">
-                      No hay entrenamientos recientes
-                    </div>
-                    <p className="text-slate-400 text-xs mt-1">
-                      Comienza tu primer entrenamiento.
-                    </p>
-                  </div>
+                  <p className="mt-2 text-sm text-slate-400">Todavia no tienes entrenamientos recientes.</p>
                 )}
               </div>
             </div>
-
-         </div>
-        </main>
+          </details>
+        </section>
+      </main>
         <div className="px-4 pb-8">
           <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
             Version {appVersion}

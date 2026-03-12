@@ -137,36 +137,72 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   return (
     <div className="app-shell pb-28">
       <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-display text-white">Rutinas</h1>
-            <p className="text-sm text-slate-300">Crea, ajusta y reutiliza tus entrenamientos.</p>
+        <section className="mb-6 overflow-hidden rounded-[2rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_28%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] shadow-lift sm:mb-8">
+          <div className="border-b border-white/8 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-mint/85 sm:px-6">
+            Biblioteca de entrenamiento
           </div>
-          <button
-            onClick={handleCreateRoutine}
-            className="btn-primary inline-flex items-center gap-2"
-            aria-label="Crear nueva rutina"
-          >
-            <Plus size={18} />
-            <span>Nueva rutina</span>
-          </button>
-        </div>
+          <div className="space-y-5 px-5 py-5 sm:px-6 sm:py-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-xl">
+                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
+                  {activeTab === 'my' ? 'Tus rutinas activas' : 'Rutinas de la comunidad'}
+                </div>
+                <h1 className="mt-3 font-display text-[2.4rem] uppercase leading-[0.92] text-white sm:text-[3.3rem]">
+                  {activeTab === 'my' ? 'Crea, ajusta y repite.' : 'Explora y activa nuevas ideas.'}
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed text-slate-300">
+                  {activeTab === 'my'
+                    ? 'Organiza tus entrenamientos, edita ejercicios y deja listas las rutinas que más usas.'
+                    : 'Activa en Inicio las rutinas públicas que quieres tener a mano para entrenar rápido.'}
+                </p>
+              </div>
 
-        {/* Tabs */}
-        <div className="app-surface mb-6 flex gap-1 p-1" role="tablist" aria-label="Tipos de rutinas">
+              <button
+                onClick={handleCreateRoutine}
+                className="btn-primary inline-flex items-center justify-center gap-2 self-start sm:self-auto"
+                aria-label="Crear nueva rutina"
+              >
+                <Plus size={18} />
+                <span>Nueva rutina</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-3">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Propias</div>
+                <div className="mt-1 font-display text-2xl text-white">{myRoutines.length}</div>
+              </div>
+              <div className="rounded-[1.35rem] border border-mint/20 bg-mint/10 px-4 py-3">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Públicas</div>
+                <div className="mt-1 font-display text-2xl text-white">{publicRoutines.length}</div>
+              </div>
+              <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-3">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Sin video</div>
+                <div className="mt-1 font-display text-2xl text-white">{routinesMissingVideos}</div>
+              </div>
+              <div className="rounded-[1.35rem] border border-amberGlow/20 bg-amberGlow/10 px-4 py-3">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">En Inicio</div>
+                <div className="mt-1 font-display text-2xl text-white">{visiblePublicRoutinesCount}</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="mb-6 grid gap-3 sm:grid-cols-2" role="tablist" aria-label="Tipos de rutinas">
           <button
             id="routines-tab-my"
             role="tab"
             aria-selected={activeTab === 'my'}
             aria-controls="routines-panel-my"
             onClick={() => handleTabChange('my')}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'my'
-              ? 'bg-mint/15 text-mint'
-              : 'text-slate-300 hover:text-white'
+            className={`rounded-[1.5rem] border px-4 py-4 text-left transition-colors ${activeTab === 'my'
+              ? 'border-mint/30 bg-mint/10 text-white shadow-lift'
+              : 'border-mist/50 bg-graphite text-slate-300 hover:border-mint/20 hover:text-white'
               }`}
           >
-            Mis Rutinas ({myRoutines.length})
+            <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Mis rutinas</div>
+            <div className="mt-1 font-display text-2xl uppercase">{myRoutines.length}</div>
+            <div className="mt-1 text-sm text-current/80">Edita tus planes y deja listas las sesiones que repites.</div>
           </button>
           <button
             id="routines-tab-public"
@@ -174,17 +210,19 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             aria-selected={activeTab === 'public'}
             aria-controls="routines-panel-public"
             onClick={() => handleTabChange('public')}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'public'
-              ? 'bg-mint/15 text-mint'
-              : 'text-slate-300 hover:text-white'
+            className={`rounded-[1.5rem] border px-4 py-4 text-left transition-colors ${activeTab === 'public'
+              ? 'border-amberGlow/30 bg-amberGlow/10 text-white shadow-lift'
+              : 'border-mist/50 bg-graphite text-slate-300 hover:border-amberGlow/20 hover:text-white'
               }`}
           >
-            Públicas ({publicRoutines.length})
+            <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Públicas</div>
+            <div className="mt-1 font-display text-2xl uppercase">{publicRoutines.length}</div>
+            <div className="mt-1 text-sm text-current/80">Activa las que quieres ver en Inicio y entrena sin buscarlas de nuevo.</div>
           </button>
         </div>
 
         {activeTab === 'my' && (
-          <div className="mb-4 flex items-center justify-between text-xs text-slate-400">
+          <div className="mb-4 flex items-center justify-between rounded-[1.3rem] border border-mist/50 bg-graphite px-4 py-3 text-xs text-slate-400">
             <span>{routinesMissingVideos} ejercicios sin video</span>
             <button
               type="button"
@@ -198,13 +236,13 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         )}
 
         {activeTab === 'public' && publicRoutines.length > 0 && (
-          <div className="mb-4 text-xs text-slate-400">
+          <div className="mb-4 rounded-[1.3rem] border border-mist/50 bg-graphite px-4 py-3 text-xs text-slate-400">
             {visiblePublicRoutinesCount} de {publicRoutines.length} rutinas públicas visibles en Inicio
           </div>
         )}
 
         {routineBackfillMessage && (
-          <div className="text-xs text-slate-400 mb-4">
+          <div className="mb-4 rounded-[1.3rem] border border-mint/20 bg-mint/10 px-4 py-3 text-xs text-slate-300">
             {routineBackfillMessage}
           </div>
         )}

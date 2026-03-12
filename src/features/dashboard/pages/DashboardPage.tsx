@@ -616,11 +616,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
               <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
               <h2 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">Tu progreso está a la vista</h2>
             </div>
-            <div className="rounded-[1.8rem] border border-mist/60 bg-graphite px-4 py-4 shadow-lift sm:px-5 sm:py-5">
-              <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
-                <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
-              </Suspense>
-            </div>
+            <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
+              <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+            </Suspense>
           </div>
 
           <div>

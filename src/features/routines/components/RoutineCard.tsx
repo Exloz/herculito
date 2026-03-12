@@ -2,6 +2,7 @@ import React from 'react';
 import { Edit, Eye, Target, Trash2, User as UserIcon } from 'lucide-react';
 import type { Routine, User } from '../../../shared/types';
 import { formatDateInAppTimeZone } from '../../../shared/lib/dateUtils';
+import { MUSCLE_GROUPS } from '../../dashboard/lib/muscleGroups';
 
 interface RoutineCardProps {
   routine: Routine;
@@ -28,35 +29,45 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
   onDelete,
   onToggleVisibility
 }) => {
+  const accentColor = routine.primaryMuscleGroup ? MUSCLE_GROUPS[routine.primaryMuscleGroup].color : '#48e5a3';
+
   return (
-    <div className="app-card p-4 sm:p-5 content-fade-in">
-      <div className="flex items-start justify-between gap-4 mb-3">
+    <div className="relative overflow-hidden rounded-[1.8rem] border border-mist/60 bg-graphite p-4 shadow-lift content-fade-in sm:p-5">
+      <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: accentColor }} />
+
+      <div className="mb-4 flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 dir="auto" className="min-w-0 break-words text-lg font-display text-white" style={{ overflowWrap: 'anywhere' }}>{routine.name}</h3>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
             {!routine.isPublic && <span className="chip">Privada</span>}
             {routine.createdBy !== user.id && <span className="chip-warm">Comunidad</span>}
+            {routine.primaryMuscleGroup && (
+              <span className="rounded-full border border-white/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                {MUSCLE_GROUPS[routine.primaryMuscleGroup].name}
+              </span>
+            )}
           </div>
 
+          <h3 dir="auto" className="min-w-0 break-words font-display text-[1.9rem] uppercase leading-[0.92] text-white" style={{ overflowWrap: 'anywhere' }}>{routine.name}</h3>
+
           {routine.description && (
-            <p dir="auto" className="mb-2 text-sm text-slate-300 break-words" style={{ overflowWrap: 'anywhere' }}>{routine.description}</p>
+            <p dir="auto" className="mt-3 max-w-2xl break-words text-sm leading-relaxed text-slate-300" style={{ overflowWrap: 'anywhere' }}>{routine.description}</p>
           )}
 
-          <div className="flex items-center text-sm text-slate-400 flex-wrap gap-x-3 gap-y-1">
-            <div className="flex items-center">
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-400">
+            <div className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
               <Target size={14} className="mr-1" />
               <span>{routine.exercises.length} ejercicios</span>
             </div>
 
             {routine.timesUsed && routine.timesUsed > 0 && (
-              <div className="flex items-center">
+              <div className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
                 <Eye size={14} className="mr-1" />
                 <span>Usada {routine.timesUsed} veces</span>
               </div>
             )}
 
             {routine.createdBy !== user.id && (
-              <div className="flex items-center">
+              <div className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
                 {routine.createdByAvatarUrl ? (
                   <img
                     src={routine.createdByAvatarUrl}
@@ -71,7 +82,9 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
               </div>
             )}
 
-            <span>Creada {routine.createdAt ? formatDateInAppTimeZone(routine.createdAt, 'es-CO') : ''}</span>
+            <div className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1.5">
+              <span>Creada {routine.createdAt ? formatDateInAppTimeZone(routine.createdAt, 'es-CO') : ''}</span>
+            </div>
           </div>
         </div>
 
@@ -80,7 +93,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
             <>
               <button
                 onClick={() => onEdit(routine)}
-                className="btn-ghost"
+                className="btn-ghost border border-white/8 bg-white/[0.03]"
                 title="Editar rutina"
                 aria-label={`Editar rutina ${routine.name}`}
               >
@@ -88,7 +101,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
               </button>
               <button
                 onClick={() => onDelete(routine.id)}
-                className="btn-ghost text-crimson hover:text-red-400"
+                className="btn-ghost border border-white/8 bg-white/[0.03] text-crimson hover:text-red-400"
                 title="Eliminar rutina"
                 aria-label={`Eliminar rutina ${routine.name}`}
               >
@@ -100,8 +113,11 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
       </div>
 
       {activeTab === 'public' && (
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <p className="text-sm text-slate-200">Mostrar en Inicio</p>
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-[1.3rem] border border-mist/50 bg-slateDeep/70 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-100">Mostrar en Inicio</p>
+            <p className="mt-1 text-xs text-slate-400">Activa esta rutina para verla en tu dashboard.</p>
+          </div>
           <button
             type="button"
             role="switch"
@@ -123,13 +139,13 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
       )}
 
       {routine.exercises.length > 0 && (
-        <div className="mt-3 pt-3 app-divider">
-          <p className="text-xs text-slate-400 mb-2">Ejercicios:</p>
-          <div className="space-y-1">
+        <div className="mt-4 border-t border-mist/40 pt-4">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Primeros ejercicios</p>
+          <div className="space-y-2">
             {routine.exercises.slice(0, 3).map((exercise) => (
-              <div key={exercise.id} className="text-sm text-slate-200 flex items-center justify-between">
-                <span>- {exercise.name}</span>
-                <span className="text-xs text-slate-500">{exercise.sets} x {exercise.reps}</span>
+              <div key={exercise.id} className="flex items-center justify-between rounded-[1rem] border border-white/8 bg-slateDeep/60 px-3 py-2 text-sm text-slate-200">
+                <span className="truncate pr-3">{exercise.name}</span>
+                <span className="shrink-0 text-xs text-slate-500">{exercise.sets} x {exercise.reps}</span>
               </div>
             ))}
             {routine.exercises.length > 3 && (

@@ -1,169 +1,172 @@
-# AGENTS.md - Herculito Codebase Guide
+# AGENTS.md - Herculito Repository Guide
 
-## Projects Overview
+## Scope
+This repository is a single frontend app, not a monorepo.
+It is a React 18 + TypeScript + Vite PWA for workout tracking.
+Authentication is handled by Clerk, and app data comes from an external API configured via env vars.
 
-This monorepo contains two projects:
+## Agent Rule Sources
+- Included: `.github/copilot-instructions.md`
+- Not present: `.cursorrules`
+- Not present: `.cursor/rules/`
+- The guidance below merges repository conventions with the Copilot instructions.
 
-1. **`herculito/`** - React/TypeScript gym workout tracking PWA using Firebase Firestore
-2. **`herculito-push-api/`** - Bun/TypeScript REST API for push notifications and data persistence (SQLite)
+## Project Snapshot
+- Package manager: `pnpm`
+- Build tool: `vite`
+- Test runner: `vitest`
+- Linting: `eslint` with `typescript-eslint`, `react-hooks`, and `react-refresh`
+- Styling: Tailwind CSS plus shared utility classes in `src/index.css`
+- PWA: `vite-plugin-pwa` with `injectManifest` and service worker source at `src/sw.ts`
+- Auth/API: Clerk on the client, custom fetch layer in `src/shared/api/apiClient.ts`
 
----
+## Repository Layout
+- `src/app/` - app shell, providers, navigation, bootstrapping
+- `src/features/` - feature folders: `admin`, `auth`, `dashboard`, `routines`, `workouts`
+- `src/shared/` - shared types, APIs, hooks, libs, UI primitives
+- `src/firebase/` - legacy/demo Firebase config still referenced by docs
+- `public/` - static assets and PWA icons
+- `dist/` - build output; do not edit manually
 
-## Build Commands
+## Build, Lint, Typecheck, and Test Commands
+Run commands from `/Users/xlz/Documents/Code/herculito`.
 
-### Frontend (herculito/)
-```bash
-cd herculito
-pnpm dev          # Start Vite dev server
-pnpm build        # Production build
-pnpm lint         # Run ESLint on all files
-pnpm preview      # Preview production build
-```
+- Install deps: `pnpm install`
+- Start dev server: `pnpm dev`
+- Production build: `pnpm build`
+- Preview build: `pnpm preview`
+- Lint: `pnpm lint`
+- Lint with autofix: `pnpm lint -- --fix`
+- Typecheck: `pnpm exec tsc -b`
+- Run all tests: `pnpm test`
+- Run one test file: `pnpm exec vitest run src/shared/lib/promisePool.test.ts`
+- Another single-file example: `pnpm exec vitest run src/features/workouts/lib/workoutSessions.test.ts`
+- Run one test by name: `pnpm exec vitest run src/shared/lib/promisePool.test.ts -t "preserves result order"`
+- Watch one test file: `pnpm exec vitest watch src/shared/lib/promisePool.test.ts`
 
-### Backend (herculito-push-api/)
-```bash
-cd herculito-push-api
-bun dev           # Start with hot reload
-bun start         # Production start
-bun check         # TypeScript type check (tsc --noEmit)
-bun run migrate:json      # Migrate from JSON data
-bun run export:firestore  # Export Firestore data
-bun run cleanup:system    # Cleanup system data
-bun run backfill:sessions # Backfill session data
-```
+## Testing Notes
+- Tests are colocated with source and use `*.test.ts`
+- Current tests are mostly pure unit tests in `src/shared/lib/`, `src/features/dashboard/lib/`, and `src/features/workouts/lib/`
+- There is no custom Vitest config file in the repo right now; defaults apply
+- Tests currently run in Vitest's default Node environment unless future config changes that
 
----
+## Environment and Runtime Notes
+- Required client env vars are documented in `.env.example`
+- Important vars include `VITE_CLERK_PUBLISHABLE_KEY`, `VITE_CLERK_JWT_TEMPLATE`, and `VITE_PUSH_API_ORIGIN`
+- Do not hardcode secrets, Clerk keys, or production API origins
+- `src/shared/api/apiClient.ts` centralizes bearer-token access, timeouts, and retries
+- In development, service workers are unregistered in `src/app/main.tsx` to avoid stale caches
+
+## Architecture and Data Flow
+- Routing is lightweight and pathname-driven through `src/app/hooks/usePageNavigation.ts`
+- There is no active React Router page system; preserve the current simple navigation model
+- Feature logic lives in hooks and feature folders rather than one global store
+- Shared data contracts live in `src/shared/types/index.ts`
+- API response mapping usually happens near the fetch boundary before data reaches UI components
+- Dates from the API are commonly normalized into real `Date` objects before rendering or comparison
 
 ## Code Style Guidelines
 
-### TypeScript (Both Projects)
-- Use `strict: true` in all tsconfig files
-- Use interfaces for object shapes, types for unions/primitives
-- Avoid `any`; use `unknown` with type guards when needed
-- Enable `noUnusedLocals` and `noUnusedParameters`
+### Formatting
+- Use 2-space indentation
+- Use semicolons
+- Use single quotes
+- Keep lines readable; split long imports, objects, and JSX props
+- There is no Prettier config, so follow existing style in nearby files
 
-### Naming Conventions
-- **Components**: PascalCase (`ExerciseCard`, `UserProfile`)
-- **Hooks**: camelCase with `use` prefix (`useWorkouts`, `useAuth`)
-- **Variables/functions**: camelCase
-- **Types/interfaces**: PascalCase
-- **Constants**: UPPER_SNAKE_CASE for config values, camelCase for others
-- **Files**: kebab-case for non-components, PascalCase for components
+### Imports
+- Order imports as: React, external packages, internal modules, styles
+- Use `import type` for type-only imports whenever possible
+- Prefer explicit relative imports; do not introduce path aliases unless the repo adopts them globally
+- Keep import reordering minimal and consistent with surrounding files
 
-### Frontend (React/Tailwind)
+Example:
 
-#### Imports
-- Organize: React → external → internal → styles
-- Example:
-  ```tsx
-  import { useState } from 'react';
-  import { Check, Clock } from 'lucide-react';
-  import { Exercise, ExerciseLog } from '../types';
-  import { useAuth } from './hooks/useAuth';
-  ```
+```ts
+import { useEffect, useState } from 'react';
+import { useClerk } from '@clerk/react';
+import type { User } from '../../../shared/types';
+import { toUserMessage } from '../../../shared/lib/errorMessages';
+```
 
-#### Component Patterns
-- Use functional components with explicit props typing
-- Destructure props with explicit typing
-- Keep components focused; extract complex logic to hooks
-- Use `React.memo()` for performance when appropriate
+### TypeScript
+- `strict`, `noUnusedLocals`, `noUnusedParameters`, and `noFallthroughCasesInSwitch` are enabled
+- Prefer `interface` for shared object shapes
+- Prefer `type` for unions, mapped types, response helpers, and literal domains
+- Avoid `any`; prefer `unknown` with runtime checks or type guards
+- Keep browser/API boundary parsing explicit, especially for JSON payloads and date-like values
+- Convert API timestamps close to the fetch boundary with small helpers like `toDate(...)`
 
-#### Styling (Tailwind CSS)
-- Use design system utilities: `app-shell`, `app-header`, `app-surface`, `app-card`
-- Buttons: `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-danger`
-- Inputs: `input`, `input-sm`; chips: `chip`, `chip-warm`
-- Palette: `ink/charcoal/graphite` surfaces with `mint` and `amberGlow` accents
-- Typography: use `font-display` for headings
-- Always design UI/UX mobile first, using phone layouts and touch interactions as the default baseline
-- Prioritize the mobile experience over desktop enhancements when making product, layout, navigation, and interaction decisions
-- Scale up progressively for tablet and desktop without compromising mobile clarity, reachability, or performance
+### Naming
+- React components and pages: PascalCase (`DashboardPage.tsx`, `RoutineCard.tsx`)
+- Hooks: `useX` camelCase (`useAuth.ts`, `useDashboardData.ts`)
+- Utility functions and locals: camelCase
+- Interfaces and types: PascalCase
+- App-wide constants: UPPER_SNAKE_CASE; short local constants are often camelCase
+- Match nearby file naming: components/pages usually PascalCase, hooks `useX.ts`, utilities can be camelCase or kebab-case
 
-#### Firebase Patterns
-- Use `merge: true` for document updates
-- Composite document IDs: `${exerciseId}_${userId}_${date}`
-- Clean up listeners in useEffect returns
-- Use optional chaining (`?.`) for potentially undefined Firebase data
+### React and Hooks
+- Prefer functional components
+- Named exports are the norm; default exports are used sparingly for entrypoints and a few lazy-loaded auth components
+- Keep side effects inside hooks/components and move reusable logic into `src/shared/lib/` or feature hooks
+- Use `useMemo` for reused or expensive derived state
+- Use `useCallback` for handlers passed deeply or reused in dependency lists
+- In `useEffect`, create an inner async function and call it with `void fn()` instead of making the effect callback async
 
-### Backend (Bun/SQLite)
+### State and Data Patterns
+- Hooks commonly return object-shaped state like `{ data, loading, error, refresh }`
+- Prefer local state for transient UI and feature hooks for data orchestration
+- Keep normalization close to fetch boundaries instead of spreading date/string conversion across components
+- Update arrays immutably with `map`, `filter`, and spread
 
-#### API Structure
-- Route handlers in `src/index.ts` with type-safe request/response
-- Business logic in `src/data.ts`, database layer in `src/db.ts`
-- HTTP utilities in `src/http.ts`, auth in `src/auth.ts`
-- Environment config in `src/env.ts`
+### Error Handling
+- Catch errors as `unknown` and convert them with `toUserMessage(...)` for UI-safe copy
+- Centralize HTTP failures in `ApiError` from `src/shared/api/apiClient.ts`
+- Use Spanish user-facing fallbacks to match existing product copy
+- Surface recoverable failures through `showToast(...)`
+- Guard browser-only APIs with `typeof window !== 'undefined'`
+- Fail fast for missing required env vars at startup when necessary, as in `src/app/main.tsx`
 
-#### Error Handling
-- Validate inputs with type guards (e.g., `isNonEmptyString`, `isValidDateKey`)
-- Return JSON error responses with consistent error codes
-- Log requests with structured JSON: `{ level, ts, event, requestId, method, path, status, durationMs }`
-- Wrap async operations in try/catch at handler level
+### API and Auth Conventions
+- Use `fetchJson<T>(...)` instead of raw `fetch` for authenticated JSON endpoints
+- Get auth tokens through `getIdToken()` / `setTokenGetter(...)`; do not hand-roll Clerk token access in multiple places
+- Send JSON requests with `content-type: application/json`
+- Include Clerk bearer auth in the `authorization` header for protected endpoints
+- Keep API helper functions in `src/shared/api/dataApi.ts` or the closest feature API module
 
-#### SQLite Patterns
-- Use `bun:sqlite` for database operations
-- Composite keys pattern: `${uid}:${deviceId}:rest` for job IDs
-- Soft deletes via `isActive` flags on subscriptions
-- Prepared statements for all queries
+### Styling and UX
+- Use Tailwind utilities plus shared classes from `src/index.css`
+- Prefer design-system classes like `app-shell`, `app-header`, `app-card`, `app-surface`, `btn-primary`, `btn-secondary`, `input`, and `chip`
+- Keep the existing visual language: dark surfaces, `mint` and `amberGlow` accents, `Khand` display font, `Hind` body font
+- Design mobile first and preserve large tap targets with `touch-target` utilities
+- Avoid introducing a different routing shell or conflicting design system
 
----
+### Testing Style
+- Use Vitest imports: `describe`, `it`, `expect`
+- Keep tests small and colocated beside the module under test
+- Prefer deterministic unit tests over broad integration tests unless necessary
+- Use `import type` in tests when only types are needed
 
-## State Management (Frontend)
+## Product Context From Copilot Instructions
+- The app is a gym workout tracker with authentication, routines, sessions, progress tracking, and rest timers
+- The dashboard is the primary user surface
+- The app uses a simple page-state model instead of a heavy router flow
+- Mobile-first UX is a hard requirement
+- Exercise/session/routine logic depends heavily on the shared types in `src/shared/types/index.ts`
 
-- Custom hooks centralize business logic
-- Return `{ data, loading, error, actions }` pattern
-- Use local state for UI, Firebase for persistence
-- Optimize with `useMemo`, `useCallback` for expensive operations
+## High-Value Files
+- `package.json` - canonical scripts
+- `vite.config.ts` - Vite + PWA setup
+- `eslint.config.js` - lint rules
+- `src/app/main.tsx` - bootstrapping, Clerk provider, service worker handling
+- `src/app/App.tsx` - top-level shell and lazy page loading
+- `src/app/hooks/usePageNavigation.ts` - current navigation model
+- `src/shared/types/index.ts` - core domain model
+- `src/shared/api/apiClient.ts` - auth-aware fetch layer and `ApiError`
+- `src/shared/api/dataApi.ts` - backend endpoint helpers
 
----
-
-## UI/UX Priority
-
-- Treat mobile as the primary platform for every frontend feature, flow, and visual decision
-- Start every screen, component, and interaction from small-screen constraints before adding larger breakpoints
-- Favor thumb-friendly navigation, large tap targets, concise content hierarchy, and fast perceived performance
-- Only add desktop-specific complexity when it clearly improves the experience without weakening the mobile-first baseline
-
----
-
-## Key Files
-
-### Frontend
-| File | Purpose |
-|------|---------|
-| `src/types/index.ts` | Complete data model |
-| `src/hooks/useWorkouts.ts` | Core Firebase operations |
-| `src/components/ExerciseCard.tsx` | Main interaction patterns |
-| `src/firebase/config.ts` | Database configuration |
-| `eslint.config.js` | Linting rules |
-| `tsconfig.app.json` | TypeScript configuration |
-
-### Backend
-| File | Purpose |
-|------|---------|
-| `src/index.ts` | HTTP server and route handlers |
-| `src/data.ts` | Business logic layer |
-| `src/db.ts` | SQLite database operations |
-| `src/auth.ts` | Firebase auth verification |
-| `src/push.ts` | Web Push notifications |
-| `src/http.ts` | HTTP utilities (CORS, JSON) |
-| `src/env.ts` | Environment configuration |
-
----
-
-## Development Workflow
-
-1. Run linter before committing: `pnpm lint` (frontend) or `bun check` (backend)
-2. Test changes with dev server: `pnpm dev` / `bun dev`
-3. Build to verify production readiness: `pnpm build` / `bun start`
-4. Follow existing patterns for new features (hooks on frontend, route+data+db on backend)
-5. Service worker is production-only; dev unregisters it to avoid stale caches
-6. Bump the minor version in `package.json` for every commit
-
----
-
-## Copilot Instructions Summary
-
-- React/TypeScript gym workout tracking app
-- Dual-user workout logging (A/B users)
-- Simple state-based routing (no React Router despite dependency)
-- Document IDs pattern: `${exerciseId}_${userId}_${date}` for exercise logs
-- UI/UX decisions must always prioritize mobile-first behavior, layout, readability, and touch ergonomics
+## Agent Workflow Recommendations
+- Before changing behavior, inspect the nearest feature folder and copy existing patterns
+- After code changes, run the narrowest useful test first, then `pnpm lint`, then `pnpm exec tsc -b`, then `pnpm build` when shipped behavior changes
+- When adding tests, colocate them next to the implementation file
+- Do not edit `dist/` manually

@@ -250,15 +250,15 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [pointsInRange]);
 
   return (
-    <div className="space-y-4">
-      <div className="mb-4 space-y-4 border-b border-mist/40 pb-4">
+    <div className="overflow-hidden rounded-[1.9rem] border border-mist/60 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_24%),linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
+      <div className="mb-5 border-b border-white/8 pb-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+            <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">
               <Activity className="text-mint" size={14} />
               <span>Historial y progreso</span>
             </div>
-            <p className="mt-2 text-sm text-slate-300">Sigue tus mejores cargas y revisa el historial completo de cada ejercicio.</p>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-slate-300">Revisa tu carga real, detecta subidas de nivel y abre el historial de cada ejercicio sin cambiar de pantalla.</p>
           </div>
 
           {selectedSummary ? (
@@ -270,32 +270,45 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
         </div>
 
         {selectedSummary ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ejercicio</div>
-              <div className="mt-1 font-display text-2xl leading-none text-white sm:text-[2rem]">{selectedSummary.exerciseName}</div>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
+          <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1.15fr)_repeat(3,minmax(0,0.6fr))]">
+            <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ejercicio activo</div>
+              <div className="mt-2 font-display text-[1.9rem] uppercase leading-none text-white sm:text-[2.3rem]">{selectedSummary.exerciseName}</div>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-300">
                 <span className="rounded-full border border-mist/40 px-2.5 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
                 <span className="rounded-full border border-mist/40 px-2.5 py-1">Último: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
               </div>
             </div>
 
-            <div className="text-left sm:text-right">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Mejor marca visible</div>
-              <div className="mt-1 font-display text-2xl text-white">
+            <div className="rounded-[1.45rem] border border-mint/20 bg-mint/10 px-4 py-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Mejor marca</div>
+              <div className="mt-2 font-display text-2xl text-white">
                 {pointsInRange.length > 0 ? formatKg(Math.max(...pointsInRange.map((point) => point.bestWeight))) : formatKg(selectedSummary.personalRecord)}
               </div>
+              <div className="mt-1 text-xs text-slate-300">Dentro del rango visible</div>
+            </div>
+
+            <div className="rounded-[1.45rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Récord</div>
+              <div className="mt-2 font-display text-2xl text-white">{formatKg(selectedSummary.personalRecord)}</div>
+              <div className="mt-1 text-xs text-slate-300">Mejor marca total</div>
+            </div>
+
+            <div className="rounded-[1.45rem] border border-amberGlow/20 bg-amberGlow/10 px-4 py-4">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Vista</div>
+              <div className="mt-2 font-display text-2xl text-white">{getRangeLabel(selectedRangeDays)}</div>
+              <div className="mt-1 text-xs text-slate-300">{formatSessionCount(pointsInRange.length)}</div>
             </div>
           </div>
         ) : null}
       </div>
 
       {selectedSummary ? (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div>
               <label htmlFor="exercise-progress-selector" className="mb-1.5 block text-xs text-slate-400">
-              Ejercicio
+                Ejercicio
               </label>
               <select
                 id="exercise-progress-selector"
@@ -311,10 +324,10 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </select>
             </div>
 
-              <div className="rounded-xl border border-mist/50 bg-slateDeep/70 px-3 py-2 text-right">
-               <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Vista</div>
-               <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-             </div>
+            <div className="rounded-xl border border-mist/50 bg-slateDeep/70 px-3 py-2 text-right">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Vista</div>
+              <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
+            </div>
           </div>
 
           <div>
@@ -341,224 +354,227 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
             </div>
           </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="app-surface-muted rounded-[1.2rem] p-3">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[1.3rem] border border-white/8 bg-white/[0.03] p-3.5">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Último registro</div>
                 <div className="mt-2 flex items-center gap-2">
-                <div className="text-base font-display text-white sm:text-xl">{formatKg(displayedLastWeight)}</div>
-                {rangeTrend === 'up' && <TrendingUp size={16} className="text-mint" />}
-                {rangeTrend === 'down' && <TrendingDown size={16} className="text-crimson" />}
-                {rangeTrend === 'flat' && <Minus size={16} className="text-slate-300" />}
+                  <div className="text-base font-display text-white sm:text-xl">{formatKg(displayedLastWeight)}</div>
+                  {rangeTrend === 'up' && <TrendingUp size={16} className="text-mint" />}
+                  {rangeTrend === 'down' && <TrendingDown size={16} className="text-crimson" />}
+                  {rangeTrend === 'flat' && <Minus size={16} className="text-slate-300" />}
+                </div>
+                <div className="mt-1 text-xs text-slate-400">
+                  {displayedComparisonWeight !== null ? `${formatDelta(displayedLastWeight - displayedComparisonWeight)} vs registro anterior` : 'Aún no hay comparación previa'}
+                </div>
               </div>
-              <div className="mt-1 text-xs text-slate-400">
-                {displayedComparisonWeight !== null ? `${formatDelta(displayedLastWeight - displayedComparisonWeight)} vs registro anterior` : 'Aun no hay comparacion previa'}
-              </div>
-            </div>
 
-            <div className="app-surface-muted rounded-[1.2rem] p-3">
+            <div className="rounded-[1.3rem] border border-white/8 bg-white/[0.03] p-3.5">
               <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Récord personal</div>
               <div className="mt-2 text-base font-display text-amberGlow sm:text-xl">{formatKg(selectedSummary.personalRecord)}</div>
               <div className="mt-1 text-xs text-slate-400">Mejor marca de toda la historia</div>
             </div>
 
-              <div className="app-surface-muted rounded-[1.2rem] p-3">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Cambio visible</div>
-                <div className={`mt-2 text-base font-display sm:text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
-                  {rangeDelta !== null ? formatDelta(rangeDelta) : 'Sin datos'}
-                </div>
-                <div className="mt-1 text-xs text-slate-400">Desde el primer punto del rango actual</div>
+            <div className="rounded-[1.3rem] border border-white/8 bg-white/[0.03] p-3.5">
+              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Cambio visible</div>
+              <div className={`mt-2 text-base font-display sm:text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
+                {rangeDelta !== null ? formatDelta(rangeDelta) : 'Sin datos'}
               </div>
+              <div className="mt-1 text-xs text-slate-400">Desde el primer punto del rango actual</div>
             </div>
-
-          <div className="overflow-hidden rounded-[1.4rem] border border-mist/40 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(15,23,42,0.72))] p-4">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                  <BarChart3 size={14} className="text-mint" />
-                  <span>Mapa de carga</span>
-                </div>
-                <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-                <div className="mt-1 text-xs text-slate-400">Escala real en kg. Cada punto representa el mejor set de una sesión.</div>
-              </div>
-
-              <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
-                <div className="flex items-center justify-end gap-1.5 text-[11px] uppercase tracking-[0.18em] text-slate-400">
-                  <CalendarRange size={12} />
-                  <span>Rango</span>
-                </div>
-                <div className="mt-1 text-sm font-semibold text-white">{getRangeLabel(selectedRangeDays)}</div>
-              </div>
-            </div>
-
-            {chartData ? (
-              <div className="overflow-x-auto pb-2" role="img" aria-label="Gráfica de progresión de carga con escala en kilogramos">
-                <svg
-                  width={chartData.width}
-                  height={CHART_HEIGHT}
-                  viewBox={`0 0 ${chartData.width} ${CHART_HEIGHT}`}
-                  className="min-w-full"
-                  aria-hidden="true"
-                >
-                  <defs>
-                    <linearGradient id="exercise-progress-area" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="rgba(72, 229, 163, 0.34)" />
-                      <stop offset="100%" stopColor="rgba(72, 229, 163, 0.02)" />
-                    </linearGradient>
-                    <linearGradient id="exercise-progress-line" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="rgba(245, 158, 11, 0.9)" />
-                      <stop offset="100%" stopColor="rgba(72, 229, 163, 0.95)" />
-                    </linearGradient>
-                  </defs>
-
-                  {chartData.ticks.map((tick) => (
-                    <g key={tick.y}>
-                      <line
-                        x1={CHART_PADDING.left}
-                        x2={chartData.width - CHART_PADDING.right}
-                        y1={tick.y}
-                        y2={tick.y}
-                        stroke="rgba(148, 163, 184, 0.14)"
-                        strokeDasharray="3 4"
-                      />
-                      <text
-                        x={CHART_PADDING.left - 8}
-                        y={tick.y + 4}
-                        textAnchor="end"
-                        fill="rgba(148, 163, 184, 0.82)"
-                        fontSize="10"
-                      >
-                        {formatWeightValue(tick.value)}
-                      </text>
-                    </g>
-                  ))}
-
-                  {chartData.coordinates.map((point) => (
-                    <line
-                      key={`guide-${point.timestamp}`}
-                      x1={point.x}
-                      x2={point.x}
-                      y1={point.y}
-                      y2={chartData.bottomY}
-                      stroke="rgba(72, 229, 163, 0.12)"
-                    />
-                  ))}
-
-                  {chartData.areaPath ? <path d={chartData.areaPath} fill="url(#exercise-progress-area)" /> : null}
-                  {chartData.coordinates.length > 1 ? (
-                    <path
-                      d={chartData.linePath}
-                      fill="none"
-                      stroke="url(#exercise-progress-line)"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  ) : null}
-
-                  {chartData.coordinates.map((point, index) => {
-                    const isLatest = index === chartData.coordinates.length - 1;
-
-                    return (
-                      <g key={`point-${point.timestamp}`}>
-                        <title>{`${point.pointDate}: ${formatKg(point.bestWeight)}`}</title>
-                        <circle
-                          cx={point.x}
-                          cy={point.y}
-                          r={isLatest ? 6 : 4.5}
-                          fill={isLatest ? '#f59e0b' : '#48e5a3'}
-                          stroke="rgba(11, 15, 20, 0.95)"
-                          strokeWidth="2"
-                        />
-                        {(index % chartData.labelStep === 0 || isLatest) ? (
-                          <text
-                            x={point.x}
-                            y={CHART_HEIGHT - 12}
-                            textAnchor="middle"
-                            fill="rgba(203, 213, 225, 0.82)"
-                            fontSize="10"
-                          >
-                            {point.axisDate}
-                          </text>
-                        ) : null}
-                      </g>
-                    );
-                  })}
-                </svg>
-                <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400">
-                  <span>Escala visible: {formatKg(chartData.minWeight)} - {formatKg(chartData.maxWeight)}</span>
-                  <span>{formatSessionCount(pointsInRange.length)}</span>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-mist/50 bg-white/5 px-4 py-8 text-center text-xs text-slate-400">
-                No hay sesiones con carga en este rango. Cambia a <button type="button" className="font-semibold text-mint" onClick={() => setSelectedRangeDays('all')}>Todo</button> para revisar el historial completo.
-              </div>
-            )}
           </div>
 
-          <div className="overflow-hidden rounded-[1.4rem] border border-mist/40 bg-[linear-gradient(180deg,rgba(2,6,23,0.55),rgba(15,23,42,0.9))] p-4">
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
-                  <History size={14} className="text-amberGlow" />
-                  <span>Historial visible</span>
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)]">
+            <div className="overflow-hidden rounded-[1.6rem] border border-mist/40 bg-[linear-gradient(180deg,rgba(15,23,42,0.95),rgba(15,23,42,0.72))] p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <BarChart3 size={14} className="text-mint" />
+                    <span>Mapa de carga</span>
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
+                  <div className="mt-1 text-xs text-slate-400">Escala real en kg. Cada punto representa el mejor set de una sesión.</div>
                 </div>
-                <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-                <div className="mt-1 text-xs text-slate-400">Lista del rango seleccionado, ordenada del más reciente al más antiguo.</div>
+
+                <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
+                  <div className="flex items-center justify-end gap-1.5 text-[11px] uppercase tracking-[0.18em] text-slate-400">
+                    <CalendarRange size={12} />
+                    <span>Rango</span>
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-white">{getRangeLabel(selectedRangeDays)}</div>
+                </div>
               </div>
 
-              <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Entradas</div>
-                <div className="mt-1 text-sm font-semibold text-white">{pointsInRange.length}</div>
-              </div>
+              {chartData ? (
+                <div className="overflow-x-auto pb-2" role="img" aria-label="Gráfica de progresión de carga con escala en kilogramos">
+                  <svg
+                    width={chartData.width}
+                    height={CHART_HEIGHT}
+                    viewBox={`0 0 ${chartData.width} ${CHART_HEIGHT}`}
+                    className="min-w-full"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <linearGradient id="exercise-progress-area" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="rgba(72, 229, 163, 0.34)" />
+                        <stop offset="100%" stopColor="rgba(72, 229, 163, 0.02)" />
+                      </linearGradient>
+                      <linearGradient id="exercise-progress-line" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="rgba(245, 158, 11, 0.9)" />
+                        <stop offset="100%" stopColor="rgba(72, 229, 163, 0.95)" />
+                      </linearGradient>
+                    </defs>
+
+                    {chartData.ticks.map((tick) => (
+                      <g key={tick.y}>
+                        <line
+                          x1={CHART_PADDING.left}
+                          x2={chartData.width - CHART_PADDING.right}
+                          y1={tick.y}
+                          y2={tick.y}
+                          stroke="rgba(148, 163, 184, 0.14)"
+                          strokeDasharray="3 4"
+                        />
+                        <text
+                          x={CHART_PADDING.left - 8}
+                          y={tick.y + 4}
+                          textAnchor="end"
+                          fill="rgba(148, 163, 184, 0.82)"
+                          fontSize="10"
+                        >
+                          {formatWeightValue(tick.value)}
+                        </text>
+                      </g>
+                    ))}
+
+                    {chartData.coordinates.map((point) => (
+                      <line
+                        key={`guide-${point.timestamp}`}
+                        x1={point.x}
+                        x2={point.x}
+                        y1={point.y}
+                        y2={chartData.bottomY}
+                        stroke="rgba(72, 229, 163, 0.12)"
+                      />
+                    ))}
+
+                    {chartData.areaPath ? <path d={chartData.areaPath} fill="url(#exercise-progress-area)" /> : null}
+                    {chartData.coordinates.length > 1 ? (
+                      <path
+                        d={chartData.linePath}
+                        fill="none"
+                        stroke="url(#exercise-progress-line)"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ) : null}
+
+                    {chartData.coordinates.map((point, index) => {
+                      const isLatest = index === chartData.coordinates.length - 1;
+
+                      return (
+                        <g key={`point-${point.timestamp}`}>
+                          <title>{`${point.pointDate}: ${formatKg(point.bestWeight)}`}</title>
+                          <circle
+                            cx={point.x}
+                            cy={point.y}
+                            r={isLatest ? 6 : 4.5}
+                            fill={isLatest ? '#f59e0b' : '#48e5a3'}
+                            stroke="rgba(11, 15, 20, 0.95)"
+                            strokeWidth="2"
+                          />
+                          {(index % chartData.labelStep === 0 || isLatest) ? (
+                            <text
+                              x={point.x}
+                              y={CHART_HEIGHT - 12}
+                              textAnchor="middle"
+                              fill="rgba(203, 213, 225, 0.82)"
+                              fontSize="10"
+                            >
+                              {point.axisDate}
+                            </text>
+                          ) : null}
+                        </g>
+                      );
+                    })}
+                  </svg>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-400">
+                    <span>Escala visible: {formatKg(chartData.minWeight)} - {formatKg(chartData.maxWeight)}</span>
+                    <span>{formatSessionCount(pointsInRange.length)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-mist/50 bg-white/5 px-4 py-8 text-center text-xs text-slate-400">
+                  No hay sesiones con carga en este rango. Cambia a <button type="button" className="font-semibold text-mint" onClick={() => setSelectedRangeDays('all')}>Todo</button> para revisar el historial completo.
+                </div>
+              )}
             </div>
 
-            {historyItems.length > 0 ? (
-              <div className="max-h-[24rem] space-y-2 overflow-y-auto pr-1">
-                {historyItems.map((point) => {
-                  const deltaTone = point.deltaFromPrevious === null || Math.abs(point.deltaFromPrevious) < 0.05
-                    ? 'text-slate-300 bg-white/5 border-white/8'
-                    : point.deltaFromPrevious > 0
-                      ? 'text-mint bg-mint/10 border-mint/20'
-                      : 'text-crimson bg-crimson/10 border-crimson/20';
+            <div className="overflow-hidden rounded-[1.6rem] border border-mist/40 bg-[linear-gradient(180deg,rgba(2,6,23,0.55),rgba(15,23,42,0.9))] p-4">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-400">
+                    <History size={14} className="text-amberGlow" />
+                    <span>Historial visible</span>
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
+                  <div className="mt-1 text-xs text-slate-400">Lista del rango seleccionado, ordenada del más reciente al más antiguo.</div>
+                </div>
 
-                  const deltaLabel = point.deltaFromPrevious === null
-                    ? 'Primer registro visible'
-                    : Math.abs(point.deltaFromPrevious) < 0.05
-                      ? 'Sin cambio vs anterior'
-                      : `${formatDelta(point.deltaFromPrevious)} vs anterior`;
+                <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Entradas</div>
+                  <div className="mt-1 text-sm font-semibold text-white">{pointsInRange.length}</div>
+                </div>
+              </div>
 
-                  return (
-                    <div key={point.timestamp} className="rounded-[1.15rem] border border-white/8 bg-white/[0.03] p-3 shadow-[0_10px_30px_rgba(2,6,23,0.16)]">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-white">{point.dateLabel}</div>
-                          <div className="mt-1 text-xs text-slate-400">
-                            {formatSetCount(point.completedSets)} completadas · Volumen {formatKg(point.totalWeight)}
+              {historyItems.length > 0 ? (
+                <div className="max-h-[24rem] space-y-2 overflow-y-auto pr-1">
+                  {historyItems.map((point) => {
+                    const deltaTone = point.deltaFromPrevious === null || Math.abs(point.deltaFromPrevious) < 0.05
+                      ? 'text-slate-300 bg-white/5 border-white/8'
+                      : point.deltaFromPrevious > 0
+                        ? 'text-mint bg-mint/10 border-mint/20'
+                        : 'text-crimson bg-crimson/10 border-crimson/20';
+
+                    const deltaLabel = point.deltaFromPrevious === null
+                      ? 'Primer registro visible'
+                      : Math.abs(point.deltaFromPrevious) < 0.05
+                        ? 'Sin cambio vs anterior'
+                        : `${formatDelta(point.deltaFromPrevious)} vs anterior`;
+
+                    return (
+                      <div key={point.timestamp} className="rounded-[1.15rem] border border-white/8 bg-white/[0.03] p-3 shadow-[0_10px_30px_rgba(2,6,23,0.16)]">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium text-white">{point.dateLabel}</div>
+                            <div className="mt-1 text-xs text-slate-400">
+                              {formatSetCount(point.completedSets)} completadas · Volumen {formatKg(point.totalWeight)}
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="text-right">
-                          <div className="font-display text-xl text-white">{formatKg(point.bestWeight)}</div>
-                          <div className={`mt-1 inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold ${deltaTone}`}>
-                            {deltaLabel}
+                          <div className="text-right">
+                            <div className="font-display text-xl text-white">{formatKg(point.bestWeight)}</div>
+                            <div className={`mt-1 inline-flex items-center rounded-full border px-2 py-1 text-[11px] font-semibold ${deltaTone}`}>
+                              {deltaLabel}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-mist/50 bg-white/5 px-4 py-8 text-center text-xs text-slate-400">
-                No hay registros en {getRangeTitle(selectedRangeDays).toLowerCase()}.
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-dashed border-mist/50 bg-white/5 px-4 py-8 text-center text-xs text-slate-400">
+                  No hay registros en {getRangeTitle(selectedRangeDays).toLowerCase()}.
+                </div>
+              )}
+            </div>
           </div>
         </div>
       ) : (
-        <div className="text-sm text-slate-400">
-          Completa algunas sesiones con peso para ver tu progreso por ejercicio.
+        <div className="rounded-[1.6rem] border border-dashed border-mist/50 bg-white/[0.03] px-4 py-10 text-center">
+          <div className="font-display text-xl uppercase text-white">Sin progreso visible todavía</div>
+          <p className="mt-2 text-sm text-slate-400">Completa algunas sesiones con peso para desbloquear tu mapa de carga y el historial por ejercicio.</p>
         </div>
       )}
     </div>

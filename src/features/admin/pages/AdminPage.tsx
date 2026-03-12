@@ -218,12 +218,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
           onUserSortChange={(value) => dispatch({ type: 'setUserSort', value })}
           onToggleAllUsers={() => dispatch({ type: 'setAllUsersOpen', userIds: filteredUsers.map((user) => user.userId), open: !areAllUsersExpanded })}
           onToggleUser={(userId, open) => dispatch({ type: 'toggleUser', userId, open })}
+          onResetFilters={() => dispatch({ type: 'resetFilters' })}
         />
 
         <AdminRoutinesSection
           routines={filteredRoutines}
           routineSort={state.routineSort}
           onRoutineSortChange={(value) => dispatch({ type: 'setRoutineSort', value })}
+          onResetFilters={() => dispatch({ type: 'resetFilters' })}
         />
 
         <AdminSessionsSection
@@ -234,6 +236,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
           remainingSessions={remainingSessions}
           onSessionSortChange={(value) => dispatch({ type: 'setSessionSort', value })}
           onShowMore={() => dispatch({ type: 'showMoreSessions' })}
+          onResetFilters={() => dispatch({ type: 'resetFilters' })}
         />
       </main>
     </div>

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DashboardExerciseProgressSummary, Routine, WorkoutSession } from '../../../shared/types';
 import { formatDateForDisplay, getDateStringInAppTimeZone } from '../../../shared/lib/dateUtils';
+import { APP_LOCALE, formatCountLabel, formatDateValue, formatNumber } from '../../../shared/lib/intl';
 import { buildExerciseProgress } from '../lib/workoutProgress';
 import { useExerciseNameMap } from '../hooks/useExerciseNameMap';
 
@@ -33,20 +34,20 @@ const CHART_HEIGHT = 220;
 const CHART_PADDING = { top: 18, right: 16, bottom: 34, left: 46 };
 
 const formatKg = (value: number): string => {
-  return `${value.toLocaleString('es-CO', { maximumFractionDigits: 1 })} kg`;
+  return `${formatNumber(value, { maximumFractionDigits: 1 })} kg`;
 };
 
 const formatWeightValue = (value: number): string => {
   const hasDecimals = Math.abs(value % 1) > 0.001;
-  return value.toLocaleString('es-CO', { maximumFractionDigits: hasDecimals ? 1 : 0 });
+  return formatNumber(value, { maximumFractionDigits: hasDecimals ? 1 : 0 });
 };
 
 const formatSessionCount = (count: number): string => {
-  return `${count} ${count === 1 ? 'sesion' : 'sesiones'}`;
+  return formatCountLabel(count, 'sesion', 'sesiones');
 };
 
 const formatSetCount = (count: number): string => {
-  return `${count} ${count === 1 ? 'serie' : 'series'}`;
+  return formatCountLabel(count, 'serie', 'series');
 };
 
 const formatPointDate = (timestamp: number): string => {
@@ -54,10 +55,10 @@ const formatPointDate = (timestamp: number): string => {
 };
 
 const formatAxisDate = (timestamp: number): string => {
-  return new Date(timestamp).toLocaleDateString('es-CO', {
+  return formatDateValue(new Date(timestamp), {
     day: 'numeric',
     month: 'short'
-  });
+  }, APP_LOCALE);
 };
 
 const formatDelta = (delta: number): string => {

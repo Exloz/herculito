@@ -1,3 +1,5 @@
+import { APP_LOCALE, formatDateValue } from './intl';
+
 export const APP_TIME_ZONE = 'America/Bogota';
 
 const FALLBACK_OFFSET_HOURS = -5;
@@ -33,9 +35,9 @@ export const getDateStringInAppTimeZone = (date: Date): string => {
   }
 };
 
-export const formatDateInAppTimeZone = (date: Date, locale: string = 'es-CO'): string => {
+export const formatDateInAppTimeZone = (date: Date, locale: string = APP_LOCALE): string => {
   try {
-    return date.toLocaleDateString(locale, { timeZone: APP_TIME_ZONE });
+    return formatDateValue(date, { timeZone: APP_TIME_ZONE }, locale);
   } catch {
     return date.toLocaleDateString(locale);
   }
@@ -48,13 +50,13 @@ export function getCurrentDateString(): string {
 export function formatDateString(dateString: string): string {
   const date = dateFromYMD(dateString);
 
-  const formattedDate = date.toLocaleDateString('es-CO', {
+  const formattedDate = formatDateValue(date, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     timeZone: APP_TIME_ZONE
-  });
+  }, APP_LOCALE);
 
   return formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
 }
@@ -81,11 +83,11 @@ export function formatDateForDisplay(dateString: string): string {
 
   const date = dateFromYMD(dateString);
 
-  return date.toLocaleDateString('es-CO', {
+  return formatDateValue(date, {
     day: 'numeric',
     month: 'short',
     timeZone: APP_TIME_ZONE
-  });
+  }, APP_LOCALE);
 }
 
 export function getStartOfWeek(): string {

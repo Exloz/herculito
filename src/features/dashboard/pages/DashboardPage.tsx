@@ -16,6 +16,7 @@ import { getRecommendedMuscleGroup } from '../lib/muscleGroups';
 import { useUI } from '../../../app/providers/ui-context';
 import { formatDateInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
+import { formatDateValue } from '../../../shared/lib/intl';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { version as appVersion } from '../../../../package.json';
 
@@ -213,7 +214,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const {
     data: dashboardData,
     loading: dashboardLoading,
+    refreshing: dashboardRefreshing,
     error: dashboardError,
+    usingCachedData,
+    lastUpdatedAt,
+    isOffline,
     refresh
   } = useDashboardData(user.id, user.name);
   const showDashboardSkeleton = useDelayedLoading(dashboardLoading, 180);
@@ -333,6 +338,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   };
 
   const userInitials = useMemo(() => getUserInitials(user.name || 'Usuario'), [user.name]);
+  const dashboardStatusMessage = useMemo(() => {
+    if (dashboardError && dashboardData) {
+      return isOffline
+        ? 'Estas sin conexion. Mostramos la ultima informacion guardada mientras recuperas internet.'
+        : 'Mostramos datos guardados mientras intentamos sincronizar la informacion mas reciente.';
+    }
+
+    if (isOffline && dashboardData) {
+      return 'Modo sin conexion activo. Puedes seguir viendo los datos que ya estaban disponibles en este dispositivo.';
+    }
+
+    return null;
+  }, [dashboardData, dashboardError, isOffline]);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
@@ -486,8 +504,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             <p className="text-sm text-slate-300 mb-4">
               {dashboardError || 'Intenta recargar la informacion del inicio.'}
             </p>
-            <button type="button" onClick={() => void refresh()} className="btn-primary">
-              Reintentar
+            <button type="button" onClick={() => void refresh()} disabled={dashboardRefreshing} className="btn-primary disabled:opacity-60">
+              {dashboardRefreshing ? 'Reintentando...' : 'Reintentar'}
             </button>
           </div>
         </main>
@@ -564,6 +582,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           </div>
         </div>
       </header>
+
+      {dashboardStatusMessage && (
+        <div className="px-4 pt-4">
+          <div className="mx-auto flex max-w-7xl flex-col gap-3 rounded-2xl border border-amberGlow/30 bg-amberGlow/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-amberGlow">Estado de conexion</div>
+              <p className="mt-1 text-sm text-slate-200">{dashboardStatusMessage}</p>
+              {usingCachedData && lastUpdatedAt && (
+                <div className="mt-1 text-xs text-slate-300">
+                  Ultima actualizacion guardada: {formatDateValue(new Date(lastUpdatedAt), {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}
+                </div>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              disabled={dashboardRefreshing}
+              className="btn-secondary shrink-0 disabled:opacity-60"
+            >
+              {dashboardRefreshing ? 'Actualizando...' : 'Actualizar ahora'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Bar */}
       <div className="px-4 py-3 sm:py-4">

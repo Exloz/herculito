@@ -1,5 +1,8 @@
 import { useEffect, type RefObject } from 'react';
 
+const activeDialogStack: HTMLElement[] = [];
+let rootBodyOverflow = '';
+
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
@@ -29,10 +32,24 @@ export const useDialogA11y = (
       return;
     }
 
+    const removeFromStack = () => {
+      const index = activeDialogStack.lastIndexOf(container);
+      if (index >= 0) {
+        activeDialogStack.splice(index, 1);
+      }
+    };
+
+    removeFromStack();
+
+    if (activeDialogStack.length === 0) {
+      rootBodyOverflow = document.body.style.overflow;
+    }
+
+    activeDialogStack.push(container);
+
     const previousActiveElement = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
-    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     const focusableElements = getFocusableElements(container);
@@ -43,6 +60,10 @@ export const useDialogA11y = (
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (activeDialogStack[activeDialogStack.length - 1] !== container) {
+        return;
+      }
+
       if (event.key === 'Escape') {
         onClose?.();
         return;
@@ -78,9 +99,15 @@ export const useDialogA11y = (
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = previousOverflow;
+      removeFromStack();
 
-      if (previousActiveElement) {
+      if (activeDialogStack.length === 0) {
+        document.body.style.overflow = rootBodyOverflow;
+      } else {
+        document.body.style.overflow = 'hidden';
+      }
+
+      if (previousActiveElement?.isConnected) {
         previousActiveElement.focus();
       }
     };

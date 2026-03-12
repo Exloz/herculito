@@ -21,6 +21,7 @@ interface AdminSessionsSectionProps {
   remainingSessions: number;
   onSessionSortChange: (value: AdminSessionSort) => void;
   onShowMore: () => void;
+  onResetFilters: () => void;
 }
 
 export const AdminSessionsSection: React.FC<AdminSessionsSectionProps> = ({
@@ -30,7 +31,8 @@ export const AdminSessionsSection: React.FC<AdminSessionsSectionProps> = ({
   sessionSort,
   remainingSessions,
   onSessionSortChange,
-  onShowMore
+  onShowMore,
+  onResetFilters
 }) => {
   return (
     <SectionAccordion
@@ -48,6 +50,15 @@ export const AdminSessionsSection: React.FC<AdminSessionsSectionProps> = ({
       </div>
 
       <div className="space-y-3">
+        {sessions.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-mist/25 bg-white/[0.02] px-4 py-6 text-sm text-slate-400">
+            <p>No hay sesiones para mostrar con los filtros actuales.</p>
+            <button type="button" onClick={onResetFilters} className="btn-secondary mt-3 text-sm">
+              Reiniciar filtros
+            </button>
+          </div>
+        )}
+
         {sessions.map((session) => (
           <details key={session.sessionId} className="group overflow-hidden rounded-2xl border border-mist/20 bg-white/[0.03]">
             <summary className="flex cursor-pointer list-none flex-col gap-2 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">

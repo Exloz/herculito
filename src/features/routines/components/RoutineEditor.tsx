@@ -4,6 +4,13 @@ import { Routine, Exercise, MuscleGroup } from '../../../shared/types';
 import { ExerciseSelector } from './ExerciseSelector';
 import { MUSCLE_GROUPS } from '../../dashboard/lib/muscleGroups';
 import { useDialogA11y } from '../../../shared/hooks/useDialogA11y';
+import { clampInteger, normalizeMultiline, normalizeSingleLine } from '../../../shared/lib/inputSanitizers';
+
+const MAX_ROUTINE_NAME_LENGTH = 120;
+const MAX_ROUTINE_DESCRIPTION_LENGTH = 600;
+const MAX_SETS = 30;
+const MAX_REPS = 200;
+const MAX_REST_TIME_SECONDS = 3600;
 
 interface ExerciseDraftValues {
   sets?: string;
@@ -34,8 +41,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [primaryMuscleGroup, setPrimaryMuscleGroup] = useState<MuscleGroup>(routine?.primaryMuscleGroup || 'fullbody');
   const [exerciseError, setExerciseError] = useState('');
   const [exerciseDrafts, setExerciseDrafts] = useState<Record<string, ExerciseDraftValues>>({});
+  const [formError, setFormError] = useState('');
 
-  useDialogA11y(dialogRef, { onClose: onCancel });
+  useDialogA11y(dialogRef, { enabled: !showExerciseSelector, onClose: onCancel });
 
   const handleAddExercise = (exercise: Exercise) => {
     if (exercises.some((existing) => existing.id === exercise.id)) {
@@ -43,6 +51,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
       return;
     }
     if (exerciseError) setExerciseError('');
+    if (formError) setFormError('');
     const newExercises = [...exercises, exercise];
     setExercises(newExercises);
 
@@ -82,7 +91,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     }
 
     const minValue = field === 'restTime' ? 5 : 1;
-    handleUpdateExercise(exerciseId, { [field]: Math.max(minValue, parsedValue) } as Partial<Exercise>);
+    const maxValue = field === 'restTime' ? MAX_REST_TIME_SECONDS : field === 'reps' ? MAX_REPS : MAX_SETS;
+    handleUpdateExercise(exerciseId, { [field]: clampInteger(parsedValue, minValue, maxValue) } as Partial<Exercise>);
   };
 
   const handleExerciseNumberBlur = (exerciseId: string, field: keyof ExerciseDraftValues, fallback: number) => {
@@ -93,7 +103,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
     const minValue = field === 'restTime' ? 5 : 1;
     const parsedValue = Number.parseInt(draftValue, 10);
-    const nextValue = Number.isNaN(parsedValue) ? fallback : Math.max(minValue, parsedValue);
+    const maxValue = field === 'restTime' ? MAX_REST_TIME_SECONDS : field === 'reps' ? MAX_REPS : MAX_SETS;
+    const nextValue = Number.isNaN(parsedValue) ? fallback : clampInteger(parsedValue, minValue, maxValue);
 
     handleUpdateExercise(exerciseId, { [field]: nextValue } as Partial<Exercise>);
 
@@ -118,18 +129,33 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (showExerciseSelector) return;
-    if (!name.trim() || exercises.length === 0) return;
-    onSave(name, description, exercises, isPublic, primaryMuscleGroup);
+
+    const normalizedName = normalizeSingleLine(name, MAX_ROUTINE_NAME_LENGTH);
+    const normalizedDescription = normalizeMultiline(description, MAX_ROUTINE_DESCRIPTION_LENGTH);
+
+    if (normalizedName.length < 2) {
+      setFormError('Usa un nombre de al menos 2 caracteres para identificar la rutina.');
+      return;
+    }
+
+    if (exercises.length === 0) {
+      setFormError('Agrega al menos un ejercicio antes de guardar la rutina.');
+      return;
+    }
+
+    setFormError('');
+    onSave(normalizedName, normalizedDescription, exercises, isPublic, primaryMuscleGroup);
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div
         ref={dialogRef}
-        className="app-card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className={`app-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
         role="dialog"
-        aria-modal="true"
+        aria-modal={!showExerciseSelector}
         aria-labelledby="routine-editor-title"
+        aria-hidden={showExerciseSelector}
         tabIndex={-1}
       >
         <div className="flex items-center justify-between mb-6">
@@ -156,11 +182,17 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 id="routine-name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value.slice(0, MAX_ROUTINE_NAME_LENGTH));
+                  if (formError) setFormError('');
+                }}
                 className="input"
                 placeholder="Ej: Pecho y Tríceps"
+                maxLength={MAX_ROUTINE_NAME_LENGTH}
                 required
+                dir="auto"
               />
+              <div className="mt-1 text-xs text-slate-400">{name.length}/{MAX_ROUTINE_NAME_LENGTH}</div>
             </div>
 
             <div>
@@ -170,11 +202,14 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               <textarea
                 id="routine-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => setDescription(e.target.value.slice(0, MAX_ROUTINE_DESCRIPTION_LENGTH))}
                 className="input"
                 placeholder="Describe tu rutina..."
                 rows={3}
+                maxLength={MAX_ROUTINE_DESCRIPTION_LENGTH}
+                dir="auto"
               />
+              <div className="mt-1 text-xs text-slate-400">{description.length}/{MAX_ROUTINE_DESCRIPTION_LENGTH}</div>
             </div>
 
             {/* Grupo muscular */}
@@ -220,6 +255,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               <button
                 type="button"
                 onClick={() => {
+                  setFormError('');
                   setShowExerciseSelector(true);
                 }}
                 className="btn-secondary flex items-center gap-2"
@@ -239,8 +275,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 {exercises.map((exercise, index) => (
                   <div key={exercise.id} className="app-surface-muted p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-white">
+                      <div className="min-w-0 flex items-center gap-2">
+                        <h4 dir="auto" className="min-w-0 break-words font-semibold text-white" style={{ overflowWrap: 'anywhere' }}>
                           {index + 1}. {exercise.name}
                         </h4>
                         {exercise.video?.url ? (
@@ -256,16 +292,18 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                             setEditingExercise(exercise);
                             setShowExerciseSelector(true);
                           }}
-                          className="text-slate-400 hover:text-mint transition-colors"
+                          className="touch-target-sm rounded-lg p-1 text-slate-400 transition-colors hover:text-mint"
                           title="Editar ejercicio"
+                          aria-label={`Editar ejercicio ${exercise.name}`}
                         >
                           <Pencil size={16} />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleRemoveExercise(exercise.id)}
-                          className="text-red-400 hover:text-red-300 transition-colors"
+                          className="touch-target-sm rounded-lg p-1 text-red-400 transition-colors hover:text-red-300"
                           title="Eliminar ejercicio"
+                          aria-label={`Eliminar ejercicio ${exercise.name}`}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -283,6 +321,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                           onBlur={() => handleExerciseNumberBlur(exercise.id, 'sets', exercise.sets)}
                           className="input input-sm"
                           min="1"
+                          max={MAX_SETS}
                         />
                       </div>
                       <div>
@@ -295,6 +334,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                           onBlur={() => handleExerciseNumberBlur(exercise.id, 'reps', exercise.reps)}
                           className="input input-sm"
                           min="1"
+                          max={MAX_REPS}
                         />
                       </div>
                       <div>
@@ -308,6 +348,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                           className="input input-sm"
                           min="5"
                           step="5"
+                          max={MAX_REST_TIME_SECONDS}
                         />
                       </div>
                     </div>
@@ -318,6 +359,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             {exerciseError && (
               <div className="mt-3 text-sm text-amberGlow">
                 {exerciseError}
+              </div>
+            )}
+            {formError && (
+              <div className="mt-3 rounded-xl border border-crimson/40 bg-crimson/10 px-3 py-2 text-sm text-crimson" role="alert">
+                {formError}
               </div>
             )}
           </div>

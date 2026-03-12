@@ -4,6 +4,14 @@ import type { Exercise, ExerciseVideo } from '../../../shared/types';
 import type { MusclewikiSuggestion } from '../api/musclewikiApi';
 import type { CustomExerciseForm } from '../types/exercise-selector';
 import { ExerciseVideoPicker } from './ExerciseVideoPicker';
+import { clampInteger } from '../../../shared/lib/inputSanitizers';
+
+const MAX_EXERCISE_NAME_LENGTH = 120;
+const MAX_EXERCISE_CATEGORY_LENGTH = 80;
+const MAX_EXERCISE_DESCRIPTION_LENGTH = 400;
+const MAX_SETS = 30;
+const MAX_REPS = 200;
+const MAX_REST_TIME_SECONDS = 3600;
 
 interface ExerciseSelectorFormProps {
   isEditing: boolean;
@@ -51,7 +59,11 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
 
     const parsedValue = Number.parseInt(value, 10);
     if (Number.isNaN(parsedValue)) return;
-    onCustomExerciseChange({ [field]: parsedValue } as Partial<CustomExerciseForm>);
+
+    const minValue = field === 'restTime' ? 5 : 1;
+    const maxValue = field === 'restTime' ? MAX_REST_TIME_SECONDS : field === 'reps' ? MAX_REPS : MAX_SETS;
+
+    onCustomExerciseChange({ [field]: clampInteger(parsedValue, minValue, maxValue) } as Partial<CustomExerciseForm>);
   };
 
   return (
@@ -63,18 +75,21 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             id="custom-exercise-name"
             type="text"
             value={customExercise.name}
-            onChange={(event) => onCustomExerciseChange({ name: event.target.value })}
+            onChange={(event) => onCustomExerciseChange({ name: event.target.value.slice(0, MAX_EXERCISE_NAME_LENGTH) })}
             className="input text-sm"
             placeholder="Ej: Press de banca"
+            maxLength={MAX_EXERCISE_NAME_LENGTH}
+            dir="auto"
           />
+          <div className="mt-1 text-xs text-slate-400">{customExercise.name.length}/{MAX_EXERCISE_NAME_LENGTH}</div>
         </div>
 
         {error && (
-          <div className="bg-red-900/50 border border-red-500 rounded-md p-3 text-red-200 text-sm">{error}</div>
+          <div className="rounded-md border border-red-500 bg-red-900/50 p-3 text-sm text-red-200" role="alert">{error}</div>
         )}
 
         {successMessage && (
-          <div className="bg-mint/10 border border-mint rounded-md p-3 text-mint text-sm">{successMessage}</div>
+          <div className="rounded-md border border-mint bg-mint/10 p-3 text-sm text-mint" role="status" aria-live="polite">{successMessage}</div>
         )}
 
         <div>
@@ -83,11 +98,14 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             id="custom-exercise-category"
             type="text"
             value={customExercise.category}
-            onChange={(event) => onCustomExerciseChange({ category: event.target.value })}
+            onChange={(event) => onCustomExerciseChange({ category: event.target.value.slice(0, MAX_EXERCISE_CATEGORY_LENGTH) })}
             className="input text-sm"
             placeholder="Ej: Pecho, Espalda, Piernas..."
             list="categories"
+            maxLength={MAX_EXERCISE_CATEGORY_LENGTH}
+            dir="auto"
           />
+          <div className="mt-1 text-xs text-slate-400">{customExercise.category.length}/{MAX_EXERCISE_CATEGORY_LENGTH}</div>
           <datalist id="categories">
             {categories.map((category) => (
               <option key={category} value={category} />
@@ -100,11 +118,14 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
           <textarea
             id="custom-exercise-description"
             value={customExercise.description}
-            onChange={(event) => onCustomExerciseChange({ description: event.target.value })}
+            onChange={(event) => onCustomExerciseChange({ description: event.target.value.slice(0, MAX_EXERCISE_DESCRIPTION_LENGTH) })}
             className="input text-sm"
             placeholder="Describe como hacer el ejercicio..."
             rows={2}
+            maxLength={MAX_EXERCISE_DESCRIPTION_LENGTH}
+            dir="auto"
           />
+          <div className="mt-1 text-xs text-slate-400">{customExercise.description.length}/{MAX_EXERCISE_DESCRIPTION_LENGTH}</div>
         </div>
 
         <ExerciseVideoPicker
@@ -128,6 +149,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               onChange={(event) => handleNumberChange('sets', event.target.value)}
               className="input input-sm text-sm"
               min="1"
+              max={MAX_SETS}
             />
           </div>
           <div>
@@ -139,6 +161,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               onChange={(event) => handleNumberChange('reps', event.target.value)}
               className="input input-sm text-sm"
               min="1"
+              max={MAX_REPS}
             />
           </div>
           <div>
@@ -151,6 +174,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               className="input input-sm text-sm"
               min="5"
               step="5"
+              max={MAX_REST_TIME_SECONDS}
             />
           </div>
         </div>

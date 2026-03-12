@@ -4,6 +4,27 @@ import { Exercise, ExerciseLog, WorkoutSet, ExerciseVideo } from '../../../share
 import { getCurrentDateString } from '../../../shared/lib/dateUtils';
 import { vibrateLight, vibrateSuccess } from '../../../shared/lib/mobileFeedback';
 
+const MAX_WEIGHT_KG = 2000;
+
+const parseWeightInput = (rawValue: string): number | null => {
+  const normalizedValue = rawValue.replace(',', '.').trim();
+
+  if (normalizedValue === '') {
+    return 0;
+  }
+
+  if (!/^\d{1,4}(\.\d)?$/.test(normalizedValue)) {
+    return null;
+  }
+
+  const parsedWeight = Number(normalizedValue);
+  if (!Number.isFinite(parsedWeight) || parsedWeight < 0 || parsedWeight > MAX_WEIGHT_KG) {
+    return null;
+  }
+
+  return Number(parsedWeight.toFixed(1));
+};
+
 interface ExerciseCardProps {
   exercise: Exercise;
   log: ExerciseLog;
@@ -125,8 +146,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
       return;
     }
 
-    const parsedWeight = Number(rawValue);
-    if (!Number.isFinite(parsedWeight) || parsedWeight < 0) {
+    const parsedWeight = parseWeightInput(rawValue);
+    if (parsedWeight === null) {
       return;
     }
 
@@ -146,8 +167,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
       return;
     }
 
-    const parsedWeight = Number(rawDraftValue);
-    if (Number.isFinite(parsedWeight) && parsedWeight >= 0) {
+    const parsedWeight = parseWeightInput(rawDraftValue);
+    if (parsedWeight !== null) {
       updateSetWeight(setNumber, parsedWeight);
     }
 
@@ -334,6 +355,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                         inputMode="decimal"
                         step="0.5"
                         min="0"
+                        max={MAX_WEIGHT_KG}
                         aria-label={`Peso para serie ${setNumber}`}
                       />
                       {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (

@@ -5,6 +5,7 @@ import { MUSCLE_GROUPS, getRoutinesByMuscleGroup } from '../lib/muscleGroups';
 import { vibrateLight } from '../../../shared/lib/mobileFeedback';
 import { MuscleGroupSelector } from './MuscleGroupSelector';
 import { MuscleGroupIcon } from './MuscleGroupIcon';
+import { formatCountLabel } from '../../../shared/lib/intl';
 
 interface MuscleGroupSectionProps {
   muscleGroup: MuscleGroup;
@@ -51,9 +52,9 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                   Recomendado
                 </span>
               )}
-            </h3>
+             </h3>
             <p className="text-xs sm:text-sm text-slate-300 truncate">
-              {groupRoutines.length} rutina{groupRoutines.length !== 1 ? 's' : ''} disponible{groupRoutines.length !== 1 ? 's' : ''}
+              {formatCountLabel(groupRoutines.length, 'rutina disponible', 'rutinas disponibles')}
             </p>
           </div>
         </div>
@@ -88,7 +89,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
 
             <div className="space-y-2 mb-3">
               <div className="text-sm text-slate-400">
-                {routine.exercises.length} ejercicio{routine.exercises.length !== 1 ? 's' : ''}
+                {formatCountLabel(routine.exercises.length, 'ejercicio', 'ejercicios')}
               </div>
 
               {routine.timesUsed && routine.timesUsed > 0 && (

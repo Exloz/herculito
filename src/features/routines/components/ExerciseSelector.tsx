@@ -9,6 +9,14 @@ import type { CustomExerciseForm } from '../types/exercise-selector';
 import { ExerciseSelectorTemplateList } from './ExerciseSelectorTemplateList';
 import { ExerciseSelectorForm } from './ExerciseSelectorForm';
 import { useExerciseVideoManager } from '../hooks/useExerciseVideoManager';
+import { clampInteger, normalizeMultiline, normalizeSingleLine } from '../../../shared/lib/inputSanitizers';
+
+const MAX_EXERCISE_NAME_LENGTH = 120;
+const MAX_EXERCISE_CATEGORY_LENGTH = 80;
+const MAX_EXERCISE_DESCRIPTION_LENGTH = 400;
+const MAX_SETS = 30;
+const MAX_REPS = 200;
+const MAX_REST_TIME_SECONDS = 3600;
 
 interface ExerciseSelectorProps {
   onSelectExercise: (exercise: Exercise) => void;
@@ -84,6 +92,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [customExercise, setCustomExercise] = useState<CustomExerciseForm>(EMPTY_CUSTOM_EXERCISE);
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
 
   const {
     videoSuggestions,
@@ -151,28 +160,42 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   };
 
   const handleSelectTemplate = async (template: ExerciseTemplate) => {
-    const exercise: Exercise = {
-      id: template.id,
-      name: template.name,
-      sets: template.sets,
-      reps: template.reps,
-      restTime: template.restTime,
-      ...(template.video ? { video: template.video } : {})
-    };
-
-    await incrementUsage(template.id);
-    onSelectExercise(exercise);
-  };
-
-  const handleCustomExercise = async () => {
-    if (!customExercise.name.trim()) {
-      setError('El nombre del ejercicio es requerido');
+    if (pendingTemplateId) {
       return;
     }
 
-    const resolvedSets = getNumericValue(customExercise.sets, 3, 1);
-    const resolvedReps = getNumericValue(customExercise.reps, 10, 1);
-    const resolvedRestTime = getNumericValue(customExercise.restTime, 90, 5);
+    setPendingTemplateId(template.id);
+
+    try {
+      const exercise: Exercise = {
+        id: template.id,
+        name: template.name,
+        sets: template.sets,
+        reps: template.reps,
+        restTime: template.restTime,
+        ...(template.video ? { video: template.video } : {})
+      };
+
+      await incrementUsage(template.id);
+      onSelectExercise(exercise);
+    } finally {
+      setPendingTemplateId(null);
+    }
+  };
+
+  const handleCustomExercise = async () => {
+    const normalizedName = normalizeSingleLine(customExercise.name, MAX_EXERCISE_NAME_LENGTH);
+    const normalizedCategory = normalizeSingleLine(customExercise.category, MAX_EXERCISE_CATEGORY_LENGTH);
+    const normalizedDescription = normalizeMultiline(customExercise.description, MAX_EXERCISE_DESCRIPTION_LENGTH);
+
+    if (normalizedName.length < 2) {
+      setError('Escribe un nombre de al menos 2 caracteres para identificar el ejercicio.');
+      return;
+    }
+
+    const resolvedSets = clampInteger(getNumericValue(customExercise.sets, 3, 1), 1, MAX_SETS);
+    const resolvedReps = clampInteger(getNumericValue(customExercise.reps, 10, 1), 1, MAX_REPS);
+    const resolvedRestTime = clampInteger(getNumericValue(customExercise.restTime, 90, 5), 5, MAX_REST_TIME_SECONDS);
 
     setCreatingExercise(true);
     clearMessages();
@@ -180,7 +203,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     try {
       if (isEditing && editingExercise && onUpdateExercise) {
         const updates: Partial<Exercise> = {
-          name: customExercise.name,
+          name: normalizedName,
           sets: resolvedSets,
           reps: resolvedReps,
           restTime: resolvedRestTime,
@@ -188,43 +211,43 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         };
 
         await updateExerciseTemplate(editingExercise.id, {
-          name: customExercise.name,
-          category: customExercise.category || 'Personalizado',
+          name: normalizedName,
+          category: normalizedCategory || 'Personalizado',
           sets: resolvedSets,
           reps: resolvedReps,
           restTime: resolvedRestTime,
-          description: customExercise.description,
+          description: normalizedDescription,
           video: selectedVideo ?? undefined
         });
 
         onUpdateExercise(editingExercise.id, updates);
-        setSuccessMessage(`¡Ejercicio "${customExercise.name}" actualizado exitosamente!`);
+        setSuccessMessage(`¡Ejercicio "${normalizedName}" actualizado exitosamente!`);
 
         setTimeout(() => {
           onCancel();
         }, 800);
       } else {
         const templateId = await createExerciseTemplate(
-          customExercise.name,
-          customExercise.category || 'Personalizado',
+          normalizedName,
+          normalizedCategory || 'Personalizado',
           resolvedSets,
           resolvedReps,
           resolvedRestTime,
-          customExercise.description,
+          normalizedDescription,
           true,
           selectedVideo ?? undefined
         );
 
         const exercise: Exercise = {
           id: templateId,
-          name: customExercise.name,
+          name: normalizedName,
           sets: resolvedSets,
           reps: resolvedReps,
           restTime: resolvedRestTime,
           ...(selectedVideo ? { video: selectedVideo } : {})
         };
 
-        setSuccessMessage(`¡Ejercicio "${customExercise.name}" creado y añadido exitosamente!`);
+        setSuccessMessage(`¡Ejercicio "${normalizedName}" creado y añadido exitosamente!`);
         resetCustomForm();
         onSelectExercise(exercise);
       }
@@ -313,13 +336,19 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               selectedCategory={selectedCategory}
               categories={categories}
               filteredExercises={filteredExercises}
+              hasAnyExercises={exercises.length > 0}
               ownVideoCandidates={ownVideoCandidates}
               backfillRunning={backfillRunning}
               backfillMessage={backfillMessage}
+              pendingTemplateId={pendingTemplateId}
               onSearchTermChange={setSearchTerm}
               onSelectedCategoryChange={setSelectedCategory}
               onBackfillVideos={() => {
                 void handleBackfillVideos();
+              }}
+              onResetFilters={() => {
+                setSearchTerm('');
+                setSelectedCategory('');
               }}
               onSelectTemplate={handleSelectTemplate}
             />

@@ -32,12 +32,12 @@ export const Toast: React.FC<ToastProps> = ({ id, type, message, onClose }) => {
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-md shadow-lg animate-in fade-in slide-in-from-top-4 duration-300 ${bgColors[type]}`}
+      className={`flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-300 ${bgColors[type]}`}
       role={type === 'error' ? 'alert' : 'status'}
       aria-atomic="true"
     >
       <span className="shrink-0">{icons[type]}</span>
-      <p className="text-sm font-medium">{message}</p>
+      <p dir="auto" className="min-w-0 flex-1 break-words text-sm font-medium" style={{ overflowWrap: 'anywhere' }}>{message}</p>
       <button 
         onClick={() => onClose(id)} 
         className="shrink-0 p-1 hover:bg-white/10 rounded-full transition-colors"

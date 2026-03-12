@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { useDialogA11y } from '../hooks/useDialogA11y';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   const modalRef = useRef<HTMLDivElement | null>(null);
   const previousActiveElementRef = useRef<HTMLElement | null>(null);
 
+  useDialogA11y(modalRef, { enabled: isOpen, onClose: onCancel });
+
   useEffect(() => {
     if (!isOpen) return;
     previousActiveElementRef.current = document.activeElement as HTMLElement | null;
@@ -36,58 +39,16 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onCancel();
-      }
-
-      if (event.key === 'Tab') {
-        const root = modalRef.current;
-        if (!root) return;
-
-        const focusables = Array.from(
-          root.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          )
-        ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
-
-        if (focusables.length === 0) return;
-
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
-        const active = document.activeElement as HTMLElement | null;
-
-        if (event.shiftKey) {
-          if (!active || active === first) {
-            event.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (active === last) {
-            event.preventDefault();
-            first.focus();
-          }
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onCancel]);
-
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onCancel}
     >
       <div
         ref={modalRef}
-        className="bg-charcoal border border-mist/60 rounded-2xl w-full max-w-sm shadow-2xl scale-100 animate-in zoom-in-95 duration-200"
+        className="w-full max-w-lg scale-100 rounded-2xl border border-mist/60 bg-charcoal shadow-2xl animate-in zoom-in-95 duration-200"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="modal-title"
@@ -99,12 +60,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isDanger ? 'bg-crimson/15 text-crimson' : 'bg-mint/15 text-mint'}`}>
               <AlertTriangle size={20} />
             </div>
-            <h3 id="modal-title" className="text-lg font-display text-white">
+            <h3 id="modal-title" dir="auto" className="min-w-0 break-words text-lg font-display text-white" style={{ overflowWrap: 'anywhere' }}>
               {title}
             </h3>
           </div>
 
-          <p id="modal-desc" className="text-slate-300 text-sm mb-6 leading-relaxed">
+          <p id="modal-desc" dir="auto" className="mb-6 text-sm leading-relaxed text-slate-300 break-words" style={{ overflowWrap: 'anywhere' }}>
             {message}
           </p>
 

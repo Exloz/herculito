@@ -17,7 +17,7 @@ type CachedDashboardEntry = {
   response: DashboardDataResponse;
 };
 
-const readDashboardCache = (userId: string): DashboardDataResponse | null => {
+const readDashboardCacheEntry = (userId: string): CachedDashboardEntry | null => {
   if (!userId || typeof window === 'undefined') {
     return null;
   }
@@ -40,7 +40,7 @@ const readDashboardCache = (userId: string): DashboardDataResponse | null => {
       return null;
     }
 
-    return cacheEntry.response;
+    return cacheEntry;
   } catch {
     return null;
   }
@@ -142,49 +142,90 @@ const mapDashboardData = (
 
 export const useDashboardData = (userId: string, userName: string) => {
   const [data, setData] = useState<DashboardData | null>(() => {
-    const cachedResponse = readDashboardCache(userId);
-    return cachedResponse ? mapDashboardData(cachedResponse, userId, userName) : null;
+    const cachedEntry = readDashboardCacheEntry(userId);
+    return cachedEntry ? mapDashboardData(cachedEntry.response, userId, userName) : null;
   });
-  const [loading, setLoading] = useState(() => !readDashboardCache(userId));
+  const [loading, setLoading] = useState(() => !readDashboardCacheEntry(userId));
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [usingCachedData, setUsingCachedData] = useState(() => Boolean(readDashboardCacheEntry(userId)));
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(() => readDashboardCacheEntry(userId)?.savedAt ?? null);
+  const [isOffline, setIsOffline] = useState(() => {
+    if (typeof navigator === 'undefined') {
+      return false;
+    }
+
+    return navigator.onLine === false;
+  });
 
   const loadDashboard = useCallback(async (preserveData: boolean) => {
     if (!userId) {
       setData(null);
       setLoading(false);
+      setRefreshing(false);
       setError(null);
+      setUsingCachedData(false);
+      setLastUpdatedAt(null);
       return;
     }
 
-    const cachedResponse = readDashboardCache(userId);
+    const cachedEntry = readDashboardCacheEntry(userId);
+    const cachedResponse = cachedEntry?.response ?? null;
 
     if (!preserveData) {
       if (cachedResponse) {
         setData(mapDashboardData(cachedResponse, userId, userName));
         setLoading(false);
+        setUsingCachedData(true);
+        setLastUpdatedAt(cachedEntry?.savedAt ?? null);
       } else {
-      setLoading(true);
+        setLoading(true);
       }
+    } else {
+      setRefreshing(true);
     }
+
     setError(null);
 
     try {
       const response = await fetchDashboardData();
+      const savedAt = Date.now();
       writeDashboardCache(userId, response);
       setData(mapDashboardData(response, userId, userName));
+      setUsingCachedData(false);
+      setLastUpdatedAt(savedAt);
     } catch (loadError) {
       if (!preserveData && !cachedResponse) {
         setData(null);
       }
+      setUsingCachedData(Boolean(cachedResponse));
       setError(toUserMessage(loadError, 'No se pudo cargar el dashboard'));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [userId, userName]);
 
   useEffect(() => {
     void loadDashboard(false);
   }, [loadDashboard]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     await loadDashboard(true);
@@ -193,7 +234,11 @@ export const useDashboardData = (userId: string, userName: string) => {
   return {
     data,
     loading,
+    refreshing,
     error,
+    usingCachedData,
+    lastUpdatedAt,
+    isOffline,
     refresh
   };
 };

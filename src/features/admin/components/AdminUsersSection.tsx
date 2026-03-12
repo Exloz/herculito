@@ -23,6 +23,7 @@ interface AdminUsersSectionProps {
   onUserSortChange: (value: AdminUserSort) => void;
   onToggleAllUsers: () => void;
   onToggleUser: (userId: string, open: boolean) => void;
+  onResetFilters: () => void;
 }
 
 export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
@@ -36,7 +37,8 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
   openUserIds,
   onUserSortChange,
   onToggleAllUsers,
-  onToggleUser
+  onToggleUser,
+  onResetFilters
 }) => {
   return (
     <SectionAccordion
@@ -61,6 +63,15 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
       </div>
 
       <div className="space-y-4">
+        {users.length === 0 && (
+          <div className="rounded-2xl border border-dashed border-mist/25 bg-white/[0.02] px-4 py-6 text-sm text-slate-400">
+            <p>No hay usuarios que coincidan con los filtros actuales.</p>
+            <button type="button" onClick={onResetFilters} className="btn-secondary mt-3 text-sm">
+              Reiniciar filtros
+            </button>
+          </div>
+        )}
+
         {users.map((user) => {
           const activity = userActivityById.get(user.userId);
           const createdRoutines = routines.filter((routine) => routine.createdBy === user.userId);
@@ -85,8 +96,8 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                     </div>
                   </div>
 
-                  <div className="mt-3 text-xl font-display text-white">{displayName}</div>
-                  <div className="mt-1 text-sm text-slate-400">{subtitle}</div>
+                  <div dir="auto" className="mt-3 break-words text-xl font-display text-white" style={{ overflowWrap: 'anywhere' }}>{displayName}</div>
+                  <div dir="auto" className="mt-1 break-words text-sm text-slate-400" style={{ overflowWrap: 'anywhere' }}>{subtitle}</div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:min-w-[520px]">

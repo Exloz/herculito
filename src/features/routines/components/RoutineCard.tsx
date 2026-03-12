@@ -31,15 +31,15 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
   return (
     <div className="app-card p-4 sm:p-5 content-fade-in">
       <div className="flex items-start justify-between gap-4 mb-3">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-lg font-display text-white">{routine.name}</h3>
+            <h3 dir="auto" className="min-w-0 break-words text-lg font-display text-white" style={{ overflowWrap: 'anywhere' }}>{routine.name}</h3>
             {!routine.isPublic && <span className="chip">Privada</span>}
             {routine.createdBy !== user.id && <span className="chip-warm">Comunidad</span>}
           </div>
 
           {routine.description && (
-            <p className="text-slate-300 text-sm mb-2">{routine.description}</p>
+            <p dir="auto" className="mb-2 text-sm text-slate-300 break-words" style={{ overflowWrap: 'anywhere' }}>{routine.description}</p>
           )}
 
           <div className="flex items-center text-sm text-slate-400 flex-wrap gap-x-3 gap-y-1">

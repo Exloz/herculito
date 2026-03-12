@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { LogOut, Bell } from 'lucide-react';
+import { ChevronDown, LogOut, Bell } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
 import {
   completeSession as apiCompleteSession,
@@ -255,12 +255,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const dashboardStatusMessage = useMemo(() => {
     if (dashboardError && dashboardData) {
       return isOffline
-        ? 'Estas sin conexion. Mostramos la ultima informacion guardada mientras recuperas internet.'
-        : 'Mostramos datos guardados mientras intentamos sincronizar la informacion mas reciente.';
+        ? 'Estás sin conexión. Mostramos la última información guardada mientras recuperas internet.'
+        : 'Mostramos datos guardados mientras intentamos sincronizar la información más reciente.';
     }
 
     if (isOffline && dashboardData) {
-      return 'Modo sin conexion activo. Puedes seguir viendo los datos que ya estaban disponibles en este dispositivo.';
+      return 'Modo sin conexión activo. Puedes seguir viendo los datos que ya estaban disponibles en este dispositivo.';
     }
 
     return null;
@@ -274,7 +274,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       return 'Crea una rutina para empezar a entrenar.';
     }
 
-    return `${stats.thisWeekWorkouts} esta semana · racha de ${stats.currentStreak} dias`;
+    return `${stats.thisWeekWorkouts} esta semana · racha de ${stats.currentStreak} días`;
   }, [activeWorkout, dashboardRoutines.length, stats.currentStreak, stats.thisWeekWorkouts]);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
@@ -303,7 +303,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         showToast('Rutina no encontrada', 'error');
       }
     } catch (error) {
-      showToast(toUserMessage(error, 'Error al iniciar el entrenamiento. Intentalo de nuevo.'), 'error');
+      showToast(toUserMessage(error, 'Error al iniciar el entrenamiento. Inténtalo de nuevo.'), 'error');
     }
   }, [dashboardRoutines, showToast, user.id]);
 
@@ -312,14 +312,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       await apiUpdateRoutine(routineId, { primaryMuscleGroup: newMuscleGroup });
       await refresh();
     } catch (error) {
-      showToast(toUserMessage(error, 'Error al cambiar el grupo muscular. Intentalo de nuevo.'), 'error');
+      showToast(toUserMessage(error, 'Error al cambiar el grupo muscular. Inténtalo de nuevo.'), 'error');
     }
   }, [refresh, showToast]);
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDayClick = useCallback((_date: string) => {
-    // Aquí podrías mostrar detalles del entrenamiento de ese día
-  }, []);
 
   const handleBackToDashboard = useCallback(() => {
     setShowActiveWorkout(false);
@@ -371,8 +366,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         showToast('Entrenamiento completado', 'success');
         void refresh();
       } catch (error) {
-        console.error('Error completing workout:', error);
-        showToast(toUserMessage(error, 'Error al completar el entrenamiento. Intentalo de nuevo.'), 'error');
+        showToast(toUserMessage(error, 'Error al completar el entrenamiento. Inténtalo de nuevo.'), 'error');
       }
     };
 
@@ -427,7 +421,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           <div className="app-card p-5 sm:p-6">
             <h1 className="text-xl font-display text-white mb-2">No pudimos cargar el dashboard</h1>
             <p className="text-sm text-slate-300 mb-4">
-              {dashboardError || 'Intenta recargar la informacion del inicio.'}
+              {dashboardError || 'Intenta recargar la información del inicio.'}
             </p>
             <button type="button" onClick={() => void refresh()} disabled={dashboardRefreshing} className="btn-primary disabled:opacity-60">
               {dashboardRefreshing ? 'Reintentando...' : 'Reintentar'}
@@ -480,11 +474,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         <div className="px-4 pt-4">
           <div className="mx-auto flex max-w-7xl flex-col gap-3 rounded-2xl border border-amberGlow/30 bg-amberGlow/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-amberGlow">Estado de conexion</div>
+              <div className="text-sm font-semibold text-amberGlow">Estado de conexión</div>
               <p className="mt-1 text-sm text-slate-200">{dashboardStatusMessage}</p>
               {usingCachedData && lastUpdatedAt && (
                 <div className="mt-1 text-xs text-slate-300">
-                  Ultima actualizacion guardada: {formatDateValue(new Date(lastUpdatedAt), {
+                  Última actualización guardada: {formatDateValue(new Date(lastUpdatedAt), {
                     dateStyle: 'medium',
                     timeStyle: 'short'
                   })}
@@ -551,7 +545,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 <div>
                   <div className="text-sm font-semibold text-white">Notificaciones en iOS</div>
                   <p className="text-sm text-slate-300">
-                    Instala la app en Pantalla de inicio para recibir alertas de descanso cuando cierres la app o bloquees el telefono.
+                    Instala la app en Pantalla de inicio para recibir alertas de descanso cuando cierres la app o bloquees el teléfono.
                   </p>
                 </div>
               </div>
@@ -565,7 +559,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         <section className="content-fade-in">
           <div className="mb-4 sm:mb-5">
             <h2 className="section-title mb-1">Empieza una rutina</h2>
-            <p className="text-sm text-slate-300">Elige tu entrenamiento de hoy y entra directo a la sesion.</p>
+            <p className="text-sm text-slate-300">Elige tu entrenamiento de hoy y entra directo a la sesión.</p>
           </div>
 
           <MuscleGroupDashboard
@@ -578,9 +572,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         </section>
 
         <section className="mt-8 space-y-4">
-          <details className="app-surface overflow-hidden">
-            <summary className="cursor-pointer list-none px-4 py-4 text-sm font-semibold text-white sm:px-5">
-              Ver progreso por ejercicio
+          <details className="group app-surface overflow-hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-semibold text-white sm:px-5">
+              <span>Ver progreso por ejercicio</span>
+              <ChevronDown size={16} className="text-slate-400 transition-transform group-open:rotate-180" />
             </summary>
             <div className="border-t border-mist/40 px-4 py-4 sm:px-5 sm:py-5">
               <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
@@ -589,9 +584,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             </div>
           </details>
 
-          <details className="app-surface overflow-hidden">
-            <summary className="cursor-pointer list-none px-4 py-4 text-sm font-semibold text-white sm:px-5">
-              Ver calendario y actividad reciente
+          <details className="group app-surface overflow-hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-semibold text-white sm:px-5">
+              <span>Ver calendario y actividad reciente</span>
+              <ChevronDown size={16} className="text-slate-400 transition-transform group-open:rotate-180" />
             </summary>
             <div className="space-y-5 border-t border-mist/40 px-4 py-4 sm:px-5 sm:py-5">
               <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
@@ -599,7 +595,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                   calendar={dashboardData.calendar}
                   currentMonth={currentMonth}
                   onMonthChange={setCurrentMonth}
-                  onDayClick={handleDayClick}
                 />
               </Suspense>
 
@@ -622,7 +617,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-slate-400">Todavia no tienes entrenamientos recientes.</p>
+                  <p className="mt-2 text-sm text-slate-400">Todavía no tienes entrenamientos recientes.</p>
                 )}
               </div>
             </div>

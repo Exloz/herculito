@@ -173,8 +173,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
             <div className="chip mb-3 inline-flex items-center gap-2">
               <Shield size={14} /> ADMIN
             </div>
-            <h1 className="text-2xl font-display text-white sm:text-3xl">Panel de administracion</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-300">Revision operativa de usuarios, rutinas y actividad real de entrenamiento.</p>
+            <h1 className="text-2xl font-display text-white sm:text-3xl">Panel de administración</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-300">Revisión operativa de usuarios, rutinas y actividad real de entrenamiento.</p>
           </div>
 
           <button type="button" onClick={() => void refresh()} disabled={refreshing} className="btn-secondary inline-flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap sm:w-auto disabled:opacity-60">

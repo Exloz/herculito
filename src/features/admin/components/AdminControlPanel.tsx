@@ -45,7 +45,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))]">
           <label className="block">
-            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Busqueda</span>
+            <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Búsqueda</span>
             <input
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
@@ -77,9 +77,9 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
           <label className="block">
             <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ventana</span>
             <select value={dateRange} onChange={(event) => onDateRangeChange(event.target.value as AdminDateRange)} className="input h-12 w-full bg-white/[0.04]">
-              <option value="7d">Ultimos 7 dias</option>
-              <option value="30d">Ultimos 30 dias</option>
-              <option value="all">Historico</option>
+              <option value="7d">Últimos 7 días</option>
+              <option value="30d">Últimos 30 días</option>
+              <option value="all">Histórico</option>
             </select>
           </label>
 

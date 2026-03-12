@@ -36,15 +36,15 @@ export const AdminSessionsSection: React.FC<AdminSessionsSectionProps> = ({
 }) => {
   return (
     <SectionAccordion
-      title="Bitacora de sesiones"
-      subtitle="Registro detallado de sesiones individuales solo para auditoria puntual."
+      title="Bitácora de sesiones"
+      subtitle="Registro detallado de sesiones individuales solo para auditoría puntual."
       badge={<div className="chip">{totalSessions}</div>}
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-400">Se mantiene como log auxiliar; la revision principal vive en la seccion de usuarios.</p>
+        <p className="text-sm text-slate-400">Se mantiene como log auxiliar; la revisión principal vive en la sección de usuarios.</p>
         <select value={sessionSort} onChange={(event) => onSessionSortChange(event.target.value as AdminSessionSort)} className="input input-sm bg-white/[0.03] text-sm sm:w-auto">
-          <option value="recent">Mas recientes</option>
-          <option value="duration">Mas largas</option>
+          <option value="recent">Más recientes</option>
+          <option value="duration">Más largas</option>
           <option value="user">Usuario</option>
         </select>
       </div>

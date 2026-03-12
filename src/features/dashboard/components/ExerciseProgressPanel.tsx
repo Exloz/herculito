@@ -43,7 +43,7 @@ const formatWeightValue = (value: number): string => {
 };
 
 const formatSessionCount = (count: number): string => {
-  return formatCountLabel(count, 'sesion', 'sesiones');
+  return formatCountLabel(count, 'sesión', 'sesiones');
 };
 
 const formatSetCount = (count: number): string => {
@@ -76,7 +76,7 @@ const getRangeTitle = (value: RangeValue): string => {
     return 'Historial completo';
   }
 
-  return `Ultimos ${value} dias`;
+  return `Últimos ${value} días`;
 };
 
 const getRangeCutoff = (value: RangeValue): number => {
@@ -250,7 +250,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [pointsInRange]);
 
   return (
-    <div className="app-card overflow-hidden p-4 sm:p-5">
+    <div className="space-y-4">
       <div className="mb-4 space-y-4 border-b border-mist/40 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -276,7 +276,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               <div className="mt-1 font-display text-2xl leading-none text-white sm:text-[2rem]">{selectedSummary.exerciseName}</div>
               <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
                 <span className="rounded-full border border-mist/40 px-2.5 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
-                <span className="rounded-full border border-mist/40 px-2.5 py-1">Ultimo: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
+                <span className="rounded-full border border-mist/40 px-2.5 py-1">Último: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
               </div>
             </div>
 
@@ -311,10 +311,10 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </select>
             </div>
 
-            <div className="rounded-xl border border-mist/50 bg-slateDeep/70 px-3 py-2 text-right">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Vista</div>
-              <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-            </div>
+              <div className="rounded-xl border border-mist/50 bg-slateDeep/70 px-3 py-2 text-right">
+               <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Vista</div>
+               <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
+             </div>
           </div>
 
           <div>
@@ -343,7 +343,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="app-surface-muted rounded-[1.2rem] p-3">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ultimo registro</div>
+                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Último registro</div>
                 <div className="mt-2 flex items-center gap-2">
                 <div className="text-base font-display text-white sm:text-xl">{formatKg(displayedLastWeight)}</div>
                 {rangeTrend === 'up' && <TrendingUp size={16} className="text-mint" />}
@@ -356,7 +356,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
             </div>
 
             <div className="app-surface-muted rounded-[1.2rem] p-3">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Record personal</div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Récord personal</div>
               <div className="mt-2 text-base font-display text-amberGlow sm:text-xl">{formatKg(selectedSummary.personalRecord)}</div>
               <div className="mt-1 text-xs text-slate-400">Mejor marca de toda la historia</div>
             </div>
@@ -378,11 +378,11 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   <span>Mapa de carga</span>
                 </div>
                 <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-                <div className="mt-1 text-xs text-slate-400">Escala real en kg. Cada punto representa el mejor set de una sesion.</div>
+                <div className="mt-1 text-xs text-slate-400">Escala real en kg. Cada punto representa el mejor set de una sesión.</div>
               </div>
 
               <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
-                <div className="flex items-center justify-end gap-1.5 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                <div className="flex items-center justify-end gap-1.5 text-[11px] uppercase tracking-[0.18em] text-slate-400">
                   <CalendarRange size={12} />
                   <span>Rango</span>
                 </div>
@@ -391,7 +391,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
             </div>
 
             {chartData ? (
-              <div className="overflow-x-auto pb-2" role="img" aria-label="Grafica de progresion de carga con escala en kilogramos">
+              <div className="overflow-x-auto pb-2" role="img" aria-label="Gráfica de progresión de carga con escala en kilogramos">
                 <svg
                   width={chartData.width}
                   height={CHART_HEIGHT}
@@ -504,11 +504,11 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   <span>Historial visible</span>
                 </div>
                 <div className="mt-1 text-sm font-semibold text-white">{getRangeTitle(selectedRangeDays)}</div>
-                <div className="mt-1 text-xs text-slate-400">Lista completa del rango seleccionado, ordenada del mas reciente al mas antiguo.</div>
+                <div className="mt-1 text-xs text-slate-400">Lista del rango seleccionado, ordenada del más reciente al más antiguo.</div>
               </div>
 
               <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2 text-right">
-                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Entradas</div>
+                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Entradas</div>
                 <div className="mt-1 text-sm font-semibold text-white">{pointsInRange.length}</div>
               </div>
             </div>

@@ -92,7 +92,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                       Usuario
                     </div>
                     <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-slate-400">
-                      Ultima actividad: {formatDateTime(activity?.lastCompletedAt ?? user.lastActivityAt)}
+                      Última actividad: {formatDateTime(activity?.lastCompletedAt ?? user.lastActivityAt)}
                     </div>
                   </div>
 
@@ -130,7 +130,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                             <summary className="flex cursor-pointer list-none flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
                               <div>
                                 <div className="text-base font-semibold text-white">{routine.routineName}</div>
-                                <div className="mt-1 text-xs text-slate-400">Ultima vez: {formatDateTime(routine.lastCompletedAt)}</div>
+                                <div className="mt-1 text-xs text-slate-400">Última vez: {formatDateTime(routine.lastCompletedAt)}</div>
                               </div>
 
                               <div className="grid grid-cols-3 gap-2 sm:min-w-[300px]">
@@ -186,7 +186,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                                         <div className="mt-1 text-base font-display text-white">{formatWeight(exercise.topWeight)}</div>
                                       </div>
                                       <div className="rounded-xl bg-ink/45 px-3 py-2">
-                                        <div className="text-[11px] uppercase tracking-wide text-slate-400">Ultima carga</div>
+                                        <div className="text-[11px] uppercase tracking-wide text-slate-400">Última carga</div>
                                         <div className="mt-1 text-base font-display text-white">{formatWeight(exercise.latestTopWeight)}</div>
                                       </div>
                                     </div>
@@ -215,7 +215,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                                       </div>
                                     </div>
 
-                                    <div className="mt-3 text-xs text-slate-400">Ultima ejecucion: {formatDateTime(exercise.lastPerformedAt)}</div>
+                                    <div className="mt-3 text-xs text-slate-400">Última ejecución: {formatDateTime(exercise.lastPerformedAt)}</div>
                                   </div>
                                 ))}
                               </div>
@@ -232,7 +232,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
 
                   <div className="space-y-4">
                     <div className="rounded-2xl border border-mist/20 bg-white/[0.03] p-4">
-                      <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Resumen rapido</div>
+                      <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-400">Resumen rápido</div>
                       <div className="mt-4 grid grid-cols-2 gap-3">
                         <div className="rounded-xl bg-ink/40 px-3 py-3 text-center">
                           <div className="text-base font-display text-white">{activity?.routines.length ?? 0}</div>

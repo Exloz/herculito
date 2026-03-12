@@ -2,21 +2,11 @@
 
 /* Mejoras de touch targets para dispositivos móviles */
 @media (max-width: 768px) {
-  /* Asegurar que los botones tengan tamaño mínimo de 44px para touch */
+  /* Mantener respuesta táctil sin forzar tamaños globales */
   button {
-    min-height: 44px;
-    min-width: 44px;
     touch-action: manipulation;
   }
-  
-  /* Botones más pequeños específicos */
-  button.p-1,
-  button.p-1\.5,
-  button.p-2 {
-    min-height: 36px;
-    min-width: 36px;
-  }
-  
+
   /* Prevenir zoom en inputs en iOS */
   input[type="text"],
   input[type="email"],
@@ -25,12 +15,12 @@
   textarea {
     font-size: 16px;
   }
-  
+
   /* Mejorar scroll en contenedores */
   .overflow-y-auto {
     -webkit-overflow-scrolling: touch;
   }
-  
+
   /* Reducir motion para usuarios que lo prefieran */
   @media (prefers-reduced-motion: reduce) {
     * {
@@ -53,7 +43,7 @@
 
 /* Dark mode optimizations */
 @media (prefers-color-scheme: dark) {
-  /* Los colores ya están optimizados en Tailwind, 
+  /* Los colores ya están optimizados en Tailwind,
      pero asegurar que no haya flash de contenido blanco */
   html {
     background-color: #0b0f14; /* bg-ink */

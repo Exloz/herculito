@@ -2,11 +2,6 @@ import { useCallback, useState } from 'react';
 import { useSignIn } from '@clerk/react/legacy';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
-const getBrowserOrigin = () => {
-  if (typeof window === 'undefined') return 'https://herculito.exloz.site/';
-  return `${window.location.origin}/`;
-};
-
 export const useGoogleSignIn = () => {
   const { isLoaded, signIn } = useSignIn();
   const [error, setError] = useState<string | null>(null);
@@ -26,16 +21,13 @@ export const useGoogleSignIn = () => {
         redirectUrlComplete: `${origin}/`
       });
     } catch (signInError) {
-      setError(toUserMessage(signInError, 'No se pudo iniciar sesion con Clerk. Intentalo de nuevo.'));
+      setError(toUserMessage(signInError, 'No se pudo iniciar sesión con Clerk. Inténtalo de nuevo.'));
     }
   }, [isLoaded, signIn]);
 
   return {
     loading: !isLoaded,
     error,
-    signInWithGoogle,
-    requiresSafariForGoogleSignIn: false,
-    safariLoginUrl: getBrowserOrigin(),
-    openSafariForGoogleLogin: signInWithGoogle
+    signInWithGoogle
   };
 };

@@ -133,7 +133,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
               </div>
             ))}
             {routine.exercises.length > 3 && (
-              <div className="text-xs text-slate-500">... y {routine.exercises.length - 3} mas</div>
+              <div className="text-xs text-slate-500">... y {routine.exercises.length - 3} más</div>
             )}
           </div>
         </div>

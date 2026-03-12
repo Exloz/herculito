@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { useUI } from '../../../app/providers/ui-context';
 import { useGoogleSignIn } from '../hooks/useGoogleSignIn';
 
@@ -14,19 +14,11 @@ export function Login({ errorMessage }: LoginProps) {
   const {
     loading,
     error: googleSignInError,
-    signInWithGoogle,
-    requiresSafariForGoogleSignIn,
-    safariLoginUrl,
-    openSafariForGoogleLogin
+    signInWithGoogle
   } = useGoogleSignIn();
   const effectiveErrorMessage = errorMessage || googleSignInError;
 
   const handleGoogleAction = () => {
-    if (requiresSafariForGoogleSignIn) {
-      void openSafariForGoogleLogin();
-      return;
-    }
-
     void signInWithGoogle();
   };
 
@@ -34,38 +26,32 @@ export function Login({ errorMessage }: LoginProps) {
     if (!effectiveErrorMessage) return;
 
     if (typeof navigator === 'undefined' || !navigator.clipboard) {
-      showToast('No se pudo copiar el error automaticamente.', 'error');
+      showToast('No se pudo copiar el error automáticamente.', 'error');
       return;
     }
 
     try {
       await navigator.clipboard.writeText(effectiveErrorMessage);
-      showToast('Error copiado. Pegalo al reportarlo.', 'success');
+      showToast('Error copiado. Pégalo al reportarlo.', 'success');
     } catch {
-      showToast('No se pudo copiar el error automaticamente.', 'error');
+      showToast('No se pudo copiar el error automáticamente.', 'error');
     }
   };
 
-  useEffect(() => {
-    if (effectiveErrorMessage) {
-      showToast(effectiveErrorMessage, 'error');
-    }
-  }, [effectiveErrorMessage, showToast]);
-
   return (
     <div className="app-shell flex items-center justify-center p-5 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-      <div className="app-card relative w-full max-w-md overflow-hidden p-8">
+      <main className="app-card relative w-full max-w-md overflow-hidden p-8">
         <div className="absolute -top-20 -right-16 h-40 w-40 rounded-full bg-mint/20 blur-3xl" />
         <div className="absolute -bottom-20 -left-16 h-40 w-40 rounded-full bg-amberGlow/20 blur-3xl" />
 
         <div className="relative z-10">
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-mint rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lift">
+          <div className="mb-8 text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-mint shadow-lift">
               <svg className="w-10 h-10 text-ink" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" />
               </svg>
             </div>
-            <h1 className="text-3xl font-display text-white mb-2">Herculito</h1>
+            <h1 className="mb-2 text-3xl font-display text-white">Herculito</h1>
             <p className="text-slate-300">Tu compañero de entrenamiento personal</p>
           </div>
 
@@ -93,21 +79,13 @@ export function Login({ errorMessage }: LoginProps) {
               </div>
             )}
 
-            {requiresSafariForGoogleSignIn && (
-              <div className="rounded-xl border border-amberGlow/40 bg-amberGlow/10 px-4 py-3 text-sm text-amberGlow">
-                En iPhone con la app instalada, Google debe abrirse en Safari para mostrar teclado y completar el login.
-              </div>
-            )}
-
-              <button
+            <button
                 onClick={handleGoogleAction}
                 disabled={loading}
                 className="btn-primary w-full flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
-              >
+            >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-ink border-t-transparent rounded-full animate-spin" />
-              ) : requiresSafariForGoogleSignIn ? (
-                <span>Copiar enlace para Safari</span>
               ) : (
                 <>
                   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -150,22 +128,16 @@ export function Login({ errorMessage }: LoginProps) {
                 onClick={() => setShowClerkOptions(true)}
                 className="btn-secondary w-full text-sm"
               >
-                Ver mas opciones de acceso
+                Ver más opciones de acceso
               </button>
             )}
 
             <p className="text-xs text-slate-400 text-center">
-              {requiresSafariForGoogleSignIn
-                ? 'El boton copia o comparte el enlace para abrirlo en Safari y evitar el bloqueo de iOS PWA.'
-                : 'Sincroniza tu progreso y accede desde cualquier dispositivo.'}
+              Sincroniza tu progreso y accede desde cualquier dispositivo.
             </p>
-
-            {requiresSafariForGoogleSignIn && safariLoginUrl && (
-              <p className="text-[11px] text-slate-500 break-all text-center">URL Safari: {safariLoginUrl}</p>
-            )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

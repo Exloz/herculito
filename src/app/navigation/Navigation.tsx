@@ -74,6 +74,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
             }`}
             aria-label="Ir a Inicio"
+            aria-current={currentPage === "dashboard" ? "page" : undefined}
           >
             <Home size={22} />
             <span className="text-xs font-semibold">Inicio</span>
@@ -98,6 +99,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
             }`}
             aria-label="Ir a Rutinas"
+            aria-current={currentPage === "routines" ? "page" : undefined}
           >
             <Dumbbell size={22} />
             <span className="text-xs font-semibold">Rutinas</span>
@@ -112,6 +114,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                   : "text-slate-300 hover:text-white hover:bg-slateDeep/60"
               }`}
               aria-label="Ir a Admin"
+              aria-current={currentPage === "admin" ? "page" : undefined}
             >
               <Shield size={22} />
               <span className="text-xs font-semibold">Admin</span>

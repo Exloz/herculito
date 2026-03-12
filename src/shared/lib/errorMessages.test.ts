@@ -9,12 +9,12 @@ describe('toUserMessage', () => {
       code: 'routine_id_conflict'
     });
 
-    expect(toUserMessage(error, 'fallback')).toBe('El identificador de la rutina ya esta en uso.');
+    expect(toUserMessage(error, 'fallback')).toBe('El identificador de la rutina ya está en uso.');
   });
 
   it('falls back to status message when code is missing', () => {
     const error = new ApiError('Request failed: 401', { status: 401 });
-    expect(toUserMessage(error, 'fallback')).toBe('Tu sesion expiro. Inicia sesion nuevamente.');
+    expect(toUserMessage(error, 'fallback')).toBe('Tu sesión expiró. Inicia sesión nuevamente.');
   });
 
   it('returns fallback for unknown errors', () => {

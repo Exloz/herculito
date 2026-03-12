@@ -154,8 +154,12 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         </div>
 
         {/* Tabs */}
-        <div className="app-surface p-1 mb-6 flex gap-1">
+        <div className="app-surface mb-6 flex gap-1 p-1" role="tablist" aria-label="Tipos de rutinas">
           <button
+            id="routines-tab-my"
+            role="tab"
+            aria-selected={activeTab === 'my'}
+            aria-controls="routines-panel-my"
             onClick={() => handleTabChange('my')}
             className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'my'
               ? 'bg-mint/15 text-mint'
@@ -165,6 +169,10 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             Mis Rutinas ({myRoutines.length})
           </button>
           <button
+            id="routines-tab-public"
+            role="tab"
+            aria-selected={activeTab === 'public'}
+            aria-controls="routines-panel-public"
             onClick={() => handleTabChange('public')}
             className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-semibold transition-colors ${activeTab === 'public'
               ? 'bg-mint/15 text-mint'
@@ -204,6 +212,9 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         {/* Lista de rutinas */}
         <div className="relative isolation-isolate min-h-[16rem]">
           <div
+            id={activeTab === 'my' ? 'routines-panel-my' : 'routines-panel-public'}
+            role="tabpanel"
+            aria-labelledby={activeTab === 'my' ? 'routines-tab-my' : 'routines-tab-public'}
             key={`${activeTab}-${tabTransitionVersion}`}
             className={tabTransitionDirection === 'forward' ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward'}
           >
@@ -224,7 +235,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
                     onClick={handleCreateRoutine}
                     className="btn-primary"
                   >
-                    Crear Rutina
+                    Crear rutina
                   </button>
                 )}
               </div>

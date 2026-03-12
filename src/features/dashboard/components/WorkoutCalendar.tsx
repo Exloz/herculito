@@ -116,37 +116,35 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
       <div className="mb-4 flex items-start justify-between gap-3 border-b border-white/8 pb-3 sm:mb-5">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Calendario</div>
-          <h3 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">
-            {monthNames[month]} {year}
-          </h3>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <h3 className="font-display text-xl uppercase text-white sm:text-2xl">
+              {monthNames[month]} {year}
+            </h3>
+
+            <div className="inline-flex items-center gap-1 rounded-full border border-white/8 bg-white/[0.03] px-1.5 py-1">
+              <button
+                onClick={() => navigateMonth('prev')}
+                className="btn-ghost p-1.5 touch-target-sm"
+                aria-label="Mes anterior"
+              >
+                <ChevronLeft size={16} className="text-slate-300" />
+              </button>
+              <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Mes</span>
+              <button
+                onClick={() => navigateMonth('next')}
+                className="btn-ghost p-1.5 touch-target-sm"
+                aria-label="Mes siguiente"
+              >
+                <ChevronRight size={16} className="text-slate-300" />
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="rounded-[1.1rem] border border-amberGlow/20 bg-amberGlow/10 px-3 py-2 text-right">
           <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Sesiones</div>
           <div className="mt-1 text-sm font-semibold text-white">{workoutsThisMonth}</div>
         </div>
-      </div>
-
-      <div className="mb-3 flex items-center justify-between sm:mb-4">
-        <button
-          onClick={() => navigateMonth('prev')}
-          className="btn-ghost p-2 touch-target"
-          aria-label="Mes anterior"
-        >
-          <ChevronLeft size={18} className="text-slate-300" />
-        </button>
-
-        <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 text-center">
-          Navegar mes
-        </div>
-
-        <button
-          onClick={() => navigateMonth('next')}
-          className="btn-ghost p-2 touch-target"
-          aria-label="Mes siguiente"
-        >
-          <ChevronRight size={18} className="text-slate-300" />
-        </button>
       </div>
 
       <div className="mb-2 grid grid-cols-7 gap-1">
@@ -215,7 +213,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
       <div className="mt-4 border-t border-mist/60 pt-3">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Grupos musculares</div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="flex flex-wrap gap-2">
           {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
             <div key={key} className="flex items-center gap-1.5 rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1.5">
               <div

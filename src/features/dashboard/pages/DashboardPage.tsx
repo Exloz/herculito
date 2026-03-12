@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, History } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
 import {
   completeSession as apiCompleteSession,
@@ -252,6 +252,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   }, [dashboardData, dashboardLoading, onReadyForBackgroundPreload]);
 
   const userInitials = useMemo(() => getUserInitials(user.name || 'Usuario'), [user.name]);
+  const routinesSectionRef = useRef<HTMLElement | null>(null);
+  const progressSectionRef = useRef<HTMLElement | null>(null);
+  const calendarSectionRef = useRef<HTMLElement | null>(null);
+  const historySectionRef = useRef<HTMLDivElement | null>(null);
   const dashboardStatusMessage = useMemo(() => {
     if (dashboardError && dashboardData) {
       return isOffline
@@ -265,6 +269,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
     return null;
   }, [dashboardData, dashboardError, isOffline]);
+  const recommendedRoutineCount = useMemo(() => {
+    if (!recommendedGroup) {
+      return dashboardRoutines.length;
+    }
+
+    return dashboardRoutines.filter((routine) => routine.primaryMuscleGroup === recommendedGroup).length;
+  }, [dashboardRoutines, recommendedGroup]);
   const primarySummary = useMemo(() => {
     if (activeWorkout) {
       return 'Tienes un entrenamiento en curso.';
@@ -278,6 +289,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   }, [activeWorkout, dashboardRoutines.length, stats.currentStreak, stats.thisWeekWorkouts]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
   const latestSessionDate = recentSessions[0]?.completedAt ? formatDateInAppTimeZone(recentSessions[0].completedAt) : null;
+  const scrollToSection = useCallback((element: HTMLElement | null) => {
+    element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
@@ -501,43 +515,121 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         {!activeWorkout && (
-          <section className="mb-8 overflow-hidden rounded-[2rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_28%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] shadow-lift">
-            <div className="border-b border-white/8 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-mint/85 sm:px-6">
-              Dashboard de entrenamiento
-            </div>
-            <div className="space-y-6 px-5 py-5 sm:px-6 sm:py-6">
-              <div className="space-y-3">
-                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  {recommendedGroupName ? `Sugerido hoy: ${recommendedGroupName}` : 'Listo para entrenar'}
+          <section className="mb-6 overflow-hidden rounded-[1.9rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.14),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] shadow-lift">
+            <div className="border-b border-white/8 px-4 py-3 sm:px-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">
+                    {recommendedGroupName ? `Sugerido: ${recommendedGroupName}` : 'Listo para entrenar'}
+                  </div>
+                  {latestSessionDate && (
+                    <div className="inline-flex items-center rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-[11px] font-medium text-slate-300">
+                      Última sesión: {latestSessionDate}
+                    </div>
+                  )}
                 </div>
-                <div className="max-w-xl">
-                  <h2 className="font-display text-[2.4rem] uppercase leading-[0.92] text-white sm:text-[3.4rem]">
-                    {recommendedGroupName ? `Hoy toca ${recommendedGroupName}.` : 'Elige una rutina y entra.'}
+                <div className="text-xs text-slate-400">{dashboardRoutines.length} rutinas disponibles</div>
+              </div>
+            </div>
+
+            <div className="grid gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:grid-cols-[minmax(0,1.18fr)_minmax(280px,0.9fr)]">
+              <div className="space-y-4">
+                <div>
+                  <h2 className="font-display text-[2rem] uppercase leading-[0.94] text-white sm:text-[2.5rem]">
+                    {recommendedGroupName ? `${recommendedGroupName} hoy` : 'Listo para entrenar'}
                   </h2>
-                  <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">{primarySummary}</p>
+                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">{primarySummary}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-3 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Rutinas</div>
+                    <div className="mt-1 font-display text-xl text-white sm:text-2xl">{dashboardRoutines.length}</div>
+                    <div className="text-xs text-slate-300">listas</div>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-mint/20 bg-mint/10 px-3 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Semana</div>
+                    <div className="mt-1 font-display text-xl text-white sm:text-2xl">{stats.thisWeekWorkouts}</div>
+                    <div className="text-xs text-mint/80">sesiones</div>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-white/10 bg-white/[0.04] px-3 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Racha</div>
+                    <div className="mt-1 font-display text-xl text-white sm:text-2xl">{stats.currentStreak}</div>
+                    <div className="text-xs text-slate-300">días</div>
+                  </div>
+                  <div className="rounded-[1.2rem] border border-amberGlow/20 bg-amberGlow/10 px-3 py-3">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Historial</div>
+                    <div className="mt-1 text-sm font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
+                    <div className="text-xs text-slate-300">última actividad</div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Rutinas</div>
-                  <div className="mt-1 font-display text-2xl text-white">{dashboardRoutines.length}</div>
-                  <div className="text-xs text-slate-300">listas para empezar</div>
+              <div className="rounded-[1.5rem] border border-white/8 bg-slateDeep/70 p-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Acceso directo</div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(routinesSectionRef.current)}
+                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-mint/30 hover:bg-white/[0.05]"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint/12 text-mint">
+                      <Dumbbell size={16} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">Rutinas</div>
+                      <div className="text-[11px] text-slate-400">Empieza rápido</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(progressSectionRef.current)}
+                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-amberGlow/30 hover:bg-white/[0.05]"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amberGlow/12 text-amberGlow">
+                      <BarChart3 size={16} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">Progreso</div>
+                      <div className="text-[11px] text-slate-400">Carga visible</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(calendarSectionRef.current)}
+                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-mint/30 hover:bg-white/[0.05]"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint/12 text-mint">
+                      <CalendarRange size={16} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">Calendario</div>
+                      <div className="text-[11px] text-slate-400">Tu ritmo</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection(historySectionRef.current)}
+                    className="flex items-center gap-2 rounded-[1.05rem] border border-white/8 bg-white/[0.03] px-3 py-3 text-left transition-colors hover:border-amberGlow/30 hover:bg-white/[0.05]"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amberGlow/12 text-amberGlow">
+                      <History size={16} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-white">Historial</div>
+                      <div className="text-[11px] text-slate-400">Sesiones recientes</div>
+                    </div>
+                  </button>
                 </div>
-                <div className="rounded-[1.4rem] border border-mint/20 bg-mint/10 px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Semana</div>
-                  <div className="mt-1 font-display text-2xl text-white">{stats.thisWeekWorkouts}</div>
-                  <div className="text-xs text-mint/80">entrenamientos</div>
-                </div>
-                <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Racha</div>
-                  <div className="mt-1 font-display text-2xl text-white">{stats.currentStreak}</div>
-                  <div className="text-xs text-slate-300">días seguidos</div>
-                </div>
-                <div className="rounded-[1.4rem] border border-amberGlow/20 bg-amberGlow/10 px-4 py-3">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Última sesión</div>
-                  <div className="mt-1 text-sm font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
-                  <div className="text-xs text-slate-300">actividad reciente</div>
+
+                <div className="mt-3 rounded-[1.15rem] border border-white/8 bg-white/[0.03] px-3 py-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">En foco</div>
+                  <div className="mt-1 text-sm font-semibold text-white">
+                    {recommendedGroupName
+                      ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina disponible' : 'rutinas disponibles'} en ${recommendedGroupName}`
+                      : `${dashboardRoutines.length} rutinas listas para hoy`}
+                  </div>
+                  <div className="mt-1 text-xs text-slate-400">Las tarjetas ahora se mantienen compactas y al tocar puedes abrir detalles sin perder el acceso directo a iniciar.</div>
                 </div>
               </div>
             </div>
@@ -590,15 +682,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           </section>
         )}
 
-        <section className="content-fade-in">
-          <div className="mb-5 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+        <section ref={routinesSectionRef} className="content-fade-in scroll-mt-24">
+          <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas para hoy</div>
-              <h2 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
+              <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">
                 {recommendedGroupName ? `Empieza por ${recommendedGroupName}` : 'Empieza una rutina'}
               </h2>
             </div>
-            <p className="max-w-sm text-sm text-slate-300">Explora tus rutinas por grupo muscular y empieza con un toque.</p>
+            <p className="max-w-sm text-sm text-slate-300">Cambia de grupo sin recorrer toda la pantalla y abre detalles solo cuando los necesites.</p>
           </div>
 
           <MuscleGroupDashboard
@@ -610,22 +702,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           />
         </section>
 
-        <section className="mt-10 space-y-8">
-          <div>
+        <section className="mt-8 space-y-8">
+          <section ref={progressSectionRef} className="scroll-mt-24">
             <div className="mb-4">
               <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
-              <h2 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">Tu progreso está a la vista</h2>
+              <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Tu progreso está a la vista</h2>
             </div>
             <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
               <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
             </Suspense>
-          </div>
+          </section>
 
-          <div>
+          <section ref={calendarSectionRef} className="scroll-mt-24">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Constancia</div>
-                <h2 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">Calendario y actividad reciente</h2>
+                <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Calendario y actividad reciente</h2>
               </div>
               <p className="max-w-sm text-sm text-slate-300">Mira tu ritmo semanal y las últimas sesiones sin esconderlas detrás de un acordeón.</p>
             </div>
@@ -638,7 +730,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 />
               </Suspense>
 
-              <div className="rounded-[1.8rem] border border-mist/60 bg-graphite p-4 shadow-lift sm:p-5">
+              <div ref={historySectionRef} className="rounded-[1.8rem] border border-mist/60 bg-graphite p-4 shadow-lift sm:p-5">
                 <div className="mb-4 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
                   <div>
                     <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
@@ -671,7 +763,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 )}
               </div>
             </div>
-          </div>
+          </section>
         </section>
       </main>
       <div className="px-4 pb-8">

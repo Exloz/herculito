@@ -128,6 +128,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [exerciseNameMap, precomputedSummaries, routines, sessions]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
   const [selectedRangeDays, setSelectedRangeDays] = useState<RangeValue>('all');
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
 
   useEffect(() => {
     if (summaries.length === 0) {
@@ -142,6 +143,12 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
       setSelectedExerciseId(summaries[0].exerciseId);
     }
   }, [selectedExerciseId, summaries]);
+
+  useEffect(() => {
+    if (selectedRangeDays === 'all') {
+      setIsHistoryExpanded(false);
+    }
+  }, [selectedExerciseId, selectedRangeDays]);
 
   const selectedSummary = useMemo(() => {
     if (summaries.length === 0) return null;
@@ -187,6 +194,10 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
       })
       .reverse();
   }, [pointsInRange]);
+  const isHistoryCollapsible = selectedRangeDays === 'all' && historyItems.length > 3;
+  const visibleHistoryItems = isHistoryCollapsible && !isHistoryExpanded
+    ? historyItems.slice(0, 3)
+    : historyItems;
   const trendCopy = getTrendCopy(rangeTrend);
   const chartData = useMemo(() => {
     if (pointsInRange.length === 0) {
@@ -301,7 +312,14 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                 <button
                   key={option.label}
                   type="button"
-                  onClick={() => setSelectedRangeDays(option.value)}
+                  onClick={() => {
+                    setSelectedRangeDays(option.value);
+                    if (option.value !== 'all') {
+                      setIsHistoryExpanded(true);
+                    } else {
+                      setIsHistoryExpanded(false);
+                    }
+                  }}
                   className={`touch-target-sm rounded-[0.85rem] px-2 py-2 text-center transition-colors ${selectedRangeDays === option.value
                     ? 'bg-mint/18 text-mint'
                     : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
@@ -482,39 +500,64 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </div>
 
               {historyItems.length > 0 ? (
-                <div className="max-h-[20rem] space-y-1.5 overflow-y-auto pr-1">
-                  {historyItems.map((point) => {
-                    const deltaTone = point.deltaFromPrevious === null || Math.abs(point.deltaFromPrevious) < 0.05
-                      ? 'text-slate-300 bg-white/[0.06]'
-                      : point.deltaFromPrevious > 0
-                        ? 'text-mint bg-mint/10'
-                        : 'text-crimson bg-crimson/10';
+                <div>
+                  {isHistoryCollapsible && (
+                    <button
+                      type="button"
+                      className="mb-3 flex w-full items-center justify-between rounded-[0.95rem] border border-white/8 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slateDeep"
+                      onClick={() => setIsHistoryExpanded((current) => !current)}
+                      aria-expanded={isHistoryExpanded}
+                      aria-controls="exercise-history-list"
+                    >
+                      <div>
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Vista</div>
+                        <div className="mt-0.5 text-sm font-medium text-white">
+                          {isHistoryExpanded ? 'Ocultar historial completo' : 'Ver historial completo'}
+                        </div>
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        {isHistoryExpanded ? 'Mostrando todo' : 'Solo recientes'}
+                      </div>
+                    </button>
+                  )}
 
-                    const deltaLabel = point.deltaFromPrevious === null
-                      ? 'Inicio'
-                      : Math.abs(point.deltaFromPrevious) < 0.05
-                        ? 'Sin cambio'
-                        : formatDelta(point.deltaFromPrevious);
+                  <div
+                    id="exercise-history-list"
+                    className={`space-y-1.5 pr-1 ${isHistoryExpanded || !isHistoryCollapsible ? 'max-h-[20rem] overflow-y-auto' : ''}`}
+                  >
+                    {visibleHistoryItems.map((point) => {
+                      const deltaTone = point.deltaFromPrevious === null || Math.abs(point.deltaFromPrevious) < 0.05
+                        ? 'text-slate-300 bg-white/[0.06]'
+                        : point.deltaFromPrevious > 0
+                          ? 'text-mint bg-mint/10'
+                          : 'text-crimson bg-crimson/10';
 
-                    return (
-                      <div key={point.timestamp} className="rounded-[0.95rem] bg-white/[0.04] px-3 py-2.5">
-                        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
-                          <div className="min-w-0">
-                            <div className="text-sm font-medium text-white">{point.dateLabel}</div>
-                            <div className="mt-1 text-[11px] text-slate-400">
-                              {formatSetCount(point.completedSets)} completadas · Volumen {formatKg(point.totalWeight)}
+                      const deltaLabel = point.deltaFromPrevious === null
+                        ? 'Inicio'
+                        : Math.abs(point.deltaFromPrevious) < 0.05
+                          ? 'Sin cambio'
+                          : formatDelta(point.deltaFromPrevious);
+
+                      return (
+                        <div key={point.timestamp} className="rounded-[0.95rem] bg-white/[0.04] px-3 py-2.5">
+                          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                            <div className="min-w-0">
+                              <div className="text-sm font-medium text-white">{point.dateLabel}</div>
+                              <div className="mt-1 text-[11px] text-slate-400">
+                                {formatSetCount(point.completedSets)} completadas · Volumen {formatKg(point.totalWeight)}
+                              </div>
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-display text-base text-white sm:text-lg">{formatKg(point.bestWeight)}</div>
-                            <div className={`mt-1 rounded-full px-2 py-1 text-[10px] font-semibold ${deltaTone}`}>
-                              {deltaLabel}
+                            <div className="text-right">
+                              <div className="font-display text-base text-white sm:text-lg">{formatKg(point.bestWeight)}</div>
+                              <div className={`mt-1 rounded-full px-2 py-1 text-[10px] font-semibold ${deltaTone}`}>
+                                {deltaLabel}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <div className="rounded-[1rem] bg-white/[0.05] px-4 py-8 text-center text-xs text-slate-400">

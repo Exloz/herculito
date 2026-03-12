@@ -440,12 +440,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
   return (
     <div className="app-shell pb-28">
-      <header className="app-header px-4 pb-5 pt-[calc(0.25rem+env(safe-area-inset-top))] sm:pb-6 sm:pt-[calc(0.5rem+env(safe-area-inset-top))]">
+      <header className="app-header px-4 pb-4 pt-[calc(0.25rem+env(safe-area-inset-top))] sm:pb-5 sm:pt-[calc(0.5rem+env(safe-area-inset-top))]">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-display text-white flex items-center gap-3">
-                <div className="w-9 h-9 sm:w-11 sm:h-11 shrink-0 rounded-2xl overflow-hidden shadow-lift ring-1 ring-white/20 flex items-center justify-center">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-lift ring-1 ring-white/20 sm:h-11 sm:w-11">
                   <Suspense
                     fallback={(
                       <div className="flex h-full w-full items-center justify-center bg-slateDeep text-xs font-semibold text-slate-200">
@@ -456,15 +456,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     <DeferredClerkUserButton />
                   </Suspense>
                 </div>
-                <span>Herculito</span>
-              </h1>
-              <p className="mt-1 truncate text-sm text-slate-300">Bienvenido, {user.name || 'Usuario'}</p>
+                <div className="min-w-0">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-mint/80">Inicio</div>
+                  <h1 className="truncate font-display text-[2rem] leading-none text-white sm:text-[2.35rem]">Herculito</h1>
+                </div>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-300">
+                <p className="truncate font-medium text-slate-100">{user.name || 'Usuario'}</p>
+                <span className="hidden text-slate-500 sm:inline">/</span>
+                <p>{latestSessionDate ? `Última sesión ${latestSessionDate}` : 'Listo para entrenar'}</p>
+              </div>
             </div>
 
-            <div className="ml-4 flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={onLogout}
-                className="btn-secondary flex items-center gap-2 touch-target"
+                className="btn-secondary flex h-14 w-14 items-center justify-center rounded-[1.35rem] touch-target sm:h-auto sm:w-auto sm:px-4"
                 title="Cerrar sesión"
                 aria-label="Cerrar sesión"
               >
@@ -505,12 +512,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         {!activeWorkout && (
-          <section className="mb-5 rounded-[1.5rem] bg-graphite/80 px-4 py-4 shadow-lift sm:px-5">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
-              <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Hoy</div>
+          <section className="mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Hoy</div>
+                  <div className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] text-slate-300">
+                    {dashboardRoutines.length} rutinas activas
+                  </div>
+                </div>
+
                 <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-2">
-                  <h2 className="font-display text-[2rem] uppercase leading-none text-white sm:text-[2.4rem]">
+                  <h2 className="font-display text-[1.8rem] uppercase leading-none text-white sm:text-[2.2rem]">
                     {recommendedGroupName ?? 'Listo para entrenar'}
                   </h2>
                   {recommendedGroupName && (
@@ -519,92 +532,114 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     </span>
                   )}
                 </div>
-                <p className="mt-2 text-sm text-slate-300">
+                <p className="mt-1.5 max-w-2xl text-sm text-slate-300">
                   {recommendedGroupName
                     ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina lista' : 'rutinas listas'} para empezar ahora.`
                     : 'Elige una rutina y entra directo a entrenar.'}
                 </p>
 
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Rutinas</div>
-                    <div className="mt-1 font-semibold text-white">{dashboardRoutines.length}</div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                      <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts} sesiones</div>
+                    </div>
+                    <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Ritmo</div>
+                      <div className="mt-1 font-semibold text-white">{stats.currentStreak > 0 ? `${stats.currentStreak} días en racha` : 'Actívalo hoy'}</div>
+                    </div>
                   </div>
-                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                    <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts}</div>
-                  </div>
-                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha</div>
-                    <div className="mt-1 font-semibold text-white">{stats.currentStreak}</div>
-                  </div>
-                  <div className="rounded-[1rem] bg-slateDeep/65 px-3 py-2.5">
+
+                  <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300 sm:min-w-[14rem]">
                     <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Última</div>
                     <div className="mt-1 font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => scrollToSection(routinesSectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
                   >
-                    <Dumbbell size={15} className="text-mint" />
+                    <Dumbbell size={14} className="text-mint" />
                     <span>Rutinas</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => scrollToSection(progressSectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
                   >
-                    <BarChart3 size={15} className="text-amberGlow" />
+                    <BarChart3 size={14} className="text-amberGlow" />
                     <span>Progreso</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => scrollToSection(calendarSectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
                   >
-                    <CalendarRange size={15} className="text-mint" />
+                    <CalendarRange size={14} className="text-mint" />
                     <span>Calendario</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => scrollToSection(historySectionRef.current)}
-                    className="inline-flex items-center gap-2 rounded-[1rem] bg-slateDeep/75 px-3 py-3 text-left text-sm text-white transition-colors hover:bg-slateDeep"
+                    className="inline-flex items-center gap-2 rounded-full bg-slateDeep/80 px-3 py-2 text-left text-sm text-white transition-colors hover:bg-slateDeep"
                   >
-                    <History size={15} className="text-amberGlow" />
+                    <History size={14} className="text-amberGlow" />
                     <span>Historial</span>
                   </button>
                 </div>
+              </div>
 
+              <div className="space-y-3">
                 {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
                   <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
-                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      <Trophy size={13} className="text-amberGlow" />
-                      <span>Ranking</span>
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        <Trophy size={13} className="text-amberGlow" />
+                        <span>Ranking</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500">Semana y mes</div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                        <div className="mt-1 text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin lider'}</div>
+                        <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                          <span>Semana</span>
+                          <span>{competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : '--'}</span>
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin líder'}</div>
                         <div className="mt-1 text-xs text-slate-400">
-                          Tu puesto: {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posicion'}
+                          Tu puesto: {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posición'}
                         </div>
                       </div>
                       <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Mes</div>
-                        <div className="mt-1 text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin lider'}</div>
+                        <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                          <span>Mes</span>
+                          <span>{competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : '--'}</span>
+                        </div>
+                        <div className="mt-1 text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin líder'}</div>
                         <div className="mt-1 text-xs text-slate-400">
-                          Tu puesto: {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posicion'}
+                          Tu puesto: {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posición'}
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
+
+                <div className="rounded-[1.1rem] border border-white/6 bg-white/[0.03] px-3 py-3">
+                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Panel rápido</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Rutinas</div>
+                      <div className="mt-1 text-sm font-semibold text-white">{dashboardRoutines.length}</div>
+                    </div>
+                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                      <div className="mt-1 text-sm font-semibold text-white">{stats.thisWeekWorkouts}</div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -696,9 +731,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Constancia</div>
-                <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Calendario y actividad reciente</h2>
+                <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Calendario y pulso reciente</h2>
               </div>
-              <p className="max-w-sm text-sm text-slate-300">Mira tu ritmo semanal y las últimas sesiones sin esconderlas detrás de un acordeón.</p>
+              <p className="max-w-sm text-sm text-slate-300">El calendario lleva el peso; al lado solo queda una lectura rápida de lo último para no repetir demasiado.</p>
             </div>
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
               <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
@@ -713,19 +748,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
                   <div>
                     <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
-                    <h3 className="mt-1 font-display text-xl uppercase text-white">Actividad reciente</h3>
+                    <h3 className="mt-1 font-display text-lg uppercase text-white sm:text-xl">Pulso reciente</h3>
                   </div>
                   <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
                 </div>
 
                 {recentSessions.length > 0 ? (
-                  <div className="space-y-2">
-                    {recentSessions.slice(0, 5).map((session, index) => (
-                      <div key={session.id} className={`rounded-[1rem] px-3 py-3 ${index === 0 ? 'bg-mint/10' : 'bg-slateDeep/65'}`}>
+                  <div className="space-y-1.5">
+                    {recentSessions.slice(0, 3).map((session, index) => (
+                      <div
+                        key={session.id}
+                        className={`rounded-[0.95rem] border px-3 py-2.5 ${index === 0
+                          ? 'border-mint/20 bg-mint/8'
+                          : 'border-white/5 bg-slateDeep/45'
+                          }`}
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
-                            <div className="mt-1 text-xs uppercase tracking-[0.14em] text-slate-400">{session.primaryMuscleGroup || 'Sin categoría'}</div>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                              <span>{session.primaryMuscleGroup || 'Sin categoría'}</span>
+                              {session.totalDuration && <span className="text-slate-500">{session.totalDuration} min</span>}
+                            </div>
                           </div>
                           {session.completedAt && (
                             <div className="shrink-0 text-right text-xs font-medium text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
@@ -733,6 +777,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                         </div>
                       </div>
                     ))}
+                    {recentSessions.length > 3 && (
+                      <button
+                        type="button"
+                        onClick={() => scrollToSection(progressSectionRef.current)}
+                        className="w-full rounded-[0.95rem] border border-dashed border-white/10 px-3 py-2 text-sm text-slate-300 transition-colors hover:border-mint/30 hover:text-white"
+                      >
+                        Ver el detalle completo en progreso e historial
+                      </button>
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">

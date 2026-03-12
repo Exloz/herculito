@@ -457,14 +457,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                   </Suspense>
                 </div>
                 <div className="min-w-0">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-mint/80">Inicio</div>
+                  <div className="truncate text-[10px] font-semibold uppercase tracking-[0.24em] text-mint/80">{user.name || 'Usuario'}</div>
                   <h1 className="truncate font-display text-[2rem] leading-none text-white sm:text-[2.35rem]">Herculito</h1>
                 </div>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-300">
-                <p className="truncate font-medium text-slate-100">{user.name || 'Usuario'}</p>
-                <span className="hidden text-slate-500 sm:inline">/</span>
-                <p>{latestSessionDate ? `Última sesión ${latestSessionDate}` : 'Listo para entrenar'}</p>
               </div>
             </div>
 
@@ -538,21 +533,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     : 'Elige una rutina y entra directo a entrenar.'}
                 </p>
 
-                <div className="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                      <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts} sesiones</div>
-                    </div>
-                    <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Ritmo</div>
-                      <div className="mt-1 font-semibold text-white">{stats.currentStreak > 0 ? `${stats.currentStreak} días en racha` : 'Actívalo hoy'}</div>
-                    </div>
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                    <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts}</div>
                   </div>
-
-                  <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300 sm:min-w-[14rem]">
+                  <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha</div>
+                    <div className="mt-1 font-semibold text-white">{stats.currentStreak}</div>
+                  </div>
+                  <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300">
                     <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Última</div>
-                    <div className="mt-1 font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
+                    <div className="mt-1 truncate font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
                   </div>
                 </div>
 
@@ -595,12 +587,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
               <div className="space-y-3">
                 {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
                   <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                         <Trophy size={13} className="text-amberGlow" />
                         <span>Ranking</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500">Semana y mes</div>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
@@ -626,20 +615,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     </div>
                   </div>
                 )}
-
-                <div className="rounded-[1.1rem] border border-white/6 bg-white/[0.03] px-3 py-3">
-                  <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Panel rápido</div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Rutinas</div>
-                      <div className="mt-1 text-sm font-semibold text-white">{dashboardRoutines.length}</div>
-                    </div>
-                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                      <div className="mt-1 text-sm font-semibold text-white">{stats.thisWeekWorkouts}</div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </section>
@@ -730,10 +705,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           <section ref={calendarSectionRef} className="scroll-mt-24">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Constancia</div>
-                <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Calendario y pulso reciente</h2>
+                <h2 className="font-display text-xl uppercase text-white sm:text-2xl">Calendario y actividad reciente</h2>
               </div>
-              <p className="max-w-sm text-sm text-slate-300">El calendario lleva el peso; al lado solo queda una lectura rápida de lo último para no repetir demasiado.</p>
             </div>
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
               <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
@@ -748,7 +721,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
                   <div>
                     <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
-                    <h3 className="mt-1 font-display text-lg uppercase text-white sm:text-xl">Pulso reciente</h3>
+                    <h3 className="mt-1 font-display text-lg uppercase text-white sm:text-xl">Actividad reciente</h3>
                   </div>
                   <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
                 </div>

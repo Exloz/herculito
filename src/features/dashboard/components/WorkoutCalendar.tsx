@@ -113,37 +113,31 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
   return (
     <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-3 shadow-lift sm:p-4">
-      <div className="mb-3 grid gap-3 border-b border-white/8 pb-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
-        <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Calendario</div>
-          <div className="mt-1 flex items-center justify-between gap-3">
-            <h3 className="min-w-0 truncate font-display text-xl uppercase text-white sm:text-2xl">
-              {monthNames[month]} {year}
-            </h3>
+      <div className="mb-3 flex flex-col gap-3 border-b border-white/8 pb-3 sm:flex-row sm:items-start sm:justify-between">
+        <h3 className="min-w-0 truncate font-display text-xl uppercase text-white sm:text-2xl">
+          {monthNames[month]} {year}
+        </h3>
 
-            <div className="inline-flex shrink-0 items-center gap-1 rounded-[0.95rem] bg-white/[0.04] px-1.5 py-1">
-              <button
-                onClick={() => navigateMonth('prev')}
-                className="btn-ghost p-1.5 touch-target-sm"
-                aria-label="Mes anterior"
-              >
-                <ChevronLeft size={16} className="text-slate-300" />
-              </button>
-              <span className="px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Mes</span>
-              <button
-                onClick={() => navigateMonth('next')}
-                className="btn-ghost p-1.5 touch-target-sm"
-                aria-label="Mes siguiente"
-              >
-                <ChevronRight size={16} className="text-slate-300" />
-              </button>
-            </div>
+        <div className="flex items-center gap-2 self-start sm:justify-end">
+          <div className="rounded-full bg-amberGlow/10 px-3 py-1.5 text-xs font-semibold text-amberGlow/90">
+            {workoutsThisMonth} {workoutsThisMonth === 1 ? 'sesión' : 'sesiones'}
           </div>
-        </div>
-
-        <div className="justify-self-start rounded-[1rem] bg-amberGlow/10 px-3 py-2 text-right sm:justify-self-end">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Sesiones</div>
-          <div className="mt-1 text-sm font-semibold text-white">{workoutsThisMonth}</div>
+          <div className="inline-flex shrink-0 items-center gap-1 rounded-[0.95rem] bg-white/[0.04] px-1.5 py-1">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="btn-ghost p-1.5 touch-target-sm"
+              aria-label="Mes anterior"
+            >
+              <ChevronLeft size={16} className="text-slate-300" />
+            </button>
+            <button
+              onClick={() => navigateMonth('next')}
+              className="btn-ghost p-1.5 touch-target-sm"
+              aria-label="Mes siguiente"
+            >
+              <ChevronRight size={16} className="text-slate-300" />
+            </button>
+          </div>
         </div>
       </div>
 

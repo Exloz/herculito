@@ -36,14 +36,23 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   onReset
 }) => {
   return (
-    <section className="relative overflow-hidden rounded-[1.75rem] border border-mint/15 bg-[radial-gradient(circle_at_top_left,rgba(72,229,163,0.14),transparent_28%),radial-gradient(circle_at_top_right,rgba(255,191,71,0.16),transparent_24%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.94))] p-4 shadow-soft sm:p-5">
+    <section className="relative overflow-hidden rounded-[1.85rem] border border-mint/15 bg-[radial-gradient(circle_at_top_left,rgba(72,229,163,0.14),transparent_28%),radial-gradient(circle_at_top_right,rgba(255,191,71,0.16),transparent_24%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.94))] p-4 shadow-soft sm:p-5">
       <div className="absolute inset-0 bg-[linear-gradient(120deg,transparent_0%,rgba(255,255,255,0.03)_25%,transparent_50%)]" aria-hidden="true" />
       <div className="relative">
-        <div className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-mint/80">
-          <Filter size={14} /> Centro de control
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-mint/80">
+              <Filter size={14} /> Centro de control
+            </div>
+            <p className="mt-2 max-w-2xl text-sm text-slate-300">Filtra rápido por usuario, rutina y rango para leer el sistema sin perder contexto.</p>
+          </div>
+
+          <button type="button" onClick={onReset} className="btn-secondary inline-flex h-12 items-center justify-center gap-2 self-start sm:self-auto">
+            <ArrowDownAZ size={16} /> Reiniciar
+          </button>
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))]">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))]">
           <label className="block">
             <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Búsqueda</span>
             <input
@@ -82,23 +91,19 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
               <option value="all">Histórico</option>
             </select>
           </label>
-
-          <button type="button" onClick={onReset} className="btn-secondary mt-[1.45rem] inline-flex h-12 items-center justify-center gap-2">
-            <ArrowDownAZ size={16} /> Reiniciar
-          </button>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] px-4 py-3">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Usuarios visibles</div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-[1.35rem] border border-white/10 bg-white/[0.04] px-4 py-3">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Usuarios visibles</div>
             <div className="mt-1 text-xl font-display text-white">{visibleUsers}</div>
           </div>
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] px-4 py-3">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Rutinas visibles</div>
+          <div className="rounded-[1.35rem] border border-mint/20 bg-mint/10 px-4 py-3">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Rutinas visibles</div>
             <div className="mt-1 text-xl font-display text-white">{visibleRoutines}</div>
           </div>
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] px-4 py-3">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Actividad visible</div>
+          <div className="rounded-[1.35rem] border border-amberGlow/20 bg-amberGlow/10 px-4 py-3">
+            <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Actividad visible</div>
             <div className="mt-1 text-xl font-display text-white">{visibleSessions} sesiones</div>
           </div>
         </div>

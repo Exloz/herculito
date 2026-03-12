@@ -30,45 +30,53 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
   if (groupRoutines.length === 0) return null;
 
   return (
-    <div className={`app-card p-3 sm:p-5 ${isRecommended ? 'ring-2 ring-mint/60' : ''}`}>
-      {/* Header del grupo muscular */}
-      <div className="flex items-center justify-between mb-3 sm:mb-4">
+    <div className={`relative overflow-hidden rounded-[1.8rem] border p-4 shadow-lift sm:p-5 ${isRecommended ? 'border-mint/40 bg-[linear-gradient(180deg,rgba(23,33,31,0.98),rgba(11,15,20,0.98))]' : 'border-mist/60 bg-graphite'}`}>
+      <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: groupInfo.color }} />
+
+      <div className="mb-4 flex items-center justify-between gap-3 sm:mb-5">
         <div className="flex items-center space-x-2 sm:space-x-3">
           <div
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm sm:text-base"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white sm:h-10 sm:w-10"
             style={{ backgroundColor: groupInfo.color }}
           >
             <MuscleGroupIcon
               muscleGroup={muscleGroup}
-              size={16}
+              size={18}
               color="white"
             />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base sm:text-lg font-semibold text-white flex items-center space-x-2">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              {isRecommended ? 'Sugerido hoy' : 'Grupo muscular'}
+            </div>
+            <h3 className="flex items-center space-x-2 font-display text-2xl uppercase text-white sm:text-[1.85rem]">
               <span className="truncate">{groupInfo.name}</span>
               {isRecommended && (
-                <span className="chip whitespace-nowrap">
-                  Recomendado
+                <span className="rounded-full border border-mint/25 bg-mint/12 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint whitespace-nowrap">
+                  Hoy
                 </span>
               )}
-             </h3>
-            <p className="text-xs sm:text-sm text-slate-300 truncate">
+              </h3>
+            <p className="truncate text-sm text-slate-300">
               {formatCountLabel(groupRoutines.length, 'rutina disponible', 'rutinas disponibles')}
             </p>
           </div>
         </div>
+
+        <div className="hidden rounded-[1.15rem] border border-white/10 bg-white/[0.04] px-3 py-2 text-right sm:block">
+          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Listas</div>
+          <div className="mt-1 font-display text-xl text-white">{groupRoutines.length}</div>
+        </div>
       </div>
 
-      {/* Lista de rutinas */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {groupRoutines.map((routine) => (
           <div
             key={routine.id}
-            className="app-surface-muted rounded-xl p-3 sm:p-4 app-card-hover"
+            className="rounded-[1.4rem] border border-white/8 bg-slateDeep/80 p-3.5 transition-colors hover:border-mint/35 sm:p-4"
           >
             <div className="flex items-start justify-between mb-2">
-              <h4 className="font-medium text-white truncate pr-2 text-sm sm:text-base">
+              <h4 className="pr-2 font-semibold text-white truncate text-sm sm:text-base">
                 {routine.name}
               </h4>
               {routine.isPublic && (
@@ -87,7 +95,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
               />
             </div>
 
-            <div className="space-y-2 mb-3">
+            <div className="mb-3 space-y-2.5">
               <div className="text-sm text-slate-400">
                 {formatCountLabel(routine.exercises.length, 'ejercicio', 'ejercicios')}
               </div>
@@ -117,9 +125,9 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
             </div>
 
             {/* Ejercicios principales */}
-            <div className="mb-3">
-              <div className="text-xs text-slate-400 mb-1">Ejercicios:</div>
-              <div className="text-xs text-slate-300 space-y-1">
+            <div className="mb-4 rounded-[1.1rem] border border-white/8 bg-white/[0.03] px-3 py-3">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Primeros ejercicios</div>
+              <div className="space-y-1.5 text-xs text-slate-300">
                 {routine.exercises.slice(0, 3).map((exercise) => (
                   <div key={exercise.id} className="truncate">
                     • {exercise.name} ({exercise.sets}×{exercise.reps})
@@ -140,10 +148,10 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                 vibrateLight();
                 onStartWorkout(routine.id);
               }}
-              className="btn-primary w-full flex items-center justify-center gap-2 text-sm touch-target"
+              className="btn-primary flex w-full items-center justify-center gap-2 text-sm touch-target"
             >
               <Play size={16} />
-              <span className="hidden sm:inline">Iniciar Entrenamiento</span>
+              <span className="hidden sm:inline">Iniciar entrenamiento</span>
               <span className="sm:hidden">Iniciar</span>
             </button>
           </div>
@@ -180,18 +188,13 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Información de recomendación */}
       {recommendedGroup && (
         <div className="flex items-center gap-2 text-sm text-slate-300">
           <span className="chip">Sugerido hoy</span>
-          <span>
-            {MUSCLE_GROUPS[recommendedGroup].name}
-          </span>
+          <span className="font-semibold text-white">{MUSCLE_GROUPS[recommendedGroup].name}</span>
         </div>
       )}
 
-
-      {/* Secciones de grupos musculares */}
       {orderedGroups.map((muscleGroup) => (
         <MuscleGroupSection
           key={muscleGroup}

@@ -164,9 +164,6 @@ bun run backfill:sessions # Backfill session data
 
 - React/TypeScript gym workout tracking app
 - Dual-user workout logging (A/B users)
-- Real-time Firestore subscriptions via `onSnapshot`
 - Simple state-based routing (no React Router despite dependency)
 - Document IDs pattern: `${exerciseId}_${userId}_${date}` for exercise logs
-- Always use `merge: true` for Firestore updates
-- Dark theme UI with gray-900 backgrounds and blue-400 accents
 - UI/UX decisions must always prioritize mobile-first behavior, layout, readability, and touch ergonomics

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronDown, LogOut, Bell } from 'lucide-react';
+import { LogOut, Bell } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
 import {
   completeSession as apiCompleteSession,
@@ -12,7 +12,7 @@ import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
 import { useDashboardData } from '../hooks/useDashboardData';
-import { getRecommendedMuscleGroup } from '../lib/muscleGroups';
+import { MUSCLE_GROUPS, getRecommendedMuscleGroup } from '../lib/muscleGroups';
 import { useUI } from '../../../app/providers/ui-context';
 import { formatDateInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
@@ -276,6 +276,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
     return `${stats.thisWeekWorkouts} esta semana · racha de ${stats.currentStreak} días`;
   }, [activeWorkout, dashboardRoutines.length, stats.currentStreak, stats.thisWeekWorkouts]);
+  const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
+  const latestSessionDate = recentSessions[0]?.completedAt ? formatDateInAppTimeZone(recentSessions[0].completedAt) : null;
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
@@ -499,15 +501,44 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         {!activeWorkout && (
-          <section className="mb-6 app-card p-4 sm:p-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-xl font-display text-white sm:text-2xl">Entrena sin distracciones</h2>
-                <p className="mt-1 text-sm text-slate-300">{primarySummary}</p>
+          <section className="mb-8 overflow-hidden rounded-[2rem] border border-mint/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_28%),linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] shadow-lift">
+            <div className="border-b border-white/8 px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-mint/85 sm:px-6">
+              Dashboard de entrenamiento
+            </div>
+            <div className="space-y-6 px-5 py-5 sm:px-6 sm:py-6">
+              <div className="space-y-3">
+                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">
+                  {recommendedGroupName ? `Sugerido hoy: ${recommendedGroupName}` : 'Listo para entrenar'}
+                </div>
+                <div className="max-w-xl">
+                  <h2 className="font-display text-[2.4rem] uppercase leading-[0.92] text-white sm:text-[3.4rem]">
+                    {recommendedGroupName ? `Hoy toca ${recommendedGroupName}.` : 'Elige una rutina y entra.'}
+                  </h2>
+                  <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-300">{primarySummary}</p>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2 text-xs text-slate-300">
-                <span className="rounded-full border border-mist/50 px-3 py-1.5">{dashboardRoutines.length} rutinas listas</span>
-                <span className="rounded-full border border-mist/50 px-3 py-1.5">{stats.totalWorkouts} entrenamientos totales</span>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Rutinas</div>
+                  <div className="mt-1 font-display text-2xl text-white">{dashboardRoutines.length}</div>
+                  <div className="text-xs text-slate-300">listas para empezar</div>
+                </div>
+                <div className="rounded-[1.4rem] border border-mint/20 bg-mint/10 px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-mint/80">Semana</div>
+                  <div className="mt-1 font-display text-2xl text-white">{stats.thisWeekWorkouts}</div>
+                  <div className="text-xs text-mint/80">entrenamientos</div>
+                </div>
+                <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Racha</div>
+                  <div className="mt-1 font-display text-2xl text-white">{stats.currentStreak}</div>
+                  <div className="text-xs text-slate-300">días seguidos</div>
+                </div>
+                <div className="rounded-[1.4rem] border border-amberGlow/20 bg-amberGlow/10 px-4 py-3">
+                  <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/80">Última sesión</div>
+                  <div className="mt-1 text-sm font-semibold text-white">{latestSessionDate ?? 'Sin registro'}</div>
+                  <div className="text-xs text-slate-300">actividad reciente</div>
+                </div>
               </div>
             </div>
           </section>
@@ -515,21 +546,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
         {activeWorkout && (
           <section className="mb-6">
-            <div className="app-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-              <div>
-                <div className="chip mb-2">Entrenamiento activo</div>
-                <div className="text-lg font-display text-white">{activeWorkout.routine.name}</div>
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
-                  Reanudar
-                </button>
-                <button
-                  onClick={handleCancelActiveWorkout}
-                  className="btn-secondary border-crimson/40 text-crimson hover:border-crimson/60 hover:text-crimson touch-target"
-                >
-                  Cancelar
-                </button>
+            <div className="overflow-hidden rounded-[1.8rem] border border-mint/20 bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="chip mb-2">Entrenamiento activo</div>
+                  <div className="font-display text-2xl uppercase text-white sm:text-3xl">{activeWorkout.routine.name}</div>
+                  <p className="mt-2 text-sm text-slate-300">Sigue donde lo dejaste y termina la sesión sin perder el ritmo.</p>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
+                    Reanudar
+                  </button>
+                  <button
+                    onClick={handleCancelActiveWorkout}
+                    className="btn-secondary border-crimson/40 text-crimson hover:border-crimson/60 hover:text-crimson touch-target"
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             </div>
           </section>
@@ -557,9 +591,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         )}
 
         <section className="content-fade-in">
-          <div className="mb-4 sm:mb-5">
-            <h2 className="section-title mb-1">Empieza una rutina</h2>
-            <p className="text-sm text-slate-300">Elige tu entrenamiento de hoy y entra directo a la sesión.</p>
+          <div className="mb-5 flex flex-col gap-2 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas para hoy</div>
+              <h2 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">
+                {recommendedGroupName ? `Empieza por ${recommendedGroupName}` : 'Empieza una rutina'}
+              </h2>
+            </div>
+            <p className="max-w-sm text-sm text-slate-300">Explora tus rutinas por grupo muscular y empieza con un toque.</p>
           </div>
 
           <MuscleGroupDashboard
@@ -571,25 +610,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           />
         </section>
 
-        <section className="mt-8 space-y-4">
-          <details className="group app-surface overflow-hidden">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-semibold text-white sm:px-5">
-              <span>Ver progreso por ejercicio</span>
-              <ChevronDown size={16} className="text-slate-400 transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="border-t border-mist/40 px-4 py-4 sm:px-5 sm:py-5">
+        <section className="mt-10 space-y-8">
+          <div>
+            <div className="mb-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
+              <h2 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">Tu progreso está a la vista</h2>
+            </div>
+            <div className="rounded-[1.8rem] border border-mist/60 bg-graphite px-4 py-4 shadow-lift sm:px-5 sm:py-5">
               <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
                 <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
               </Suspense>
             </div>
-          </details>
+          </div>
 
-          <details className="group app-surface overflow-hidden">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 text-sm font-semibold text-white sm:px-5">
-              <span>Ver calendario y actividad reciente</span>
-              <ChevronDown size={16} className="text-slate-400 transition-transform group-open:rotate-180" />
-            </summary>
-            <div className="space-y-5 border-t border-mist/40 px-4 py-4 sm:px-5 sm:py-5">
+          <div>
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Constancia</div>
+                <h2 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">Calendario y actividad reciente</h2>
+              </div>
+              <p className="max-w-sm text-sm text-slate-300">Mira tu ritmo semanal y las últimas sesiones sin esconderlas detrás de un acordeón.</p>
+            </div>
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
               <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
                 <DeferredWorkoutCalendar
                   calendar={dashboardData.calendar}
@@ -598,35 +640,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 />
               </Suspense>
 
-              <div>
-                <h3 className="text-sm font-semibold text-white">Entrenamientos recientes</h3>
+              <div className="rounded-[1.8rem] border border-mist/60 bg-graphite p-4 shadow-lift sm:p-5">
+                <div className="mb-4 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
+                  <div>
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
+                    <h3 className="mt-1 font-display text-xl uppercase text-white">Actividad reciente</h3>
+                  </div>
+                  <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
+                </div>
+
                 {recentSessions.length > 0 ? (
-                  <div className="mt-3 space-y-3">
-                    {recentSessions.slice(0, 5).map((session) => (
-                      <div key={session.id} className="border-b border-mist/30 pb-3 last:border-b-0 last:pb-0">
-                        <div className="flex items-center justify-between gap-3">
-                          <h4 className="min-w-0 truncate text-sm font-medium text-white">{session.routineName}</h4>
+                  <div className="space-y-3">
+                    {recentSessions.slice(0, 5).map((session, index) => (
+                      <div key={session.id} className={`rounded-[1.25rem] border px-4 py-3 ${index === 0 ? 'border-mint/25 bg-mint/10' : 'border-mist/30 bg-slateDeep/65'}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
+                            <div className="mt-1 text-xs text-slate-300">{session.primaryMuscleGroup || 'Sin categoría'}</div>
+                          </div>
                           {session.completedAt && (
-                            <span className="shrink-0 text-xs text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</span>
+                            <div className="shrink-0 text-right text-xs text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
                           )}
                         </div>
-                        {session.primaryMuscleGroup && (
-                          <div className="mt-1 text-xs text-slate-400">{session.primaryMuscleGroup}</div>
-                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-2 text-sm text-slate-400">Todavía no tienes entrenamientos recientes.</p>
+                  <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">
+                    <div className="font-display text-lg uppercase text-white">Aún no hay actividad</div>
+                    <p className="mt-2 text-sm text-slate-400">Empieza una rutina para llenar tu calendario y registrar tu ritmo.</p>
+                  </div>
                 )}
               </div>
             </div>
-          </details>
+          </div>
         </section>
       </main>
-        <div className="px-4 pb-8">
-          <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
-            Version {appVersion}
+      <div className="px-4 pb-8">
+        <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
+          Version {appVersion}
           </div>
         </div>
     </div>

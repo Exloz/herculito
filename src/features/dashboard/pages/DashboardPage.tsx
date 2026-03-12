@@ -108,7 +108,7 @@ const HOME_TABS: Array<{
 }> = [
   { id: 'routines', label: 'Rutinas', icon: Dumbbell, tone: 'text-mint' },
   { id: 'progress', label: 'Progreso', icon: BarChart3, tone: 'text-amberGlow' },
-  { id: 'calendar', label: 'Calendario + historial', icon: CalendarRange, tone: 'text-mint' }
+  { id: 'calendar', label: 'Calendario', icon: CalendarRange, tone: 'text-mint' }
 ];
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
@@ -547,18 +547,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     : 'Elige una rutina y entra directo a entrenar.'}
                 </p>
 
-                <div className="mt-3 grid grid-cols-3 gap-2">
-                  <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                <div className="mt-3 grid grid-cols-6 gap-2">
+                  <div className="col-span-2 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                    <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts}</div>
+                  </div>
+                  <div className="col-span-2 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha</div>
+                    <div className="mt-1 font-semibold text-white">{stats.currentStreak}</div>
+                  </div>
+                  <div className="col-span-2 rounded-[1rem] bg-white/[0.04] px-3 py-2.5">
+                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Este mes</div>
+                    <div className="mt-1 font-semibold text-white">{stats.thisMonthWorkouts}</div>
+                  </div>
+                  <div className="col-span-3 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
                     <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Total</div>
                     <div className="mt-1 font-semibold text-white">{stats.totalWorkouts}</div>
                   </div>
-                  <div className="rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
+                  <div className="col-span-3 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
                     <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha larga</div>
                     <div className="mt-1 font-semibold text-white">{stats.longestStreak}</div>
-                  </div>
-                  <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Este mes</div>
-                    <div className="mt-1 truncate font-semibold text-white">{stats.thisMonthWorkouts}</div>
                   </div>
                 </div>
               </div>
@@ -567,28 +575,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
                   <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
                     <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                        <Trophy size={13} className="text-amberGlow" />
-                        <span>Ranking</span>
+                      <Trophy size={13} className="text-amberGlow" />
+                      <span>Ranking</span>
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                        <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                          <span>Semana</span>
-                          <span>{competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : '--'}</span>
-                        </div>
-                        <div className="mt-1 text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin líder'}</div>
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                        <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin líder'}</div>
                         <div className="mt-1 text-xs text-slate-400">
-                          Tu puesto: {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posición'}
+                          Tu puesto {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posición'}
                         </div>
                       </div>
                       <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                        <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                          <span>Mes</span>
-                          <span>{competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : '--'}</span>
-                        </div>
-                        <div className="mt-1 text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin líder'}</div>
+                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Mes</div>
+                        <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin líder'}</div>
                         <div className="mt-1 text-xs text-slate-400">
-                          Tu puesto: {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posición'}
+                          Tu puesto {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posición'}
                         </div>
                       </div>
                     </div>
@@ -601,7 +603,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
         {!activeWorkout && (
           <section className="mb-6 content-fade-in">
-            <div className="rounded-[1.4rem] border border-white/6 bg-slateDeep/45 p-1.5 shadow-lift">
+            <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
               <div className="grid grid-cols-3 gap-1">
                 {HOME_TABS.map((tab) => {
                   const Icon = tab.icon;
@@ -613,13 +615,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                       type="button"
                       onClick={() => handleHomeTabChange(tab.id)}
                       aria-pressed={isActive}
-                      className={`flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-3 py-3 text-sm font-medium transition-all duration-300 ${isActive
+                      className={`flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
                         ? 'bg-[linear-gradient(180deg,rgba(24,33,46,0.98),rgba(14,20,30,0.98))] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)]'
                         : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
                         }`}
                     >
                       <Icon size={15} className={isActive ? tab.tone : 'text-slate-500'} />
-                      <span className="truncate">{tab.id === 'calendar' ? 'Calendario + historial' : tab.label}</span>
+                      <span className="min-w-0 text-center leading-none">{tab.label}</span>
                     </button>
                   );
                 })}

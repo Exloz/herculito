@@ -113,29 +113,29 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
   return (
     <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-3 shadow-lift sm:p-4">
-      <div className="mb-3 flex flex-col gap-3 border-b border-white/8 pb-3 sm:flex-row sm:items-start sm:justify-between">
-        <h3 className="min-w-0 truncate font-display text-xl uppercase text-white sm:text-2xl">
+      <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/8 pb-3">
+        <h3 className="min-w-0 text-[1.75rem] font-display uppercase leading-none text-white sm:text-2xl">
           {monthNames[month]} {year}
         </h3>
 
-        <div className="flex items-center gap-2 self-start sm:justify-end">
+        <div className="flex shrink-0 items-center gap-2">
           <div className="rounded-full bg-amberGlow/10 px-3 py-1.5 text-xs font-semibold text-amberGlow/90">
             {workoutsThisMonth} {workoutsThisMonth === 1 ? 'sesión' : 'sesiones'}
           </div>
-          <div className="inline-flex shrink-0 items-center gap-1 rounded-[0.95rem] bg-white/[0.04] px-1.5 py-1">
+          <div className="inline-flex shrink-0 items-center gap-1 rounded-[1rem] bg-white/[0.04] p-1">
             <button
               onClick={() => navigateMonth('prev')}
-              className="btn-ghost p-1.5 touch-target-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
               aria-label="Mes anterior"
             >
-              <ChevronLeft size={16} className="text-slate-300" />
+              <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              className="btn-ghost p-1.5 touch-target-sm"
+              className="flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
               aria-label="Mes siguiente"
             >
-              <ChevronRight size={16} className="text-slate-300" />
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>

@@ -73,7 +73,6 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
         <div className="mt-4 divide-y divide-white/8">
           {groupRoutines.map((routine, index) => {
             const isExpanded = expandedRoutineId === routine.id;
-            const previewExercises = routine.exercises.slice(0, 2);
 
             return (
               <div key={routine.id} className={`${index === 0 ? 'pt-0' : 'pt-4'} ${index === groupRoutines.length - 1 ? 'pb-0' : 'pb-4'}`}>
@@ -100,11 +99,6 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                     <div className="mt-2 flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h4 className="truncate text-base font-semibold text-white sm:text-lg">{routine.name}</h4>
-                        <div className="mt-1 text-sm text-slate-400">
-                          {previewExercises.length > 0
-                            ? previewExercises.map((exercise) => `${exercise.name} (${exercise.sets}x${exercise.reps})`).join(' - ')
-                            : 'Sin ejercicios todavía'}
-                        </div>
                         {routine.createdBy && routine.createdBy !== currentUser.id && (
                           <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-500">
                             {routine.createdByAvatarUrl ? (
@@ -139,11 +133,11 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                     aria-label={`Iniciar ${routine.name}`}
                   >
                     <span className="hidden items-center gap-2 sm:inline-flex">
-                      <Play size={15} />
+                      <Play size={15} className="translate-x-px" />
                       Iniciar
                     </span>
-                    <span className="sm:hidden">
-                      <Play size={15} />
+                    <span className="inline-flex items-center justify-center sm:hidden">
+                      <Play size={15} className="translate-x-px" />
                     </span>
                   </button>
                 </div>

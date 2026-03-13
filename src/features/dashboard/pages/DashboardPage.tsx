@@ -353,6 +353,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     pendingHomeTabViewportBottomRef.current = null;
   }, [activeHomeTab, homeTabBottomSpacerPx]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || homeTabBottomSpacerPx <= 0) return;
+
+    const adjustBottomSpacer = () => {
+      if (pendingHomeTabScrollYRef.current !== null) {
+        return;
+      }
+
+      const scrollY = Math.max(
+        0,
+        window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
+      );
+      const viewportBottom = scrollY + window.innerHeight;
+      const documentHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+      const documentHeightWithoutSpacer = Math.max(0, documentHeight - homeTabBottomSpacerPx);
+      const requiredSpacerPx = Math.max(0, Math.ceil(viewportBottom - documentHeightWithoutSpacer));
+      const nextSpacerPx = Math.min(homeTabBottomSpacerPx, requiredSpacerPx);
+
+      if (nextSpacerPx !== homeTabBottomSpacerPx) {
+        setHomeTabBottomSpacerPx(nextSpacerPx);
+      }
+    };
+
+    adjustBottomSpacer();
+    window.addEventListener('scroll', adjustBottomSpacer, { passive: true });
+    window.addEventListener('resize', adjustBottomSpacer);
+
+    return () => {
+      window.removeEventListener('scroll', adjustBottomSpacer);
+      window.removeEventListener('resize', adjustBottomSpacer);
+    };
+  }, [homeTabBottomSpacerPx]);
+
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
       const routine = dashboardRoutines.find((entry) => entry.id === routineId);

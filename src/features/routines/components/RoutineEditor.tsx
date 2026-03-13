@@ -425,20 +425,20 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             </button>
           </div>
         </form>
-
-        {/* Selector de ejercicios */}
-        {showExerciseSelector && (
-          <ExerciseSelector
-            onSelectExercise={handleAddExercise}
-            onCancel={() => {
-              setShowExerciseSelector(false);
-              setEditingExercise(null);
-            }}
-            editingExercise={editingExercise}
-            onUpdateExercise={handleUpdateExercise}
-          />
-        )}
       </div>
+      
+      {/* Selector de ejercicios - rendered as sibling, not child, so it's not affected by pointer-events-none */}
+      {showExerciseSelector && (
+        <ExerciseSelector
+          onSelectExercise={handleAddExercise}
+          onCancel={() => {
+            setShowExerciseSelector(false);
+            setEditingExercise(null);
+          }}
+          editingExercise={editingExercise}
+          onUpdateExercise={handleUpdateExercise}
+        />
+      )}
     </div>
   );
 };

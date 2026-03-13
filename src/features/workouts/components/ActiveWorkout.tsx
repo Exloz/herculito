@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle } from 'lucide-react';
 import type { ExerciseLog, Routine, User, WorkoutSession } from '../../../shared/types';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
@@ -72,6 +72,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [session.id]);
 
   const hasProgress = useMemo(() => {
     return exerciseLogs.some((log) => log.sets?.some((set) => set.completed));

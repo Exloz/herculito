@@ -181,9 +181,6 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               <h2 id="routine-editor-title" className="mt-1 font-display text-[1.8rem] uppercase leading-[0.94] text-white sm:text-[2.2rem]">
                 {routine ? 'Edita tu rutina' : 'Crea una rutina'}
               </h2>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
-                Ponle nombre, agrega ejercicios y dejala lista para empezar cuando quieras.
-              </p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -434,7 +431,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
           </div>
         </form>
       </div>
-      
+
       {/* Selector de ejercicios - rendered as sibling, not child, so it's not affected by pointer-events-none */}
       {showExerciseSelector && (
         <ExerciseSelector

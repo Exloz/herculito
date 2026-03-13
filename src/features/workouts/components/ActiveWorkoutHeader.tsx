@@ -130,6 +130,7 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
             <ArrowLeft size={20} />
             <span className="font-medium">Volver</span>
           </button>
+
           <div
             className="flex items-center"
             style={{

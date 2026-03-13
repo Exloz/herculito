@@ -56,12 +56,15 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                 <MuscleGroupIcon muscleGroup={muscleGroup} size={18} color="white" />
               </div>
 
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  <span>{isRecommended ? 'Primero hoy' : 'Grupo activo'}</span>
-                  {isRecommended && <span className="rounded-full bg-mint/12 px-2 py-1 text-[10px] text-mint">Hoy</span>}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="min-w-0 truncate font-display text-xl text-white sm:text-[1.55rem]">{groupInfo.name}</h3>
+                  {isRecommended && (
+                    <span className="inline-flex h-6 shrink-0 items-center rounded-full border border-mint/20 bg-mint/10 px-2.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-mint">
+                      Hoy
+                    </span>
+                  )}
                 </div>
-                <h3 className="mt-1 truncate font-display text-xl text-white sm:text-[1.55rem]">{groupInfo.name}</h3>
                 <p className="mt-1 text-sm text-slate-400">
                   {formatCountLabel(groupRoutines.length, 'rutina disponible', 'rutinas disponibles')}
                 </p>

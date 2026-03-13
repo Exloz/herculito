@@ -270,22 +270,22 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div
         ref={dialogRef}
-        className="flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden rounded-none border-y-0 border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem] sm:border"
+        className="flex h-[calc(100dvh-0.75rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[1.35rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="exercise-selector-title"
         tabIndex={-1}
       >
-        <div className="shrink-0 border-b border-white/8 p-4 sm:p-5">
-          <div className="mb-4 flex items-start justify-between gap-3 sm:mb-5 sm:gap-4">
+        <div className="shrink-0 border-b border-white/8 px-4 pb-3 pt-[calc(0.35rem+env(safe-area-inset-top))] sm:p-5">
+          <div className="mb-3 flex items-start justify-between gap-3 sm:mb-4 sm:gap-4">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amberGlow/85">
                 {isEditing ? 'Editar ejercicio' : 'Añadir ejercicio'}
               </div>
-              <h3 id="exercise-selector-title" className="mt-2 font-display text-[1.75rem] uppercase leading-[0.94] text-white sm:text-[2.5rem]">
+              <h3 id="exercise-selector-title" className="mt-1.5 font-display text-[1.55rem] uppercase leading-[0.96] text-white sm:text-[2.2rem]">
               {isEditing ? (
                   <span className="flex items-center gap-2">
                     <Pencil size={20} className="text-mint" />
@@ -295,7 +295,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 'Elige o crea uno'
               )}
               </h3>
-              <p className="mt-2 max-w-lg text-xs leading-relaxed text-slate-300 sm:mt-3 sm:text-sm">
+              <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-slate-300 sm:mt-2 sm:text-sm">
                 Busca una base rápida o crea un ejercicio propio con series, reps, descanso y video listo para usar.
               </p>
             </div>

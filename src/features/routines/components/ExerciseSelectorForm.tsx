@@ -67,7 +67,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
   };
 
   return (
-    <div className="p-4 sm:p-5">
+    <div className="p-4 pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:p-5 sm:pb-6">
       <div className="space-y-4">
         <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
@@ -188,7 +188,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
           </div>
         </div>
 
-        <div className="flex space-x-2 border-t border-white/8 pt-4">
+        <div className="sticky bottom-0 z-10 -mx-4 mt-2 flex space-x-2 border-t border-white/8 bg-[linear-gradient(180deg,rgba(11,15,20,0.76),rgba(11,15,20,0.98))] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0">
           <button type="button" onClick={onClearForm} className="btn-secondary flex-1">Cancelar</button>
 
           <button

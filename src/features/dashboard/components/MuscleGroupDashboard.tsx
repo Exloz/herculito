@@ -61,7 +61,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                   <span>{isRecommended ? 'Primero hoy' : 'Grupo activo'}</span>
                   {isRecommended && <span className="rounded-full bg-mint/12 px-2 py-1 text-[10px] text-mint">Hoy</span>}
                 </div>
-                <h3 className="mt-1 truncate font-display text-xl uppercase text-white sm:text-[1.55rem]">{groupInfo.name}</h3>
+                <h3 className="mt-1 truncate font-display text-xl text-white sm:text-[1.55rem]">{groupInfo.name}</h3>
                 <p className="mt-1 text-sm text-slate-400">
                   {formatCountLabel(groupRoutines.length, 'rutina disponible', 'rutinas disponibles')}
                 </p>
@@ -232,7 +232,7 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
   if (availableGroups.length === 0) {
     return (
       <div className="rounded-[1.6rem] bg-slateDeep/45 px-4 py-8 text-center">
-        <div className="font-display text-lg uppercase text-white">No hay rutinas todavía</div>
+        <div className="font-display text-lg text-white">No hay rutinas todavía</div>
         <p className="mt-2 text-sm text-slate-400">Crea tu primera rutina para verla organizada por grupo muscular.</p>
       </div>
     );

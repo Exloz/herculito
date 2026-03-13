@@ -114,7 +114,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   return (
     <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-3 shadow-lift sm:p-4">
       <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/8 pb-3">
-        <h3 className="min-w-0 text-[1.75rem] font-display uppercase leading-none text-white sm:text-2xl">
+        <h3 className="min-w-0 text-[1.75rem] font-display leading-none text-white sm:text-2xl">
           {monthNames[month]} {year}
         </h3>
 

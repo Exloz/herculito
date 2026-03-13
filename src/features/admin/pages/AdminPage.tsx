@@ -175,7 +175,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
                 <Shield size={14} className="text-mint" />
                 <span>Centro de control</span>
               </div>
-              <h1 className="mt-2 font-display text-[2rem] uppercase leading-[0.92] text-white sm:text-[2.5rem]">
+              <h1 className="mt-2 font-display text-[2rem] leading-[0.92] text-white sm:text-[2.5rem]">
                 Admin
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">

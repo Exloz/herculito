@@ -540,7 +540,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-2">
-                  <h2 className="font-display text-[1.8rem] uppercase leading-none text-white sm:text-[2.2rem]">
+                  <h2 className="font-display text-[1.8rem] leading-none text-white sm:text-[2.2rem]">
                     {recommendedGroupName ?? 'Listo para entrenar'}
                   </h2>
                   {recommendedGroupName && (
@@ -641,7 +641,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="chip mb-2">Entrenamiento activo</div>
-                  <div className="font-display text-[2rem] uppercase leading-none text-white sm:text-[2.35rem]">{activeWorkout.routine.name}</div>
+                  <div className="font-display text-[2rem] leading-none text-white sm:text-[2.35rem]">{activeWorkout.routine.name}</div>
                   <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Sigue donde lo dejaste y termina la sesión sin perder el ritmo.</p>
                 </div>
 
@@ -688,7 +688,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
-                    <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">
+                    <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">
                       {recommendedGroupName ? `${recommendedGroupName} al frente` : 'Empieza una rutina'}
                     </h2>
                   </div>
@@ -713,7 +713,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
               <section>
                 <div className="mb-4">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
-                  <h2 className="mt-1 font-display text-xl uppercase text-white sm:text-2xl">Tu progreso está a la vista</h2>
+                  <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">Tu progreso está a la vista</h2>
                 </div>
                 <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
                   <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
@@ -724,7 +724,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             {activeHomeTab === 'calendar' && (
               <section>
                 <div className="mb-4">
-                  <h2 className="font-display text-xl uppercase text-white sm:text-2xl">Calendario y actividad reciente</h2>
+                  <h2 className="font-display text-xl text-white sm:text-2xl">Calendario y actividad reciente</h2>
                 </div>
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
                   <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
@@ -739,7 +739,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
                       <div>
                         <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
-                        <h3 className="mt-1 font-display text-lg uppercase text-white sm:text-xl">Actividad reciente</h3>
+                        <h3 className="mt-1 font-display text-lg text-white sm:text-xl">Actividad reciente</h3>
                       </div>
                       <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
                     </div>

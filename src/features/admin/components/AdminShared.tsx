@@ -65,7 +65,7 @@ export const SectionAccordion = ({
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 sm:px-5">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Sección</div>
-          <h2 className="mt-1 text-xl font-display uppercase text-white">{title}</h2>
+          <h2 className="mt-1 text-xl font-display text-white">{title}</h2>
           <p className="mt-2 max-w-2xl text-sm text-slate-400">{subtitle}</p>
         </div>
 

@@ -140,7 +140,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         <section className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Biblioteca de entrenamiento</div>
-            <h1 className="mt-1 font-display text-2xl uppercase text-white sm:text-3xl">Rutinas</h1>
+            <h1 className="mt-1 font-display text-2xl text-white sm:text-3xl">Rutinas</h1>
             <p className="mt-2 max-w-xl text-sm text-slate-300">
               {activeTab === 'my'
                 ? 'Crea, edita y reutiliza tus rutinas en un solo lugar.'

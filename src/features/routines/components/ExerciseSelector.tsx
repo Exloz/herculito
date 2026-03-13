@@ -285,7 +285,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amberGlow/85">
                 {isEditing ? 'Editar ejercicio' : 'Agregar ejercicio'}
               </div>
-              <h3 id="exercise-selector-title" className="mt-1.5 font-display text-[1.55rem] uppercase leading-[0.96] text-white sm:text-[2.2rem]">
+              <h3 id="exercise-selector-title" className="mt-1.5 font-display text-[1.55rem] leading-[0.96] text-white sm:text-[2.2rem]">
               {isEditing ? (
                   <span className="flex items-center gap-2">
                     <Pencil size={20} className="text-mint" />

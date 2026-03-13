@@ -32,6 +32,75 @@ type RangeValue = (typeof RANGE_OPTIONS)[number]['value'];
 
 const CHART_HEIGHT = 220;
 const CHART_PADDING = { top: 18, right: 16, bottom: 34, left: 46 };
+const CHART_MIN_TICKS = 4;
+const CHART_MAX_TICKS = 6;
+
+const roundChartValue = (value: number): number => {
+  return Number(value.toFixed(3));
+};
+
+const getNiceStepCandidates = (minimumStep: number): number[] => {
+  if (minimumStep <= 0 || !Number.isFinite(minimumStep)) {
+    return [1, 2, 5, 10];
+  }
+
+  const baseExponent = Math.floor(Math.log10(minimumStep));
+  const candidates = new Set<number>();
+
+  for (let exponent = baseExponent - 1; exponent <= baseExponent + 4; exponent += 1) {
+    const scale = 10 ** exponent;
+    [1, 2, 5].forEach((factor) => {
+      const candidate = factor * scale;
+      if (candidate >= minimumStep * 0.999) {
+        candidates.add(candidate);
+      }
+    });
+  }
+
+  return Array.from(candidates).sort((left, right) => left - right);
+};
+
+const buildYAxisTicks = (minValue: number, maxValue: number) => {
+  const range = Math.max(maxValue - minValue, 1);
+  const minimumStep = range / (CHART_MAX_TICKS - 1);
+  const stepCandidates = getNiceStepCandidates(minimumStep);
+
+  for (const step of stepCandidates) {
+    const domainMin = roundChartValue(Math.max(0, Math.floor(minValue / step) * step));
+    const domainMax = roundChartValue(Math.ceil(maxValue / step) * step);
+    const tickCount = Math.round((domainMax - domainMin) / step) + 1;
+
+    if (tickCount >= CHART_MIN_TICKS && tickCount <= CHART_MAX_TICKS) {
+      const ticks = Array.from({ length: tickCount }, (_, index) => {
+        const value = domainMax - (index * step);
+        return {
+          ratio: tickCount === 1 ? 0 : index / (tickCount - 1),
+          value: roundChartValue(value)
+        };
+      });
+
+      return {
+        domainMin,
+        domainMax,
+        ticks
+      };
+    }
+  }
+
+  const fallbackStep = stepCandidates[stepCandidates.length - 1] ?? 1;
+  const domainMin = roundChartValue(Math.max(0, Math.floor(minValue / fallbackStep) * fallbackStep));
+  const domainMax = roundChartValue(Math.ceil(maxValue / fallbackStep) * fallbackStep);
+  const tickCount = Math.max(2, Math.round((domainMax - domainMin) / fallbackStep) + 1);
+
+  return {
+    domainMin,
+    domainMax,
+    ticks: Array.from({ length: tickCount }, (_, index) => ({
+      ratio: tickCount === 1 ? 0 : index / (tickCount - 1),
+      value: roundChartValue(domainMax - (index * fallbackStep))
+    }))
+  };
+};
 
 const formatKg = (value: number): string => {
   return `${formatNumber(value, { maximumFractionDigits: 1 })} kg`;
@@ -209,18 +278,19 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
     const maxWeight = Math.max(...weights);
     const spread = Math.max(maxWeight - minWeight, maxWeight > 0 ? maxWeight * 0.12 : 1);
     const domainPadding = Math.max(spread * 0.18, 2);
-    const domainMin = Math.max(0, minWeight - domainPadding);
-    const domainMax = maxWeight + domainPadding;
+    const paddedMin = Math.max(0, minWeight - domainPadding);
+    const paddedMax = maxWeight + domainPadding;
+    const yAxis = buildYAxisTicks(paddedMin, paddedMax);
     const plotHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
     const plotWidth = Math.max(220, pointsInRange.length === 1 ? 220 : (pointsInRange.length - 1) * 42);
     const width = CHART_PADDING.left + CHART_PADDING.right + plotWidth;
-    const yRange = Math.max(domainMax - domainMin, 1);
+    const yRange = Math.max(yAxis.domainMax - yAxis.domainMin, 1);
 
     const coordinates = pointsInRange.map((point, index) => {
       const x = pointsInRange.length === 1
         ? CHART_PADDING.left + (plotWidth / 2)
         : CHART_PADDING.left + ((index / (pointsInRange.length - 1)) * plotWidth);
-      const y = CHART_PADDING.top + (((domainMax - point.bestWeight) / yRange) * plotHeight);
+      const y = CHART_PADDING.top + (((yAxis.domainMax - point.bestWeight) / yRange) * plotHeight);
 
       return {
         ...point,
@@ -238,13 +308,10 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
     const areaPath = coordinates.length > 1
       ? `${linePath} L ${coordinates[coordinates.length - 1].x} ${bottomY} L ${coordinates[0].x} ${bottomY} Z`
       : '';
-    const ticks = Array.from({ length: 4 }, (_, index) => {
-      const ratio = index / 3;
-      return {
-        y: CHART_PADDING.top + (ratio * plotHeight),
-        value: domainMax - (ratio * yRange)
-      };
-    });
+    const ticks = yAxis.ticks.map((tick) => ({
+      y: CHART_PADDING.top + (tick.ratio * plotHeight),
+      value: tick.value
+    }));
     const labelStep = coordinates.length > 10 ? Math.ceil(coordinates.length / 6) : 1;
 
     return {
@@ -270,7 +337,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                 <Activity className="text-mint" size={14} />
                 <span>Historial y progreso</span>
               </div>
-              <div className="mt-2 font-display text-[1.6rem] uppercase leading-none text-white sm:text-[2rem]">
+              <div className="mt-2 font-display text-[1.6rem] leading-none text-white sm:text-[2rem]">
                 {selectedSummary.exerciseName}
               </div>
               <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
@@ -569,7 +636,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
         </div>
       ) : (
         <div className="rounded-[1.2rem] bg-white/[0.04] px-4 py-10 text-center">
-          <div className="font-display text-xl uppercase text-white">Sin progreso visible todavía</div>
+          <div className="font-display text-xl text-white">Sin progreso visible todavía</div>
           <p className="mt-2 text-sm text-slate-400">Completa algunas sesiones con peso para desbloquear el historial por ejercicio.</p>
         </div>
       )}

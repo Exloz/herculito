@@ -52,7 +52,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
 
             <h3
               dir="auto"
-              className="mt-2 min-w-0 break-words font-display text-[1.5rem] uppercase leading-[0.95] text-white sm:text-[1.9rem]"
+              className="mt-2 min-w-0 break-words font-display text-[1.5rem] leading-[0.95] text-white sm:text-[1.9rem]"
               style={{ overflowWrap: 'anywhere' }}
             >
               {routine.name}

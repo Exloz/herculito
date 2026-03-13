@@ -54,7 +54,7 @@ export function Login({ errorMessage }: LoginProps) {
                 </svg>
               </div>
 
-              <h1 className="mt-5 font-display text-[3.2rem] uppercase leading-[0.9] text-white">
+              <h1 className="mt-5 font-display text-[3.2rem] leading-[0.9] text-white">
                 Entra. Entrena. Repite.
               </h1>
               <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-300">
@@ -77,13 +77,13 @@ export function Login({ errorMessage }: LoginProps) {
                   </svg>
                 </div>
                 <div>
-                  <div className="font-display text-3xl uppercase leading-none text-white">Herculito</div>
+                  <div className="font-display text-3xl leading-none text-white">Herculito</div>
                   <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">Rutinas, progreso y calendario</div>
                 </div>
               </div>
 
               <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Acceso</div>
-              <h2 className="mt-2 font-display text-[2rem] uppercase leading-[0.94] text-white sm:text-[2.3rem]">Vuelve a tu dashboard</h2>
+               <h2 className="mt-2 font-display text-[2rem] leading-[0.94] text-white sm:text-[2.3rem]">Vuelve a tu dashboard</h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-300">
                 Inicia sesión para abrir tus rutinas, continuar entrenamientos y revisar tu progreso.
               </p>

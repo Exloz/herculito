@@ -293,9 +293,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     { label: 'Total', value: stats.totalWorkouts },
     { label: 'Racha larga', value: stats.longestStreak }
   ];
-  const averageDurationLabel = stats.averageDurationMin > 0
-    ? `${stats.averageDurationMin} min promedio`
-    : 'Ritmo listo para hoy';
   const competition = dashboardData?.competition;
   const activeTabIndex = HOME_TABS.findIndex((tab) => tab.id === activeHomeTab);
   const previousTabIndex = HOME_TABS.findIndex((tab) => tab.id === previousHomeTab);
@@ -538,62 +535,46 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        <section className="motion-enter relative isolate mb-4 overflow-hidden rounded-[1.6rem] border border-white/[0.06] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_34%),linear-gradient(180deg,rgba(18,24,35,0.99),rgba(8,12,18,0.99))] px-4 py-4 shadow-lift sm:px-5 sm:py-5">
-            <div className="pointer-events-none absolute inset-0">
-              <div className="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-white/18 to-transparent" />
-              <div className="absolute -right-12 top-0 h-36 w-36 rounded-full bg-mint/10 blur-3xl" />
-              <div className="absolute left-1/3 top-1/2 h-24 w-24 rounded-full bg-amberGlow/8 blur-3xl" />
-            </div>
-
-            <div className="relative grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
-              <div className="min-w-0 rounded-[1.3rem] border border-white/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.015))] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] sm:p-4">
+        <section className="motion-enter mb-5 overflow-hidden rounded-[1.5rem] border border-white/[0.05] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_32%),linear-gradient(180deg,rgba(18,24,35,0.98),rgba(8,12,18,0.98))] px-4 py-4 shadow-lift sm:px-5 sm:py-5">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+              <div className="min-w-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="rounded-full border border-white/[0.07] bg-white/[0.045] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-100/80">Hoy</div>
-                  <div className="rounded-full border border-white/[0.07] bg-black/15 px-3 py-1 text-[11px] font-medium text-slate-100/85">
+                  <div className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-200/75">Hoy</div>
+                  <div className="rounded-full border border-white/[0.06] bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-slate-200">
                     {dashboardRoutines.length} rutinas activas
                   </div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-                  <h2 className="font-display text-[1.8rem] leading-none text-white sm:text-[2.35rem]">
+                  <h2 className="font-display text-[1.95rem] leading-none text-white sm:text-[2.3rem]">
                     {recommendedGroupName ?? 'Listo para entrenar'}
                   </h2>
                   {recommendedGroupName && (
-                    <span className="rounded-full border border-mint/22 bg-mint/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/90">
+                    <span className="rounded-full border border-mint/20 bg-mint/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/90">
                       Sugerido
                     </span>
                   )}
                 </div>
+                <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-slate-200">
+                  {recommendedGroupName
+                    ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina lista' : 'rutinas listas'} para empezar ahora.`
+                    : 'Elige una rutina y entra directo a entrenar.'}
+                </p>
 
-                <div className="mt-2 flex flex-col gap-2.5 lg:flex-row lg:items-end lg:justify-between">
-                  <p className="max-w-xl text-sm leading-relaxed text-slate-100/88 sm:text-[15px]">
-                    {recommendedGroupName
-                      ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina lista' : 'rutinas listas'} para empezar ahora.`
-                      : 'Elige una rutina y entra directo a entrenar.'}
-                  </p>
-                  <div className="inline-flex items-center gap-2 self-start rounded-full border border-white/[0.06] bg-white/[0.04] px-3 py-1.5 text-[11px] text-slate-100/75">
-                    <span className="h-1.5 w-1.5 rounded-full bg-mint shadow-[0_0_10px_rgba(72,229,163,0.6)]" />
-                    <span>{averageDurationLabel}</span>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-2.5 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
-                  <div className="rounded-[1.2rem] border border-mint/18 bg-[linear-gradient(180deg,rgba(72,229,163,0.14),rgba(255,255,255,0.035))] px-3.5 py-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.18)] sm:px-4">
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/85">Este mes</div>
-                      <div className="mt-1 text-xs text-slate-100/70">Tu foco principal ahora</div>
-                    </div>
-                    <div className="mt-3 flex items-end justify-between gap-3">
-                      <div className="font-display text-[2.4rem] leading-none text-white sm:text-[2.7rem]">{stats.thisMonthWorkouts}</div>
-                      <div className="max-w-[6.5rem] text-right text-[11px] leading-tight text-slate-100/72">sesiones completadas</div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+                  <div className="rounded-[1.2rem] border border-mint/16 bg-[linear-gradient(180deg,rgba(72,229,163,0.12),rgba(255,255,255,0.03))] px-4 py-3.5 shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/80">Este mes</div>
+                    <div className="mt-2 flex items-end gap-3">
+                      <div className="font-display text-[2.55rem] leading-none text-white">{stats.thisMonthWorkouts}</div>
+                      <div className="pb-1 text-xs text-slate-200/80">sesiones completadas</div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     {heroStats.map((item) => (
-                      <div key={item.label} className="rounded-[1rem] border border-white/[0.05] bg-black/12 px-3 py-2.5 backdrop-blur-sm sm:px-3.5 sm:py-3">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-100/60">{item.label}</div>
-                        <div className="mt-1.5 text-[1.2rem] font-semibold leading-none text-white sm:text-[1.35rem]">{item.value}</div>
+                      <div key={item.label} className="rounded-[1rem] border border-white/[0.05] bg-black/10 px-3 py-3 backdrop-blur-sm">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300/70">{item.label}</div>
+                        <div className="mt-1.5 text-[1.35rem] font-semibold leading-none text-white">{item.value}</div>
                       </div>
                     ))}
                   </div>
@@ -602,7 +583,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
               <div className="space-y-3">
                 {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
-                  <div className="rounded-[1.2rem] border border-white/[0.05] bg-[linear-gradient(180deg,rgba(22,30,42,0.72),rgba(12,17,25,0.82))] px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                  <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
                     <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                       <Trophy size={13} className="text-amberGlow" />
                       <span>Ranking</span>
@@ -629,9 +610,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             </div>
         </section>
 
-        <section className="motion-enter motion-enter-delay-1 mb-5 content-fade-in">
-            <div className="rounded-[1.4rem] border border-white/[0.05] bg-[linear-gradient(180deg,rgba(20,28,40,0.82),rgba(12,18,28,0.9))] p-1.5 shadow-lift">
-              <div className="grid grid-cols-3 gap-1.5">
+        <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
+            <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
+              <div className="grid grid-cols-3 gap-1">
                 {HOME_TABS.map((tab) => {
                   const Icon = tab.icon;
                   const isActive = activeHomeTab === tab.id;
@@ -642,18 +623,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                       type="button"
                       onClick={() => handleHomeTabChange(tab.id)}
                       aria-pressed={isActive}
-                      className={`motion-interactive group relative flex min-w-0 items-center justify-center gap-2 rounded-[1.05rem] border px-2 py-2.5 text-[13px] font-medium transition-all duration-300 sm:px-3 sm:py-3 ${isActive
-                        ? 'border-white/[0.08] bg-[linear-gradient(180deg,rgba(25,35,49,0.98),rgba(13,19,29,0.98))] text-white shadow-[0_14px_28px_rgba(0,0,0,0.24)]'
-                        : 'border-transparent bg-black/10 text-slate-300 hover:border-white/[0.06] hover:bg-white/[0.04] hover:text-white'
+                      className={`motion-interactive flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
+                        ? 'bg-[linear-gradient(180deg,rgba(24,33,46,0.98),rgba(14,20,30,0.98))] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)]'
+                        : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
                         }`}
                     >
-                      {isActive && <span className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />}
-                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[0.9rem] border transition-colors ${isActive
-                        ? 'border-white/[0.08] bg-white/[0.05]'
-                        : 'border-white/[0.04] bg-white/[0.02] group-hover:bg-white/[0.05]'
-                        }`}>
-                        <Icon size={15} className={isActive ? tab.tone : 'text-slate-500'} />
-                      </span>
+                      <Icon size={15} className={isActive ? tab.tone : 'text-slate-500'} />
                       <span className="min-w-0 text-center leading-none">{tab.label}</span>
                     </button>
                   );

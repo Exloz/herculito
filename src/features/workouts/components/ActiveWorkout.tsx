@@ -271,7 +271,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         {showExerciseSkeleton ? (
           <ActiveWorkoutExerciseSkeleton count={Math.min(3, routine.exercises.length)} />
         ) : (
-          <div className="space-y-4 content-fade-in">
+          <div className="space-y-3.5 content-fade-in">
             {routine.exercises.map((exercise, index) => {
               const log = getLogForExerciseCustom(exercise.id, user.id) || {
                 exerciseId: exercise.id,
@@ -304,17 +304,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         )}
 
         {hasProgress && (
-          <div className="app-card mt-6 p-4 text-center sm:p-5">
-            <div className="mb-3 flex items-center justify-between gap-3 text-sm text-slate-300">
-              <span>Progreso total</span>
-              <span className="font-semibold text-mint">{Math.round(workoutProgress)}%</span>
-            </div>
-            <div className="mb-4 h-2 w-full rounded-full bg-slateDeep">
-              <div
-                className="h-2 rounded-full bg-mint transition-all duration-300"
-                style={{ width: `${workoutProgress}%` }}
-              />
-            </div>
+          <div className="mt-6 text-center">
             <button
               onClick={handleCompleteWorkout}
               className="btn-primary inline-flex w-full items-center justify-center gap-2 px-8 sm:w-auto"

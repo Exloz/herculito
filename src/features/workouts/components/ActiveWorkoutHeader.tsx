@@ -126,7 +126,7 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
     >
       <div className="max-w-4xl mx-auto">
         <div className="relative flex items-center justify-between gap-2">
-          <button onClick={onBackToDashboard} className="btn-ghost flex items-center gap-2 border border-transparent bg-transparent">
+          <button onClick={onBackToDashboard} className="btn-ghost flex items-center gap-2">
             <ArrowLeft size={20} />
             <span className="font-medium">Volver</span>
           </button>
@@ -153,28 +153,26 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
         <div
           className={`overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-0 opacity-0 -translate-y-2 mt-0' : 'max-h-80 opacity-100 translate-y-0 mt-4'}`}
         >
-          <div className="app-card px-4 py-3.5 sm:px-5 sm:py-4">
-            <h1 className="flex items-center gap-2 text-2xl font-display text-white">
-              <Dumbbell size={24} className="text-mint" />
-              <span>{routineName}</span>
-            </h1>
+          <h1 className="text-2xl font-display text-white flex items-center gap-2">
+            <Dumbbell size={24} className="text-mint" />
+            <span>{routineName}</span>
+          </h1>
 
-            <div className="mt-3 rounded-xl bg-slateDeep/70 px-3 py-3">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <span className="text-sm text-slate-300">Progreso del entrenamiento</span>
-                <span className="text-sm font-semibold text-mint">{Math.round(workoutProgress)}%</span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-charcoal">
-                <div
-                  className="h-2 rounded-full bg-mint transition-all duration-300"
-                  style={{ width: `${workoutProgress}%` }}
-                />
-              </div>
+          <div className="mt-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-slate-300">Progreso del entrenamiento</span>
+              <span className="text-sm font-semibold text-mint">{Math.round(workoutProgress)}%</span>
+            </div>
+            <div className="w-full bg-slateDeep rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-mint to-amberGlow h-2 rounded-full transition-all duration-300"
+                style={{ width: `${workoutProgress}%` }}
+              />
             </div>
 
             {hasLastWeights && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-mint">
-                <div className="motion-pulse-dot h-2 w-2 rounded-full bg-mint" />
+              <div className="mt-2 text-xs text-mint flex items-center gap-2">
+                <div className="motion-pulse-dot w-2 h-2 bg-mint rounded-full"></div>
                 <span>Precargamos tus ultimos pesos registrados.</span>
               </div>
             )}
@@ -185,9 +183,9 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
           className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-5 opacity-100' : 'max-h-0 opacity-0'}`}
         >
           <div className="pt-1.5">
-            <div className="h-1 w-full rounded-full bg-charcoal">
+            <div className="w-full bg-slateDeep rounded-full h-1">
               <div
-                className="h-1 rounded-full bg-mint transition-all duration-300"
+                className="bg-gradient-to-r from-mint to-amberGlow h-1 rounded-full transition-all duration-300"
                 style={{ width: `${workoutProgress}%` }}
               />
             </div>

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Check, Loader, Plus } from 'lucide-react';
 import type { Exercise, ExerciseVideo } from '../../../shared/types';
 import type { MusclewikiSuggestion } from '../api/musclewikiApi';
 import type { CustomExerciseForm } from '../types/exercise-selector';
@@ -19,17 +18,14 @@ interface ExerciseSelectorFormProps {
   customExercise: CustomExerciseForm;
   error: string;
   successMessage: string;
-  creatingExercise: boolean;
   videoError: string;
   videoLoading: boolean;
   videoSuggestions: MusclewikiSuggestion[];
   selectedVideo: ExerciseVideo | null;
   onCustomExerciseChange: (updates: Partial<CustomExerciseForm>) => void;
-  onClearForm: () => void;
   onSuggestVideos: () => void;
   onPickSuggestion: (suggestion: MusclewikiSuggestion) => void;
   onClearVideo: () => void;
-  onSubmit: () => void;
   editingExercise?: Exercise | null;
 }
 
@@ -39,17 +35,14 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
   customExercise,
   error,
   successMessage,
-  creatingExercise,
   videoError,
   videoLoading,
   videoSuggestions,
   selectedVideo,
   onCustomExerciseChange,
-  onClearForm,
   onSuggestVideos,
   onPickSuggestion,
-  onClearVideo,
-  onSubmit
+  onClearVideo
 }) => {
   const handleNumberChange = (field: 'sets' | 'reps' | 'restTime', value: string) => {
     if (value === '') {
@@ -67,7 +60,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
   };
 
   return (
-    <div className="p-4 pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:p-5 sm:pb-6">
+    <div className="p-4 pb-4 sm:p-5 sm:pb-6">
       <div className="space-y-4">
         <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
@@ -188,28 +181,6 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
           </div>
         </div>
 
-        <div className="sticky bottom-0 z-10 -mx-4 mt-2 flex space-x-2 border-t border-white/8 bg-[linear-gradient(180deg,rgba(11,15,20,0.76),rgba(11,15,20,0.98))] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:pb-0">
-          <button type="button" onClick={onClearForm} className="btn-secondary flex-1">Cancelar</button>
-
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={!customExercise.name.trim() || creatingExercise}
-            className="btn-primary flex-[2] flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            {creatingExercise ? (
-              <>
-                <Loader size={16} className="animate-spin" />
-                <span>{isEditing ? 'Guardando...' : 'Creando...'}</span>
-              </>
-            ) : (
-              <>
-                {isEditing ? <Check size={16} /> : <Plus size={16} />}
-                <span>{isEditing ? 'Guardar Cambios' : 'Crear y Añadir'}</span>
-              </>
-            )}
-          </button>
-        </div>
       </div>
     </div>
   );

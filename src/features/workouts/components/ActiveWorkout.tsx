@@ -282,14 +282,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
               const isCompleted = isExerciseLogCompleted(log.sets, exercise.sets);
 
               return (
-                <div key={exercise.id} className={`transition-all duration-200 ${isCompleted ? 'opacity-75' : ''}`}>
-                  <div className="mb-2 flex items-center space-x-2">
-                    {isCompleted && <CheckCircle size={20} className="text-mint" />}
-                    <h3 className="text-lg font-semibold text-white sm:text-xl">
-                      {index + 1}. {exercise.name}
-                    </h3>
-                  </div>
-
+                <div key={exercise.id} className="transition-all duration-200">
                   <ExerciseCard
                     exercise={exercise}
                     log={log}
@@ -297,6 +290,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
                     onUpdateLog={handleUpdateLog}
                     onStartTimer={handleStartRestTimer}
                     previousWeights={lastWeights[exercise.id]}
+                    exerciseNumber={index + 1}
+                    isCompleted={isCompleted}
                   />
                 </div>
               );

@@ -32,6 +32,8 @@ interface ExerciseCardProps {
   onUpdateLog: (log: ExerciseLog) => void;
   onStartTimer: (seconds: number) => void;
   previousWeights?: number[]; // Pesos de la sesión anterior
+  exerciseNumber?: number;
+  isCompleted?: boolean;
 }
 
 export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
@@ -40,7 +42,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   userId,
   onUpdateLog,
   onStartTimer,
-  previousWeights
+  previousWeights,
+  exerciseNumber,
+  isCompleted = false
 }) => {
   const [showVideo, setShowVideo] = React.useState(false);
   const [draftWeights, setDraftWeights] = React.useState<Record<number, string>>({});
@@ -216,12 +220,22 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   };
 
   return (
-    <div className="app-card mb-3 p-3.5 sm:p-4">
+    <div className={`app-card mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(10,18,24,0.98))]' : ''}`}>
       {/* Header del ejercicio */}
       <div className="mb-3">
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
-            <h3 className="truncate text-lg font-semibold text-white">{exercise.name}</h3>
+            {exerciseNumber ? (
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold ${isCompleted ? 'border-mint/50 bg-mint/12 text-mint' : 'border-mist/60 bg-white/[0.03] text-slate-200'}`}>
+                {isCompleted ? <Check size={18} /> : exerciseNumber}
+              </div>
+            ) : null}
+            <div className="min-w-0">
+              <h3 className="truncate text-lg font-semibold text-white sm:text-[1.35rem]">{exercise.name}</h3>
+              {isCompleted && (
+                <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint">Ejercicio completado</div>
+              )}
+            </div>
             {exercise.video?.url && (
                 <button
                   type="button"

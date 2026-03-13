@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Loader, Pencil, X } from 'lucide-react';
+import { Check, Loader, Pencil, Plus, X } from 'lucide-react';
 import { useExerciseTemplates } from '../hooks/useExerciseTemplates';
 import { useAuth } from '../../auth/hooks/useAuth';
 import type { Exercise, ExerciseTemplate } from '../../../shared/types';
@@ -371,16 +371,11 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               customExercise={customExercise}
               error={error}
               successMessage={successMessage}
-              creatingExercise={creatingExercise}
               videoError={videoError}
               videoLoading={videoLoading}
               videoSuggestions={videoSuggestions}
               selectedVideo={selectedVideo}
               onCustomExerciseChange={handleCustomExerciseChange}
-              onClearForm={() => {
-                setShowCustomForm(false);
-                resetCustomForm();
-              }}
               onSuggestVideos={() => {
                 void handleSuggestVideos(customExercise.name);
               }}
@@ -388,13 +383,48 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 void handlePickSuggestion(suggestion);
               }}
               onClearVideo={clearVideoSelection}
-              onSubmit={() => {
-                void handleCustomExercise();
-              }}
               editingExercise={editingExercise}
             />
           )}
         </div>
+
+        {showCustomForm && (
+          <div className="shrink-0 border-t border-white/8 bg-[linear-gradient(180deg,rgba(11,15,20,0.72),rgba(11,15,20,0.98))] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-5">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustomForm(false);
+                  resetCustomForm();
+                }}
+                className="btn-secondary flex-1"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  void handleCustomExercise();
+                }}
+                disabled={!customExercise.name.trim() || creatingExercise}
+                className="btn-primary flex-[2] flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                {creatingExercise ? (
+                  <>
+                    <Loader size={16} className="animate-spin" />
+                    <span>{isEditing ? 'Guardando...' : 'Creando...'}</span>
+                  </>
+                ) : (
+                  <>
+                    {isEditing ? <Check size={16} /> : <Plus size={16} />}
+                    <span>{isEditing ? 'Guardar Cambios' : 'Crear y Añadir'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

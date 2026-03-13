@@ -60,7 +60,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const today = getCurrentDateString();
   const {
     updateExerciseLog,
-    getLogForExercise,
     loading: logsLoading,
     flushPendingLogs
   } = useExerciseLogs(today, user.id, { deferRemoteSync: true });
@@ -82,7 +81,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     const storedLogs = loadProgressFromStorage(session.id);
     if (storedLogs) {
       setExerciseLogs(storedLogs);
+    } else {
+      setExerciseLogs([]);
     }
+
+    lastSentProgressRef.current = '';
 
     const storedStartTime = localStorage.getItem(`workoutStartTime_${session.id}`);
     if (storedStartTime) {
@@ -131,11 +134,19 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     return getLastWeightsForRoutineFromSessions(sessions, routine.id);
   }, [previousWeightsByExercise, routine.id, sessions]);
 
-  const getLogForExerciseCustom = useCallback((exerciseId: string, userId: string): ExerciseLog | undefined => {
+  const createEmptyLog = useCallback((exerciseId: string): ExerciseLog => {
+    return {
+      exerciseId,
+      userId: user.id,
+      date: getCurrentDateString(),
+      sets: []
+    };
+  }, [user.id]);
+
+  const getLogForExerciseCustom = useCallback((exerciseId: string): ExerciseLog => {
     const localLog = exerciseLogs.find((log) => log.exerciseId === exerciseId);
-    if (localLog) return localLog;
-    return getLogForExercise(exerciseId, userId);
-  }, [exerciseLogs, getLogForExercise]);
+    return localLog ?? createEmptyLog(exerciseId);
+  }, [createEmptyLog, exerciseLogs]);
 
   const handleUpdateLog = useCallback((log: ExerciseLog) => {
     updateExerciseLog(log);
@@ -166,12 +177,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       await flushPendingLogs();
 
       const logsToSave = routine.exercises.map((exercise) => {
-        const log = getLogForExerciseCustom(exercise.id, user.id) || {
-          exerciseId: exercise.id,
-          userId: user.id,
-          date: getCurrentDateString(),
-          sets: []
-        };
+        const log = getLogForExerciseCustom(exercise.id);
 
         return {
           ...log,
@@ -182,10 +188,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       await Promise.resolve(onCompleteWorkout(logsToSave));
       clearProgressFromStorage(session.id);
       localStorage.removeItem(`workoutStartTime_${session.id}`);
+      lastSentProgressRef.current = '';
     };
 
     void finish();
-  }, [flushPendingLogs, getLogForExerciseCustom, onCompleteWorkout, routine.exercises, session.id, user.id]);
+  }, [flushPendingLogs, getLogForExerciseCustom, onCompleteWorkout, routine.exercises, session.id]);
 
   useEffect(() => {
     return () => {
@@ -197,15 +204,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
   const completedExercises = useMemo(() => {
     return routine.exercises.filter((exercise) => {
-      const log = getLogForExerciseCustom(exercise.id, user.id) || {
-        exerciseId: exercise.id,
-        userId: user.id,
-        date: getCurrentDateString(),
-        sets: []
-      };
+      const log = getLogForExerciseCustom(exercise.id);
       return isExerciseLogCompleted(log.sets, exercise.sets);
     }).length;
-  }, [getLogForExerciseCustom, routine.exercises, user.id]);
+  }, [getLogForExerciseCustom, routine.exercises]);
 
   useEffect(() => {
     if (logsLoading || hasMigratedSessionLogsRef.current) return;
@@ -222,7 +224,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
     const migratedLogs: ExerciseLog[] = [];
     routine.exercises.forEach((exercise) => {
-      const log = getLogForExerciseCustom(exercise.id, user.id);
+      const log = getLogForExerciseCustom(exercise.id);
       if (!log || (log.sets?.length ?? 0) === 0) return;
 
       const normalizedSets = normalizeWorkoutSets(log.sets, exercise.sets);
@@ -245,7 +247,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     }
 
     hasMigratedSessionLogsRef.current = true;
-  }, [getLogForExerciseCustom, handleUpdateLog, logsLoading, routine.exercises, session.id, user.id]);
+  }, [getLogForExerciseCustom, handleUpdateLog, logsLoading, routine.exercises, session.id]);
 
   const workoutProgress = useMemo(() => {
     return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
@@ -273,12 +275,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         ) : (
           <div className="space-y-3.5 content-fade-in">
             {routine.exercises.map((exercise, index) => {
-              const log = getLogForExerciseCustom(exercise.id, user.id) || {
-                exerciseId: exercise.id,
-                userId: user.id,
-                date: getCurrentDateString(),
-                sets: []
-              };
+              const log = getLogForExerciseCustom(exercise.id);
               const isCompleted = isExerciseLogCompleted(log.sets, exercise.sets);
 
               return (

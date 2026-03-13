@@ -43,6 +43,13 @@ const isIOSDevice = () => {
   return isAppleMobile || isIPadOS;
 };
 
+const isAndroidStandalonePwa = () => {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+  const isAndroid = /Android/i.test(navigator.userAgent || '');
+  const isStandalone = typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches;
+  return isAndroid && isStandalone;
+};
+
 const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: number): boolean => {
   if (expectedSets <= 0) return false;
 
@@ -214,6 +221,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     } catch {
       setShowIosNotificationGuide(false);
     }
+  }, []);
+
+  useEffect(() => {
+    if (!isAndroidStandalonePwa()) return;
+    document.documentElement.classList.add('dashboard-scrollbar-hidden');
+    document.body.classList.add('dashboard-scrollbar-hidden');
+
+    return () => {
+      document.documentElement.classList.remove('dashboard-scrollbar-hidden');
+      document.body.classList.remove('dashboard-scrollbar-hidden');
+    };
   }, []);
 
   const {

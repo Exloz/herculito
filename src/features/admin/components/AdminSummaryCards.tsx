@@ -36,14 +36,14 @@ export const AdminSummaryCards: React.FC<{ summary?: AdminSummary }> = ({ summar
   ];
 
   return (
-    <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="grid grid-cols-2 gap-2 xl:grid-cols-4">
       {items.map(({ label, value, detail, Icon, tone }) => (
-        <div key={label} className={`rounded-[1.05rem] px-3 py-3 shadow-soft ${tone}`}>
+        <div key={label} className={`rounded-[0.95rem] px-3 py-2.5 shadow-soft ${tone}`}>
           <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em]">
             <Icon size={15} /> {label}
           </div>
-          <div className="mt-2 font-display text-[1.7rem] uppercase text-white">{value}</div>
-          <div className="mt-1 text-xs text-slate-300">{detail}</div>
+          <div className="mt-1.5 font-display text-[1.45rem] uppercase text-white sm:text-[1.6rem]">{value}</div>
+          <div className="mt-0.5 text-[11px] text-slate-300">{detail}</div>
         </div>
       ))}
     </section>

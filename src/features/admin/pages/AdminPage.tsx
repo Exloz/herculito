@@ -167,29 +167,29 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
 
   return (
     <div className="app-shell pb-28">
-      <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:py-8">
-        <section className="motion-enter rounded-[1.6rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:gap-5 sm:py-7">
+        <section className="motion-enter rounded-[1.35rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">
                 <Shield size={14} className="text-mint" />
                 <span>Centro de control</span>
               </div>
-              <h1 className="mt-2 font-display text-[2rem] leading-[0.92] text-white sm:text-[2.5rem]">
+              <h1 className="mt-1.5 font-display text-[1.7rem] leading-[0.95] text-white sm:text-[2.2rem]">
                 Admin
               </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
+              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-slate-300">
                 Revisa usuarios, rutinas y sesiones con una lectura más directa y menos bloques gigantes.
               </p>
             </div>
 
-            <button type="button" onClick={() => void refresh()} disabled={refreshing} className="btn-primary inline-flex w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap sm:w-auto disabled:opacity-60">
+            <button type="button" onClick={() => void refresh()} disabled={refreshing} className="btn-primary inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap px-4 text-sm sm:h-11 sm:w-auto disabled:opacity-60">
               <RefreshCw size={16} className={refreshing ? 'animate-spin' : ''} />
               <span>{refreshing ? 'Actualizando...' : 'Actualizar datos'}</span>
             </button>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-3">
             <AdminSummaryCards summary={data?.summary} />
           </div>
         </section>

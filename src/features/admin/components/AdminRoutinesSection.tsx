@@ -23,16 +23,16 @@ export const AdminRoutinesSection: React.FC<AdminRoutinesSectionProps> = ({
       subtitle="Inventario general de rutinas y sus ejercicios configurados."
       badge={<div className="chip">{routines.length}</div>}
     >
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-400">Seccion secundaria para revisar estructura y uso.</p>
-        <select value={routineSort} onChange={(event) => onRoutineSortChange(event.target.value as AdminRoutineSort)} className="input input-sm bg-white/[0.03] text-sm sm:w-auto">
+      <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-slate-400 sm:text-sm">Sección secundaria para revisar estructura y uso.</p>
+        <select value={routineSort} onChange={(event) => onRoutineSortChange(event.target.value as AdminRoutineSort)} className="input input-sm h-10 bg-white/[0.03] text-sm sm:w-auto">
           <option value="usage">Mas usadas</option>
           <option value="lastCompleted">Mas recientes</option>
           <option value="name">Nombre</option>
         </select>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {routines.length === 0 && (
           <div className="rounded-2xl border border-dashed border-mist/25 bg-white/[0.02] px-4 py-6 text-sm text-slate-400">
             <p>No hay rutinas visibles con los filtros actuales.</p>
@@ -43,22 +43,22 @@ export const AdminRoutinesSection: React.FC<AdminRoutinesSectionProps> = ({
         )}
 
         {routines.map((routine) => (
-          <details key={routine.routineId} className="group overflow-hidden rounded-2xl border border-mist/20 bg-white/[0.03]">
-            <summary className="flex cursor-pointer list-none flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+          <details key={routine.routineId} className="group overflow-hidden rounded-xl border border-mist/20 bg-white/[0.03]">
+            <summary className="flex cursor-pointer list-none flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="text-base font-semibold text-white">{routine.name}</div>
-                <div className="mt-1 text-sm text-slate-400">Creador: {routine.createdByName || 'Usuario sin nombre'}</div>
+                <div className="text-sm font-semibold text-white sm:text-base">{routine.name}</div>
+                <div className="mt-1 text-xs text-slate-400 sm:text-sm">Creador: {routine.createdByName || 'Usuario sin nombre'}</div>
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:min-w-[320px]">
-                <div className="rounded-xl bg-ink/40 p-3 text-center">
+              <div className="grid grid-cols-3 gap-1.5 sm:min-w-[280px]">
+                <div className="rounded-lg bg-ink/40 px-2 py-1.5 text-center">
                   <div className="text-base font-display text-white">{routine.timesUsed}</div>
                   <div className="text-[11px] text-slate-400">usos</div>
                 </div>
-                <div className="rounded-xl bg-ink/40 p-3 text-center">
-                  <div className="text-sm font-semibold text-white">{formatDateTime(routine.lastCompletedAt)}</div>
+                <div className="rounded-lg bg-ink/40 px-2 py-1.5 text-center">
+                  <div className="text-xs font-semibold text-white sm:text-sm">{formatDateTime(routine.lastCompletedAt)}</div>
                   <div className="text-[11px] text-slate-400">ultima vez</div>
                 </div>
-                <div className="flex items-center justify-center rounded-xl bg-ink/40 p-3 text-slate-300 transition group-open:rotate-180">
+                <div className="flex items-center justify-center rounded-lg bg-ink/40 px-2 py-1.5 text-slate-300 transition group-open:rotate-180">
                   <ChevronDown size={16} />
                 </div>
               </div>

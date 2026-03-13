@@ -220,20 +220,20 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   };
 
   return (
-    <div className={`app-card mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(10,18,24,0.98))]' : ''}`}>
+    <div className={`app-card app-card-hover mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-mint/5' : ''}`}>
       {/* Header del ejercicio */}
       <div className="mb-3">
         <div className="mb-2 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             {exerciseNumber ? (
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold ${isCompleted ? 'border-mint/50 bg-mint/12 text-mint' : 'border-mist/60 bg-white/[0.03] text-slate-200'}`}>
+              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold ${isCompleted ? 'border-mint/50 bg-mint/12 text-mint' : 'border-mist/60 bg-slateDeep text-slate-200'}`}>
                 {isCompleted ? <Check size={18} /> : exerciseNumber}
               </div>
             ) : null}
             <div className="min-w-0">
               <h3 className="truncate text-lg font-semibold text-white sm:text-[1.35rem]">{exercise.name}</h3>
               {isCompleted && (
-                <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint">Ejercicio completado</div>
+                <div className="mt-1 text-[11px] font-semibold text-mint">Ejercicio completado</div>
               )}
             </div>
             {exercise.video?.url && (
@@ -258,14 +258,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
 
         {exercise.video?.url && showVideo && (
-          <div className="mb-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="app-surface-muted mb-4 space-y-2 p-3 animate-in fade-in slide-in-from-top-2 duration-200">
             {(() => {
               const { frontUrl, sideUrl } = getVideoUrls(exercise.video);
               return (
                 <div className={`grid gap-3 ${sideUrl ? 'sm:grid-cols-2' : ''}`}>
                   <div>
                     <div className="text-xs text-slate-400 mb-1">Vista frontal</div>
-                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-charcoal">
                       <video
                         className="h-full w-full"
                         src={frontUrl}
@@ -278,7 +278,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                   {sideUrl && (
                     <div>
                       <div className="text-xs text-slate-400 mb-1">Vista lateral</div>
-                      <div className="aspect-video w-full overflow-hidden rounded-xl bg-black/40">
+                      <div className="aspect-video w-full overflow-hidden rounded-xl bg-charcoal">
                         <video
                           className="h-full w-full"
                           src={sideUrl}
@@ -307,9 +307,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
 
         {/* Barra de progreso */}
-        <div className="w-full bg-slateDeep rounded-full h-2 mb-2">
+        <div className="mb-2 h-2 w-full rounded-full bg-slateDeep">
           <div
-            className="bg-mint h-2 rounded-full transition-all duration-300"
+            className="h-2 rounded-full bg-mint transition-all duration-300"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
@@ -334,9 +334,9 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
             <div
               key={setNumber}
                className={`motion-list-item flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-200 ${isCompleted ? 'motion-complete ' : ''}${isCompleted
-                  ? 'bg-mint/10 border-mint/50'
-                  : 'bg-slateDeep border-mist/60 hover:border-mint/40'
-                  }`}
+                   ? 'bg-mint/10 border-mint/50'
+                   : 'bg-slateDeep/70 border-mist/60 hover:border-mint/40'
+                   }`}
             >
               {/* Numero de serie */}
                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${isCompleted ? 'bg-mint text-ink' : 'bg-charcoal text-slate-300'
@@ -346,10 +346,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
               <div className="flex-1 min-w-0">
                  <div className="flex items-center gap-2">
-                   <div className="flex items-center overflow-hidden rounded-lg border border-mist/60 bg-slateDeep">
-                    <button
-                      type="button"
-                      onClick={() => adjustWeight(setNumber, -2.5)}
+                    <div className="flex items-center overflow-hidden rounded-lg border border-mist/60 bg-charcoal">
+                     <button
+                       type="button"
+                       onClick={() => adjustWeight(setNumber, -2.5)}
                       className="motion-interactive flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60 touch-target-sm"
                       aria-label="Reducir peso 2.5kg"
                     >
@@ -361,7 +361,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                         value={draftWeight !== undefined ? draftWeight : (Number.isFinite(weight) ? String(weight) : '')}
                         onChange={(e) => handleWeightChange(setNumber, e.target.value)}
                         onBlur={() => handleWeightBlur(setNumber)}
-                        className="w-16 bg-transparent text-center text-sm font-medium focus:outline-none py-1"
+                        className="w-16 bg-transparent py-1 text-center text-sm font-medium focus:outline-none"
                         placeholder="0"
                         inputMode="decimal"
                         step="0.5"
@@ -404,11 +404,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
       {/* Información de descanso */}
       {exercise.restTime && (
-         <div className="mt-2.5 flex items-center gap-2 rounded-xl bg-slateDeep px-3 py-2 text-sm text-slate-400">
-           <Clock size={16} />
-           <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
-         </div>
-      )}
+         <div className="app-surface-muted mt-2.5 flex items-center gap-2 px-3 py-2 text-sm text-slate-400">
+            <Clock size={16} />
+            <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
+          </div>
+       )}
     </div>
   );
 });

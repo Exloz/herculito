@@ -27,7 +27,6 @@ interface DashboardProps {
 }
 
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
-const ACTIVE_WORKOUT_PROGRESS_KEY = 'activeWorkoutProgress';
 const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in ms
 
@@ -339,21 +338,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
   const handleBackToDashboard = useCallback(() => {
     setShowActiveWorkout(false);
+    setActiveHomeTab('routines');
+    setPreviousHomeTab('routines');
+
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('activeWorkoutForceOpen');
+      if (window.location.pathname !== '/') {
+        window.history.replaceState({}, '', '/');
+      }
+      window.requestAnimationFrame(() => {
+        window.scrollTo({ top: 0, behavior: 'auto' });
+      });
+    }
+
     if (activeWorkout) {
       saveActiveWorkoutToStorage(activeWorkout);
     }
-  }, [activeWorkout]);
-
-  const handleCancelActiveWorkout = useCallback(() => {
-    if (!activeWorkout) return;
-    const sessionId = activeWorkout.session?.id;
-    if (sessionId) {
-      localStorage.removeItem(`${ACTIVE_WORKOUT_PROGRESS_KEY}_${sessionId}`);
-      localStorage.removeItem(`workoutStartTime_${sessionId}`);
-    }
-    setActiveWorkout(null);
-    setShowActiveWorkout(false);
-    saveActiveWorkoutToStorage(null);
   }, [activeWorkout]);
 
   const handleDismissIosGuide = useCallback(() => {
@@ -642,13 +642,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
                 <div className="grid gap-2 sm:min-w-[15rem]">
                   <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
-                    Reanudar
-                  </button>
-                  <button
-                    onClick={handleCancelActiveWorkout}
-                    className="btn-secondary border-crimson/40 text-crimson hover:border-crimson/60 hover:text-crimson touch-target"
-                  >
-                    Cancelar
+                    Volver al entrenamiento
                   </button>
                 </div>
               </div>

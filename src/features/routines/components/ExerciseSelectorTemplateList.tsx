@@ -38,8 +38,8 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
   const hasActiveFilters = searchTerm.trim().length > 0 || selectedCategory.length > 0;
 
   return (
-    <div className="p-4 sm:p-5">
-      <div className="mb-4 rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
+    <div className="p-3.5 sm:p-5">
+      <div className="mb-3 rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-3.5 sm:mb-4 sm:rounded-[1.5rem] sm:p-4">
         <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Encuentra una base</div>
         <div className="space-y-3">
         <div className="relative">
@@ -91,14 +91,14 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
       </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 pb-3">
         {filteredExercises.map((exercise) => (
           <button
             key={exercise.id}
             type="button"
             onClick={() => void onSelectTemplate(exercise)}
             disabled={Boolean(pendingTemplateId)}
-            className="w-full rounded-[1.35rem] border border-white/8 bg-slateDeep/85 p-3.5 text-left transition-colors hover:border-mint/30 hover:bg-charcoal disabled:cursor-wait disabled:opacity-60"
+            className="w-full rounded-[1.1rem] border border-white/8 bg-slateDeep/85 p-3 text-left transition-colors hover:border-mint/30 hover:bg-charcoal disabled:cursor-wait disabled:opacity-60 sm:rounded-[1.35rem] sm:p-3.5"
           >
             <div className="flex items-center justify-between">
               <div className="min-w-0 pr-3">

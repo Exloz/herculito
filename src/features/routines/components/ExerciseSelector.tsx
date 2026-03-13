@@ -316,13 +316,14 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setShowCustomForm(false);
                 clearMessages();
               }}
-               className={`motion-interactive rounded-[1.15rem] border px-3 py-3 text-left transition-colors sm:rounded-[1.35rem] sm:px-4 sm:py-4 ${
+              aria-pressed={!showCustomForm}
+              className={`motion-interactive rounded-[1.15rem] border px-3 py-3 text-left transition-colors sm:rounded-[1.35rem] sm:px-4 sm:py-4 ${
                 !showCustomForm ? 'border-mint/30 bg-mint/10 text-white' : 'border-mist/50 bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
               <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Guardados</div>
-              <div className="mt-1 font-display text-lg uppercase sm:text-xl">{exercises.length}</div>
-              <div className="mt-1 text-xs text-current/80 sm:text-sm">Elige uno y agregalo al instante.</div>
+              <div className="mt-1 font-display text-lg sm:text-xl">{exercises.length}</div>
+              <div className="mt-1 text-xs text-current/80 sm:text-sm">Elige uno y agrégalo al instante.</div>
             </button>
             <button
               type="button"
@@ -330,13 +331,14 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 setShowCustomForm(true);
                 clearMessages();
               }}
-               className={`motion-interactive rounded-[1.15rem] border px-3 py-3 text-left transition-colors sm:rounded-[1.35rem] sm:px-4 sm:py-4 ${
+              aria-pressed={showCustomForm}
+              className={`motion-interactive rounded-[1.15rem] border px-3 py-3 text-left transition-colors sm:rounded-[1.35rem] sm:px-4 sm:py-4 ${
                 showCustomForm ? 'border-amberGlow/30 bg-amberGlow/10 text-white' : 'border-mist/50 bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
               <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Nuevo</div>
-              <div className="mt-1 font-display text-lg uppercase sm:text-xl">Crear</div>
-              <div className="mt-1 text-xs text-current/80 sm:text-sm">Crea un ejercicio nuevo y reutilizalo.</div>
+              <div className="mt-1 font-display text-lg sm:text-xl">Crear</div>
+              <div className="mt-1 text-xs text-current/80 sm:text-sm">Crea un ejercicio nuevo y reutilízalo.</div>
             </button>
           </div>
         </div>

@@ -167,15 +167,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
 
   return (
     <div className="app-shell pb-28">
-      <main className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-6 sm:py-8">
-        <section className="motion-enter rounded-[1.6rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
+      <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 sm:py-8">
+        <section className="motion-enter rounded-[1.45rem] border border-amberGlow/25 bg-[radial-gradient(circle_at_95%_-15%,oklch(0.78_0.16_72/0.22),transparent_52%),radial-gradient(circle_at_0%_0%,oklch(0.73_0.16_38/0.2),transparent_42%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
-              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">
-                <Shield size={14} className="text-mint" />
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">
+                <Shield size={14} className="text-amberGlow" />
                 <span>Centro de control</span>
               </div>
-              <h1 className="mt-2 font-display text-[2rem] leading-[0.92] text-white sm:text-[2.5rem]">
+              <h1 className="mt-2 bg-[linear-gradient(92deg,oklch(0.91_0.04_95),oklch(0.9_0.14_72))] bg-clip-text font-display text-[2rem] leading-[0.92] text-transparent sm:text-[2.5rem]">
                 Admin
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
@@ -194,7 +194,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
           </div>
         </section>
 
-        {error && <div className="rounded-[1.5rem] border border-crimson/40 bg-crimson/10 px-4 py-4 text-sm text-crimson">{error}</div>}
+        {error && <div className="rounded-[1.2rem] border border-crimson/45 bg-[oklch(0.58_0.18_20/0.12)] px-4 py-3 text-sm text-red-200">{error}</div>}
 
         <AdminControlPanel
           searchQuery={state.searchQuery}

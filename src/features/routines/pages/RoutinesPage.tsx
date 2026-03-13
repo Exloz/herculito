@@ -144,7 +144,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             <p className="mt-2 max-w-xl text-sm text-slate-300">
               {activeTab === 'my'
                 ? 'Crea, edita y reutiliza tus rutinas en un solo lugar.'
-                : 'Activa las rutinas publicas que quieras ver en Inicio.'}
+                : 'Activa las rutinas públicas que quieras ver en Inicio.'}
             </p>
           </div>
 
@@ -183,7 +183,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
               <Bookmark size={13} />
               <span>Mis rutinas</span>
             </div>
-            <div className="mt-1 font-display text-xl uppercase">{myRoutines.length}</div>
+            <div className="mt-1 font-display text-xl">{myRoutines.length}</div>
             <div className="mt-1 text-xs text-current/75">Crea, edita y repite.</div>
           </button>
           <button
@@ -201,7 +201,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
               <Globe2 size={13} />
               <span>Públicas</span>
             </div>
-            <div className="mt-1 font-display text-xl uppercase">{publicRoutines.length}</div>
+            <div className="mt-1 font-display text-xl">{publicRoutines.length}</div>
             <div className="mt-1 text-xs text-current/75">Activa las que si vas a usar.</div>
           </button>
           </div>
@@ -216,14 +216,14 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
               disabled={routineBackfillRunning || routinesMissingVideos === 0}
               className="btn-ghost text-xs disabled:opacity-60"
             >
-              {routineBackfillRunning ? 'Actualizando...' : 'Buscar videos automaticamente'}
+              {routineBackfillRunning ? 'Actualizando...' : 'Buscar videos automáticamente'}
             </button>
           </div>
         )}
 
         {activeTab === 'public' && publicRoutines.length > 0 && (
           <div className="motion-enter motion-enter-delay-3 mb-4 rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
-            {visiblePublicRoutinesCount} de {publicRoutines.length} rutinas publicas visibles en Inicio
+            {visiblePublicRoutinesCount} de {publicRoutines.length} rutinas públicas visibles en Inicio
           </div>
         )}
 
@@ -246,12 +246,12 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
               <div className="text-center py-12 content-fade-in">
                 <Target className="mx-auto mb-4 text-slate-500" size={48} />
                 <h3 className="text-lg font-semibold text-slate-300 mb-2">
-                  {activeTab === 'my' ? 'Aun no tienes rutinas' : 'Aun no hay rutinas publicas'}
+                  {activeTab === 'my' ? 'Aún no tienes rutinas' : 'Aún no hay rutinas públicas'}
                 </h3>
                 <p className="text-slate-400 text-sm mb-4">
                   {activeTab === 'my'
-                    ? 'Crea tu primera rutina para empezar mas rapido.'
-                    : 'Todavia no hay rutinas compartidas. Puedes publicar la primera.'
+                    ? 'Crea tu primera rutina para empezar más rápido.'
+                    : 'Todavía no hay rutinas compartidas. Puedes publicar la primera.'
                   }
                 </p>
                 {activeTab === 'my' && (

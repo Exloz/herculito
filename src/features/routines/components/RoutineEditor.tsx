@@ -206,7 +206,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               <div className="space-y-4 rounded-[1.35rem] bg-white/[0.03] p-4">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Detalles</div>
-                  <h3 className="mt-1 font-display text-xl text-white">Informacion basica</h3>
+                  <h3 className="mt-1 font-display text-xl text-white">Información básica</h3>
                 </div>
 
                 <div>
@@ -275,7 +275,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   />
                   <span>
                     <span className="block text-sm font-semibold text-slate-100">Compartir con la comunidad</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">Otros usuarios podran guardarla y activarla desde Inicio.</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">Otros usuarios podrán guardarla y activarla desde Inicio.</span>
                   </span>
                 </label>
               </div>
@@ -305,13 +305,13 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
                 {exercises.length === 0 ? (
                   <div className="rounded-[1.2rem] bg-slateDeep/45 px-4 py-8 text-center text-slate-400">
-                    <p className="font-display text-lg text-white">Aun no agregas ejercicios</p>
+                    <p className="font-display text-lg text-white">Aún no agregas ejercicios</p>
                     <p className="mt-2 text-sm">Añade al menos uno para completar la rutina.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {exercises.map((exercise, index) => (
-                      <div key={exercise.id} className="rounded-[1.15rem] bg-slateDeep/85 p-3">
+                      <div key={exercise.id} className="motion-list-item app-surface-muted p-3">
                         <div className="mb-3 flex items-center justify-between gap-3">
                           <div className="min-w-0 flex items-center gap-2">
                             <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
@@ -330,7 +330,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                             <button
                               type="button"
                               onClick={() => openExerciseEditor(exercise)}
-                              className="touch-target-sm rounded-lg p-1 text-slate-400 transition-colors hover:text-mint"
+                              className="motion-interactive touch-target-sm rounded-lg p-1 text-slate-400 transition-colors hover:text-mint"
                               title="Editar ejercicio"
                               aria-label={`Editar ejercicio ${exercise.name}`}
                             >
@@ -339,7 +339,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                             <button
                               type="button"
                               onClick={() => handleRemoveExercise(exercise.id)}
-                              className="touch-target-sm rounded-lg p-1 text-red-400 transition-colors hover:text-red-300"
+                              className="motion-interactive touch-target-sm rounded-lg p-1 text-red-400 transition-colors hover:text-red-300"
                               title="Eliminar ejercicio"
                               aria-label={`Eliminar ejercicio ${exercise.name}`}
                             >
@@ -396,7 +396,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 )}
 
                 {exerciseError && (
-                  <div className="mt-3 text-sm text-amberGlow">
+                  <div className="mt-3 rounded-xl border border-amberGlow/30 bg-amberGlow/10 px-3 py-2 text-sm text-amberGlow">
                     {exerciseError}
                   </div>
                 )}

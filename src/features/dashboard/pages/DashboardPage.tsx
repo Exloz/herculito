@@ -408,7 +408,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     if (!allExercisesCompleted) {
       confirm({
         title: 'Entrenamiento incompleto',
-        message: 'Todavia te faltan ejercicios por completar. Puedes terminar ahora o seguir entrenando.',
+        message: 'Todavía te faltan ejercicios por completar. Puedes terminar ahora o seguir entrenando.',
         confirmText: 'Terminar',
         cancelText: 'Seguir entrenando',
         onConfirm: finishWorkout,
@@ -771,7 +771,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                       </div>
                     ) : (
                       <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">
-                        <div className="font-display text-lg uppercase text-white">Aún no hay actividad</div>
+                        <div className="font-display text-lg text-white">Aún no hay actividad</div>
                         <p className="mt-2 text-sm text-slate-400">Empieza una rutina para llenar tu calendario y registrar tu ritmo.</p>
                       </div>
                     )}

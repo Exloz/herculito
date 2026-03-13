@@ -81,12 +81,12 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
             disabled={backfillRunning || ownVideoCandidates === 0 || Boolean(pendingTemplateId)}
             className="btn-ghost text-xs disabled:opacity-60"
           >
-              {backfillRunning ? 'Actualizando...' : 'Buscar videos automaticamente'}
+              {backfillRunning ? 'Actualizando...' : 'Buscar videos automáticamente'}
             </button>
           </div>
 
         {backfillMessage && (
-          <div className="text-xs text-slate-400">{backfillMessage}</div>
+          <div className="rounded-xl bg-white/[0.03] px-3 py-2 text-xs text-slate-300">{backfillMessage}</div>
         )}
       </div>
       </div>
@@ -125,12 +125,12 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
                 ? hasActiveFilters
                   ? 'No encontramos ejercicios con esos filtros.'
                   : 'No se encontraron ejercicios disponibles.'
-                : 'Aun no hay ejercicios guardados.'}
+                : 'Aún no hay ejercicios guardados.'}
             </p>
             <p className="mt-2 text-sm">
               {hasAnyExercises
                 ? hasActiveFilters
-                  ? 'Prueba con otro nombre, cambia la categoria o limpia los filtros.'
+                  ? 'Prueba con otro nombre, cambia la categoría o limpia los filtros.'
                   : 'Si no encuentras lo que buscas, crea un ejercicio nuevo.'
                 : 'Crea tu primer ejercicio desde la pestaña Crear.'}
             </p>

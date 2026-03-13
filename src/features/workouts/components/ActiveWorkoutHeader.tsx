@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Clock, Dumbbell, Target } from 'lucide-react';
 
 interface ActiveWorkoutHeaderProps {
@@ -11,6 +11,10 @@ interface ActiveWorkoutHeaderProps {
   onBackToDashboard: () => void;
 }
 
+const ENTER_COMPACT_SCROLL_THRESHOLD_Y = 132;
+const EXIT_COMPACT_SCROLL_THRESHOLD_Y = 12;
+const HEADER_TOGGLE_COOLDOWN_MS = 180;
+
 const formatElapsedWorkoutTime = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -19,7 +23,6 @@ const formatElapsedWorkoutTime = (seconds: number): string => {
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
-
   return `${minutes}:${secs.toString().padStart(2, '0')}`;
 };
 
@@ -32,7 +35,16 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
   hasLastWeights,
   onBackToDashboard
 }) => {
+  const [isHeaderCompact, setIsHeaderCompact] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  const headerScrollFrameRef = useRef<number | null>(null);
+  const isHeaderCompactRef = useRef(false);
+  const lastHeaderToggleAtRef = useRef(0);
+
+  useEffect(() => {
+    isHeaderCompactRef.current = isHeaderCompact;
+  }, [isHeaderCompact]);
 
   useEffect(() => {
     if (!workoutStartTime) {
@@ -53,50 +65,149 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
     };
   }, [workoutStartTime]);
 
-  return (
-    <header className="app-header sticky top-0 z-20 px-4 pb-3 pt-[calc(0.85rem+env(safe-area-inset-top))] backdrop-blur-xl">
-      <div className="mx-auto max-w-4xl">
-        <div className="rounded-[1.2rem] bg-charcoal/70 px-3 py-3 shadow-soft">
-          <div className="flex items-center justify-between gap-3">
-            <button onClick={onBackToDashboard} className="btn-ghost inline-flex items-center gap-2 px-0 py-0 text-white">
-              <ArrowLeft size={20} />
-              <span className="font-medium">Volver</span>
-            </button>
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
 
-            <div className="flex items-center gap-2">
-              <div className="chip">
-                <Clock size={14} />
-                <span className="font-mono text-xs tabular-nums">{formatElapsedWorkoutTime(elapsedSeconds)}</span>
-              </div>
-              <div className="chip chip-warm">
-                <Target size={14} />
-                <span className="text-xs">{completedExercises}/{totalExercises}</span>
-              </div>
+    const updateCompactHeaderState = () => {
+      const scrollY = Math.max(
+        0,
+        window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
+      );
+
+      const currentMode = isHeaderCompactRef.current;
+      const shouldBeCompact = currentMode
+        ? scrollY > EXIT_COMPACT_SCROLL_THRESHOLD_Y
+        : scrollY > ENTER_COMPACT_SCROLL_THRESHOLD_Y;
+
+      if (shouldBeCompact === currentMode) {
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastHeaderToggleAtRef.current < HEADER_TOGGLE_COOLDOWN_MS) {
+        return;
+      }
+
+      lastHeaderToggleAtRef.current = now;
+      isHeaderCompactRef.current = shouldBeCompact;
+      setIsHeaderCompact(shouldBeCompact);
+    };
+
+    const handleScroll = () => {
+      if (headerScrollFrameRef.current !== null) {
+        return;
+      }
+
+      headerScrollFrameRef.current = window.requestAnimationFrame(() => {
+        updateCompactHeaderState();
+        headerScrollFrameRef.current = null;
+      });
+    };
+
+    updateCompactHeaderState();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+
+      if (headerScrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(headerScrollFrameRef.current);
+        headerScrollFrameRef.current = null;
+      }
+    };
+  }, []);
+
+  return (
+    <header
+      className={`app-header px-4 sticky top-0 z-10 transition-[padding] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'pt-[calc(0.55rem+env(safe-area-inset-top))] pb-2' : 'pt-[calc(1rem+env(safe-area-inset-top))] pb-4'}`}
+      style={{ overflowAnchor: 'none' }}
+    >
+      <div className="max-w-4xl mx-auto">
+        <div className="relative flex items-center justify-between gap-2">
+          <button onClick={onBackToDashboard} className="btn-ghost flex items-center gap-2">
+            <ArrowLeft size={20} />
+            <span className="font-medium">Volver</span>
+          </button>
+
+          <div
+            className="pointer-events-none absolute inset-x-24 min-w-0 px-2 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:inset-x-32"
+            style={{
+              opacity: isHeaderCompact ? 1 : 0,
+              transform: `translateY(${isHeaderCompact ? 0 : 10}px)`
+            }}
+          >
+            <div
+              dir="auto"
+              title={routineName}
+              className="truncate text-center text-sm font-display text-white"
+              style={{
+                maxWidth: '100%',
+                transition: 'max-width 300ms cubic-bezier(0.22, 1, 0.36, 1)'
+              }}
+            >
+              {routineName}
             </div>
           </div>
 
-          <div className="mt-3 flex items-start gap-3">
-            <Dumbbell size={18} className="mt-0.5 shrink-0 text-mint" />
-            <div className="min-w-0 flex-1">
-              <h1 dir="auto" className="truncate font-display text-[1.85rem] uppercase leading-none text-white sm:text-[2.1rem]">
-                {routineName}
-              </h1>
-              <div className="mt-2 flex items-center justify-between gap-3 text-sm">
-                <span className="text-slate-300">Progreso del entrenamiento</span>
-                <span className="font-semibold text-mint">{Math.round(workoutProgress)}%</span>
-              </div>
-              <div className="mt-2 h-2 rounded-full bg-slateDeep">
-                <div
-                  className="h-2 rounded-full bg-gradient-to-r from-mint to-amberGlow transition-all duration-300"
-                  style={{ width: `${workoutProgress}%` }}
-                />
-              </div>
+          <div
+            className="flex items-center"
+            style={{
+              gap: isHeaderCompact ? '9px' : '12px',
+              transition: 'gap 300ms cubic-bezier(0.22, 1, 0.36, 1)'
+            }}
+          >
+            <div className="chip">
+              <Clock size={14} />
+              <span className="font-mono text-xs">{formatElapsedWorkoutTime(elapsedSeconds)}</span>
+            </div>
 
-              {hasLastWeights && (
-                <div className="mt-2 text-xs text-mint">
-                  Se cargaron tus últimos pesos con carga.
-                </div>
-              )}
+            <div className="chip chip-warm">
+              <Target size={14} />
+              <span className="text-xs">{completedExercises}/{totalExercises}</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`overflow-hidden transition-[max-height,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-0 opacity-0 -translate-y-2 mt-0' : 'max-h-80 opacity-100 translate-y-0 mt-4'}`}
+        >
+          <h1 className="text-2xl font-display text-white flex items-center gap-2">
+            <Dumbbell size={24} className="text-mint" />
+            <span>{routineName}</span>
+          </h1>
+
+          <div className="mt-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-slate-300">Progreso del entrenamiento</span>
+              <span className="text-sm font-semibold text-mint">{Math.round(workoutProgress)}%</span>
+            </div>
+            <div className="w-full bg-slateDeep rounded-full h-2">
+              <div
+                className="bg-gradient-to-r from-mint to-amberGlow h-2 rounded-full transition-all duration-300"
+                style={{ width: `${workoutProgress}%` }}
+              />
+            </div>
+
+            {hasLastWeights && (
+              <div className="mt-2 text-xs text-mint flex items-center gap-2">
+                <div className="w-2 h-2 bg-mint rounded-full"></div>
+                <span>Se han cargado tus ultimos pesos con carga</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div
+          className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isHeaderCompact ? 'max-h-5 opacity-100' : 'max-h-0 opacity-0'}`}
+        >
+          <div className="pt-1.5">
+            <div className="w-full bg-slateDeep rounded-full h-1">
+              <div
+                className="bg-gradient-to-r from-mint to-amberGlow h-1 rounded-full transition-all duration-300"
+                style={{ width: `${workoutProgress}%` }}
+              />
             </div>
           </div>
         </div>

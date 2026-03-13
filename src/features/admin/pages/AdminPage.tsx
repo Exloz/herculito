@@ -162,7 +162,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
   const areAllUsersExpanded = filteredUsers.length > 0 && filteredUsers.every((user) => state.openUserIds.has(user.userId));
   const remainingSessions = Math.min(SESSION_PAGE_SIZE, filteredSessions.length - visibleFilteredSessions.length);
 
-  if (loading) return <PageSkeleton page="dashboard" />;
+  if (loading) return <PageSkeleton page="admin" />;
   if (!enabled) return null;
 
   return (

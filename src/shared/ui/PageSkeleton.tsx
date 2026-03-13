@@ -15,39 +15,89 @@ const SkeletonBlock = ({ className }: { className: string }) => {
 const DashboardSkeleton = ({ compact = false }: { compact?: boolean }) => {
   return (
     <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
-      <header className="app-header px-4 pb-6 pt-[calc(0.5rem+env(safe-area-inset-top))]">
+      <header className="app-header px-4 pb-4 pt-[calc(0.25rem+env(safe-area-inset-top))] sm:pb-5 sm:pt-[calc(0.5rem+env(safe-area-inset-top))]">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 min-w-0">
-              <SkeletonBlock className="h-8 w-40 mb-2" />
-              <SkeletonBlock className="h-4 w-52" />
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-3">
+                <SkeletonBlock className="h-10 w-10 shrink-0 rounded-2xl sm:h-11 sm:w-11" />
+                <div className="min-w-0 flex-1">
+                  <SkeletonBlock className="h-3 w-40 max-w-[70%] rounded-lg" />
+                  <SkeletonBlock className="mt-2 h-10 w-44 max-w-[85%] rounded-lg sm:h-11" />
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <SkeletonBlock className="h-10 w-24" />
-              <SkeletonBlock className="h-10 w-20" />
-            </div>
+            <SkeletonBlock className="h-11 w-11 shrink-0 rounded-[1rem]" />
           </div>
         </div>
       </header>
 
-      <div className="px-4 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="app-surface p-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <SkeletonBlock key={index} className="h-24" />
-              ))}
+      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
+        <section className="mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <SkeletonBlock className="h-3 w-14 rounded-lg" />
+                <SkeletonBlock className="h-7 w-32 rounded-full" />
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
+                <SkeletonBlock className="h-12 w-56 max-w-full rounded-lg sm:h-14" />
+                <SkeletonBlock className="h-6 w-24 rounded-full" />
+              </div>
+
+              <SkeletonBlock className="mt-2 h-5 w-72 max-w-full rounded-lg" />
+
+              <div className="mt-3 grid grid-cols-6 gap-2">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <SkeletonBlock key={`top-stat-${index}`} className="col-span-2 h-[4.5rem] rounded-[1rem]" />
+                ))}
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <SkeletonBlock key={`bottom-stat-${index}`} className="col-span-3 h-[4.5rem] rounded-[1rem]" />
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
+              <SkeletonBlock className="mb-2 h-4 w-24 rounded-lg" />
+              <div className="grid grid-cols-2 gap-2">
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <div key={index} className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
+                    <SkeletonBlock className="h-3 w-16 rounded-lg" />
+                    <SkeletonBlock className="mt-2 h-6 w-28 rounded-lg" />
+                    <SkeletonBlock className="mt-2 h-4 w-24 rounded-lg" />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <SkeletonBlock className="h-52" />
-        <div className="grid lg:grid-cols-3 gap-6">
-          <SkeletonBlock className="lg:col-span-2 h-[26rem]" />
-          <SkeletonBlock className="h-[26rem]" />
-        </div>
+        <section className="mb-6 rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
+          <div className="grid grid-cols-3 gap-1">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-12 rounded-[1rem]" />
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-2 space-y-4">
+          <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <SkeletonBlock className="h-3 w-20 rounded-lg" />
+              <SkeletonBlock className="mt-2 h-9 w-56 max-w-full rounded-lg" />
+            </div>
+            <SkeletonBlock className="h-4 w-64 max-w-full rounded-lg" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-20 rounded-[1.1rem]" />
+            ))}
+          </div>
+
+          <SkeletonBlock className="h-[20rem] rounded-[1.6rem]" />
+        </section>
       </main>
     </div>
   );
@@ -56,26 +106,71 @@ const DashboardSkeleton = ({ compact = false }: { compact?: boolean }) => {
 const RoutinesSkeleton = ({ compact = false }: { compact?: boolean }) => {
   return (
     <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
-      <div className="max-w-4xl mx-auto px-4 pb-8 pt-[calc(2rem+env(safe-area-inset-top))]">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <SkeletonBlock className="h-8 w-36 mb-2" />
-            <SkeletonBlock className="h-4 w-52" />
+      <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
+        <section className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <SkeletonBlock className="h-3 w-40 rounded-lg" />
+            <SkeletonBlock className="mt-2 h-10 w-40 rounded-lg" />
+            <SkeletonBlock className="mt-2 h-4 w-72 max-w-full rounded-lg" />
           </div>
-          <SkeletonBlock className="h-11 w-11" />
-        </div>
+          <SkeletonBlock className="h-11 w-36 rounded-xl" />
+        </section>
 
-        <div className="app-surface p-1 mb-6 flex gap-1">
-          <SkeletonBlock className="h-10 flex-1" />
-          <SkeletonBlock className="h-10 flex-1" />
-        </div>
-
-        <div className="space-y-4">
+        <div className="mb-4 flex flex-wrap gap-2">
           {Array.from({ length: 4 }).map((_, index) => (
-            <SkeletonBlock key={index} className="h-40" />
+            <SkeletonBlock key={index} className="h-6 w-24 rounded-full" />
+          ))}
+        </div>
+
+        <div className="mb-5 rounded-[1.2rem] bg-graphite/80 p-1.5 shadow-soft">
+          <SkeletonBlock className="mx-2 mb-2 h-3 w-12 rounded-lg" />
+          <div className="grid grid-cols-2 gap-1">
+            <SkeletonBlock className="h-24 rounded-[0.95rem]" />
+            <SkeletonBlock className="h-24 rounded-[0.95rem]" />
+          </div>
+        </div>
+
+        <SkeletonBlock className="mb-4 h-12 rounded-[1rem]" />
+
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonBlock key={index} className="h-40 rounded-[1.4rem]" />
           ))}
         </div>
       </div>
+    </div>
+  );
+};
+
+const AdminSkeleton = ({ compact = false }: { compact?: boolean }) => {
+  return (
+    <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
+      <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 sm:py-8">
+        <section className="rounded-[1.45rem] border border-amberGlow/25 bg-[radial-gradient(circle_at_95%_-15%,oklch(0.78_0.16_72/0.22),transparent_52%),radial-gradient(circle_at_0%_0%,oklch(0.73_0.16_38/0.2),transparent_42%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <SkeletonBlock className="h-3 w-36 rounded-lg" />
+              <SkeletonBlock className="mt-2 h-12 w-32 rounded-lg" />
+              <SkeletonBlock className="mt-2 h-4 w-80 max-w-full rounded-lg" />
+            </div>
+            <SkeletonBlock className="h-11 w-full rounded-xl sm:w-44" />
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-24 rounded-[1rem]" />
+            ))}
+          </div>
+        </section>
+
+        <SkeletonBlock className="h-36 rounded-[1.2rem]" />
+
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <SkeletonBlock key={index} className="h-48 rounded-[1.2rem]" />
+          ))}
+        </div>
+      </main>
     </div>
   );
 };
@@ -84,7 +179,9 @@ export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard', 
   return (
     <div role="status" aria-live="polite" className={className}>
       <span className="sr-only">Cargando contenido</span>
-      {page === 'routines' ? <RoutinesSkeleton compact={compact} /> : <DashboardSkeleton compact={compact} />}
+      {page === 'routines' && <RoutinesSkeleton compact={compact} />}
+      {page === 'admin' && <AdminSkeleton compact={compact} />}
+      {page === 'dashboard' && <DashboardSkeleton compact={compact} />}
     </div>
   );
 };

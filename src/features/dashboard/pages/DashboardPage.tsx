@@ -287,6 +287,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     return dashboardRoutines.filter((routine) => routine.primaryMuscleGroup === recommendedGroup).length;
   }, [dashboardRoutines, recommendedGroup]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
+  const heroStats = [
+    { label: 'Semana', value: stats.thisWeekWorkouts },
+    { label: 'Racha', value: stats.currentStreak },
+    { label: 'Total', value: stats.totalWorkouts },
+    { label: 'Racha larga', value: stats.longestStreak }
+  ];
   const competition = dashboardData?.competition;
   const activeTabIndex = HOME_TABS.findIndex((tab) => tab.id === activeHomeTab);
   const previousTabIndex = HOME_TABS.findIndex((tab) => tab.id === previousHomeTab);
@@ -529,52 +535,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        <section className="motion-enter mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
+        <section className="motion-enter mb-5 overflow-hidden rounded-[1.5rem] border border-white/[0.05] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_32%),linear-gradient(180deg,rgba(18,24,35,0.98),rgba(8,12,18,0.98))] px-4 py-4 shadow-lift sm:px-5 sm:py-5">
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Hoy</div>
-                  <div className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] text-slate-300">
+                  <div className="rounded-full border border-white/[0.06] bg-white/[0.04] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-200/75">Hoy</div>
+                  <div className="rounded-full border border-white/[0.06] bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-slate-200">
                     {dashboardRoutines.length} rutinas activas
                   </div>
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-2">
-                  <h2 className="font-display text-[1.8rem] leading-none text-white sm:text-[2.2rem]">
+                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+                  <h2 className="font-display text-[1.95rem] leading-none text-white sm:text-[2.3rem]">
                     {recommendedGroupName ?? 'Listo para entrenar'}
                   </h2>
                   {recommendedGroupName && (
-                    <span className="rounded-full bg-mint/12 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint/85">
+                    <span className="rounded-full border border-mint/20 bg-mint/12 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/90">
                       Sugerido
                     </span>
                   )}
                 </div>
-                <p className="mt-1.5 max-w-2xl text-sm text-slate-300">
+                <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-slate-200">
                   {recommendedGroupName
                     ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina lista' : 'rutinas listas'} para empezar ahora.`
                     : 'Elige una rutina y entra directo a entrenar.'}
                 </p>
 
-                <div className="mt-3 grid grid-cols-6 gap-2">
-                  <div className="col-span-2 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                    <div className="mt-1 font-semibold text-white">{stats.thisWeekWorkouts}</div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+                  <div className="rounded-[1.2rem] border border-mint/16 bg-[linear-gradient(180deg,rgba(72,229,163,0.12),rgba(255,255,255,0.03))] px-4 py-3.5 shadow-[0_16px_36px_rgba(0,0,0,0.18)]">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/80">Este mes</div>
+                    <div className="mt-2 flex items-end gap-3">
+                      <div className="font-display text-[2.55rem] leading-none text-white">{stats.thisMonthWorkouts}</div>
+                      <div className="pb-1 text-xs text-slate-200/80">sesiones completadas</div>
+                    </div>
                   </div>
-                  <div className="col-span-2 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha</div>
-                    <div className="mt-1 font-semibold text-white">{stats.currentStreak}</div>
-                  </div>
-                  <div className="col-span-2 rounded-[1rem] bg-white/[0.04] px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Este mes</div>
-                    <div className="mt-1 font-semibold text-white">{stats.thisMonthWorkouts}</div>
-                  </div>
-                  <div className="col-span-3 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Total</div>
-                    <div className="mt-1 font-semibold text-white">{stats.totalWorkouts}</div>
-                  </div>
-                  <div className="col-span-3 rounded-[1rem] bg-slateDeep/58 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Racha larga</div>
-                    <div className="mt-1 font-semibold text-white">{stats.longestStreak}</div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {heroStats.map((item) => (
+                      <div key={item.label} className="rounded-[1rem] border border-white/[0.05] bg-black/10 px-3 py-3 backdrop-blur-sm">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300/70">{item.label}</div>
+                        <div className="mt-1.5 text-[1.35rem] font-semibold leading-none text-white">{item.value}</div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

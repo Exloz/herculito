@@ -112,10 +112,10 @@ const HOME_TABS: Array<{
   icon: typeof Dumbbell;
   tone: string;
 }> = [
-  { id: 'routines', label: 'Rutinas', icon: Dumbbell, tone: 'text-mint' },
-  { id: 'progress', label: 'Progreso', icon: BarChart3, tone: 'text-amberGlow' },
-  { id: 'calendar', label: 'Calendario', icon: CalendarRange, tone: 'text-mint' }
-];
+    { id: 'routines', label: 'Rutinas', icon: Dumbbell, tone: 'text-mint' },
+    { id: 'progress', label: 'Progreso', icon: BarChart3, tone: 'text-amberGlow' },
+    { id: 'calendar', label: 'Calendario', icon: CalendarRange, tone: 'text-mint' }
+  ];
 
 const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
   if (activeWorkout) {
@@ -184,7 +184,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       const stored = loadActiveWorkoutFromStorage();
       if (stored) {
         setActiveWorkout(stored);
-        
+
         const forceOpen = localStorage.getItem('activeWorkoutForceOpen');
         if (forceOpen === 'true') {
           setShowActiveWorkout(true);
@@ -557,90 +557,90 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
         <section className="motion-enter mb-4 overflow-hidden rounded-[1.45rem] border border-white/[0.05] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.1),transparent_30%),linear-gradient(180deg,rgba(18,24,35,0.98),rgba(8,12,18,0.98))] px-4 py-3.5 shadow-lift sm:px-5 sm:py-4">
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300/80">Resumen</div>
-                  <div className="rounded-full border border-white/[0.06] bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-slate-200">
-                    {dashboardRoutines.length} rutinas activas
-                  </div>
-                </div>
-
-                <div className="mt-3 grid gap-2.5 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
-                  <div className="rounded-[1.15rem] border border-mint/16 bg-[linear-gradient(180deg,rgba(72,229,163,0.12),rgba(255,255,255,0.03))] px-3.5 py-3 shadow-[0_14px_30px_rgba(0,0,0,0.16)] sm:px-4 sm:py-3.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/80">Este mes</div>
-                    <div className="mt-1.5 flex items-end gap-2.5">
-                      <div className="font-display text-[2.25rem] leading-none text-white sm:text-[2.45rem]">{stats.thisMonthWorkouts}</div>
-                      <div className="pb-1 text-xs text-slate-200/80">sesiones</div>
-                    </div>
-                    <div className="mt-2 text-xs text-slate-300">{averageDurationLabel}</div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {heroStats.map((item) => (
-                      <div key={item.label} className="rounded-[0.95rem] border border-white/[0.05] bg-black/10 px-3 py-2.5 backdrop-blur-sm">
-                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300/70">{item.label}</div>
-                        <div className="mt-1 text-[1.2rem] font-semibold leading-none text-white sm:text-[1.3rem]">{item.value}</div>
-                      </div>
-                    ))}
-                  </div>
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300/80">Resumen</div>
+                <div className="rounded-full border border-white/[0.06] bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-slate-200">
+                  {dashboardRoutines.length} rutinas activas
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
-                  <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
-                    <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                      <Trophy size={13} className="text-amberGlow" />
-                      <span>Ranking</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                        <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin líder'}</div>
-                        <div className="mt-1 text-xs text-slate-400">
-                          Tu puesto {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posición'}
-                        </div>
-                      </div>
-                      <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                        <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Mes</div>
-                        <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin líder'}</div>
-                        <div className="mt-1 text-xs text-slate-400">
-                          Tu puesto {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posición'}
-                        </div>
-                      </div>
-                    </div>
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
+                <div className="rounded-[1.15rem] border border-mint/16 bg-[linear-gradient(180deg,rgba(72,229,163,0.12),rgba(255,255,255,0.03))] px-3.5 py-3 shadow-[0_14px_30px_rgba(0,0,0,0.16)] sm:px-4 sm:py-3.5">
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/80">Este mes</div>
+                  <div className="mt-1.5 flex items-end gap-2.5">
+                    <div className="font-display text-[2.25rem] leading-none text-white sm:text-[2.45rem]">{stats.thisMonthWorkouts}</div>
+                    <div className="pb-1 text-xs text-slate-200/80">sesiones</div>
                   </div>
-                )}
+                  <div className="mt-2 text-xs text-slate-300">{averageDurationLabel}</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {heroStats.map((item) => (
+                    <div key={item.label} className="rounded-[0.95rem] border border-white/[0.05] bg-black/10 px-3 py-2.5 backdrop-blur-sm">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300/70">{item.label}</div>
+                      <div className="mt-1 text-[1.2rem] font-semibold leading-none text-white sm:text-[1.3rem]">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+
+            <div className="space-y-3">
+              {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
+                <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
+                  <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    <Trophy size={13} className="text-amberGlow" />
+                    <span>Ranking</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
+                      <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin líder'}</div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        Tu puesto {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posición'}
+                      </div>
+                    </div>
+                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
+                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Mes</div>
+                      <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin líder'}</div>
+                      <div className="mt-1 text-xs text-slate-400">
+                        Tu puesto {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posición'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </section>
 
         <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
-            <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
-              <div className="grid grid-cols-3 gap-1">
-                {HOME_TABS.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeHomeTab === tab.id;
+          <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
+            <div className="grid grid-cols-3 gap-1">
+              {HOME_TABS.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeHomeTab === tab.id;
 
-                  return (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => handleHomeTabChange(tab.id)}
-                      aria-pressed={isActive}
-                      className={`motion-interactive flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
-                        ? 'bg-[linear-gradient(180deg,rgba(24,33,46,0.98),rgba(14,20,30,0.98))] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)]'
-                        : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
-                        }`}
-                    >
-                      <Icon size={15} className={isActive ? tab.tone : 'text-slate-500'} />
-                      <span className="min-w-0 text-center leading-none">{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => handleHomeTabChange(tab.id)}
+                    aria-pressed={isActive}
+                    className={`motion-interactive flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
+                      ? 'bg-[linear-gradient(180deg,rgba(24,33,46,0.98),rgba(14,20,30,0.98))] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)]'
+                      : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
+                      }`}
+                  >
+                    <Icon size={15} className={isActive ? tab.tone : 'text-slate-500'} />
+                    <span className="min-w-0 text-center leading-none">{tab.label}</span>
+                  </button>
+                );
+              })}
             </div>
+          </div>
         </section>
 
         {activeWorkout && (
@@ -691,109 +691,105 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         )}
 
         <section className={`mt-2 ${homeTabAnimationClass}`} key={activeHomeTab}>
-            {activeHomeTab === 'routines' && (
-              <section className="motion-enter motion-enter-delay-3 space-y-4">
-                <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
-                    <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">
-                      {recommendedGroupName ? `${recommendedGroupName} al frente` : 'Empieza una rutina'}
-                    </h2>
-                  </div>
-                  <p className="max-w-sm text-sm text-slate-300">
-                    {recommendedGroupName
-                      ? `${recommendedRoutineCount} ${recommendedRoutineCount === 1 ? 'rutina disponible' : 'rutinas disponibles'} para empezar sin rodeos.`
-                      : 'Empieza directo o abre detalles solo cuando haga falta.'}
-                  </p>
+          {activeHomeTab === 'routines' && (
+            <section className="motion-enter motion-enter-delay-3 space-y-4">
+              <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
+                  <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">
+                    {recommendedGroupName ? `${recommendedGroupName} al frente` : 'Empieza una rutina'}
+                  </h2>
                 </div>
+              </div>
 
-                <MuscleGroupDashboard
-                  routines={dashboardRoutines}
-                  currentUser={user}
-                  onStartWorkout={handleStartWorkout}
-                  onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
-                  recommendedGroup={recommendedGroup}
-                />
-              </section>
-            )}
+              <MuscleGroupDashboard
+                routines={dashboardRoutines}
+                currentUser={user}
+                onStartWorkout={handleStartWorkout}
+                onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
+                recommendedGroup={recommendedGroup}
+              />
+            </section>
+          )}
 
-            {activeHomeTab === 'progress' && (
-              <section className="motion-enter motion-enter-delay-3">
-                <div className="mb-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
-                  <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">Tu progreso está a la vista</h2>
-                </div>
-                <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
-                  <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+          {activeHomeTab === 'progress' && (
+            <section className="motion-enter motion-enter-delay-3">
+              <div className="mb-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
+                <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">Tu progreso está a la vista</h2>
+              </div>
+              <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
+                <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+              </Suspense>
+            </section>
+          )}
+
+          {activeHomeTab === 'calendar' && (
+            <section className="motion-enter motion-enter-delay-3">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Calendario</div>
+              <div className="mb-4">
+                <h2 className="font-display text-xl text-white sm:text-2xl">Actividad reciente</h2>
+              </div>
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
+                <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
+                  <DeferredWorkoutCalendar
+                    calendar={dashboardData.calendar}
+                    currentMonth={currentMonth}
+                    onMonthChange={setCurrentMonth}
+                  />
                 </Suspense>
-              </section>
-            )}
 
-            {activeHomeTab === 'calendar' && (
-              <section className="motion-enter motion-enter-delay-3">
-                <div className="mb-4">
-                  <h2 className="font-display text-xl text-white sm:text-2xl">Calendario y actividad reciente</h2>
-                </div>
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
-                  <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
-                    <DeferredWorkoutCalendar
-                      calendar={dashboardData.calendar}
-                      currentMonth={currentMonth}
-                      onMonthChange={setCurrentMonth}
-                    />
-                  </Suspense>
-
-                  <div className="rounded-[1.6rem] bg-graphite p-4 shadow-lift sm:p-5">
-                    <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
-                      <div>
-                        <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
-                        <h3 className="mt-1 font-display text-lg text-white sm:text-xl">Actividad reciente</h3>
-                      </div>
-                      <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
+                <div className="rounded-[1.6rem] bg-graphite p-4 shadow-lift sm:p-5">
+                  <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
+                    <div>
+                      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
+                      <h3 className="mt-1 font-display text-lg text-white sm:text-xl">Actividad reciente</h3>
                     </div>
-
-                    {recentSessions.length > 0 ? (
-                      <div className="space-y-1.5">
-                        {recentSessions.slice(0, 3).map((session, index) => (
-                          <div
-                            key={session.id}
-                            className={`rounded-[0.95rem] border px-3 py-2.5 ${index === 0
-                              ? 'border-mint/20 bg-mint/8'
-                              : 'border-white/5 bg-slateDeep/45'
-                              }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0">
-                                <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
-                                <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-slate-400">
-                                  <span>{session.primaryMuscleGroup || 'Sin categoría'}</span>
-                                  {session.totalDuration && <span className="text-slate-500">{session.totalDuration} min</span>}
-                                </div>
-                              </div>
-                              {session.completedAt && (
-                                <div className="shrink-0 text-right text-xs font-medium text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">
-                        <div className="font-display text-lg text-white">Aún no hay actividad</div>
-                        <p className="mt-2 text-sm text-slate-400">Empieza una rutina para llenar tu calendario y registrar tu ritmo.</p>
-                      </div>
-                    )}
+                    <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
                   </div>
+
+                  {recentSessions.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {recentSessions.slice(0, 3).map((session, index) => (
+                        <div
+                          key={session.id}
+                          className={`rounded-[0.95rem] border px-3 py-2.5 ${index === 0
+                            ? 'border-mint/20 bg-mint/8'
+                            : 'border-white/5 bg-slateDeep/45'
+                            }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
+                              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-slate-400">
+                                <span>{session.primaryMuscleGroup || 'Sin categoría'}</span>
+                                {session.totalDuration && <span className="text-slate-500">{session.totalDuration} min</span>}
+                              </div>
+                            </div>
+                            {session.completedAt && (
+                              <div className="shrink-0 text-right text-xs font-medium text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">
+                      <div className="font-display text-lg text-white">Aún no hay actividad</div>
+                      <p className="mt-2 text-sm text-slate-400">Empieza una rutina para llenar tu calendario y registrar tu ritmo.</p>
+                    </div>
+                  )}
                 </div>
-              </section>
-            )}
+              </div>
+            </section>
+          )}
         </section>
       </main>
       <div className="px-4 pb-8">
         <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
           Version {appVersion}
-          </div>
         </div>
+      </div>
     </div>
   );
 };

@@ -253,8 +253,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       }
     } catch (submissionError) {
       const fallback = isEditing
-        ? 'Error al actualizar el ejercicio. Por favor, intenta de nuevo.'
-        : 'Error al crear el ejercicio. Por favor, intenta de nuevo.';
+        ? 'No pudimos guardar los cambios del ejercicio. Intenta de nuevo.'
+        : 'No pudimos crear el ejercicio. Intenta de nuevo.';
       setError(toUserMessage(submissionError, fallback));
     } finally {
       setCreatingExercise(false);
@@ -262,11 +262,11 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   };
 
   if (!user?.id) {
-    return <LoadingOverlay dialogRef={dialogRef} label="Verificando autenticación" message="Verificando autenticación..." />;
+    return <LoadingOverlay dialogRef={dialogRef} label="Comprobando acceso" message="Comprobando acceso..." />;
   }
 
   if (loading) {
-    return <LoadingOverlay dialogRef={dialogRef} label="Cargando ejercicios" message="Cargando ejercicios..." />;
+    return <LoadingOverlay dialogRef={dialogRef} label="Cargando ejercicios" message="Cargando ejercicios guardados..." />;
   }
 
   return (
@@ -283,20 +283,20 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           <div className="mb-3 flex items-start justify-between gap-3 sm:mb-4 sm:gap-4">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amberGlow/85">
-                {isEditing ? 'Editar ejercicio' : 'Añadir ejercicio'}
+                {isEditing ? 'Editar ejercicio' : 'Agregar ejercicio'}
               </div>
               <h3 id="exercise-selector-title" className="mt-1.5 font-display text-[1.55rem] uppercase leading-[0.96] text-white sm:text-[2.2rem]">
               {isEditing ? (
                   <span className="flex items-center gap-2">
                     <Pencil size={20} className="text-mint" />
-                    Afina el ejercicio
+                    Edita el ejercicio
                 </span>
               ) : (
-                'Elige o crea uno'
+                'Elige un ejercicio o crea uno'
               )}
               </h3>
               <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-slate-300 sm:mt-2 sm:text-sm">
-                Busca una base rápida o crea un ejercicio propio con series, reps, descanso y video listo para usar.
+                Usa uno que ya tengas guardado o crea uno nuevo con series, reps, descanso y video.
               </p>
             </div>
             <button
@@ -320,9 +320,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 !showCustomForm ? 'border-mint/30 bg-mint/10 text-white' : 'border-mist/50 bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
-              <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Biblioteca</div>
+              <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Guardados</div>
               <div className="mt-1 font-display text-lg uppercase sm:text-xl">{exercises.length}</div>
-              <div className="mt-1 text-xs text-current/80 sm:text-sm">Añade uno existente con un toque.</div>
+              <div className="mt-1 text-xs text-current/80 sm:text-sm">Elige uno y agregalo al instante.</div>
             </button>
             <button
               type="button"
@@ -336,7 +336,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             >
               <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Nuevo</div>
               <div className="mt-1 font-display text-lg uppercase sm:text-xl">Crear</div>
-              <div className="mt-1 text-xs text-current/80 sm:text-sm">Guarda un ejercicio propio y reutilízalo.</div>
+              <div className="mt-1 text-xs text-current/80 sm:text-sm">Crea un ejercicio nuevo y reutilizalo.</div>
             </button>
           </div>
         </div>
@@ -418,7 +418,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 ) : (
                   <>
                     {isEditing ? <Check size={16} /> : <Plus size={16} />}
-                    <span>{isEditing ? 'Guardar Cambios' : 'Crear y Añadir'}</span>
+                    <span>{isEditing ? 'Guardar cambios' : 'Crear y añadir'}</span>
                   </>
                 )}
               </button>

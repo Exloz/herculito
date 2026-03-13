@@ -176,13 +176,13 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-mint/85">
-                {routine ? 'Edición de rutina' : 'Nueva rutina'}
+                {routine ? 'Editar rutina' : 'Nueva rutina'}
               </div>
               <h2 id="routine-editor-title" className="mt-1 font-display text-[1.8rem] uppercase leading-[0.94] text-white sm:text-[2.2rem]">
-                {routine ? 'Afina tu rutina' : 'Nueva rutina'}
+                {routine ? 'Edita tu rutina' : 'Crea una rutina'}
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
-                Define el enfoque, agrega ejercicios y deja la sesión lista para empezar desde Inicio.
+                Ponle nombre, agrega ejercicios y dejala lista para empezar cuando quieras.
               </p>
             </div>
 
@@ -208,8 +208,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
               <div className="space-y-4 rounded-[1.35rem] bg-white/[0.03] p-4">
                 <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Identidad</div>
-                  <h3 className="mt-1 font-display text-xl uppercase text-white">Base de la rutina</h3>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Detalles</div>
+                  <h3 className="mt-1 font-display text-xl uppercase text-white">Informacion basica</h3>
                 </div>
 
                 <div>
@@ -278,7 +278,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   />
                   <span>
                     <span className="block text-sm font-semibold text-slate-100">Compartir con la comunidad</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">Otros usuarios podrán usar esta rutina y activarla en su Inicio.</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">Otros usuarios podran guardarla y activarla desde Inicio.</span>
                   </span>
                 </label>
               </div>
@@ -286,9 +286,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               <div className="rounded-[1.35rem] border border-mint/15 bg-mint/8 p-4">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/80">Preparación</div>
+                    <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/80">Ejercicios</div>
                     <h3 className="mt-1 font-display text-xl uppercase text-white">Lista de ejercicios</h3>
-                    <p className="mt-2 text-sm text-slate-300">Añade y ajusta volumen, reps y descanso antes de guardar.</p>
+                    <p className="mt-2 text-sm text-slate-300">Agrega ejercicios y ajusta series, reps y descanso antes de guardar.</p>
                   </div>
                   <button
                     type="button"
@@ -302,14 +302,14 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
                 <div className="mb-4 rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300">
                   {exercises.length > 0
-                    ? `Rutina lista con ${exercises.length} ejercicio${exercises.length === 1 ? '' : 's'}.`
-                    : 'Empieza agregando el primer ejercicio para desbloquear el guardado.'}
+                    ? `Has agregado ${exercises.length} ejercicio${exercises.length === 1 ? '' : 's'}.`
+                    : 'Agrega el primer ejercicio para poder guardar la rutina.'}
                 </div>
 
                 {exercises.length === 0 ? (
                   <div className="rounded-[1.2rem] bg-slateDeep/45 px-4 py-8 text-center text-slate-400">
-                    <p className="font-display text-lg uppercase text-white">Todavía no hay ejercicios</p>
-                    <p className="mt-2 text-sm">Añade al menos uno para convertir esta idea en una rutina real.</p>
+                    <p className="font-display text-lg uppercase text-white">Aun no agregas ejercicios</p>
+                    <p className="mt-2 text-sm">Añade al menos uno para completar la rutina.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">

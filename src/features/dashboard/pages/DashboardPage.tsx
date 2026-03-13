@@ -356,7 +356,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
     confirm({
       title: 'Cancelar entrenamiento activo',
-      message: 'Se perderá el acceso rápido para retomarlo desde Inicio. ¿Quieres cancelarlo?',
+      message: 'Se borrara el entrenamiento en curso y ya no podras retomarlo desde Inicio.',
       confirmText: 'Cancelar entrenamiento',
       cancelText: 'Volver',
       isDanger: true,
@@ -408,7 +408,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     if (!allExercisesCompleted) {
       confirm({
         title: 'Entrenamiento incompleto',
-        message: 'No has completado todos los ejercicios. ¿Quieres terminar el entrenamiento de todas formas?',
+        message: 'Todavia te faltan ejercicios por completar. Puedes terminar ahora o seguir entrenando.',
         confirmText: 'Terminar',
         cancelText: 'Seguir entrenando',
         onConfirm: finishWorkout,

@@ -40,7 +40,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
   return (
     <div className="p-3.5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
       <div className="mb-3 rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-3.5 sm:mb-4 sm:rounded-[1.5rem] sm:p-4">
-        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Encuentra una base</div>
+        <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Busca un ejercicio</div>
         <div className="space-y-3">
         <div className="relative">
           <label htmlFor="exercise-template-search" className="sr-only">Buscar ejercicios</label>
@@ -81,9 +81,9 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
             disabled={backfillRunning || ownVideoCandidates === 0 || Boolean(pendingTemplateId)}
             className="btn-ghost text-xs disabled:opacity-60"
           >
-            {backfillRunning ? 'Actualizando...' : 'Cargar videos automáticamente'}
-          </button>
-        </div>
+              {backfillRunning ? 'Actualizando...' : 'Buscar videos automaticamente'}
+            </button>
+          </div>
 
         {backfillMessage && (
           <div className="text-xs text-slate-400">{backfillMessage}</div>
@@ -123,16 +123,16 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
             <p>
               {hasAnyExercises
                 ? hasActiveFilters
-                  ? 'No hay ejercicios que coincidan con tu busqueda.'
+                  ? 'No encontramos ejercicios con esos filtros.'
                   : 'No se encontraron ejercicios disponibles.'
-                : 'Todavia no hay ejercicios guardados.'}
+                : 'Aun no hay ejercicios guardados.'}
             </p>
             <p className="mt-2 text-sm">
               {hasAnyExercises
                 ? hasActiveFilters
-                  ? 'Prueba con otro termino, cambia la categoria o reinicia los filtros.'
-                  : 'Crea uno nuevo usando la pestaña "Crear Nuevo".'
-                : 'Crea tu primer ejercicio usando la pestaña "Crear Nuevo".'}
+                  ? 'Prueba con otro nombre, cambia la categoria o limpia los filtros.'
+                  : 'Si no encuentras lo que buscas, crea un ejercicio nuevo.'
+                : 'Crea tu primer ejercicio desde la pestaña Crear.'}
             </p>
             {hasActiveFilters && (
               <button type="button" onClick={onResetFilters} className="btn-secondary mt-3 text-sm">

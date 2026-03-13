@@ -64,10 +64,10 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
       <div className="space-y-4">
         <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
           <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-            {isEditing ? 'Edición manual' : 'Crear desde cero'}
+            {isEditing ? 'Detalles del ejercicio' : 'Nuevo ejercicio'}
           </div>
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            Define nombre, volumen y video para que este ejercicio quede listo para reutilizarse en futuras rutinas.
+            Completa la informacion basica para guardar este ejercicio y volver a usarlo despues.
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             value={customExercise.category}
             onChange={(event) => onCustomExerciseChange({ category: event.target.value.slice(0, MAX_EXERCISE_CATEGORY_LENGTH) })}
             className="input text-sm"
-            placeholder="Ej: Pecho, Espalda, Piernas..."
+            placeholder="Ej: Pecho, espalda o piernas"
             list="categories"
             maxLength={MAX_EXERCISE_CATEGORY_LENGTH}
             dir="auto"
@@ -122,7 +122,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             value={customExercise.description}
             onChange={(event) => onCustomExerciseChange({ description: event.target.value.slice(0, MAX_EXERCISE_DESCRIPTION_LENGTH) })}
             className="input text-sm"
-            placeholder="Describe como hacer el ejercicio..."
+            placeholder="Explica como se hace o cuando usarlo"
             rows={2}
             maxLength={MAX_EXERCISE_DESCRIPTION_LENGTH}
             dir="auto"

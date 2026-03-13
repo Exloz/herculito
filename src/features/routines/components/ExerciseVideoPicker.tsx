@@ -28,14 +28,14 @@ export const ExerciseVideoPicker: React.FC<ExerciseVideoPickerProps> = ({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="block text-sm text-slate-300">Video (MuscleWiki)</div>
+        <div className="block text-sm text-slate-300">Video de referencia</div>
         <button
           type="button"
           onClick={onSuggestVideos}
           disabled={!exerciseName.trim() || videoLoading}
           className="btn-ghost text-xs disabled:opacity-60"
         >
-          Buscar sugerencias
+          Buscar en MuscleWiki
         </button>
       </div>
 
@@ -48,13 +48,13 @@ export const ExerciseVideoPicker: React.FC<ExerciseVideoPickerProps> = ({
       {videoLoading && (
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <Loader size={14} className="animate-spin" />
-          <span>Buscando videos...</span>
+          <span>Buscando videos relacionados...</span>
         </div>
       )}
 
       {videoSuggestions.length > 0 && (
         <div className="space-y-2">
-          <div className="text-xs text-slate-400 mb-1">Selecciona un video de la lista:</div>
+          <div className="text-xs text-slate-400 mb-1">Elige un video sugerido:</div>
           {videoSuggestions.map((suggestion) => {
             const isSelected = selectedVideo?.slug === suggestion.slug;
             return (
@@ -123,14 +123,14 @@ export const ExerciseVideoPicker: React.FC<ExerciseVideoPickerProps> = ({
                 rel="noreferrer"
                 className="text-mint hover:text-mintDeep font-medium"
               >
-                Abrir en MuscleWiki {'->'}
+                Ver en MuscleWiki
               </a>
               <button
                 type="button"
                 onClick={onClearVideo}
                 className="text-amberGlow hover:text-amberGlow/80 font-medium"
               >
-                Cambiar video
+                Quitar video
               </button>
             </div>
           </div>

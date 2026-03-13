@@ -316,7 +316,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
         <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm text-slate-400">
           <span>{completedSets} de {exercise.sets} series completadas</span>
           {previousWeights && previousWeights.length > 0 && (
-            <span className="text-mint">• Pesos precargados de tu último registro con peso</span>
+            <span className="text-mint">• Usamos tu ultimo peso registrado como referencia</span>
           )}
         </div>
       </div>

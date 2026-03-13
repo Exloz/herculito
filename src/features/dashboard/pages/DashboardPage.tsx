@@ -649,19 +649,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="chip mb-2">Entrenamiento activo</div>
-                  <div className="font-display text-[2rem] leading-none text-white sm:text-[2.35rem]">{activeWorkout.routine.name}</div>
+                  <div className="font-display text-[1.55rem] leading-none text-white sm:text-[1.9rem]">{activeWorkout.routine.name}</div>
                   <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Sigue donde lo dejaste y termina la sesión sin perder el ritmo.</p>
                 </div>
 
-                <div className="grid gap-2 sm:min-w-[15rem]">
-                  <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
-                    Volver al entrenamiento
+                <div className="grid w-full gap-2 sm:w-auto sm:min-w-[15rem]">
+                  <button onClick={() => setShowActiveWorkout(true)} className="btn-primary w-full touch-target">
+                    Continuar
                   </button>
                   <button
                     onClick={handleCancelActiveWorkout}
-                    className="btn-secondary border-red-400/35 text-red-300 hover:bg-red-500/10 hover:text-red-200 touch-target"
+                    className="btn-secondary w-full touch-target"
                   >
-                    Cancelar entrenamiento
+                    Cancelar
                   </button>
                 </div>
               </div>

@@ -61,7 +61,7 @@ export const SectionAccordion = ({
   children: React.ReactNode;
 }) => {
   return (
-    <details open={defaultOpen} className="group overflow-hidden rounded-[1.8rem] border border-mist/60 bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] shadow-lift">
+    <details open={defaultOpen} className="motion-enter group overflow-hidden rounded-[1.8rem] border border-mist/60 bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] shadow-lift">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 sm:px-5">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Sección</div>

@@ -43,12 +43,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in duration-200"
+      className="motion-dialog-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg scale-100 rounded-2xl border border-mist/60 bg-charcoal shadow-2xl animate-in zoom-in-95 duration-200"
+        className="motion-dialog-panel w-full max-w-lg rounded-2xl border border-mist/60 bg-charcoal shadow-2xl"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="modal-title"

@@ -282,7 +282,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
               const isCompleted = isExerciseLogCompleted(log.sets, exercise.sets);
 
               return (
-                <div key={exercise.id} className="transition-all duration-200">
+                <div
+                  key={exercise.id}
+                  className="motion-enter transition-all duration-200"
+                  style={{ animationDelay: `${Math.min(index, 4) * 70}ms` }}
+                >
                   <ExerciseCard
                     exercise={exercise}
                     log={log}

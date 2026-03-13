@@ -125,14 +125,14 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
           <div className="inline-flex shrink-0 items-center gap-1 rounded-[1rem] bg-white/[0.04] p-1">
             <button
               onClick={() => navigateMonth('prev')}
-              className="flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              className="motion-interactive flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
               aria-label="Mes anterior"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              className="flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              className="motion-interactive flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
               aria-label="Mes siguiente"
             >
               <ChevronRight size={16} />
@@ -163,7 +163,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
               type="button"
               disabled={!onDayClick}
               aria-label={`Día ${dayNumber}${hasWorkout ? `, ${day.workouts.length} entrenamiento(s)` : ''}`}
-              className={`
+              className={`motion-interactive 
                 relative aspect-square rounded-[0.9rem] p-0.5 sm:p-1 cursor-pointer transition-colors touch-manipulation
                 min-h-[44px]
                 ${isCurrentDay

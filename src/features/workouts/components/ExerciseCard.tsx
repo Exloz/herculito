@@ -240,7 +240,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 <button
                   type="button"
                   onClick={() => setShowVideo((prev) => !prev)}
-                  className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors touch-target-sm ${showVideo
+                  className={`motion-interactive inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors touch-target-sm ${showVideo
                     ? 'border-mint/70 text-mint bg-mint/10'
                     : 'border-mist/60 text-slate-300 hover:text-white hover:border-mint/50'
                     }`}
@@ -333,10 +333,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           return (
             <div
               key={setNumber}
-               className={`flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-200 ${isCompleted
-                 ? 'bg-mint/10 border-mint/50'
-                 : 'bg-slateDeep border-mist/60 hover:border-mint/40'
-                 }`}
+               className={`motion-list-item flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-200 ${isCompleted ? 'motion-complete ' : ''}${isCompleted
+                  ? 'bg-mint/10 border-mint/50'
+                  : 'bg-slateDeep border-mist/60 hover:border-mint/40'
+                  }`}
             >
               {/* Numero de serie */}
                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${isCompleted ? 'bg-mint text-ink' : 'bg-charcoal text-slate-300'
@@ -350,7 +350,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     <button
                       type="button"
                       onClick={() => adjustWeight(setNumber, -2.5)}
-                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60 touch-target-sm"
+                      className="motion-interactive flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60 touch-target-sm"
                       aria-label="Reducir peso 2.5kg"
                     >
                       <Minus size={14} />
@@ -376,7 +376,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     <button
                       type="button"
                       onClick={() => adjustWeight(setNumber, 2.5)}
-                      className="flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60 touch-target-sm"
+                      className="motion-interactive flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60 touch-target-sm"
                       aria-label="Aumentar peso 2.5kg"
                     >
                       <Plus size={14} />
@@ -389,10 +389,10 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
               <button
                 type="button"
                 onClick={() => toggleSetCompleted(setNumber)}
-                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 touch-target ${isCompleted
-                   ? 'bg-mint text-ink hover:bg-mintDeep'
-                   : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
-                   }`}
+                 className={`motion-interactive flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 touch-target ${isCompleted
+                    ? 'bg-mint text-ink hover:bg-mintDeep'
+                    : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
+                    }`}
                 aria-label={isCompleted ? "Marcar serie como incompleta" : "Marcar serie como completada"}
               >
                 <Check size={20} />

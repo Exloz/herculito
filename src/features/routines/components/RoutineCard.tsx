@@ -34,7 +34,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
   const previewExercises = routine.exercises.slice(0, 2);
 
   return (
-    <div className="overflow-hidden rounded-[1.5rem] bg-graphite shadow-lift content-fade-in">
+    <div className="motion-enter overflow-hidden rounded-[1.5rem] bg-graphite shadow-lift content-fade-in">
       <div className="h-1" style={{ backgroundColor: accentColor }} />
 
       <div className="p-4 sm:p-5">
@@ -155,7 +155,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint/85"
+            className="motion-interactive inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint/85"
             aria-expanded={expanded}
           >
             <span>{expanded ? 'Ocultar detalles' : 'Ver detalles'}</span>

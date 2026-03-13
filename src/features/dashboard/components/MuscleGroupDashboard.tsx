@@ -80,7 +80,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
                   <button
                     type="button"
                     onClick={() => setExpandedRoutineId((current) => current === routine.id ? null : routine.id)}
-                    className="min-w-0 flex-1 text-left"
+                    className="motion-interactive min-w-0 flex-1 text-left"
                     aria-expanded={isExpanded}
                   >
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
@@ -252,7 +252,7 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
               key={muscleGroup}
               type="button"
               onClick={() => setSelectedGroup(muscleGroup)}
-              className={`rounded-[1.1rem] px-3 py-3 text-left transition-colors ${isActive ? 'bg-slateDeep text-white shadow-soft' : 'bg-white/[0.03] text-slate-300 hover:bg-white/[0.05]'} `}
+              className={`motion-interactive rounded-[1.1rem] px-3 py-3 text-left transition-colors ${isActive ? 'bg-slateDeep text-white shadow-soft' : 'bg-white/[0.03] text-slate-300 hover:bg-white/[0.05]'} `}
               aria-pressed={isActive}
             >
               <div className="flex items-center gap-2">

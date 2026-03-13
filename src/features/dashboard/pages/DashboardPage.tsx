@@ -529,7 +529,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        <section className="mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
+        <section className="motion-enter mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -608,7 +608,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             </div>
         </section>
 
-        <section className="mb-6 content-fade-in">
+        <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
             <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
               <div className="grid grid-cols-3 gap-1">
                 {HOME_TABS.map((tab) => {
@@ -621,7 +621,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                       type="button"
                       onClick={() => handleHomeTabChange(tab.id)}
                       aria-pressed={isActive}
-                      className={`flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
+                      className={`motion-interactive flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
                         ? 'bg-[linear-gradient(180deg,rgba(24,33,46,0.98),rgba(14,20,30,0.98))] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)]'
                         : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
                         }`}
@@ -636,7 +636,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         </section>
 
         {activeWorkout && (
-          <section className="mb-6">
+          <section className="motion-enter motion-enter-delay-2 mb-6">
             <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -662,7 +662,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         )}
 
         {showIosNotificationGuide && (
-          <section className="mb-6">
+          <section className="motion-enter motion-enter-delay-2 mb-6">
             <div className="app-card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-mint/15 text-mint">
@@ -684,7 +684,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
         <section className={`mt-2 ${homeTabAnimationClass}`} key={activeHomeTab}>
             {activeHomeTab === 'routines' && (
-              <section className="space-y-4">
+              <section className="motion-enter motion-enter-delay-3 space-y-4">
                 <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
@@ -710,7 +710,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             )}
 
             {activeHomeTab === 'progress' && (
-              <section>
+              <section className="motion-enter motion-enter-delay-3">
                 <div className="mb-4">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
                   <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">Tu progreso está a la vista</h2>
@@ -722,7 +722,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             )}
 
             {activeHomeTab === 'calendar' && (
-              <section>
+              <section className="motion-enter motion-enter-delay-3">
                 <div className="mb-4">
                   <h2 className="font-display text-xl text-white sm:text-2xl">Calendario y actividad reciente</h2>
                 </div>

@@ -62,7 +62,7 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
   };
 
   const timerUi = (
-    <div className="fixed left-4 right-4 z-50 mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)] sm:bottom-4">
+    <div className="motion-pop-in fixed left-4 right-4 z-50 mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)] sm:bottom-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <TimerIcon className="text-mint" size={18} />
@@ -84,18 +84,18 @@ export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
       <div className="flex items-center gap-2">
         <div className="flex-1">
           <div className="w-full bg-slateDeep rounded-full h-1.5">
-            <div
-              className="bg-mint h-1.5 rounded-full transition-all duration-200"
-              style={{ width: `${progress}%` }}
-            />
+              <div
+                className="bg-mint h-1.5 rounded-full transition-all duration-200"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-        </div>
 
-        <button
-          onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
-          className="flex min-w-[112px] touch-manipulation items-center justify-center gap-1.5 rounded-lg bg-mint px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-mintDeep"
-          aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
-        >
+          <button
+            onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
+            className="motion-interactive flex min-w-[112px] touch-manipulation items-center justify-center gap-1.5 rounded-lg bg-mint px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-mintDeep"
+            aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
+          >
           {isActive ? <Pause size={16} /> : <Play size={16} />}
           <span>{isActive ? 'Pausar' : 'Reanudar'}</span>
         </button>

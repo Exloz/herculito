@@ -137,7 +137,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   return (
     <div className="app-shell pb-28">
       <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
-        <section className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <section className="motion-enter mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Biblioteca de entrenamiento</div>
             <h1 className="mt-1 font-display text-2xl text-white sm:text-3xl">Rutinas</h1>
@@ -158,14 +158,14 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
           </button>
         </section>
 
-        <div className="mb-4 flex flex-wrap gap-2 text-xs text-slate-300">
+        <div className="motion-enter motion-enter-delay-1 mb-4 flex flex-wrap gap-2 text-xs text-slate-300">
           <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{myRoutines.length} propias</span>
           <span className="rounded-full bg-mint/12 px-2.5 py-1 text-mint/85">{publicRoutines.length} públicas</span>
           <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{routinesMissingVideos} sin video</span>
           <span className="rounded-full bg-amberGlow/12 px-2.5 py-1 text-amberGlow">{visiblePublicRoutinesCount} en Inicio</span>
         </div>
 
-        <div className="mb-5 rounded-[1.2rem] bg-graphite/80 p-1.5 shadow-soft" role="tablist" aria-label="Tipos de rutinas">
+        <div className="motion-enter motion-enter-delay-2 mb-5 rounded-[1.2rem] bg-graphite/80 p-1.5 shadow-soft" role="tablist" aria-label="Tipos de rutinas">
           <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Vista</div>
           <div className="grid grid-cols-2 gap-1">
           <button
@@ -174,7 +174,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             aria-selected={activeTab === 'my'}
             aria-controls="routines-panel-my"
             onClick={() => handleTabChange('my')}
-            className={`rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'my'
+            className={`motion-interactive rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'my'
               ? 'bg-mint/12 text-white shadow-soft'
               : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
               }`}
@@ -192,7 +192,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             aria-selected={activeTab === 'public'}
             aria-controls="routines-panel-public"
             onClick={() => handleTabChange('public')}
-            className={`rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'public'
+            className={`motion-interactive rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'public'
               ? 'bg-amberGlow/12 text-white shadow-soft'
               : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
               }`}
@@ -208,7 +208,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         </div>
 
         {activeTab === 'my' && (
-          <div className="mb-4 flex items-center justify-between rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
+          <div className="motion-enter motion-enter-delay-3 mb-4 flex items-center justify-between rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
             <span>{routinesMissingVideos} ejercicios sin video</span>
             <button
               type="button"
@@ -222,13 +222,13 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
         )}
 
         {activeTab === 'public' && publicRoutines.length > 0 && (
-          <div className="mb-4 rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
+          <div className="motion-enter motion-enter-delay-3 mb-4 rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
             {visiblePublicRoutinesCount} de {publicRoutines.length} rutinas publicas visibles en Inicio
           </div>
         )}
 
         {routineBackfillMessage && (
-          <div className="mb-4 rounded-[1rem] bg-mint/10 px-3 py-2.5 text-xs text-slate-300">
+          <div className="motion-enter motion-enter-delay-3 mb-4 rounded-[1rem] bg-mint/10 px-3 py-2.5 text-xs text-slate-300">
             {routineBackfillMessage}
           </div>
         )}

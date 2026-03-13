@@ -42,7 +42,7 @@ export function Login({ errorMessage }: LoginProps) {
     <div className="app-shell flex min-h-screen items-center justify-center px-4 py-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
       <main className="w-full max-w-4xl overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(245,158,11,0.12),transparent_28%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] shadow-lift">
         <div className="grid lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)]">
-          <section className="hidden lg:flex lg:flex-col lg:justify-between lg:p-8">
+          <section className="motion-enter hidden lg:flex lg:flex-col lg:justify-between lg:p-8">
             <div>
               <div className="inline-flex items-center rounded-full bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-mint/85">
                 Gym tracker mobile-first
@@ -68,7 +68,7 @@ export function Login({ errorMessage }: LoginProps) {
             </div>
           </section>
 
-          <section className="p-5 sm:p-6 lg:p-8">
+          <section className="motion-enter motion-enter-delay-1 p-5 sm:p-6 lg:p-8">
             <div className="mx-auto max-w-md">
               <div className="flex items-center gap-3 lg:hidden">
                 <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-mint text-ink shadow-lift">

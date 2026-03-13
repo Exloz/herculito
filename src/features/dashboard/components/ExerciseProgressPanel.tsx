@@ -387,7 +387,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                       setIsHistoryExpanded(false);
                     }
                   }}
-                  className={`touch-target-sm rounded-[0.85rem] px-2 py-2 text-center transition-colors ${selectedRangeDays === option.value
+                  className={`motion-interactive touch-target-sm rounded-[0.85rem] px-2 py-2 text-center transition-colors ${selectedRangeDays === option.value
                     ? 'bg-mint/18 text-mint'
                     : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'
                     }`}
@@ -571,7 +571,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   {isHistoryCollapsible && (
                     <button
                       type="button"
-                      className="mb-3 flex w-full items-center justify-between rounded-[0.95rem] border border-white/8 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slateDeep"
+                      className="motion-interactive mb-3 flex w-full items-center justify-between rounded-[0.95rem] border border-white/8 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slateDeep"
                       onClick={() => setIsHistoryExpanded((current) => !current)}
                       aria-expanded={isHistoryExpanded}
                       aria-controls="exercise-history-list"

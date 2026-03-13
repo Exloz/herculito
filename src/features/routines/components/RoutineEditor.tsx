@@ -162,10 +162,10 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div className="motion-dialog-backdrop fixed inset-0 z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div
         ref={dialogRef}
-        className={`flex h-[100dvh] w-full max-w-3xl flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[88vh] sm:rounded-[1.7rem] ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
+        className={`motion-dialog-panel flex h-[100dvh] w-full max-w-3xl flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[88vh] sm:rounded-[1.7rem] ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
         role="dialog"
         aria-modal={!showExerciseSelector}
         aria-labelledby="routine-editor-title"

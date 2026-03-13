@@ -2,6 +2,7 @@ import { useEffect, type RefObject } from 'react';
 
 const activeDialogStack: HTMLElement[] = [];
 let rootBodyOverflow = '';
+const DIALOG_OPEN_CLASS = 'dialog-open';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -51,6 +52,7 @@ export const useDialogA11y = (
       ? document.activeElement
       : null;
     document.body.style.overflow = 'hidden';
+    document.body.classList.add(DIALOG_OPEN_CLASS);
 
     const focusableElements = getFocusableElements(container);
     if (focusableElements.length > 0) {
@@ -103,8 +105,10 @@ export const useDialogA11y = (
 
       if (activeDialogStack.length === 0) {
         document.body.style.overflow = rootBodyOverflow;
+        document.body.classList.remove(DIALOG_OPEN_CLASS);
       } else {
         document.body.style.overflow = 'hidden';
+        document.body.classList.add(DIALOG_OPEN_CLASS);
       }
 
       if (previousActiveElement?.isConnected) {

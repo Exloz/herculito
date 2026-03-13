@@ -38,7 +38,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
   const hasActiveFilters = searchTerm.trim().length > 0 || selectedCategory.length > 0;
 
   return (
-    <div className="p-3.5 sm:p-5">
+    <div className="p-3.5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
       <div className="mb-3 rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-3.5 sm:mb-4 sm:rounded-[1.5rem] sm:p-4">
         <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Encuentra una base</div>
         <div className="space-y-3">
@@ -91,7 +91,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
       </div>
       </div>
 
-      <div className="space-y-2 pb-3">
+      <div className="space-y-2 pb-1">
         {filteredExercises.map((exercise) => (
           <button
             key={exercise.id}

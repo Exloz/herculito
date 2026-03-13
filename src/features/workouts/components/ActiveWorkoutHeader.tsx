@@ -132,26 +132,6 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
           </button>
 
           <div
-            className="pointer-events-none absolute inset-x-24 min-w-0 px-2 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:inset-x-32"
-            style={{
-              opacity: isHeaderCompact ? 1 : 0,
-              transform: `translateY(${isHeaderCompact ? 0 : 10}px)`
-            }}
-          >
-            <div
-              dir="auto"
-              title={routineName}
-              className="truncate text-center text-sm font-display text-white"
-              style={{
-                maxWidth: '100%',
-                transition: 'max-width 300ms cubic-bezier(0.22, 1, 0.36, 1)'
-              }}
-            >
-              {routineName}
-            </div>
-          </div>
-
-          <div
             className="flex items-center"
             style={{
               gap: isHeaderCompact ? '9px' : '12px',

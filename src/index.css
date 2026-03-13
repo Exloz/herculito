@@ -206,6 +206,12 @@
   contain: layout paint;
 }
 
+body.dialog-open .app-bottom-nav {
+  opacity: 0;
+  transform: translate3d(0, calc(100% + env(safe-area-inset-bottom)), 0);
+  pointer-events: none;
+}
+
 @keyframes skeleton-wave {
   from {
     transform: translateX(-100%);

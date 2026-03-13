@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, Trophy } from 'lucide-react';
 import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
 import {
@@ -247,6 +247,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const showDashboardSkeleton = useDelayedLoading(dashboardLoading, 180);
   const [activeHomeTab, setActiveHomeTab] = useState<HomeTab>('routines');
   const [previousHomeTab, setPreviousHomeTab] = useState<HomeTab>('routines');
+  const homeTabsRef = useRef<HTMLElement | null>(null);
+  const pendingHomeTabsTopRef = useRef<number | null>(null);
 
   const dashboardRoutines = useMemo(() => dashboardData?.dashboardRoutines ?? [], [dashboardData]);
   const recentSessions = useMemo(() => dashboardData?.recentSessions ?? [], [dashboardData]);
@@ -297,13 +299,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
     return null;
   }, [dashboardData, dashboardError, isOffline]);
-  const recommendedRoutineCount = useMemo(() => {
-    if (!recommendedGroup) {
-      return dashboardRoutines.length;
-    }
-
-    return dashboardRoutines.filter((routine) => routine.primaryMuscleGroup === recommendedGroup).length;
-  }, [dashboardRoutines, recommendedGroup]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
   const heroStats = [
     { label: 'Semana', value: stats.thisWeekWorkouts },
@@ -320,8 +315,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const homeTabAnimationClass = activeTabIndex >= previousTabIndex ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward';
   const handleHomeTabChange = useCallback((tab: HomeTab) => {
     if (tab === activeHomeTab) return;
+    pendingHomeTabsTopRef.current = homeTabsRef.current?.getBoundingClientRect().top ?? null;
     setPreviousHomeTab(activeHomeTab);
     setActiveHomeTab(tab);
+  }, [activeHomeTab]);
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const previousTop = pendingHomeTabsTopRef.current;
+    pendingHomeTabsTopRef.current = null;
+
+    if (previousTop === null) return;
+
+    const nextTop = homeTabsRef.current?.getBoundingClientRect().top;
+    if (typeof nextTop !== 'number') return;
+
+    const delta = nextTop - previousTop;
+    if (Math.abs(delta) < 1) return;
+
+    window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
   }, [activeHomeTab]);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
@@ -616,7 +629,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           </div>
         </section>
 
-        <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
+        <section ref={homeTabsRef} className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
           <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
             <div className="grid grid-cols-3 gap-1">
               {HOME_TABS.map((tab) => {

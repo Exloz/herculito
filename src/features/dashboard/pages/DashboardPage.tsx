@@ -351,6 +351,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     setShowIosNotificationGuide(false);
   }, []);
 
+  const handleCancelActiveWorkout = useCallback(() => {
+    if (!activeWorkout) return;
+
+    confirm({
+      title: 'Cancelar entrenamiento activo',
+      message: 'Se perderá el acceso rápido para retomarlo desde Inicio. ¿Quieres cancelarlo?',
+      confirmText: 'Cancelar entrenamiento',
+      cancelText: 'Volver',
+      isDanger: true,
+      onConfirm: () => {
+        setActiveWorkout(null);
+        setShowActiveWorkout(false);
+        saveActiveWorkoutToStorage(null);
+        showToast('Entrenamiento activo cancelado', 'info');
+      }
+    });
+  }, [activeWorkout, confirm, showToast]);
+
   const handleUpdateProgress = useCallback(async (sessionId: string, exerciseLogs: ExerciseLog[]) => {
     await apiUpdateSessionProgress(sessionId, exerciseLogs);
   }, []);
@@ -511,8 +529,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        {!activeWorkout && (
-          <section className="mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
+        <section className="mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -589,11 +606,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 )}
               </div>
             </div>
-          </section>
-        )}
+        </section>
 
-        {!activeWorkout && (
-          <section className="mb-6 content-fade-in">
+        <section className="mb-6 content-fade-in">
             <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
               <div className="grid grid-cols-3 gap-1">
                 {HOME_TABS.map((tab) => {
@@ -618,8 +633,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 })}
               </div>
             </div>
-          </section>
-        )}
+        </section>
 
         {activeWorkout && (
           <section className="mb-6">
@@ -634,6 +648,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 <div className="grid gap-2 sm:min-w-[15rem]">
                   <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
                     Volver al entrenamiento
+                  </button>
+                  <button
+                    onClick={handleCancelActiveWorkout}
+                    className="btn-secondary border-red-400/35 text-red-300 hover:bg-red-500/10 hover:text-red-200 touch-target"
+                  >
+                    Cancelar entrenamiento
                   </button>
                 </div>
               </div>
@@ -662,8 +682,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           </section>
         )}
 
-        {!activeWorkout && (
-          <section className={`mt-2 ${homeTabAnimationClass}`} key={activeHomeTab}>
+        <section className={`mt-2 ${homeTabAnimationClass}`} key={activeHomeTab}>
             {activeHomeTab === 'routines' && (
               <section className="space-y-4">
                 <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
@@ -760,8 +779,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 </div>
               </section>
             )}
-          </section>
-        )}
+        </section>
       </main>
       <div className="px-4 pb-8">
         <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">

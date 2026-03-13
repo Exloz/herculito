@@ -360,6 +360,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     setShowIosNotificationGuide(false);
   }, []);
 
+  const handleDiscardActiveWorkout = useCallback(() => {
+    if (!activeWorkout) return;
+
+    confirm({
+      title: 'Descartar entrenamiento',
+      message: 'Se eliminará esta sesión activa del inicio y no podrás recuperar su progreso no guardado. ¿Quieres continuar?',
+      confirmText: 'Descartar',
+      cancelText: 'Seguir entrenando',
+      isDanger: true,
+      onConfirm: () => {
+        setActiveWorkout(null);
+        setShowActiveWorkout(false);
+        saveActiveWorkoutToStorage(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('activeWorkoutForceOpen');
+        }
+        showToast('Entrenamiento descartado', 'success');
+      }
+    });
+  }, [activeWorkout, confirm, showToast]);
+
   const handleUpdateProgress = useCallback(async (sessionId: string, exerciseLogs: ExerciseLog[]) => {
     await apiUpdateSessionProgress(sessionId, exerciseLogs);
   }, []);
@@ -643,6 +664,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 <div className="grid gap-2 sm:min-w-[15rem]">
                   <button onClick={() => setShowActiveWorkout(true)} className="btn-primary touch-target">
                     Volver al entrenamiento
+                  </button>
+                  <button onClick={handleDiscardActiveWorkout} className="btn-secondary touch-target">
+                    Descartar entrenamiento
                   </button>
                 </div>
               </div>

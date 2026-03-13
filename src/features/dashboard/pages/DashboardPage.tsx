@@ -247,8 +247,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const showDashboardSkeleton = useDelayedLoading(dashboardLoading, 180);
   const [activeHomeTab, setActiveHomeTab] = useState<HomeTab>('routines');
   const [previousHomeTab, setPreviousHomeTab] = useState<HomeTab>('routines');
-  const homeTabsRef = useRef<HTMLElement | null>(null);
-  const pendingHomeTabsTopRef = useRef<number | null>(null);
+  const pendingHomeTabScrollYRef = useRef<number | null>(null);
+  const pendingHomeTabViewportBottomRef = useRef<number | null>(null);
+  const [homeTabBottomSpacerPx, setHomeTabBottomSpacerPx] = useState(0);
 
   const dashboardRoutines = useMemo(() => dashboardData?.dashboardRoutines ?? [], [dashboardData]);
   const recentSessions = useMemo(() => dashboardData?.recentSessions ?? [], [dashboardData]);
@@ -315,7 +316,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const homeTabAnimationClass = activeTabIndex >= previousTabIndex ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward';
   const handleHomeTabChange = useCallback((tab: HomeTab) => {
     if (tab === activeHomeTab) return;
-    pendingHomeTabsTopRef.current = homeTabsRef.current?.getBoundingClientRect().top ?? null;
+
+    if (typeof window !== 'undefined') {
+      const scrollY = Math.max(
+        0,
+        window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
+      );
+
+      pendingHomeTabScrollYRef.current = scrollY;
+      pendingHomeTabViewportBottomRef.current = scrollY + window.innerHeight;
+    }
+
     setPreviousHomeTab(activeHomeTab);
     setActiveHomeTab(tab);
   }, [activeHomeTab]);
@@ -323,19 +334,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const previousTop = pendingHomeTabsTopRef.current;
-    pendingHomeTabsTopRef.current = null;
+    const pendingScrollY = pendingHomeTabScrollYRef.current;
+    if (pendingScrollY === null) return;
 
-    if (previousTop === null) return;
+    const pendingViewportBottom = pendingHomeTabViewportBottomRef.current ?? (pendingScrollY + window.innerHeight);
+    const documentHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    const documentHeightWithoutSpacer = Math.max(0, documentHeight - homeTabBottomSpacerPx);
+    const requiredSpacerPx = Math.max(0, Math.ceil(pendingViewportBottom - documentHeightWithoutSpacer));
 
-    const nextTop = homeTabsRef.current?.getBoundingClientRect().top;
-    if (typeof nextTop !== 'number') return;
+    if (requiredSpacerPx !== homeTabBottomSpacerPx) {
+      setHomeTabBottomSpacerPx(requiredSpacerPx);
+      return;
+    }
 
-    const delta = nextTop - previousTop;
-    if (Math.abs(delta) < 1) return;
+    window.scrollTo({ top: pendingScrollY, left: 0, behavior: 'auto' });
 
-    window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
-  }, [activeHomeTab]);
+    pendingHomeTabScrollYRef.current = null;
+    pendingHomeTabViewportBottomRef.current = null;
+  }, [activeHomeTab, homeTabBottomSpacerPx]);
 
   const handleStartWorkout = useCallback(async (routineId: string) => {
     try {
@@ -629,7 +645,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           </div>
         </section>
 
-        <section ref={homeTabsRef} className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
+        <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
           <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
             <div className="grid grid-cols-3 gap-1">
               {HOME_TABS.map((tab) => {
@@ -797,6 +813,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             </section>
           )}
         </section>
+
+        {homeTabBottomSpacerPx > 0 && (
+          <div aria-hidden="true" style={{ height: `${homeTabBottomSpacerPx}px` }} />
+        )}
       </main>
       <div className="px-4 pb-8">
         <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">

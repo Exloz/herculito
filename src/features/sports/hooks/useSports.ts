@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { clampInteger } from '../../../shared/lib/inputSanitizers';
-import type { ArcheryArrowValues, ArcheryRound, SportSession } from '../types/sports';
+import { clampInteger, normalizeSingleLine } from '../../../shared/lib/inputSanitizers';
+import type {
+  ArcheryArrowValues,
+  ArcheryRound,
+  SportDefinition,
+  SportKind,
+  SportSession
+} from '../types/sports';
 
 const SPORTS_STORAGE_KEY_PREFIX = 'sports-tracker-v1';
+export const MAX_SPORT_NAME_LENGTH = 80;
 const MAX_STORED_COMPLETED_SESSIONS = 120;
 
-export const ARCHERY_SPORT_ID = 'archery-default';
-export const ARCHERY_SPORT_NAME = 'Tiro con arco';
-
+type PersistedSportDefinition = Omit<SportDefinition, 'createdAt'> & { createdAt: number };
 type PersistedArcheryRound = Omit<ArcheryRound, 'createdAt'> & { createdAt: number };
 type PersistedSportSession = Omit<SportSession, 'startedAt' | 'completedAt' | 'rounds'> & {
   startedAt: number;
@@ -16,6 +21,7 @@ type PersistedSportSession = Omit<SportSession, 'startedAt' | 'completedAt' | 'r
 };
 
 interface PersistedSportsTrackingData {
+  sports: PersistedSportDefinition[];
   sessions: PersistedSportSession[];
   activeSession: PersistedSportSession | null;
 }
@@ -57,6 +63,11 @@ const toValidDate = (value: unknown, fallback: Date = new Date()): Date => {
   return fallback;
 };
 
+const toSportKind = (value: unknown): SportKind | null => {
+  if (value === 'archery') return 'archery';
+  return null;
+};
+
 const toArcheryArrowValues = (value: unknown): ArcheryArrowValues | null => {
   if (!Array.isArray(value) || value.length !== 6) return null;
   if (!value.every((entry) => typeof entry === 'number' && Number.isFinite(entry))) return null;
@@ -82,11 +93,34 @@ const parseRound = (value: unknown): ArcheryRound | null => {
   };
 };
 
+const parseSport = (value: unknown): SportDefinition | null => {
+  if (!value || typeof value !== 'object') return null;
+  const candidate = value as Partial<PersistedSportDefinition>;
+
+  const kind = toSportKind(candidate.kind);
+  if (!kind) return null;
+  if (typeof candidate.id !== 'string' || candidate.id.trim().length === 0) return null;
+  if (typeof candidate.name !== 'string' || candidate.name.trim().length < 2) return null;
+  if (typeof candidate.createdBy !== 'string' || candidate.createdBy.trim().length === 0) return null;
+
+  return {
+    id: candidate.id,
+    name: candidate.name,
+    kind,
+    createdBy: candidate.createdBy,
+    createdAt: toValidDate(candidate.createdAt)
+  };
+};
+
 const parseSession = (value: unknown): SportSession | null => {
   if (!value || typeof value !== 'object') return null;
   const candidate = value as Partial<PersistedSportSession>;
 
+  const kind = toSportKind(candidate.kind);
+  if (!kind) return null;
   if (typeof candidate.id !== 'string' || candidate.id.trim().length === 0) return null;
+  if (typeof candidate.sportId !== 'string' || candidate.sportId.trim().length === 0) return null;
+  if (typeof candidate.sportName !== 'string' || candidate.sportName.trim().length === 0) return null;
   if (typeof candidate.userId !== 'string' || candidate.userId.trim().length === 0) return null;
   if (!Array.isArray(candidate.rounds)) return null;
 
@@ -95,13 +129,9 @@ const parseSession = (value: unknown): SportSession | null => {
 
   return {
     id: candidate.id,
-    sportId: typeof candidate.sportId === 'string' && candidate.sportId.trim().length > 0
-      ? candidate.sportId
-      : ARCHERY_SPORT_ID,
-    sportName: typeof candidate.sportName === 'string' && candidate.sportName.trim().length > 0
-      ? candidate.sportName
-      : ARCHERY_SPORT_NAME,
-    kind: 'archery',
+    sportId: candidate.sportId,
+    sportName: candidate.sportName,
+    kind,
     userId: candidate.userId,
     startedAt: toValidDate(candidate.startedAt),
     completedAt: candidate.completedAt ? toValidDate(candidate.completedAt) : undefined,
@@ -114,6 +144,13 @@ const toPersistedRound = (round: ArcheryRound): PersistedArcheryRound => {
   return {
     ...round,
     createdAt: round.createdAt.getTime()
+  };
+};
+
+const toPersistedSport = (sport: SportDefinition): PersistedSportDefinition => {
+  return {
+    ...sport,
+    createdAt: sport.createdAt.getTime()
   };
 };
 
@@ -143,6 +180,7 @@ export const getArcherySessionTotals = (rounds: ArcheryRound[]) => {
 };
 
 export const useSports = (userId: string) => {
+  const [sports, setSports] = useState<SportDefinition[]>([]);
   const [sessions, setSessions] = useState<SportSession[]>([]);
   const [activeSession, setActiveSession] = useState<SportSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -152,6 +190,7 @@ export const useSports = (userId: string) => {
 
   useEffect(() => {
     if (!userId) {
+      setSports([]);
       setSessions([]);
       setActiveSession(null);
       setReadyToPersist(false);
@@ -165,6 +204,7 @@ export const useSports = (userId: string) => {
     try {
       const raw = localStorage.getItem(storageKey);
       if (!raw) {
+        setSports([]);
         setSessions([]);
         setActiveSession(null);
         setLoading(false);
@@ -172,15 +212,20 @@ export const useSports = (userId: string) => {
         return;
       }
 
-      const parsed = JSON.parse(raw) as Partial<PersistedSportsTrackingData & { sports?: unknown[] }>;
+      const parsed = JSON.parse(raw) as Partial<PersistedSportsTrackingData>;
+      const parsedSports = Array.isArray(parsed.sports)
+        ? parsed.sports.map(parseSport).filter((sport): sport is SportDefinition => sport !== null)
+        : [];
       const parsedSessions = Array.isArray(parsed.sessions)
         ? parsed.sessions.map(parseSession).filter((session): session is SportSession => session !== null)
         : [];
       const parsedActive = parseSession(parsed.activeSession);
 
+      setSports(parsedSports);
       setSessions(parsedSessions);
       setActiveSession(parsedActive && !parsedActive.completedAt ? parsedActive : null);
     } catch {
+      setSports([]);
       setSessions([]);
       setActiveSession(null);
     } finally {
@@ -194,6 +239,7 @@ export const useSports = (userId: string) => {
 
     try {
       const payload: PersistedSportsTrackingData = {
+        sports: sports.map(toPersistedSport),
         sessions: sessions.map(toPersistedSession),
         activeSession: activeSession ? toPersistedSession(activeSession) : null
       };
@@ -201,18 +247,47 @@ export const useSports = (userId: string) => {
     } catch {
       // ignore persistence errors
     }
-  }, [activeSession, readyToPersist, sessions, storageKey, userId]);
+  }, [activeSession, readyToPersist, sessions, sports, storageKey, userId]);
 
-  const startSession = useCallback((): SportSession => {
+  const createSport = useCallback((name: string, kind: SportKind = 'archery') => {
+    const normalizedName = normalizeSingleLine(name, MAX_SPORT_NAME_LENGTH);
+
+    if (normalizedName.length < 2) {
+      throw new Error('Usa un nombre de al menos 2 caracteres para crear un deporte.');
+    }
+
+    const duplicate = sports.some((sport) => sport.name.toLocaleLowerCase() === normalizedName.toLocaleLowerCase());
+    if (duplicate) {
+      throw new Error('Ya existe un deporte con ese nombre.');
+    }
+
+    const newSport: SportDefinition = {
+      id: createEntityId('sport'),
+      name: normalizedName,
+      kind,
+      createdBy: userId,
+      createdAt: new Date()
+    };
+
+    setSports((previousSports) => [newSport, ...previousSports]);
+    return newSport;
+  }, [sports, userId]);
+
+  const startSession = useCallback((sportId: string): SportSession => {
     if (activeSession) {
-      throw new Error('Ya tienes una sesión activa de tiro con arco.');
+      throw new Error('Ya tienes una sesión activa de deporte. Termínala o cancélala antes de iniciar otra.');
+    }
+
+    const sport = sports.find((entry) => entry.id === sportId);
+    if (!sport) {
+      throw new Error('No encontramos ese deporte para iniciar la sesión.');
     }
 
     const newSession: SportSession = {
       id: createEntityId('sport-session'),
-      sportId: ARCHERY_SPORT_ID,
-      sportName: ARCHERY_SPORT_NAME,
-      kind: 'archery',
+      sportId: sport.id,
+      sportName: sport.name,
+      kind: sport.kind,
       userId,
       startedAt: new Date(),
       rounds: [createArcheryRound(18)]
@@ -220,7 +295,7 @@ export const useSports = (userId: string) => {
 
     setActiveSession(newSession);
     return newSession;
-  }, [activeSession, userId]);
+  }, [activeSession, sports, userId]);
 
   const updateSessionNotes = useCallback((notes: string) => {
     setActiveSession((previousSession) => {
@@ -319,10 +394,24 @@ export const useSports = (userId: string) => {
     return completedSession;
   }, [activeSession]);
 
+  const sessionsBySport = useMemo(() => {
+    return sessions.reduce<Record<string, SportSession[]>>((accumulator, session) => {
+      if (!accumulator[session.sportId]) {
+        accumulator[session.sportId] = [];
+      }
+
+      accumulator[session.sportId].push(session);
+      return accumulator;
+    }, {});
+  }, [sessions]);
+
   return {
+    sports,
     sessions,
+    sessionsBySport,
     activeSession,
     loading,
+    createSport,
     startSession,
     addRound,
     removeRound,

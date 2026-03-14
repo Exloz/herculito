@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Calendar, ChevronDown, ChevronUp, Crosshair, Play, Users } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronUp, Play, Users } from 'lucide-react';
 import { Routine, MuscleGroup, User } from '../../../shared/types';
 import { MUSCLE_GROUPS, getRoutinesByMuscleGroup } from '../lib/muscleGroups';
 import { vibrateLight } from '../../../shared/lib/mobileFeedback';
@@ -199,31 +199,23 @@ interface MuscleGroupDashboardProps {
   onStartWorkout: (routineId: string) => void;
   onRoutineMuscleGroupChange: (routineId: string, newMuscleGroup: MuscleGroup) => void;
   recommendedGroup?: MuscleGroup | null;
-  sportsModuleContent?: React.ReactNode;
 }
-
-type DashboardModule = MuscleGroup | 'sports';
 
 export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
   routines,
   currentUser,
   onStartWorkout,
   onRoutineMuscleGroupChange,
-  recommendedGroup,
-  sportsModuleContent
+  recommendedGroup
 }) => {
   const availableGroups = useMemo(() => {
     return MUSCLE_GROUP_ORDER.filter((muscleGroup) => getRoutinesByMuscleGroup(routines, muscleGroup).length > 0);
   }, [routines]);
-  const [selectedGroup, setSelectedGroup] = useState<DashboardModule | null>(recommendedGroup ?? (sportsModuleContent ? 'sports' : null));
+  const [selectedGroup, setSelectedGroup] = useState<MuscleGroup | null>(recommendedGroup ?? null);
 
   useEffect(() => {
     setSelectedGroup((current) => {
-      if (current === 'sports' && sportsModuleContent) {
-        return current;
-      }
-
-      if (current && current !== 'sports' && availableGroups.includes(current)) {
+      if (current && availableGroups.includes(current)) {
         return current;
       }
 
@@ -231,20 +223,16 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
         return recommendedGroup;
       }
 
-      if (availableGroups[0]) {
-        return availableGroups[0];
-      }
-
-      return sportsModuleContent ? 'sports' : null;
+      return availableGroups[0] ?? null;
     });
-  }, [availableGroups, recommendedGroup, sportsModuleContent]);
+  }, [availableGroups, recommendedGroup]);
 
   const selectedGroupRoutines = useMemo(() => {
-    if (!selectedGroup || selectedGroup === 'sports') return [];
+    if (!selectedGroup) return [];
     return getRoutinesByMuscleGroup(routines, selectedGroup);
   }, [routines, selectedGroup]);
 
-  if (availableGroups.length === 0 && !sportsModuleContent) {
+  if (availableGroups.length === 0) {
     return (
       <div className="rounded-[1.6rem] bg-slateDeep/45 px-4 py-8 text-center">
         <div className="font-display text-lg text-white">No hay rutinas todavía</div>
@@ -288,40 +276,18 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
             </button>
           );
         })}
-
-        {sportsModuleContent && (
-          <button
-            key="sports-module"
-            type="button"
-            onClick={() => setSelectedGroup('sports')}
-            className={`motion-interactive rounded-[1.1rem] px-3 py-3 text-left transition-colors ${selectedGroup === 'sports' ? 'bg-slateDeep text-white shadow-soft' : 'bg-white/[0.03] text-slate-300 hover:bg-white/[0.05]'}`}
-            aria-pressed={selectedGroup === 'sports'}
-          >
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-mint text-ink">
-                <Crosshair size={15} />
-              </div>
-              <div className="min-w-0">
-                <span className="truncate text-sm font-semibold">Deportes</span>
-                <div className="text-[11px] text-slate-500">Tiro con arco</div>
-              </div>
-            </div>
-          </button>
-        )}
       </div>
 
-      {selectedGroup === 'sports' && sportsModuleContent ? (
-        sportsModuleContent
-      ) : selectedGroup ? (
+      {selectedGroup && (
         <MuscleGroupSection
-          muscleGroup={selectedGroup as MuscleGroup}
+          muscleGroup={selectedGroup}
           groupRoutines={selectedGroupRoutines}
           currentUser={currentUser}
           onStartWorkout={onStartWorkout}
           onRoutineMuscleGroupChange={onRoutineMuscleGroupChange}
-          isRecommended={selectedGroup !== 'sports' && selectedGroup === recommendedGroup}
+          isRecommended={selectedGroup === recommendedGroup}
         />
-      ) : null}
+      )}
     </div>
   );
 };

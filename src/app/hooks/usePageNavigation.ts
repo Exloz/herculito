@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export type AppPage = 'dashboard' | 'routines' | 'admin';
+export type AppPage = 'dashboard' | 'routines' | 'sports' | 'admin';
 
 export type PageTransitionDirection = 'forward' | 'backward';
 
 const getPageFromPathname = (pathname: string): AppPage => {
   if (pathname.startsWith('/routines')) {
     return 'routines';
+  }
+  if (pathname.startsWith('/sports')) {
+    return 'sports';
   }
   if (pathname.startsWith('/admin')) {
     return 'admin';
@@ -16,13 +19,14 @@ const getPageFromPathname = (pathname: string): AppPage => {
 
 const getPathnameFromPage = (page: AppPage): string => {
   if (page === 'routines') return '/routines';
+  if (page === 'sports') return '/sports';
   if (page === 'admin') return '/admin';
   return '/';
 };
 
 const getTransitionDirection = (from: AppPage, to: AppPage): PageTransitionDirection => {
   if (from === to) return 'forward';
-  const pageOrder: AppPage[] = ['dashboard', 'routines', 'admin'];
+  const pageOrder: AppPage[] = ['dashboard', 'routines', 'sports', 'admin'];
   return pageOrder.indexOf(to) >= pageOrder.indexOf(from) ? 'forward' : 'backward';
 };
 
@@ -58,7 +62,7 @@ export const usePageNavigation = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const allowedPaths = new Set(['/', '/routines', '/admin', '/sso-callback']);
+    const allowedPaths = new Set(['/', '/routines', '/sports', '/admin', '/sso-callback']);
     if (!allowedPaths.has(window.location.pathname)) {
       window.history.replaceState({}, '', '/');
       setCurrentPage('dashboard');

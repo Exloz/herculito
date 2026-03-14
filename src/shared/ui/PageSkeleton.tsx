@@ -1,6 +1,6 @@
 import React from 'react';
 
-type PageSkeletonVariant = 'dashboard' | 'routines' | 'admin';
+type PageSkeletonVariant = 'dashboard' | 'routines' | 'sports' | 'admin';
 
 interface PageSkeletonProps {
   page?: PageSkeletonVariant;
@@ -175,11 +175,55 @@ const AdminSkeleton = ({ compact = false }: { compact?: boolean }) => {
   );
 };
 
+const SportsSkeleton = ({ compact = false }: { compact?: boolean }) => {
+  return (
+    <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
+      <div className="mx-auto max-w-5xl px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
+        <section className="mb-5">
+          <SkeletonBlock className="h-3 w-36 rounded-lg" />
+          <SkeletonBlock className="mt-2 h-10 w-36 rounded-lg" />
+          <SkeletonBlock className="mt-2 h-4 w-96 max-w-full rounded-lg" />
+        </section>
+
+        <section className="mb-5 rounded-[1.3rem] bg-graphite p-4 shadow-lift sm:p-5">
+          <SkeletonBlock className="h-3 w-28 rounded-lg" />
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <div className="flex-1">
+              <SkeletonBlock className="h-4 w-16 rounded-lg" />
+              <SkeletonBlock className="mt-2 h-11 w-full rounded-xl" />
+            </div>
+            <SkeletonBlock className="h-11 w-36 rounded-xl" />
+          </div>
+        </section>
+
+        <section className="mb-5 rounded-[1.3rem] bg-graphite p-4 shadow-lift sm:p-5">
+          <SkeletonBlock className="h-3 w-24 rounded-lg" />
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-32 rounded-[1.05rem]" />
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-[1.3rem] bg-graphite p-4 shadow-lift sm:p-5">
+          <SkeletonBlock className="h-3 w-36 rounded-lg" />
+          <div className="mt-3 space-y-2.5">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonBlock key={index} className="h-24 rounded-[1rem]" />
+            ))}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+};
+
 export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard', compact = false, className = '' }) => {
   return (
     <div role="status" aria-live="polite" className={className}>
       <span className="sr-only">Cargando contenido</span>
       {page === 'routines' && <RoutinesSkeleton compact={compact} />}
+      {page === 'sports' && <SportsSkeleton compact={compact} />}
       {page === 'admin' && <AdminSkeleton compact={compact} />}
       {page === 'dashboard' && <DashboardSkeleton compact={compact} />}
     </div>

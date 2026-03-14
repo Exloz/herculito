@@ -12,13 +12,11 @@ import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
 const loadLoginPage = () => import('../features/auth/pages/LoginPage');
 const loadDashboardPage = () => import('../features/dashboard/pages/DashboardPage');
 const loadRoutinesPage = () => import('../features/routines/pages/RoutinesPage');
-const loadSportsPage = () => import('../features/sports/pages/SportsPage');
 const loadAdminPage = () => import('../features/admin/pages/AdminPage');
 
 const Login = lazy(() => loadLoginPage().then(module => ({ default: module.Login })));
 const Dashboard = lazy(() => loadDashboardPage().then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => loadRoutinesPage().then(module => ({ default: module.Routines })));
-const SportsPage = lazy(() => loadSportsPage().then(module => ({ default: module.SportsPage })));
 const AdminPage = lazy(() => loadAdminPage().then(module => ({ default: module.AdminPage })));
 
 const LoadingScreen = () => (
@@ -109,10 +107,6 @@ function AppContent() {
 
     if (page === 'admin') {
       return <AdminPage enabled={isAdmin} />;
-    }
-
-    if (page === 'sports') {
-      return <SportsPage user={user} />;
     }
 
     return <Routines user={user} />;

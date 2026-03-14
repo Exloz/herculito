@@ -11,6 +11,7 @@ import {
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
+import { ArcheryModule } from '../../sports/components/ArcheryModule';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { MUSCLE_GROUPS, getRecommendedMuscleGroup } from '../lib/muscleGroups';
 import { useUI } from '../../../app/providers/ui-context';
@@ -770,6 +771,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                 onStartWorkout={handleStartWorkout}
                 onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
                 recommendedGroup={recommendedGroup}
+                sportsModuleContent={<ArcheryModule user={user} />}
               />
             </section>
           )}

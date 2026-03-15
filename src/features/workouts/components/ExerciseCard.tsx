@@ -112,6 +112,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   const progressPercentage = exercise.sets > 0
     ? Math.min(100, (completedSets / exercise.sets) * 100)
     : 0;
+  const restSeconds = exercise.restTime ?? 0;
 
   const updateSetWeight = (setNumber: number, weight: number) => {
     const updatedSets = currentSets.map(set =>
@@ -214,8 +215,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     }
 
     // Si se completó la serie y hay tiempo de descanso, iniciar temporizador
-    if (!wasCompleted && exercise.restTime && exercise.restTime > 0) {
-      onStartTimer(exercise.restTime);
+    if (!wasCompleted && restSeconds > 0) {
+      onStartTimer(restSeconds);
     }
   };
 
@@ -403,11 +404,11 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
       </div>
 
       {/* Información de descanso */}
-      {exercise.restTime && (
-         <div className="app-surface-muted mt-2.5 flex items-center gap-2 px-3 py-2 text-sm text-slate-300">
-            <Clock size={16} />
-            <span>Descanso recomendado: {Math.floor(exercise.restTime / 60)}:{(exercise.restTime % 60).toString().padStart(2, '0')}</span>
-          </div>
+      {restSeconds > 0 && (
+          <div className="app-surface-muted mt-2.5 flex items-center gap-2 px-3 py-2 text-sm text-slate-300">
+             <Clock size={16} />
+             <span>Descanso recomendado: {Math.floor(restSeconds / 60)}:{(restSeconds % 60).toString().padStart(2, '0')}</span>
+           </div>
       )}
     </div>
   );

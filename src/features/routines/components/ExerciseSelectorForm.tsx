@@ -3,7 +3,6 @@ import type { Exercise, ExerciseVideo } from '../../../shared/types';
 import type { MusclewikiSuggestion } from '../api/musclewikiApi';
 import type { CustomExerciseForm } from '../types/exercise-selector';
 import { ExerciseVideoPicker } from './ExerciseVideoPicker';
-import { clampInteger } from '../../../shared/lib/inputSanitizers';
 
 const MAX_EXERCISE_NAME_LENGTH = 120;
 const MAX_EXERCISE_CATEGORY_LENGTH = 80;
@@ -53,11 +52,25 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
     const parsedValue = Number.parseInt(value, 10);
     if (Number.isNaN(parsedValue)) return;
 
-    const minValue = field === 'restTime' ? 5 : 1;
-    const maxValue = field === 'restTime' ? MAX_REST_TIME_SECONDS : field === 'reps' ? MAX_REPS : MAX_SETS;
+    if (field === 'restTime') {
+      onCustomExerciseChange({ restTime: parsedValue });
+      return;
+    }
 
-    onCustomExerciseChange({ [field]: clampInteger(parsedValue, minValue, maxValue) } as Partial<CustomExerciseForm>);
+    const minValue = 1;
+    const maxValue = field === 'reps' ? MAX_REPS : MAX_SETS;
+
+    const normalizedValue = Math.min(maxValue, Math.max(minValue, parsedValue));
+    onCustomExerciseChange({ [field]: normalizedValue } as Partial<CustomExerciseForm>);
   };
+
+  const restTimeError = customExercise.restTime !== ''
+    ? customExercise.restTime < 0
+      ? 'El minimo es 0 segundos.'
+      : customExercise.restTime > MAX_REST_TIME_SECONDS
+        ? `El maximo es ${MAX_REST_TIME_SECONDS} segundos.`
+        : ''
+    : '';
 
   return (
     <div className="p-4 pb-4 sm:p-5 sm:pb-6">
@@ -173,11 +186,18 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               type="number"
               value={customExercise.restTime}
               onChange={(event) => handleNumberChange('restTime', event.target.value)}
-              className="input input-sm text-sm"
-              min="5"
-              step="5"
+              className={`input input-sm text-sm ${restTimeError ? 'border-crimson/55 focus:border-crimson/60 focus:ring-crimson/30' : ''}`}
+              min="0"
+              step="1"
               max={MAX_REST_TIME_SECONDS}
+              aria-invalid={restTimeError ? 'true' : undefined}
+              aria-describedby={restTimeError ? 'custom-exercise-rest-error' : undefined}
             />
+            {restTimeError && (
+              <p id="custom-exercise-rest-error" className="mt-1 text-[11px] leading-tight text-crimson">
+                {restTimeError}
+              </p>
+            )}
           </div>
         </div>
 

@@ -124,7 +124,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         category: editableExercise.category || '',
         sets: editingExercise.sets,
         reps: editingExercise.reps,
-        restTime: editingExercise.restTime || 90,
+        restTime: editingExercise.restTime ?? 90,
         description: editableExercise.description || ''
       });
       setSelectedVideo(editingExercise.video ?? null);
@@ -133,6 +133,8 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
   const filteredExercises = searchExercises(searchTerm, selectedCategory);
   const categories = getCategories();
+  const restTimeOutOfRange = customExercise.restTime !== ''
+    && (customExercise.restTime < 0 || customExercise.restTime > MAX_REST_TIME_SECONDS);
 
   const clearMessages = () => {
     setError('');
@@ -195,7 +197,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
     const resolvedSets = clampInteger(getNumericValue(customExercise.sets, 3, 1), 1, MAX_SETS);
     const resolvedReps = clampInteger(getNumericValue(customExercise.reps, 10, 1), 1, MAX_REPS);
-    const resolvedRestTime = clampInteger(getNumericValue(customExercise.restTime, 90, 5), 5, MAX_REST_TIME_SECONDS);
+    const resolvedRestTime = customExercise.restTime === '' ? 90 : customExercise.restTime;
+
+    if (resolvedRestTime < 0 || resolvedRestTime > MAX_REST_TIME_SECONDS) {
+      setError(`El descanso debe estar entre 0 y ${MAX_REST_TIME_SECONDS} segundos.`);
+      return;
+    }
 
     setCreatingExercise(true);
     clearMessages();
@@ -409,7 +416,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 onClick={() => {
                   void handleCustomExercise();
                 }}
-                disabled={!customExercise.name.trim() || creatingExercise}
+                disabled={!customExercise.name.trim() || creatingExercise || restTimeOutOfRange}
                 className="btn-primary flex-[2] flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {creatingExercise ? (

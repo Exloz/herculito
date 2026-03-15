@@ -85,43 +85,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     ));
   };
 
-
-  const handleExerciseNumberChange = (exerciseId: string, field: keyof ExerciseDraftValues, rawValue: string) => {
-    setExerciseDrafts((previousDrafts) => ({
-      ...previousDrafts,
-      [exerciseId]: {
-        ...previousDrafts[exerciseId],
-        [field]: rawValue
-      }
-    }));
-
-    if (rawValue.trim() === '') {
-      return;
-    }
-
-    const parsedValue = Number.parseInt(rawValue, 10);
-    if (Number.isNaN(parsedValue)) {
-      return;
-    }
-
-    const minValue = field === 'restTime' ? 5 : 1;
-    const maxValue = field === 'restTime' ? MAX_REST_TIME_SECONDS : field === 'reps' ? MAX_REPS : MAX_SETS;
-    handleUpdateExercise(exerciseId, { [field]: clampInteger(parsedValue, minValue, maxValue) } as Partial<Exercise>);
-  };
-
-  const handleExerciseNumberBlur = (exerciseId: string, field: keyof ExerciseDraftValues, fallback: number) => {
-    const draftValue = exerciseDrafts[exerciseId]?.[field];
-    if (draftValue === undefined) {
-      return;
-    }
-
-    const minValue = field === 'restTime' ? 5 : 1;
-    const parsedValue = Number.parseInt(draftValue, 10);
-    const maxValue = field === 'restTime' ? MAX_REST_TIME_SECONDS : field === 'reps' ? MAX_REPS : MAX_SETS;
-    const nextValue = Number.isNaN(parsedValue) ? fallback : clampInteger(parsedValue, minValue, maxValue);
-
-    handleUpdateExercise(exerciseId, { [field]: nextValue } as Partial<Exercise>);
-
+  const clearExerciseDraftField = (exerciseId: string, field: keyof ExerciseDraftValues) => {
     setExerciseDrafts((previousDrafts) => {
       const currentDraft = previousDrafts[exerciseId];
       if (!currentDraft) return previousDrafts;
@@ -140,6 +104,87 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     });
   };
 
+  const getExerciseRestTimeError = (exerciseId: string) => {
+    const draftValue = exerciseDrafts[exerciseId]?.restTime;
+    if (draftValue === undefined || draftValue.trim() === '') {
+      return '';
+    }
+
+    const parsedValue = Number.parseInt(draftValue, 10);
+    if (Number.isNaN(parsedValue)) {
+      return 'Ingresa un numero valido.';
+    }
+
+    if (parsedValue < 0 || parsedValue > MAX_REST_TIME_SECONDS) {
+      return `El descanso debe estar entre 0 y ${MAX_REST_TIME_SECONDS} segundos.`;
+    }
+
+    return '';
+  };
+
+
+  const handleExerciseNumberChange = (exerciseId: string, field: keyof ExerciseDraftValues, rawValue: string) => {
+    if (formError) setFormError('');
+
+    setExerciseDrafts((previousDrafts) => ({
+      ...previousDrafts,
+      [exerciseId]: {
+        ...previousDrafts[exerciseId],
+        [field]: rawValue
+      }
+    }));
+
+    if (rawValue.trim() === '') {
+      return;
+    }
+
+    const parsedValue = Number.parseInt(rawValue, 10);
+    if (Number.isNaN(parsedValue)) {
+      return;
+    }
+
+    if (field === 'restTime') {
+      if (parsedValue < 0 || parsedValue > MAX_REST_TIME_SECONDS) {
+        return;
+      }
+
+      handleUpdateExercise(exerciseId, { restTime: parsedValue });
+      return;
+    }
+
+    const minValue = 1;
+    const maxValue = field === 'reps' ? MAX_REPS : MAX_SETS;
+    handleUpdateExercise(exerciseId, { [field]: clampInteger(parsedValue, minValue, maxValue) } as Partial<Exercise>);
+  };
+
+  const handleExerciseNumberBlur = (exerciseId: string, field: keyof ExerciseDraftValues, fallback: number) => {
+    const draftValue = exerciseDrafts[exerciseId]?.[field];
+    if (draftValue === undefined) {
+      return;
+    }
+
+    const parsedValue = Number.parseInt(draftValue, 10);
+    if (field === 'restTime') {
+      if (draftValue.trim() === '') {
+        return;
+      }
+
+      if (Number.isNaN(parsedValue) || parsedValue < 0 || parsedValue > MAX_REST_TIME_SECONDS) {
+        return;
+      }
+
+      handleUpdateExercise(exerciseId, { restTime: parsedValue });
+      clearExerciseDraftField(exerciseId, field);
+      return;
+    }
+
+    const maxValue = field === 'reps' ? MAX_REPS : MAX_SETS;
+    const nextValue = Number.isNaN(parsedValue) ? fallback : clampInteger(parsedValue, 1, maxValue);
+
+    handleUpdateExercise(exerciseId, { [field]: nextValue } as Partial<Exercise>);
+    clearExerciseDraftField(exerciseId, field);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (showExerciseSelector) return;
@@ -149,6 +194,25 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
     if (normalizedName.length < 2) {
       setFormError('Usa un nombre de al menos 2 caracteres para identificar la rutina.');
+      return;
+    }
+
+    const hasInvalidRestDraft = exercises.some((exercise) => {
+      const draftValue = exerciseDrafts[exercise.id]?.restTime;
+      if (draftValue === undefined) {
+        return false;
+      }
+
+      if (draftValue.trim() === '') {
+        return true;
+      }
+
+      const parsedValue = Number.parseInt(draftValue, 10);
+      return Number.isNaN(parsedValue) || parsedValue < 0 || parsedValue > MAX_REST_TIME_SECONDS;
+    });
+
+    if (hasInvalidRestDraft) {
+      setFormError('Corrige el descanso de los ejercicios (minimo 0 segundos) antes de guardar.');
       return;
     }
 
@@ -310,88 +374,99 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {exercises.map((exercise, index) => (
-                      <div key={exercise.id} className="motion-list-item app-surface-muted p-3">
-                        <div className="mb-3 flex items-center justify-between gap-3">
-                          <div className="min-w-0 flex items-center gap-2">
-                            <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
-                              {index + 1}
-                            </span>
-                            <h4 dir="auto" className="min-w-0 break-words font-display text-lg text-white" style={{ overflowWrap: 'anywhere' }}>
-                              {index + 1}. {exercise.name}
-                            </h4>
-                            {exercise.video?.url ? (
-                              <Play size={14} className="shrink-0 text-mint" />
-                            ) : (
-                              <VideoOff size={14} className="shrink-0 text-slate-500" />
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => openExerciseEditor(exercise)}
-                              className="motion-interactive touch-target-sm rounded-lg p-1 text-slate-400 transition-colors hover:text-mint"
-                              title="Editar ejercicio"
-                              aria-label={`Editar ejercicio ${exercise.name}`}
-                            >
-                              <Pencil size={16} />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveExercise(exercise.id)}
-                              className="motion-interactive touch-target-sm rounded-lg p-1 text-red-400 transition-colors hover:text-red-300"
-                              title="Eliminar ejercicio"
-                              aria-label={`Eliminar ejercicio ${exercise.name}`}
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
+                    {exercises.map((exercise, index) => {
+                      const restTimeError = getExerciseRestTimeError(exercise.id);
 
-                        <div className="grid grid-cols-3 gap-2 text-sm">
-                          <div>
-                            <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="mb-1 block text-slate-300">Series</label>
-                            <input
-                              id={`routine-exercise-${exercise.id}-sets`}
-                              type="number"
-                              value={exerciseDrafts[exercise.id]?.sets ?? String(exercise.sets)}
-                              onChange={(e) => handleExerciseNumberChange(exercise.id, 'sets', e.target.value)}
-                              onBlur={() => handleExerciseNumberBlur(exercise.id, 'sets', exercise.sets)}
-                              className="input input-sm"
-                              min="1"
-                              max={MAX_SETS}
-                            />
+                      return (
+                        <div key={exercise.id} className="motion-list-item app-surface-muted p-3">
+                          <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="min-w-0 flex items-center gap-2">
+                              <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                                {index + 1}
+                              </span>
+                              <h4 dir="auto" className="min-w-0 break-words font-display text-lg text-white" style={{ overflowWrap: 'anywhere' }}>
+                                {index + 1}. {exercise.name}
+                              </h4>
+                              {exercise.video?.url ? (
+                                <Play size={14} className="shrink-0 text-mint" />
+                              ) : (
+                                <VideoOff size={14} className="shrink-0 text-slate-500" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => openExerciseEditor(exercise)}
+                                className="motion-interactive touch-target-sm rounded-lg p-1 text-slate-400 transition-colors hover:text-mint"
+                                title="Editar ejercicio"
+                                aria-label={`Editar ejercicio ${exercise.name}`}
+                              >
+                                <Pencil size={16} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExercise(exercise.id)}
+                                className="motion-interactive touch-target-sm rounded-lg p-1 text-red-400 transition-colors hover:text-red-300"
+                                title="Eliminar ejercicio"
+                                aria-label={`Eliminar ejercicio ${exercise.name}`}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
                           </div>
-                          <div>
-                            <label htmlFor={`routine-exercise-${exercise.id}-reps`} className="mb-1 block text-slate-300">Reps</label>
-                            <input
-                              id={`routine-exercise-${exercise.id}-reps`}
-                              type="number"
-                              value={exerciseDrafts[exercise.id]?.reps ?? String(exercise.reps)}
-                              onChange={(e) => handleExerciseNumberChange(exercise.id, 'reps', e.target.value)}
-                              onBlur={() => handleExerciseNumberBlur(exercise.id, 'reps', exercise.reps)}
-                              className="input input-sm"
-                              min="1"
-                              max={MAX_REPS}
-                            />
-                          </div>
-                          <div>
-                            <label htmlFor={`routine-exercise-${exercise.id}-rest`} className="mb-1 block text-slate-300">Desc. (s)</label>
-                            <input
-                              id={`routine-exercise-${exercise.id}-rest`}
-                              type="number"
-                              value={exerciseDrafts[exercise.id]?.restTime ?? String(exercise.restTime ?? 90)}
-                              onChange={(e) => handleExerciseNumberChange(exercise.id, 'restTime', e.target.value)}
-                              onBlur={() => handleExerciseNumberBlur(exercise.id, 'restTime', exercise.restTime ?? 90)}
-                              className="input input-sm"
-                              min="5"
-                              step="5"
-                              max={MAX_REST_TIME_SECONDS}
-                            />
+
+                          <div className="grid grid-cols-3 gap-2 text-sm">
+                            <div>
+                              <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="mb-1 block text-slate-300">Series</label>
+                              <input
+                                id={`routine-exercise-${exercise.id}-sets`}
+                                type="number"
+                                value={exerciseDrafts[exercise.id]?.sets ?? String(exercise.sets)}
+                                onChange={(e) => handleExerciseNumberChange(exercise.id, 'sets', e.target.value)}
+                                onBlur={() => handleExerciseNumberBlur(exercise.id, 'sets', exercise.sets)}
+                                className="input input-sm"
+                                min="1"
+                                max={MAX_SETS}
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor={`routine-exercise-${exercise.id}-reps`} className="mb-1 block text-slate-300">Reps</label>
+                              <input
+                                id={`routine-exercise-${exercise.id}-reps`}
+                                type="number"
+                                value={exerciseDrafts[exercise.id]?.reps ?? String(exercise.reps)}
+                                onChange={(e) => handleExerciseNumberChange(exercise.id, 'reps', e.target.value)}
+                                onBlur={() => handleExerciseNumberBlur(exercise.id, 'reps', exercise.reps)}
+                                className="input input-sm"
+                                min="1"
+                                max={MAX_REPS}
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor={`routine-exercise-${exercise.id}-rest`} className="mb-1 block text-slate-300">Desc. (s)</label>
+                              <input
+                                id={`routine-exercise-${exercise.id}-rest`}
+                                type="number"
+                                value={exerciseDrafts[exercise.id]?.restTime ?? String(exercise.restTime ?? 90)}
+                                onChange={(e) => handleExerciseNumberChange(exercise.id, 'restTime', e.target.value)}
+                                onBlur={() => handleExerciseNumberBlur(exercise.id, 'restTime', exercise.restTime ?? 90)}
+                                className={`input input-sm ${restTimeError ? 'border-crimson/55 focus:border-crimson/60 focus:ring-crimson/30' : ''}`}
+                                min="0"
+                                step="1"
+                                max={MAX_REST_TIME_SECONDS}
+                                aria-invalid={restTimeError ? 'true' : undefined}
+                                aria-describedby={restTimeError ? `routine-exercise-${exercise.id}-rest-error` : undefined}
+                              />
+                              {restTimeError && (
+                                <p id={`routine-exercise-${exercise.id}-rest-error`} className="mt-1 text-[11px] leading-tight text-crimson">
+                                  {restTimeError}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 

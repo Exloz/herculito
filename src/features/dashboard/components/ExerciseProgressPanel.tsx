@@ -451,7 +451,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [pointsInRange]);
 
   return (
-    <div className="overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_24%),linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
+    <div className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_24%),linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
       {selectedSummary ? (
         <div className="space-y-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
@@ -487,7 +487,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   aria-expanded={isExercisePickerOpen}
                   aria-controls="exercise-progress-combobox-panel"
                   onClick={() => setIsExercisePickerOpen((current) => !current)}
-                  className="input input-sm flex w-full items-center justify-between gap-3 text-left"
+                  className="input input-sm touch-target flex w-full items-center justify-between gap-3 text-left"
                 >
                   <span className="min-w-0">
                     <span className="block truncate text-sm text-white">{selectedSummary.exerciseName}</span>
@@ -511,7 +511,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                           ref={exerciseSearchInputRef}
                           id="exercise-progress-search"
                           type="text"
-                          className="input input-sm pl-8 pr-8"
+                          className="input input-sm touch-target pl-8 pr-8"
                           value={exerciseSearchTerm}
                           onChange={(event) => setExerciseSearchTerm(event.target.value)}
                           placeholder="Buscar ejercicio"
@@ -532,7 +532,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                         <button
                           type="button"
                           onClick={() => setSelectedExerciseGroupFilter('all')}
-                          className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === 'all' ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
+                          className={`touch-target-sm whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === 'all' ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
                         >
                           Todos
                         </button>
@@ -541,7 +541,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                             key={group}
                             type="button"
                             onClick={() => setSelectedExerciseGroupFilter(group)}
-                            className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === group ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
+                            className={`touch-target-sm whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === group ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
                           >
                             {MUSCLE_GROUPS[group].name}
                           </button>
@@ -573,7 +573,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                                         setSelectedExerciseId(summary.exerciseId);
                                         setIsExercisePickerOpen(false);
                                       }}
-                                      className={`motion-interactive flex w-full items-center justify-between gap-2 rounded-[0.75rem] px-2 py-1.5 text-left ${isSelected ? 'bg-mint/12 text-white' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}
+                                      className={`motion-interactive touch-target flex w-full items-center justify-between gap-2 rounded-[0.75rem] px-2.5 py-2 text-left ${isSelected ? 'bg-mint/12 text-white' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}
                                     >
                                       <span className="truncate text-sm">{summary.exerciseName}</span>
                                       {isSelected && <Check size={13} className="shrink-0 text-mint" />}

@@ -36,9 +36,10 @@ if (!PUBLISHABLE_KEY) {
 
 if (import.meta.env.PROD) {
   let refreshing = false;
+  let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
 
   scheduleNonCriticalWork(() => {
-    const updateSW = registerSW({
+    updateSW = registerSW({
       immediate: true,
       onRegisteredSW(_swUrl, registration) {
         if (!registration) {
@@ -58,13 +59,8 @@ if (import.meta.env.PROD) {
         });
       },
       onNeedRefresh() {
-        const shouldRefresh = window.confirm(
-          'Hay una nueva version de Herculito. Presiona "Aceptar" para actualizar ahora.'
-        );
-
-        if (shouldRefresh) {
-          void updateSW(true);
-        }
+        // Auto-reload when a new version is available
+        void updateSW?.(true);
       }
     });
   }, 3000);

@@ -272,13 +272,13 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
     }
 
     const focusTimer = window.setTimeout(() => {
-      if (searchable) {
-        searchInputRef.current?.focus();
+      if (activeIndex >= 0) {
+        optionRefs.current[activeIndex]?.focus();
         return;
       }
 
-      if (activeIndex >= 0) {
-        optionRefs.current[activeIndex]?.focus();
+      if (!searchable) {
+        panelRef.current?.focus();
       }
     }, 0);
 
@@ -392,14 +392,14 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   ].join(' ').trim();
 
   const panelClasses = [
-    'overflow-hidden border border-mist/60 bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift backdrop-blur-xl',
+    'overflow-hidden border border-white/[0.07] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-[0_24px_70px_rgba(2,6,23,0.48)] backdrop-blur-xl',
     panelClassName ?? ''
   ].join(' ').trim();
 
   const resultsCountLabel = `${flatOptions.length} ${flatOptions.length === 1 ? 'resultado visible' : 'resultados visibles'}`;
 
   const optionsContent = groupedOptions.length === 0 ? (
-    <div className="rounded-[1rem] border border-white/6 bg-white/[0.04] px-3 py-6 text-center text-xs text-slate-400">
+    <div className="rounded-[1rem] bg-white/[0.045] px-3 py-6 text-center text-xs text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       {noResultsText}
     </div>
   ) : (
@@ -412,10 +412,10 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
       {groupedOptions.map((group) => (
         <div
           key={group.groupLabel || 'default'}
-          className="rounded-[1rem] border border-white/6 bg-white/[0.025] p-1.5"
+          className="rounded-[1rem] bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
         >
           {group.groupLabel ? (
-            <div className="mb-1 px-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            <div className="mb-1 px-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
               {group.groupLabel}
             </div>
           ) : null}
@@ -442,16 +442,16 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
                   }}
                   onClick={() => handleSelect(entry.option.value)}
                   className={[
-                    'touch-target flex w-full items-center justify-between gap-3 rounded-[0.9rem] border px-3 py-2.5 text-left text-sm transition-colors',
+                    'touch-target flex w-full items-center justify-between gap-3 rounded-[0.9rem] px-3 py-2.5 text-left text-sm transition-colors',
                     isSelected
-                      ? 'border-mint/25 bg-mint/14 text-white shadow-[0_10px_22px_rgba(72,229,163,0.12)]'
+                      ? 'bg-mint/13 text-white shadow-[inset_0_0_0_1px_rgba(72,229,163,0.24),0_10px_22px_rgba(72,229,163,0.10)]'
                       : isActive
-                        ? 'border-white/10 bg-white/[0.08] text-white'
-                        : 'border-transparent text-slate-300 hover:border-white/8 hover:bg-white/[0.05] hover:text-white'
+                        ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]'
+                        : 'text-slate-300 hover:bg-white/[0.055] hover:text-white'
                   ].join(' ')}
                 >
                   <span className="min-w-0 truncate">{entry.option.label}</span>
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-white/8 bg-black/10">
+                  <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${isSelected ? 'bg-mint/18' : 'bg-transparent'}`}>
                     {isSelected ? <Check size={13} className="text-mint" /> : null}
                   </span>
                 </button>
@@ -464,7 +464,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   );
 
   const searchBox = searchable ? (
-    <div className="border-b border-white/8 p-3">
+    <div className="border-b border-white/[0.06] p-3">
       <label htmlFor={`${triggerId}-search`} className="sr-only">{searchPlaceholder}</label>
       <div className="relative">
         <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -472,7 +472,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
           ref={searchInputRef}
           id={`${triggerId}-search`}
           type="text"
-          className="input touch-target pl-9 pr-9 text-sm"
+          className="input touch-target border-white/[0.08] bg-white/[0.04] pl-9 pr-9 text-sm"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           onKeyDown={handleInteractionKeyDown}
@@ -495,6 +495,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   const desktopPanel = !isMobileSheet ? (
     <div
       ref={panelRef}
+      tabIndex={-1}
       className={`motion-pop-in rounded-[1.25rem] ${panelClasses}`}
       style={panelStyle}
       onKeyDown={handleInteractionKeyDown}
@@ -505,7 +506,8 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
         style={{
           maxHeight: `${panelListMaxHeight}px`,
           overflowY: 'auto',
-          WebkitOverflowScrolling: 'touch'
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain'
         }}
       >
         {optionsContent}
@@ -526,6 +528,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
         className={`motion-dialog-panel relative z-[81] flex w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] ${panelClasses}`}
         style={{ maxHeight: getMobileViewportMaxHeight() }}
         onKeyDown={handleInteractionKeyDown}
@@ -543,7 +546,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
             <button
               type="button"
               onClick={closePanel}
-              className="motion-interactive touch-target flex h-10 w-10 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-slate-300 hover:text-white"
+              className="motion-interactive touch-target flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.05] text-slate-300 hover:bg-white/[0.08] hover:text-white"
               aria-label="Cerrar selector"
             >
               <X size={16} />
@@ -555,7 +558,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
 
         <div
           className="min-h-0 flex-1 overscroll-contain px-3 pb-[calc(0.9rem+env(safe-area-inset-bottom))] sm:px-4"
-          style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+          style={{ overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
         >
           {optionsContent}
         </div>
@@ -587,7 +590,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
         className={triggerClasses}
       >
         <span className="min-w-0 flex-1 truncate text-sm text-slate-100">{selectedOption?.label ?? placeholder}</span>
-        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/8 bg-white/[0.04] text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-slate-200' : ''}`}>
+        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.05] text-slate-400 transition-transform ${isOpen ? 'rotate-180 text-slate-200' : ''}`}>
           <ChevronDown size={14} />
         </span>
       </button>

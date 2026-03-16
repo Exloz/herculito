@@ -217,18 +217,29 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           ...(selectedVideo ? { video: selectedVideo } : { video: undefined })
         };
 
-        await updateExerciseTemplate(editingExercise.id, {
-          name: normalizedName,
-          category: normalizedCategory || 'Personalizado',
-          sets: resolvedSets,
-          reps: resolvedReps,
-          restTime: resolvedRestTime,
-          description: normalizedDescription,
-          video: selectedVideo ?? undefined
-        });
+        let templateUpdated = false;
+
+        try {
+          await updateExerciseTemplate(editingExercise.id, {
+            name: normalizedName,
+            category: normalizedCategory || 'Personalizado',
+            sets: resolvedSets,
+            reps: resolvedReps,
+            restTime: resolvedRestTime,
+            description: normalizedDescription,
+            video: selectedVideo ?? undefined
+          });
+          templateUpdated = true;
+        } catch {
+          templateUpdated = false;
+        }
 
         onUpdateExercise(editingExercise.id, updates);
-        setSuccessMessage(`¡Ejercicio "${normalizedName}" actualizado exitosamente!`);
+        setSuccessMessage(
+          templateUpdated
+            ? `¡Ejercicio "${normalizedName}" actualizado exitosamente!`
+            : `Cambios aplicados en esta rutina para "${normalizedName}".`
+        );
 
         setTimeout(() => {
           onCancel();
@@ -280,7 +291,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     <div className="motion-dialog-backdrop fixed inset-0 z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div
         ref={dialogRef}
-        className="motion-dialog-panel flex h-[calc(100dvh-0.75rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[1.35rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem]"
+        className="motion-dialog-panel dialog-height-trim flex w-full max-w-2xl flex-col overflow-hidden rounded-[1.35rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="exercise-selector-title"

@@ -229,7 +229,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     <div className="motion-dialog-backdrop fixed inset-0 z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4">
       <div
         ref={dialogRef}
-        className={`motion-dialog-panel flex h-[100dvh] w-full max-w-3xl flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[88vh] sm:rounded-[1.7rem] ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
+        className={`motion-dialog-panel dialog-height-full flex w-full max-w-3xl flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[88vh] sm:rounded-[1.7rem] ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
         role="dialog"
         aria-modal={!showExerciseSelector}
         aria-labelledby="routine-editor-title"
@@ -265,7 +265,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4 sm:px-5 sm:pb-8 sm:pt-5">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4 sm:px-5 sm:pb-8 sm:pt-5">
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
               <div className="space-y-4 rounded-[1.35rem] bg-white/[0.03] p-4">
                 <div>

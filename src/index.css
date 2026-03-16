@@ -291,6 +291,16 @@
   will-change: transform, opacity;
 }
 
+.dialog-height-full {
+  height: 100vh;
+  height: 100dvh;
+}
+
+.dialog-height-trim {
+  height: calc(100vh - 0.75rem);
+  height: calc(100dvh - 0.75rem);
+}
+
 .motion-interactive {
   transition-duration: var(--motion-fast);
   transition-timing-function: var(--ease-standard);

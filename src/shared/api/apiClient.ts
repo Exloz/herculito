@@ -139,6 +139,14 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> 
         });
       }
 
+      // Handle empty responses (e.g., 204 No Content or empty body for DELETE)
+      const contentLength = res.headers.get('content-length');
+      const hasBody = contentLength ? parseInt(contentLength, 10) > 0 : true;
+
+      if (!hasBody || res.status === 204) {
+        return undefined as T;
+      }
+
       if (!contentType.includes('application/json')) {
         throw new ApiError('Invalid response type', { status: 500 });
       }

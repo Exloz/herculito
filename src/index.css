@@ -553,6 +553,23 @@ body.dialog-open .app-bottom-nav {
   @apply bg-amberGlow/15 border-amberGlow/60 text-amberGlow;
 }
 
+/* World Archery target ring colors for score buttons */
+.score-numpad button.score-red {
+  @apply bg-red-500/15 border-red-500/60 text-red-400;
+}
+
+.score-numpad button.score-blue {
+  @apply bg-blue-500/15 border-blue-500/60 text-blue-400;
+}
+
+.score-numpad button.score-black {
+  @apply bg-slate-600/30 border-slate-500/60 text-slate-300;
+}
+
+.score-numpad button.score-white {
+  @apply bg-slate-200/15 border-slate-200/60 text-slate-200;
+}
+
 .score-numpad button.miss {
   @apply bg-crimson/10 border-crimson/40 text-crimson;
 }

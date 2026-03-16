@@ -6,10 +6,19 @@ declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
 };
 
+// Always skip waiting immediately to activate new SW versions
 self.skipWaiting();
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  // Claim all clients immediately so the new SW takes control
+  event.waitUntil(
+    self.clients.claim().then(() => {
+      console.log('[SW] Activated and claimed all clients');
+    })
+  );
+  
+  // Clean up old caches
+  cleanupOutdatedCaches();
 });
 
 self.addEventListener('message', (event) => {
@@ -18,8 +27,11 @@ self.addEventListener('message', (event) => {
   }
 });
 
-cleanupOutdatedCaches();
-precacheAndRoute(self.__WB_MANIFEST);
+// Precache and route with immediate cache updates
+precacheAndRoute(self.__WB_MANIFEST, {
+  // Ensure we always check for updates
+  cleanURLs: false
+});
 
 registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',

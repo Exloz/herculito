@@ -7,72 +7,78 @@ import '../index.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-const scheduleNonCriticalWork = (callback: () => void, timeoutMs: number) => {
-  if (typeof window === 'undefined') {
-    callback();
-    return;
-  }
-
-  const runWhenPossible = () => {
-    if ('requestIdleCallback' in window) {
-      window.requestIdleCallback(() => callback(), { timeout: timeoutMs });
-      return;
-    }
-
-    setTimeout(callback, timeoutMs);
-  };
-
-  if (document.readyState === 'complete') {
-    runWhenPossible();
-    return;
-  }
-
-  window.addEventListener('load', runWhenPossible, { once: true });
-};
-
 if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk Publishable Key');
 }
 
 if (import.meta.env.PROD) {
   let refreshing = false;
-  let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
 
-  scheduleNonCriticalWork(() => {
-    updateSW = registerSW({
+  const registerServiceWorker = () => {
+    const updateSW = registerSW({
       immediate: true,
       onRegisteredSW(_swUrl, registration) {
         if (!registration) {
+          console.log('[PWA] No SW registration available');
           return;
         }
 
+        console.log('[PWA] SW registered, checking for updates...');
+
+        // Check for updates every 5 minutes (was 60 minutes)
         const checkForUpdates = () => {
+          console.log('[PWA] Checking for SW updates...');
           void registration.update();
         };
 
-        setInterval(checkForUpdates, 60 * 60 * 1000);
+        setInterval(checkForUpdates, 5 * 60 * 1000);
 
+        // Check when tab becomes visible
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') {
+            console.log('[PWA] Tab visible, checking for updates...');
             checkForUpdates();
           }
         });
+
+        // Also check on page load/refresh
+        checkForUpdates();
       },
       onNeedRefresh() {
-        // Auto-reload when a new version is available
-        void updateSW?.(true);
+        console.log('[PWA] New version available, reloading...');
+        // Force reload to get new version
+        void updateSW(true);
+      },
+      onOfflineReady() {
+        console.log('[PWA] App ready for offline use');
       }
     });
-  }, 3000);
 
+    return updateSW;
+  };
+
+  // Register immediately, don't delay
+  const updateSW = registerServiceWorker();
+
+  // Listen for controller changes (SW updates)
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      console.log('[PWA] SW controller changed');
       if (refreshing) {
         return;
       }
 
       refreshing = true;
+      console.log('[PWA] Reloading page for new version...');
       window.location.reload();
+    });
+
+    // Also check if there's already a waiting SW on load
+    navigator.serviceWorker.ready.then((registration) => {
+      if (registration.waiting) {
+        console.log('[PWA] Found waiting SW, triggering update...');
+        void updateSW(true);
+      }
     });
   }
 } else if ('serviceWorker' in navigator) {

@@ -81,6 +81,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   const panelRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const hasAutoFocusedRef = useRef(false);
 
   const selectedOption = useMemo(() => {
     return options.find((option) => option.value === value) ?? null;
@@ -248,6 +249,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   useEffect(() => {
     if (!isOpen) {
       setActiveIndex(-1);
+      hasAutoFocusedRef.current = false;
       return;
     }
 
@@ -266,18 +268,25 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   }, [flatOptions, isOpen, selectedFlatIndex]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || hasAutoFocusedRef.current) {
       return;
     }
 
     const focusTimer = window.setTimeout(() => {
+      if (searchInputRef.current === document.activeElement) {
+        hasAutoFocusedRef.current = true;
+        return;
+      }
+
       if (activeIndex >= 0) {
         optionRefs.current[activeIndex]?.focus();
+        hasAutoFocusedRef.current = true;
         return;
       }
 
       if (!searchable) {
         panelRef.current?.focus();
+        hasAutoFocusedRef.current = true;
       }
     }, 0);
 
@@ -501,22 +510,12 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
           ref={searchInputRef}
           id={`${triggerId}-search`}
           type="text"
-          className="input touch-target border-white/[0.08] bg-white/[0.04] pl-9 pr-9 text-sm"
+          className="input touch-target border-white/[0.08] bg-white/[0.04] pl-9 text-sm"
           value={searchTerm}
           onChange={(event) => setSearchTerm(event.target.value)}
           onKeyDown={handleInteractionKeyDown}
           placeholder={searchPlaceholder}
         />
-        {searchTerm.trim() ? (
-          <button
-            type="button"
-            aria-label="Limpiar búsqueda"
-            onClick={() => setSearchTerm('')}
-            className="motion-interactive touch-target-sm absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-white"
-          >
-            <X size={14} />
-          </button>
-        ) : null}
       </div>
     </div>
   ) : null;

@@ -38,7 +38,9 @@ export default defineConfig({
         ]
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
+        // Only precache static assets that don't change between builds
+        // DO NOT include *.js or *.css as they have hashed names that change every build
+        globPatterns: ['index.html', '**/*.ico', '**/*.png', '**/*.svg', '**/*.woff2']
       },
       devOptions: {
         enabled: false

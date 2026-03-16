@@ -11,6 +11,16 @@ if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk Publishable Key');
 }
 
+// Clear all caches on load to fix corrupted cache issues
+if (typeof window !== 'undefined') {
+  void caches?.keys().then(cacheNames => {
+    console.log('[PWA] Clearing all caches on startup:', cacheNames);
+    return Promise.all(cacheNames.map(name => caches.delete(name)));
+  }).then(() => {
+    console.log('[PWA] All caches cleared');
+  });
+}
+
 if (import.meta.env.PROD) {
   let refreshing = false;
 

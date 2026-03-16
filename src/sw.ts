@@ -1,6 +1,6 @@
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { precacheAndRoute } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
-import { CacheFirst } from 'workbox-strategies';
+import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
@@ -10,15 +10,19 @@ declare const self: ServiceWorkerGlobalScope & {
 self.skipWaiting();
 
 self.addEventListener('activate', (event) => {
-  // Claim all clients immediately so the new SW takes control
+  // Clean up ALL old caches aggressively
   event.waitUntil(
-    self.clients.claim().then(() => {
+    (async () => {
+      const cacheNames = await self.caches.keys();
+      console.log('[SW] Cleaning up caches:', cacheNames);
+      await Promise.all(
+        cacheNames.map(cacheName => self.caches.delete(cacheName))
+      );
+      console.log('[SW] All old caches cleared');
+      await self.clients.claim();
       console.log('[SW] Activated and claimed all clients');
-    })
+    })()
   );
-  
-  // Clean up old caches
-  cleanupOutdatedCaches();
 });
 
 self.addEventListener('message', (event) => {
@@ -27,11 +31,21 @@ self.addEventListener('message', (event) => {
   }
 });
 
-// Precache and route with immediate cache updates
-precacheAndRoute(self.__WB_MANIFEST, {
-  // Ensure we always check for updates
-  cleanURLs: false
-});
+// Precache only static assets (no JS/CSS with hashes)
+precacheAndRoute(self.__WB_MANIFEST);
+
+// Runtime caching for JS/CSS files - always fetch from network first
+// This ensures users always get the latest version
+registerRoute(
+  ({ request }) => request.destination === 'script' || request.destination === 'style',
+  new NetworkFirst({
+    cacheName: 'dynamic-assets',
+    networkTimeoutSeconds: 3,
+    fetchOptions: {
+      cache: 'no-cache'
+    }
+  })
+);
 
 registerRoute(
   ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',

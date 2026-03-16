@@ -385,7 +385,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                                 {index + 1}
                               </span>
                               <h4 dir="auto" className="min-w-0 break-words font-display text-lg text-white" style={{ overflowWrap: 'anywhere' }}>
-                                {index + 1}. {exercise.name}
+                                {exercise.name}
                               </h4>
                               {exercise.video?.url ? (
                                 <Play size={14} className="shrink-0 text-mint" />

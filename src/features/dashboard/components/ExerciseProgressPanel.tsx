@@ -1,12 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   BarChart3,
   CalendarRange,
+  Check,
+  ChevronDown,
   History,
   Minus,
+  Search,
   TrendingDown,
-  TrendingUp
+  TrendingUp,
+  X
 } from 'lucide-react';
 import { DashboardExerciseProgressSummary, MuscleGroup, Routine, WorkoutSession } from '../../../shared/types';
 import { formatDateForDisplay, getDateStringInAppTimeZone } from '../../../shared/lib/dateUtils';
@@ -230,8 +234,11 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
   const [exerciseSearchTerm, setExerciseSearchTerm] = useState('');
   const [selectedExerciseGroupFilter, setSelectedExerciseGroupFilter] = useState<MuscleGroup | 'all'>('all');
+  const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
   const [selectedRangeDays, setSelectedRangeDays] = useState<RangeValue>('all');
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const exercisePickerRef = useRef<HTMLDivElement | null>(null);
+  const exerciseSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   const groupedSummaries = useMemo(() => {
     const normalizedSearchTerm = normalizeSearchText(exerciseSearchTerm);
@@ -293,6 +300,44 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
       setSelectedExerciseId(filteredSummaries[0].exerciseId);
     }
   }, [filteredSummaries, selectedExerciseId]);
+
+  useEffect(() => {
+    if (!isExercisePickerOpen) {
+      return;
+    }
+
+    const focusTimer = window.setTimeout(() => {
+      exerciseSearchInputRef.current?.focus();
+    }, 0);
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!exercisePickerRef.current?.contains(target)) {
+        setIsExercisePickerOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsExercisePickerOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('touchstart', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('touchstart', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isExercisePickerOpen]);
 
   const selectedSummary = useMemo(() => {
     if (summaries.length === 0) return null;
@@ -433,76 +478,117 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2 xl:min-w-[18rem] xl:max-w-[20rem] xl:flex-1">
-              <label className="block min-w-0" htmlFor="exercise-progress-search">
-                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Buscar ejercicio</span>
-                <input
-                  id="exercise-progress-search"
-                  type="text"
-                  className="input input-sm"
-                  value={exerciseSearchTerm}
-                  onChange={(event) => setExerciseSearchTerm(event.target.value)}
-                  placeholder="Escribe nombre del ejercicio"
-                />
-              </label>
-
-              <label className="block min-w-0" htmlFor="exercise-progress-group-filter">
-                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Grupo muscular</span>
-                <select
-                  id="exercise-progress-group-filter"
-                  className="input input-sm"
-                  value={selectedExerciseGroupFilter}
-                  onChange={(event) => setSelectedExerciseGroupFilter(event.target.value as MuscleGroup | 'all')}
+            <div className="xl:min-w-[18rem] xl:max-w-[20rem] xl:flex-1">
+              <div className="relative" ref={exercisePickerRef}>
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ejercicio</span>
+                <button
+                  type="button"
+                  role="combobox"
+                  aria-expanded={isExercisePickerOpen}
+                  aria-controls="exercise-progress-combobox-panel"
+                  onClick={() => setIsExercisePickerOpen((current) => !current)}
+                  className="input input-sm flex w-full items-center justify-between gap-3 text-left"
                 >
-                  <option value="all">Todos los grupos</option>
-                  {EXERCISE_GROUP_ORDER.map((group) => (
-                    <option key={group} value={group}>
-                      {MUSCLE_GROUPS[group].name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm text-white">{selectedSummary.exerciseName}</span>
+                    <span className="mt-0.5 block text-[11px] text-slate-400">{MUSCLE_GROUPS[selectedSummaryGroup ?? 'fullbody'].name}</span>
+                  </span>
+                  <span className="inline-flex items-center gap-2 text-[10px] text-slate-500">
+                    {filteredSummaries.length}/{summaries.length}
+                    <ChevronDown size={14} className={`transition-transform ${isExercisePickerOpen ? 'rotate-180 text-slate-200' : ''}`} />
+                  </span>
+                </button>
 
-              <label className="block min-w-0" htmlFor="exercise-progress-selector">
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Seleccionar</span>
-                  <span className="text-[10px] text-slate-500">{filteredSummaries.length}/{summaries.length}</span>
-                </div>
-                <select
-                  id="exercise-progress-selector"
-                  className="input input-sm"
-                  value={filteredSummaries.length > 0 ? selectedSummary.exerciseId : ''}
-                  onChange={(event) => setSelectedExerciseId(event.target.value)}
-                  disabled={filteredSummaries.length === 0}
-                >
-                  {filteredSummaries.length === 0 ? (
-                    <option value="">Sin resultados</option>
-                  ) : (
-                    groupedSummaries.map((entry) => (
-                      <optgroup key={entry.group} label={`${MUSCLE_GROUPS[entry.group].name} (${entry.items.length})`}>
-                        {entry.items.map((summary) => (
-                          <option key={summary.exerciseId} value={summary.exerciseId}>
-                            {summary.exerciseName}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))
-                  )}
-                </select>
-              </label>
-
-              {filteredSummaries.length === 0 && (
-                <p className="text-xs text-slate-400">
-                  No encontramos ejercicios con ese nombre.{' '}
-                  <button
-                    type="button"
-                    className="font-semibold text-mint"
-                    onClick={() => setExerciseSearchTerm('')}
+                {isExercisePickerOpen && (
+                  <div
+                    id="exercise-progress-combobox-panel"
+                    className="absolute right-0 z-30 mt-2 w-full overflow-hidden rounded-[1rem] border border-mist/60 bg-charcoal shadow-lift"
                   >
-                    Limpiar búsqueda
-                  </button>
-                </p>
-              )}
+                    <div className="border-b border-white/8 p-2.5">
+                      <div className="relative">
+                        <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input
+                          ref={exerciseSearchInputRef}
+                          id="exercise-progress-search"
+                          type="text"
+                          className="input input-sm pl-8 pr-8"
+                          value={exerciseSearchTerm}
+                          onChange={(event) => setExerciseSearchTerm(event.target.value)}
+                          placeholder="Buscar ejercicio"
+                        />
+                        {exerciseSearchTerm.trim() && (
+                          <button
+                            type="button"
+                            aria-label="Limpiar búsqueda"
+                            onClick={() => setExerciseSearchTerm('')}
+                            className="motion-interactive absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-white"
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="mt-2 flex gap-1 overflow-x-auto pb-0.5 no-scrollbar">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedExerciseGroupFilter('all')}
+                          className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === 'all' ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
+                        >
+                          Todos
+                        </button>
+                        {EXERCISE_GROUP_ORDER.map((group) => (
+                          <button
+                            key={group}
+                            type="button"
+                            onClick={() => setSelectedExerciseGroupFilter(group)}
+                            className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === group ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
+                          >
+                            {MUSCLE_GROUPS[group].name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="max-h-[17.5rem] overflow-y-auto p-2">
+                      {filteredSummaries.length === 0 ? (
+                        <div className="rounded-[0.85rem] bg-white/[0.04] px-3 py-5 text-center text-xs text-slate-400">
+                          Sin coincidencias. Ajusta la búsqueda o el filtro.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {groupedSummaries.map((entry) => (
+                            <div key={entry.group} className="rounded-[0.85rem] bg-white/[0.02] p-1.5">
+                              <div className="mb-1 px-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                {MUSCLE_GROUPS[entry.group].name} ({entry.items.length})
+                              </div>
+                              <div className="space-y-1">
+                                {entry.items.map((summary) => {
+                                  const isSelected = summary.exerciseId === selectedSummary.exerciseId;
+
+                                  return (
+                                    <button
+                                      key={summary.exerciseId}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedExerciseId(summary.exerciseId);
+                                        setIsExercisePickerOpen(false);
+                                      }}
+                                      className={`motion-interactive flex w-full items-center justify-between gap-2 rounded-[0.75rem] px-2 py-1.5 text-left ${isSelected ? 'bg-mint/12 text-white' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}
+                                    >
+                                      <span className="truncate text-sm">{summary.exerciseName}</span>
+                                      {isSelected && <Check size={13} className="shrink-0 text-mint" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

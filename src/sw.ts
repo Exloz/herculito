@@ -1,6 +1,4 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
-import { registerRoute } from 'workbox-routing';
-import { CacheFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
@@ -9,7 +7,20 @@ declare const self: ServiceWorkerGlobalScope & {
 self.skipWaiting();
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    (async () => {
+      const cacheNames = await caches.keys();
+      const legacyCaches = cacheNames.filter((name) => {
+        return (
+          name === 'google-fonts-cache' ||
+          name === 'google-fonts-static-cache' ||
+          name === 'dynamic-assets'
+        );
+      });
+      await Promise.all(legacyCaches.map((name) => caches.delete(name)));
+      await self.clients.claim();
+    })()
+  );
 });
 
 self.addEventListener('message', (event) => {
@@ -18,22 +29,8 @@ self.addEventListener('message', (event) => {
   }
 });
 
-cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
-
-registerRoute(
-  ({ url }: { url: URL }) => url.origin === 'https://fonts.googleapis.com',
-  new CacheFirst({
-    cacheName: 'google-fonts-cache'
-  })
-);
-
-registerRoute(
-  ({ url }: { url: URL }) => url.origin === 'https://fonts.gstatic.com',
-  new CacheFirst({
-    cacheName: 'google-fonts-static-cache'
-  })
-);
+cleanupOutdatedCaches();
 
 type PushPayload = {
   title?: unknown;
@@ -42,7 +39,8 @@ type PushPayload = {
   tag?: unknown;
 };
 
-const getString = (value: unknown): string | undefined => (typeof value === 'string' && value.trim() ? value : undefined);
+const getString = (value: unknown): string | undefined =>
+  typeof value === 'string' && value.trim() ? value : undefined;
 
 const DEFAULT_NOTIFICATION_URL = self.location.origin;
 const ALLOWED_NOTIFICATION_ORIGINS = new Set<string>([

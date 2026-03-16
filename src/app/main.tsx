@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { ClerkProvider } from '@clerk/react';
 import { createRoot } from 'react-dom/client';
-import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import '../index.css';
 
@@ -30,44 +29,82 @@ const scheduleNonCriticalWork = (callback: () => void, timeoutMs: number) => {
   window.addEventListener('load', runWhenPossible, { once: true });
 };
 
+const cleanLegacyCaches = async () => {
+  if (typeof window === 'undefined' || !('caches' in window)) return;
+
+  try {
+    const cacheNames = await caches.keys();
+    const legacyCaches = cacheNames.filter((name) => {
+      return (
+        name === 'google-fonts-cache' ||
+        name === 'google-fonts-static-cache' ||
+        name === 'dynamic-assets'
+      );
+    });
+    await Promise.all(legacyCaches.map((name) => caches.delete(name)));
+  } catch {
+    // Ignore errors during cleanup
+  }
+};
+
+const registerSW = async (swUrl: string) => {
+  const registration = await navigator.serviceWorker.register(swUrl, {
+    updateViaCache: 'none'
+  });
+
+  registration.addEventListener('updatefound', () => {
+    const newWorker = registration.installing;
+    if (!newWorker) return;
+
+    newWorker.addEventListener('statechange', () => {
+      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+        newWorker.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  });
+
+  return registration;
+};
+
 if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk Publishable Key');
 }
 
 if (import.meta.env.PROD) {
   let refreshing = false;
-  let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
-  const hadController = 'serviceWorker' in navigator && navigator.serviceWorker.controller != null;
+  let hasSeenController = 'serviceWorker' in navigator && navigator.serviceWorker.controller != null;
 
-  scheduleNonCriticalWork(() => {
-    updateSW = registerSW({
-      immediate: true,
-      onRegisteredSW(_swUrl, registration) {
-        if (!registration) {
-          return;
-        }
+  scheduleNonCriticalWork(async () => {
+    await cleanLegacyCaches();
 
-        const checkForUpdates = () => {
+    if ('serviceWorker' in navigator) {
+      try {
+        const registration = await registerSW('/sw.js');
+        void registration.update();
+
+        setInterval(() => {
           void registration.update();
-        };
-
-        setInterval(checkForUpdates, 60 * 60 * 1000);
+        }, 60 * 60 * 1000);
 
         document.addEventListener('visibilitychange', () => {
           if (document.visibilityState === 'visible') {
-            checkForUpdates();
+            void registration.update();
           }
         });
-      },
-      onNeedRefresh() {
-        void updateSW?.(true);
+      } catch {
+        // Registration failed, ignore
       }
-    });
+    }
   }, 3000);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (!hadController || refreshing) {
+      if (refreshing) {
+        return;
+      }
+
+      if (!hasSeenController) {
+        hasSeenController = true;
         return;
       }
 

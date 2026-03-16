@@ -10,6 +10,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
+      injectRegister: false,
       includeAssets: ['favicon-196.png', 'apple-icon-180.png', 'app-logo.png'],
       manifest: {
         name: 'Herculito - Workout Tracker',
@@ -47,5 +48,5 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: ['lucide-react'],
-  },
+  }
 });

@@ -41,6 +41,7 @@ const DESKTOP_PANEL_MIN_HEIGHT = 188;
 const DESKTOP_PANEL_MIN_WIDTH = 280;
 const DESKTOP_PANEL_MAX_WIDTH = 420;
 const DESKTOP_PANEL_MAX_HEIGHT = 380;
+const MOBILE_PANEL_EDGE_MARGIN = 8;
 
 const normalizeSearchText = (value: string): string => {
   return value
@@ -48,10 +49,6 @@ const normalizeSearchText = (value: string): string => {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
-};
-
-const getMobileViewportMaxHeight = (): string => {
-  return 'min(calc(100dvh - 1rem), 42rem)';
 };
 
 export const AppCombobox: React.FC<AppComboboxProps> = ({
@@ -77,6 +74,8 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   const [activeIndex, setActiveIndex] = useState(-1);
   const [panelStyle, setPanelStyle] = useState<CSSProperties>({});
   const [panelListMaxHeight, setPanelListMaxHeight] = useState<number>(288);
+  const [mobileViewportStyle, setMobileViewportStyle] = useState<CSSProperties>({});
+  const [mobilePanelMaxHeight, setMobilePanelMaxHeight] = useState<number>(640);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -385,6 +384,36 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
     };
   }, [closePanel, isMobileSheet, isOpen, updateDesktopPanelPosition]);
 
+  useEffect(() => {
+    if (!isOpen || !isMobileSheet || typeof window === 'undefined') {
+      return;
+    }
+
+    const updateMobileViewport = () => {
+      const viewport = window.visualViewport;
+      const viewportHeight = viewport?.height ?? window.innerHeight;
+      const viewportOffsetTop = viewport?.offsetTop ?? 0;
+
+      setMobileViewportStyle({
+        top: viewportOffsetTop,
+        height: viewportHeight
+      });
+      setMobilePanelMaxHeight(Math.max(240, Math.floor(viewportHeight - (MOBILE_PANEL_EDGE_MARGIN * 2))));
+    };
+
+    updateMobileViewport();
+
+    window.addEventListener('resize', updateMobileViewport);
+    window.visualViewport?.addEventListener('resize', updateMobileViewport);
+    window.visualViewport?.addEventListener('scroll', updateMobileViewport);
+
+    return () => {
+      window.removeEventListener('resize', updateMobileViewport);
+      window.visualViewport?.removeEventListener('resize', updateMobileViewport);
+      window.visualViewport?.removeEventListener('scroll', updateMobileViewport);
+    };
+  }, [isMobileSheet, isOpen]);
+
   const triggerClasses = [
     'input input-sm touch-target flex w-full items-center justify-between gap-2 text-left',
     disabled ? 'cursor-not-allowed opacity-60' : 'motion-interactive',
@@ -516,7 +545,10 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   ) : null;
 
   const mobilePanel = isMobileSheet ? (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center p-2 sm:p-4">
+    <div
+      className="fixed inset-x-0 z-[80] box-border flex items-start justify-center overflow-hidden px-2 py-2 sm:px-4 sm:py-4"
+      style={mobileViewportStyle}
+    >
       <button
         type="button"
         aria-label="Cerrar selector"
@@ -530,7 +562,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={`motion-dialog-panel relative z-[81] flex w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] ${panelClasses}`}
-        style={{ maxHeight: getMobileViewportMaxHeight() }}
+        style={{ maxHeight: `${mobilePanelMaxHeight}px` }}
         onKeyDown={handleInteractionKeyDown}
       >
         <div className="shrink-0 px-4 pb-3 pt-[calc(0.6rem+env(safe-area-inset-top))] sm:px-5">

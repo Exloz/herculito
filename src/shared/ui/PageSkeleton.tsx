@@ -1,6 +1,6 @@
 import React from 'react';
 
-type PageSkeletonVariant = 'dashboard' | 'routines' | 'admin';
+type PageSkeletonVariant = 'dashboard' | 'routines' | 'admin' | 'sports';
 
 interface PageSkeletonProps {
   page?: PageSkeletonVariant;
@@ -175,6 +175,39 @@ const AdminSkeleton = ({ compact = false }: { compact?: boolean }) => {
   );
 };
 
+const SportsSkeleton = ({ compact = false }: { compact?: boolean }) => {
+  return (
+    <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
+      <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
+        <section className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <SkeletonBlock className="h-3 w-40 rounded-lg" />
+            <SkeletonBlock className="mt-2 h-10 w-32 rounded-lg" />
+            <SkeletonBlock className="mt-2 h-4 w-72 max-w-full rounded-lg" />
+          </div>
+          <SkeletonBlock className="h-11 w-36 rounded-xl" />
+        </section>
+
+        <SkeletonBlock className="mb-3 h-3 w-32 rounded-lg" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonBlock key={index} className="h-32 rounded-2xl" />
+          ))}
+        </div>
+
+        <SkeletonBlock className="mb-4 h-36 rounded-2xl" />
+
+        <div className="flex gap-2 mb-4">
+          <SkeletonBlock className="h-10 w-32 rounded-xl" />
+          <SkeletonBlock className="h-10 w-32 rounded-xl" />
+        </div>
+
+        <SkeletonBlock className="h-64 rounded-2xl" />
+      </div>
+    </div>
+  );
+};
+
 export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard', compact = false, className = '' }) => {
   return (
     <div role="status" aria-live="polite" className={className}>
@@ -182,6 +215,7 @@ export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard', 
       {page === 'routines' && <RoutinesSkeleton compact={compact} />}
       {page === 'admin' && <AdminSkeleton compact={compact} />}
       {page === 'dashboard' && <DashboardSkeleton compact={compact} />}
+      {page === 'sports' && <SportsSkeleton compact={compact} />}
     </div>
   );
 };

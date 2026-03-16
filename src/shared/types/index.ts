@@ -235,3 +235,83 @@ export interface Workout {
   exercises: Exercise[];
   name: string;
 }
+
+// ===== SPORTS TYPES =====
+
+export type SportType = 'archery';
+
+export type ArcheryBowType = 'recurve' | 'compound' | 'barebow' | 'longbow';
+
+export interface ArcheryArrow {
+  id: string;
+  score: number;
+  isGold: boolean;
+  timestamp: Date;
+}
+
+export interface ArcheryEnd {
+  id: string;
+  roundId: string;
+  endNumber: number;
+  arrows: ArcheryArrow[];
+  subtotal: number;
+  goldCount: number;
+  createdAt: Date;
+}
+
+export interface ArcheryRound {
+  id: string;
+  sessionId: string;
+  distance: number;
+  targetSize: number;
+  arrowsPerEnd: number;
+  order: number;
+  ends: ArcheryEnd[];
+  totalScore: number;
+  createdAt: Date;
+}
+
+export interface SportSession {
+  id: string;
+  userId: string;
+  sportType: SportType;
+  sportName: string;
+  startedAt: Date;
+  completedAt?: Date;
+  location?: string;
+  notes?: string;
+  status: 'active' | 'completed' | 'abandoned';
+  archeryData?: {
+    bowType: ArcheryBowType;
+    arrowsUsed: number;
+    rounds: ArcheryRound[];
+    totalScore: number;
+    maxPossibleScore: number;
+    averageArrow: number;
+    goldCount?: number;
+  };
+}
+
+export interface SportSessionSummary {
+  id: string;
+  sportType: SportType;
+  sportName: string;
+  startedAt: Date;
+  completedAt?: Date;
+  location?: string;
+  totalScore?: number;
+  maxPossibleScore?: number;
+  roundsCompleted: number;
+  duration?: number;
+}
+
+export interface SportStats {
+  totalSessions: number;
+  thisWeekSessions: number;
+  thisMonthSessions: number;
+  currentStreak: number;
+  longestStreak: number;
+  totalArrowsShot: number;
+  averageScore: number;
+  personalBest: number;
+}

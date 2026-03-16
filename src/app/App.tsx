@@ -13,11 +13,13 @@ const loadLoginPage = () => import('../features/auth/pages/LoginPage');
 const loadDashboardPage = () => import('../features/dashboard/pages/DashboardPage');
 const loadRoutinesPage = () => import('../features/routines/pages/RoutinesPage');
 const loadAdminPage = () => import('../features/admin/pages/AdminPage');
+const loadSportsPage = () => import('../features/sports/pages/SportsPage');
 
 const Login = lazy(() => loadLoginPage().then(module => ({ default: module.Login })));
 const Dashboard = lazy(() => loadDashboardPage().then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => loadRoutinesPage().then(module => ({ default: module.Routines })));
 const AdminPage = lazy(() => loadAdminPage().then(module => ({ default: module.AdminPage })));
+const Sports = lazy(() => loadSportsPage().then(module => ({ default: module.default })));
 
 const LoadingScreen = () => (
   <PageSkeleton page="dashboard" />
@@ -107,6 +109,10 @@ function AppContent() {
 
     if (page === 'admin') {
       return <AdminPage enabled={isAdmin} />;
+    }
+
+    if (page === 'sports') {
+      return <Sports user={user} />;
     }
 
     return <Routines user={user} />;

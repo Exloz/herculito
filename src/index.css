@@ -501,6 +501,62 @@ body.dialog-open .app-bottom-nav {
   animation: page-exit-backward 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* Sports-specific styles */
+.sport-card {
+  @apply app-card-hover p-5 flex flex-col items-center gap-3 text-center;
+}
+
+.sport-card.active {
+  @apply bg-mint/10 border-mint/40;
+}
+
+.sport-card.locked {
+  @apply cursor-not-allowed;
+}
+
+.arrow-input {
+  @apply w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl font-bold transition-all;
+  @apply bg-slateDeep border-2 border-mist/40;
+}
+
+.arrow-input.filled {
+  @apply bg-graphite border-mint/60 text-mint;
+}
+
+.arrow-input.gold {
+  @apply bg-amberGlow/20 border-amberGlow text-amberGlow;
+}
+
+.arrow-input.empty {
+  @apply text-slate-500;
+}
+
+.score-display-lg {
+  @apply text-4xl sm:text-5xl font-display font-bold tracking-tight;
+}
+
+.score-label {
+  @apply text-xs uppercase tracking-wider text-slate-400;
+}
+
+.score-numpad {
+  @apply grid grid-cols-3 gap-2 sm:gap-3;
+}
+
+.score-numpad button {
+  @apply aspect-square rounded-xl text-xl font-semibold transition-all;
+  @apply bg-slateDeep border border-mist/40 hover:bg-graphite active:scale-95;
+  @apply touch-target flex items-center justify-center;
+}
+
+.score-numpad button.gold {
+  @apply bg-amberGlow/15 border-amberGlow/60 text-amberGlow;
+}
+
+.score-numpad button.miss {
+  @apply bg-crimson/10 border-crimson/40 text-crimson;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion-enter,
   .motion-enter-delay-1,

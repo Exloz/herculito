@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowDownAZ, Filter } from 'lucide-react';
+import { AppCombobox } from '../../../shared/ui/AppCombobox';
 import type { AdminDateRange, AdminFilterOption } from '../lib/adminPage';
 
 interface AdminControlPanelProps {
@@ -64,31 +65,45 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
 
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-amberGlow/75">Usuario</span>
-            <select value={selectedUserId} onChange={(event) => onUserChange(event.target.value)} className="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11">
-              <option value="all">Todos</option>
-              {userOptions.map((user) => (
-                <option key={user.value} value={user.value}>{user.label}</option>
-              ))}
-            </select>
+            <AppCombobox
+              value={selectedUserId}
+              onChange={onUserChange}
+              options={[
+                { value: 'all', label: 'Todos' },
+                ...userOptions.map((user) => ({ value: user.value, label: user.label }))
+              ]}
+              searchPlaceholder="Buscar usuario"
+              triggerClassName="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11"
+            />
           </label>
 
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-amberGlow/75">Rutina</span>
-            <select value={selectedRoutineId} onChange={(event) => onRoutineChange(event.target.value)} className="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11">
-              <option value="all">Todas</option>
-              {routineOptions.map((routine) => (
-                <option key={routine.value} value={routine.value}>{routine.label}</option>
-              ))}
-            </select>
+            <AppCombobox
+              value={selectedRoutineId}
+              onChange={onRoutineChange}
+              options={[
+                { value: 'all', label: 'Todas' },
+                ...routineOptions.map((routine) => ({ value: routine.value, label: routine.label }))
+              ]}
+              searchPlaceholder="Buscar rutina"
+              triggerClassName="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11"
+            />
           </label>
 
           <label className="block">
             <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.18em] text-amberGlow/75">Ventana</span>
-            <select value={dateRange} onChange={(event) => onDateRangeChange(event.target.value as AdminDateRange)} className="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11">
-              <option value="7d">Últimos 7 días</option>
-              <option value="30d">Últimos 30 días</option>
-              <option value="all">Histórico</option>
-            </select>
+            <AppCombobox
+              value={dateRange}
+              onChange={(value) => onDateRangeChange(value as AdminDateRange)}
+              options={[
+                { value: '7d', label: 'Últimos 7 días' },
+                { value: '30d', label: 'Últimos 30 días' },
+                { value: 'all', label: 'Histórico' }
+              ]}
+              searchable={false}
+              triggerClassName="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11"
+            />
           </label>
         </div>
 

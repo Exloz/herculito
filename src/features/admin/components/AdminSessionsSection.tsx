@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { AdminRoutineOverview, AdminSessionOverview } from '../../../shared/types';
+import { AppCombobox } from '../../../shared/ui/AppCombobox';
 import { SectionAccordion } from './AdminShared';
 import {
   formatDateTime,
@@ -42,11 +43,19 @@ export const AdminSessionsSection: React.FC<AdminSessionsSectionProps> = ({
     >
       <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-slate-400 sm:text-sm">Se mantiene como log auxiliar para auditoría puntual.</p>
-        <select value={sessionSort} onChange={(event) => onSessionSortChange(event.target.value as AdminSessionSort)} className="input input-sm h-10 border-amberGlow/20 bg-amberGlow/10 text-sm sm:w-auto">
-          <option value="recent">Más recientes</option>
-          <option value="duration">Más largas</option>
-          <option value="user">Usuario</option>
-        </select>
+        <div className="w-full sm:w-[12rem]">
+          <AppCombobox
+            value={sessionSort}
+            onChange={(value) => onSessionSortChange(value as AdminSessionSort)}
+            options={[
+              { value: 'recent', label: 'Más recientes' },
+              { value: 'duration', label: 'Más largas' },
+              { value: 'user', label: 'Usuario' }
+            ]}
+            searchable={false}
+            triggerClassName="input input-sm h-10 border-amberGlow/20 bg-amberGlow/10 text-sm"
+          />
+        </div>
       </div>
 
       <div className="space-y-2.5">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChevronDown } from 'lucide-react';
 import type { AdminRoutineOverview } from '../../../shared/types';
+import { AppCombobox } from '../../../shared/ui/AppCombobox';
 import { SectionAccordion } from './AdminShared';
 import { formatDateTime, type AdminRoutineSort } from '../lib/adminPage';
 
@@ -25,11 +26,19 @@ export const AdminRoutinesSection: React.FC<AdminRoutinesSectionProps> = ({
     >
       <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-slate-400 sm:text-sm">Sección secundaria para revisar estructura y uso.</p>
-        <select value={routineSort} onChange={(event) => onRoutineSortChange(event.target.value as AdminRoutineSort)} className="input input-sm h-10 border-amberGlow/20 bg-amberGlow/10 text-sm sm:w-auto">
-          <option value="usage">Mas usadas</option>
-          <option value="lastCompleted">Mas recientes</option>
-          <option value="name">Nombre</option>
-        </select>
+        <div className="w-full sm:w-[12rem]">
+          <AppCombobox
+            value={routineSort}
+            onChange={(value) => onRoutineSortChange(value as AdminRoutineSort)}
+            options={[
+              { value: 'usage', label: 'Mas usadas' },
+              { value: 'lastCompleted', label: 'Mas recientes' },
+              { value: 'name', label: 'Nombre' }
+            ]}
+            searchable={false}
+            triggerClassName="input input-sm h-10 border-amberGlow/20 bg-amberGlow/10 text-sm"
+          />
+        </div>
       </div>
 
       <div className="space-y-2.5">

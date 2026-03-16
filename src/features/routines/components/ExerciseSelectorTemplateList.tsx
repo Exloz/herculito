@@ -1,6 +1,7 @@
 import React from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { ExerciseTemplate } from '../../../shared/types';
+import { AppCombobox } from '../../../shared/ui/AppCombobox';
 
 interface ExerciseSelectorTemplateListProps {
   searchTerm: string;
@@ -56,21 +57,19 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
           />
         </div>
 
-        <div className="relative">
+        <div>
           <label htmlFor="exercise-template-category" className="sr-only">Filtrar por categoria</label>
-          <select
+          <AppCombobox
             id="exercise-template-category"
             value={selectedCategory}
-            onChange={(event) => onSelectedCategoryChange(event.target.value)}
-            className="input text-sm appearance-none cursor-pointer"
-            aria-label="Filtrar por categoria"
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
-          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+            onChange={onSelectedCategoryChange}
+            options={[
+              { value: '', label: 'Todas las categorías' },
+              ...categories.map((category) => ({ value: category, label: category }))
+            ]}
+            searchPlaceholder="Buscar categoría"
+            triggerClassName="input input-sm w-full"
+          />
         </div>
 
         <div className="flex items-center justify-between text-xs text-slate-400">

@@ -5,6 +5,7 @@ import { ExerciseSelector } from './ExerciseSelector';
 import { MUSCLE_GROUPS } from '../../dashboard/lib/muscleGroups';
 import { useDialogA11y } from '../../../shared/hooks/useDialogA11y';
 import { clampInteger, normalizeMultiline, normalizeSingleLine } from '../../../shared/lib/inputSanitizers';
+import { AppCombobox } from '../../../shared/ui/AppCombobox';
 
 const MAX_ROUTINE_NAME_LENGTH = 120;
 const MAX_ROUTINE_DESCRIPTION_LENGTH = 600;
@@ -315,18 +316,16 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   <label htmlFor="routine-primary-muscle-group" className="mb-1 block text-sm font-medium text-slate-300">
                     Grupo muscular principal
                   </label>
-                  <select
+                  <AppCombobox
                     id="routine-primary-muscle-group"
                     value={primaryMuscleGroup}
-                    onChange={(e) => setPrimaryMuscleGroup(e.target.value as MuscleGroup)}
-                    className="input"
-                  >
-                    {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
-                      <option key={key} value={key}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setPrimaryMuscleGroup(value as MuscleGroup)}
+                    options={Object.entries(MUSCLE_GROUPS).map(([key, group]) => ({
+                      value: key,
+                      label: group.name
+                    }))}
+                    searchPlaceholder="Buscar grupo muscular"
+                  />
                 </div>
 
                 <label htmlFor="isPublic" className="flex items-start gap-3 rounded-[1.1rem] border border-white/8 bg-slateDeep/60 px-3 py-2.5">

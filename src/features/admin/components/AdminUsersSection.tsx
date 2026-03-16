@@ -1,6 +1,7 @@
 import React from 'react';
 import { CheckCircle2, ChevronDown, Weight } from 'lucide-react';
 import type { AdminRoutineOverview, AdminUserOverview } from '../../../shared/types';
+import { AppCombobox } from '../../../shared/ui/AppCombobox';
 import { Sparkline, SectionAccordion } from './AdminShared';
 import {
   formatDateTime,
@@ -53,12 +54,20 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           <button type="button" onClick={onToggleAllUsers} className="btn-secondary h-10 px-3 text-sm">
             {areAllUsersExpanded ? 'Colapsar todos' : 'Expandir todos'}
           </button>
-          <select value={userSort} onChange={(event) => onUserSortChange(event.target.value as AdminUserSort)} className="input input-sm h-10 bg-white/[0.03] text-sm sm:w-auto">
-            <option value="activity">Mas activos</option>
-            <option value="completed">Mas entrenan</option>
-            <option value="created">Mas crean</option>
-            <option value="name">Nombre</option>
-          </select>
+          <div className="w-full sm:w-[12rem]">
+            <AppCombobox
+              value={userSort}
+              onChange={(value) => onUserSortChange(value as AdminUserSort)}
+              options={[
+                { value: 'activity', label: 'Mas activos' },
+                { value: 'completed', label: 'Mas entrenan' },
+                { value: 'created', label: 'Mas crean' },
+                { value: 'name', label: 'Nombre' }
+              ]}
+              searchable={false}
+              triggerClassName="input input-sm h-10 bg-white/[0.03] text-sm"
+            />
+          </div>
         </div>
       </div>
 

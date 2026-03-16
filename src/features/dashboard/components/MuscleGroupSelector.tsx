@@ -3,6 +3,7 @@ import { Edit3, Check, X } from 'lucide-react';
 import { MuscleGroup } from '../../../shared/types';
 import { MUSCLE_GROUPS } from '../lib/muscleGroups';
 import { MuscleGroupIcon } from './MuscleGroupIcon';
+import { AppCombobox } from '../../../shared/ui/AppCombobox';
 
 interface MuscleGroupSelectorProps {
   currentGroup: MuscleGroup;
@@ -59,17 +60,16 @@ export const MuscleGroupSelector: React.FC<MuscleGroupSelectorProps> = ({
 
   return (
     <div className="flex items-center space-x-1 sm:space-x-2">
-      <select
+      <AppCombobox
         value={selectedGroup}
-        onChange={(e) => setSelectedGroup(e.target.value as MuscleGroup)}
-        className="input input-sm text-xs min-w-0 flex-1"
-      >
-        {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
-          <option key={key} value={key}>
-            {group.name}
-          </option>
-        ))}
-      </select>
+        onChange={(value) => setSelectedGroup(value as MuscleGroup)}
+        options={Object.entries(MUSCLE_GROUPS).map(([key, group]) => ({
+          value: key,
+          label: group.name
+        }))}
+        searchPlaceholder="Buscar grupo"
+        triggerClassName="input input-sm min-w-0 flex-1 text-xs"
+      />
       <button
         type="button"
         onClick={handleSave}

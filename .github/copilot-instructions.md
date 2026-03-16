@@ -1,83 +1,61 @@
-# CityGym Copilot Instructions
+# Herculito Copilot Instructions
 
 ## Project Overview
-This is a React/TypeScript gym workout tracking app using Firebase Firestore for data persistence. The app supports dual-user workout logging with real-time progress tracking and rest timers.
+This is a React + TypeScript gym workout tracking app.
+Authentication is handled with Clerk, and app data is fetched from an external API configured via environment variables.
 
-## Architecture & Data Flow
+## Architecture and Data Flow
 
-### Core Data Model (`src/types/index.ts`)
-- **User**: Simple A/B user system (`'A' | 'B'`)
-- **Exercise**: Defines workout structure (sets, reps, rest time)
-- **ExerciseLog**: Tracks per-user, per-date workout progress
-- **Workout**: Groups exercises by day (monday/wednesday/friday schedule)
+### Core Data Model
+- Shared domain contracts live in `src/shared/types/index.ts`.
+- Keep date normalization close to API boundaries before rendering or comparison.
 
-### Firebase Integration
-- Uses Firestore collections: `workouts`, `exerciseLogs`
-- Real-time subscriptions via `onSnapshot` for live progress updates
-- Document IDs follow pattern: `${exerciseId}_${userId}_${date}` for exercise logs
-- Demo config in `src/firebase/config.ts` - replace with actual Firebase project
-
-### State Management Pattern
-Custom hooks centralize business logic:
-- `useWorkouts()`: Manages workout routines, auto-initializes default 3-day split
-- `useExerciseLogs(date)`: Real-time exercise progress tracking
-- `useTimer()`: Countdown timer for rest periods between sets
-
-## Key Components & Workflows
-
-### Dashboard (`src/pages/Dashboard.tsx`)
-Main workout interface that:
-1. Auto-detects current day and loads appropriate workout
-2. Renders `ExerciseCard` for each exercise with set tracking
-3. Integrates user switching and timer management
-
-### ExerciseCard (`src/components/ExerciseCard.tsx`)
-Complex component handling:
-- Weight input per set with real-time Firestore updates
-- Set completion tracking with visual progress indicators
-- Rest timer integration after completing sets
-- Expandable set details for weight adjustments
+### Auth and API Integration
+- Use Clerk for sign-in/sign-out and token retrieval.
+- Use the centralized API client in `src/shared/api/apiClient.ts`.
+- Prefer `fetchJson<T>(...)` helpers and feature APIs in `src/shared/api/dataApi.ts`.
+- Do not hardcode credentials or API origins.
 
 ### Navigation Pattern
-Simple state-based routing via `App.tsx` - no React Router despite dependency:
-```tsx
-const [currentPage, setCurrentPage] = useState<'dashboard' | 'routines'>('dashboard');
-```
+- Navigation is lightweight and pathname-driven through `src/app/hooks/usePageNavigation.ts`.
+- Keep the current simple page-state model instead of introducing a heavy router flow.
+
+### State Management Pattern
+- Business logic is mainly organized in feature hooks under `src/features/*/hooks`.
+- Keep transient UI state local to components.
 
 ## Development Conventions
 
 ### Styling
-- Tailwind CSS with dark theme (gray-900 background)
-- Consistent component styling: rounded-lg, shadow-xl, border-gray-700
-- Blue accent color (blue-400) for active states
-- Mobile-first responsive design
-
-### Firebase Patterns
-- Always use `merge: true` for document updates to prevent data loss
-- Composite document IDs for relational data
-- Real-time listeners cleaned up in useEffect returns
-- Error boundaries with user-friendly messages
+- Use Tailwind CSS utilities and shared classes from `src/index.css`.
+- Prefer the established design-system classes (`app-shell`, `app-card`, `btn-primary`, `btn-secondary`, `input`, `chip`).
+- Preserve the current visual language and mobile-first behavior.
 
 ### TypeScript Usage
-- Strict typing for user IDs (`'A' | 'B'` literal types)
-- Interface-first design for all data structures
-- Optional chaining for potentially undefined Firebase data
+- Keep strict typing and avoid `any`.
+- Use `import type` for type-only imports.
+- Parse unknown API payloads explicitly and guard browser-only APIs.
 
-## Commands & Scripts
+## Commands and Scripts
 ```bash
-npm run dev        # Vite dev server
-npm run build      # Production build
-npm run lint       # ESLint check
-npm run preview    # Preview production build
+pnpm dev
+pnpm build
+pnpm preview
+pnpm lint
+pnpm test
+pnpm exec tsc -b
 ```
 
 ## Integration Points
-- **Firebase**: `firebaje.js` contains actual production config (replace demo config)
-- **Lucide React**: Icon system throughout UI
-- **Vite**: Build tool with React plugin and Lucide optimization exclusion
+- **Clerk**: Authentication provider and JWT token source.
+- **API client**: `src/shared/api/apiClient.ts` for auth-aware fetch, timeout and retry handling.
+- **Vite + PWA**: build and service worker setup in `vite.config.ts` and `src/sw.ts`.
+- **Lucide React**: icon set used throughout the UI.
 
 ## Critical Files for Context
-- `src/types/index.ts` - Complete data model
-- `src/hooks/useWorkouts.ts` - Core business logic and Firebase operations
-- `src/components/ExerciseCard.tsx` - Main user interaction patterns
-- `src/firebase/config.ts` - Database configuration (needs production setup)
+- `src/app/main.tsx` - app bootstrap, Clerk provider and service worker behavior
+- `src/app/App.tsx` - top-level shell and lazy page loading
+- `src/app/hooks/usePageNavigation.ts` - pathname-driven navigation model
+- `src/shared/types/index.ts` - core domain model
+- `src/shared/api/apiClient.ts` - API client, auth token and error handling
+- `src/shared/api/dataApi.ts` - feature-facing API helpers

@@ -64,10 +64,5 @@ coverage/
 *.temp
 .bolt/
 
-# Firebase
-.firebaserc
-firebase.json
-firestore.rules*
-
 # Logs
 *.log

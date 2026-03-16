@@ -24,7 +24,6 @@ Authentication is handled by Clerk, and app data comes from an external API conf
 - `src/app/` - app shell, providers, navigation, bootstrapping
 - `src/features/` - feature folders: `admin`, `auth`, `dashboard`, `routines`, `workouts`
 - `src/shared/` - shared types, APIs, hooks, libs, UI primitives
-- `src/firebase/` - legacy/demo Firebase config still referenced by docs
 - `public/` - static assets and PWA icons
 - `dist/` - build output; do not edit manually
 

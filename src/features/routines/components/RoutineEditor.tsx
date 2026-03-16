@@ -239,11 +239,11 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
         <div className="shrink-0 border-b border-white/8 px-4 pb-4 pt-[calc(0.6rem+env(safe-area-inset-top))] sm:px-5 sm:pb-5 sm:pt-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-mint/85">
-                {routine ? 'Editar rutina' : 'Nueva rutina'}
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-mint/85">
+                Rutinas
               </div>
-              <h2 id="routine-editor-title" className="mt-1 font-display text-[1.8rem] leading-[0.94] text-white sm:text-[2.2rem]">
-                {routine ? 'Edita tu rutina' : 'Crea una rutina'}
+              <h2 id="routine-editor-title" className="mt-1 font-display text-[1.45rem] leading-[0.98] text-white sm:text-[1.85rem]">
+                {routine ? 'Editar rutina' : 'Nueva rutina'}
               </h2>
             </div>
 
@@ -486,18 +486,18 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
               </div>
             )}
 
-            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={onCancel}
-                className="btn-secondary w-full sm:w-auto sm:px-6"
+                className="btn-secondary flex-1"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={loading || showExerciseSelector || !name.trim() || exercises.length === 0}
-                className="btn-primary flex w-full items-center justify-center gap-2 disabled:opacity-60 sm:flex-1"
+                className="btn-primary flex-[1.35] flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 <Save size={18} />
                 <span>{loading ? 'Guardando...' : 'Guardar rutina'}</span>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Check, Loader, Pencil, Plus, X } from 'lucide-react';
+import { Check, Loader, Plus, X } from 'lucide-react';
 import { useExerciseTemplates } from '../hooks/useExerciseTemplates';
 import { useAuth } from '../../auth/hooks/useAuth';
 import type { Exercise, ExerciseTemplate } from '../../../shared/types';
@@ -297,24 +297,17 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         aria-labelledby="exercise-selector-title"
         tabIndex={-1}
       >
-        <div className="shrink-0 border-b border-white/8 px-4 pb-3 pt-[calc(0.35rem+env(safe-area-inset-top))] sm:p-5">
-          <div className="mb-3 flex items-start justify-between gap-3 sm:mb-4 sm:gap-4">
+        <div className="shrink-0 border-b border-white/8 px-4 pb-2.5 pt-[calc(0.35rem+env(safe-area-inset-top))] sm:p-5">
+          <div className="mb-2.5 flex items-start justify-between gap-3 sm:mb-3 sm:gap-4">
             <div>
-              <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-amberGlow/85">
-                {isEditing ? 'Editar ejercicio' : 'Agregar ejercicio'}
+              <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amberGlow/85">
+                Ejercicios
               </div>
-              <h3 id="exercise-selector-title" className="mt-1.5 font-display text-[1.55rem] leading-[0.96] text-white sm:text-[2.2rem]">
-              {isEditing ? (
-                  <span className="flex items-center gap-2">
-                    <Pencil size={20} className="text-mint" />
-                    Edita el ejercicio
-                </span>
-              ) : (
-                'Elige un ejercicio o crea uno'
-              )}
+              <h3 id="exercise-selector-title" className="mt-1 font-display text-[1.32rem] leading-[1.02] text-white sm:text-[1.8rem]">
+                {isEditing ? 'Editar ejercicio' : 'Agregar ejercicio'}
               </h3>
-              <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-slate-300 sm:mt-2 sm:text-sm">
-                Usa uno que ya tengas guardado o crea uno nuevo con series, reps, descanso y video.
+              <p className="mt-1.5 max-w-lg text-xs leading-relaxed text-slate-300 sm:text-sm">
+                Selecciona uno guardado o crea uno nuevo.
               </p>
             </div>
             <button
@@ -327,7 +320,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             </button>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
             <button
               type="button"
               onClick={() => {
@@ -335,13 +328,15 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 clearMessages();
               }}
               aria-pressed={!showCustomForm}
-              className={`motion-interactive rounded-[1.15rem] border px-3 py-3 text-left transition-colors sm:rounded-[1.35rem] sm:px-4 sm:py-4 ${
+              className={`motion-interactive rounded-[1rem] border px-3 py-2.5 text-left transition-colors sm:px-3.5 sm:py-3 ${
                 !showCustomForm ? 'border-mint/30 bg-mint/10 text-white' : 'border-mist/50 bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
-              <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Guardados</div>
-              <div className="mt-1 font-display text-lg sm:text-xl">{exercises.length}</div>
-              <div className="mt-1 text-xs text-current/80 sm:text-sm">Elige uno y agrégalo al instante.</div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Guardados</div>
+                <div className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs font-semibold text-current">{exercises.length}</div>
+              </div>
+              <div className="mt-1 text-sm font-semibold text-current">Elegir existente</div>
             </button>
             <button
               type="button"
@@ -350,13 +345,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
                 clearMessages();
               }}
               aria-pressed={showCustomForm}
-              className={`motion-interactive rounded-[1.15rem] border px-3 py-3 text-left transition-colors sm:rounded-[1.35rem] sm:px-4 sm:py-4 ${
+              className={`motion-interactive rounded-[1rem] border px-3 py-2.5 text-left transition-colors sm:px-3.5 sm:py-3 ${
                 showCustomForm ? 'border-amberGlow/30 bg-amberGlow/10 text-white' : 'border-mist/50 bg-slateDeep text-slate-300 hover:text-white'
               }`}
             >
               <div className="text-[11px] uppercase tracking-[0.18em] text-current/70">Nuevo</div>
-              <div className="mt-1 font-display text-lg sm:text-xl">Crear</div>
-              <div className="mt-1 text-xs text-current/80 sm:text-sm">Crea un ejercicio nuevo y reutilízalo.</div>
+              <div className="mt-1 text-sm font-semibold text-current">Crear ejercicio</div>
             </button>
           </div>
         </div>

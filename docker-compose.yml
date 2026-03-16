@@ -9,7 +9,6 @@ services:
         VITE_CLERK_JWT_TEMPLATE: ${VITE_CLERK_JWT_TEMPLATE}
 
 
-    container_name: herculito-app
     restart: unless-stopped
     expose:
       - "8080"

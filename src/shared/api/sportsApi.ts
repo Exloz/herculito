@@ -1,4 +1,4 @@
-import { fetchJson } from './apiClient';
+import { fetchJson, getIdToken } from './apiClient';
 import type {
   SportSession,
   SportStats,
@@ -59,6 +59,7 @@ export const fetchSportSessions = async (options?: {
   completedOnly?: boolean;
 }): Promise<SportSessionResponse[]> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   const searchParams = new URLSearchParams();
   if (options?.sportType) searchParams.set('sportType', options.sportType);
   if (options?.limit) searchParams.set('limit', String(options.limit));
@@ -66,15 +67,22 @@ export const fetchSportSessions = async (options?: {
   
   const query = searchParams.toString();
   const data = await fetchJson<{ sessions: SportSessionResponse[] }>(
-    `${origin}/v1/sports/sessions${query ? `?${query}` : ''}`
+    `${origin}/v1/data/sports/sessions${query ? `?${query}` : ''}`,
+    {
+      headers: { authorization: `Bearer ${token}` }
+    }
   );
   return data.sessions ?? [];
 };
 
 export const fetchSportSession = async (sessionId: string): Promise<SportSessionResponse> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   const data = await fetchJson<{ session: SportSessionResponse }>(
-    `${origin}/v1/sports/sessions/${sessionId}`
+    `${origin}/v1/data/sports/sessions/${sessionId}`,
+    {
+      headers: { authorization: `Bearer ${token}` }
+    }
   );
   return data.session;
 };
@@ -89,11 +97,15 @@ export const startSportSession = async (payload: {
   };
 }): Promise<SportSessionResponse> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   const data = await fetchJson<{ session: SportSessionResponse }>(
-    `${origin}/v1/sports/sessions/start`,
+    `${origin}/v1/data/sports/sessions/start`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`
+      },
       body: JSON.stringify(payload)
     }
   );
@@ -109,11 +121,15 @@ export const addArcheryRound = async (
   }
 ): Promise<ArcheryRoundResponse> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   const data = await fetchJson<{ round: ArcheryRoundResponse }>(
-    `${origin}/v1/sports/sessions/${sessionId}/archery/rounds`,
+    `${origin}/v1/data/sports/sessions/${sessionId}/archery/rounds`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`
+      },
       body: JSON.stringify(round)
     }
   );
@@ -126,11 +142,15 @@ export const addArcheryEnd = async (
   arrows: { score: number; isGold: boolean }[]
 ): Promise<ArcheryEndResponse> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   const data = await fetchJson<{ end: ArcheryEndResponse }>(
-    `${origin}/v1/sports/sessions/${sessionId}/archery/rounds/${roundId}/ends`,
+    `${origin}/v1/data/sports/sessions/${sessionId}/archery/rounds/${roundId}/ends`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`
+      },
       body: JSON.stringify({ arrows })
     }
   );
@@ -142,11 +162,15 @@ export const completeSportSession = async (
   notes?: string
 ): Promise<void> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   await fetchJson<{ ok: boolean }>(
-    `${origin}/v1/sports/sessions/${sessionId}/complete`,
+    `${origin}/v1/data/sports/sessions/${sessionId}/complete`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`
+      },
       body: JSON.stringify({ notes })
     }
   );
@@ -154,19 +178,25 @@ export const completeSportSession = async (
 
 export const deleteSportSession = async (sessionId: string): Promise<void> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   await fetchJson<{ ok: boolean }>(
-    `${origin}/v1/sports/sessions/${sessionId}`,
+    `${origin}/v1/data/sports/sessions/${sessionId}`,
     {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: { authorization: `Bearer ${token}` }
     }
   );
 };
 
 export const fetchSportStats = async (sportType?: SportType): Promise<SportStats> => {
   const origin = getPushApiOrigin();
+  const token = await getIdToken();
   const searchParams = sportType ? `?sportType=${sportType}` : '';
   const data = await fetchJson<{ stats: SportStats }>(
-    `${origin}/v1/sports/stats${searchParams}`
+    `${origin}/v1/data/sports/stats${searchParams}`,
+    {
+      headers: { authorization: `Bearer ${token}` }
+    }
   );
   return data.stats;
 };

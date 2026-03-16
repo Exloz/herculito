@@ -1,17 +1,20 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   BarChart3,
   CalendarRange,
+  Check,
+  ChevronDown,
   History,
   Minus,
+  Search,
   TrendingDown,
-  TrendingUp
+  TrendingUp,
+  X
 } from 'lucide-react';
 import { DashboardExerciseProgressSummary, MuscleGroup, Routine, WorkoutSession } from '../../../shared/types';
 import { formatDateForDisplay, getDateStringInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { APP_LOCALE, formatCountLabel, formatDateValue, formatNumber } from '../../../shared/lib/intl';
-import { AppCombobox } from '../../../shared/ui/AppCombobox';
 import { buildExerciseProgress } from '../lib/workoutProgress';
 import { useExerciseNameMap } from '../hooks/useExerciseNameMap';
 import { detectMuscleGroup, MUSCLE_GROUPS } from '../lib/muscleGroups';
@@ -37,6 +40,14 @@ const CHART_PADDING = { top: 18, right: 16, bottom: 34, left: 46 };
 const CHART_MIN_TICKS = 4;
 const CHART_MAX_TICKS = 6;
 const EXERCISE_GROUP_ORDER: MuscleGroup[] = ['pecho', 'espalda', 'piernas', 'hombros', 'brazos', 'core', 'fullbody'];
+
+const normalizeSearchText = (value: string): string => {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+};
 
 const roundChartValue = (value: number): number => {
   return Number(value.toFixed(3));
@@ -221,42 +232,43 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
     });
   }, [rawSummaries, summaryGroupById]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
+  const [exerciseSearchTerm, setExerciseSearchTerm] = useState('');
   const [selectedExerciseGroupFilter, setSelectedExerciseGroupFilter] = useState<MuscleGroup | 'all'>('all');
+  const [isExercisePickerOpen, setIsExercisePickerOpen] = useState(false);
   const [selectedRangeDays, setSelectedRangeDays] = useState<RangeValue>('all');
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+  const exercisePickerRef = useRef<HTMLDivElement | null>(null);
+  const exerciseSearchInputRef = useRef<HTMLInputElement | null>(null);
 
-  const exerciseGroupCounts = useMemo(() => {
-    return EXERCISE_GROUP_ORDER.reduce((counts, group) => {
-      const total = summaries.filter((summary) => {
-        return (summaryGroupById.get(summary.exerciseId) ?? 'fullbody') === group;
-      }).length;
+  const groupedSummaries = useMemo(() => {
+    const normalizedSearchTerm = normalizeSearchText(exerciseSearchTerm);
+    const matchesSearch = (exerciseName: string) => {
+      if (!normalizedSearchTerm) return true;
+      return normalizeSearchText(exerciseName).includes(normalizedSearchTerm);
+    };
 
-      counts.set(group, total);
-      return counts;
-    }, new Map<MuscleGroup, number>());
-  }, [summaries, summaryGroupById]);
+    return EXERCISE_GROUP_ORDER
+      .map((group) => {
+        const items = summaries.filter((summary) => {
+          const summaryGroup = summaryGroupById.get(summary.exerciseId) ?? 'fullbody';
+          if (selectedExerciseGroupFilter !== 'all' && summaryGroup !== selectedExerciseGroupFilter) {
+            return false;
+          }
+
+          return summaryGroup === group && matchesSearch(summary.exerciseName);
+        });
+
+        return {
+          group,
+          items
+        };
+      })
+      .filter((entry) => entry.items.length > 0);
+  }, [exerciseSearchTerm, selectedExerciseGroupFilter, summaries, summaryGroupById]);
 
   const filteredSummaries = useMemo(() => {
-    return summaries.filter((summary) => {
-      if (selectedExerciseGroupFilter === 'all') {
-        return true;
-      }
-
-      return (summaryGroupById.get(summary.exerciseId) ?? 'fullbody') === selectedExerciseGroupFilter;
-    });
-  }, [selectedExerciseGroupFilter, summaries, summaryGroupById]);
-
-  const exerciseOptions = useMemo(() => {
-    return filteredSummaries.map((summary) => {
-      const group = summaryGroupById.get(summary.exerciseId) ?? 'fullbody';
-
-      return {
-        value: summary.exerciseId,
-        label: summary.exerciseName,
-        groupLabel: MUSCLE_GROUPS[group].name
-      };
-    });
-  }, [filteredSummaries, summaryGroupById]);
+    return groupedSummaries.flatMap((entry) => entry.items);
+  }, [groupedSummaries]);
 
   useEffect(() => {
     if (summaries.length === 0) {
@@ -279,18 +291,6 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [selectedExerciseId, selectedRangeDays]);
 
   useEffect(() => {
-    if (selectedExerciseGroupFilter === 'all') {
-      return;
-    }
-
-    if ((exerciseGroupCounts.get(selectedExerciseGroupFilter) ?? 0) > 0) {
-      return;
-    }
-
-    setSelectedExerciseGroupFilter('all');
-  }, [exerciseGroupCounts, selectedExerciseGroupFilter]);
-
-  useEffect(() => {
     if (filteredSummaries.length === 0) {
       return;
     }
@@ -300,6 +300,39 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
       setSelectedExerciseId(filteredSummaries[0].exerciseId);
     }
   }, [filteredSummaries, selectedExerciseId]);
+
+  useEffect(() => {
+    if (!isExercisePickerOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (!exercisePickerRef.current?.contains(target)) {
+        setIsExercisePickerOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsExercisePickerOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('touchstart', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('touchstart', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isExercisePickerOpen]);
 
   const selectedSummary = useMemo(() => {
     if (summaries.length === 0) return null;
@@ -441,64 +474,115 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
             </div>
 
             <div className="xl:min-w-[18rem] xl:max-w-[20rem] xl:flex-1">
-              <div className="rounded-[1.15rem] border border-white/[0.06] bg-white/[0.03] p-3">
-                <div className="mb-2 flex items-center justify-between gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  <span>Ejercicio</span>
-                  <span>{filteredSummaries.length}/{summaries.length} visibles</span>
-                </div>
-
-                <AppCombobox
-                  id="exercise-progress-selector"
-                  value={selectedExerciseId}
-                  onChange={setSelectedExerciseId}
-                  options={exerciseOptions}
-                  placeholder="Selecciona un ejercicio"
-                  searchPlaceholder="Buscar ejercicio"
-                  noResultsText="Sin coincidencias. Ajusta la búsqueda o cambia el grupo."
-                  triggerClassName="w-full border-white/10 bg-white/[0.04]"
-                />
-
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                  <span className="rounded-full border border-white/8 bg-white/[0.04] px-2.5 py-1">
-                    Grupo activo: {selectedExerciseGroupFilter === 'all' ? 'Todos' : MUSCLE_GROUPS[selectedExerciseGroupFilter].name}
+              <div className="relative" ref={exercisePickerRef}>
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ejercicio</span>
+                <button
+                  type="button"
+                  role="combobox"
+                  aria-expanded={isExercisePickerOpen}
+                  aria-controls="exercise-progress-combobox-panel"
+                  onClick={() => setIsExercisePickerOpen((current) => !current)}
+                  className="input input-sm touch-target flex w-full items-center justify-between gap-3 text-left"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm text-white">{selectedSummary.exerciseName}</span>
+                    <span className="mt-0.5 block text-[11px] text-slate-400">{MUSCLE_GROUPS[selectedSummaryGroup ?? 'fullbody'].name}</span>
                   </span>
-                  {selectedSummaryGroup ? (
-                    <span className="rounded-full border border-mint/20 bg-mint/10 px-2.5 py-1 text-mint/90">
-                      Seleccionado: {MUSCLE_GROUPS[selectedSummaryGroup].name}
-                    </span>
-                  ) : null}
-                </div>
+                  <span className="inline-flex items-center gap-2 text-[10px] text-slate-500">
+                    {filteredSummaries.length}/{summaries.length}
+                    <ChevronDown size={14} className={`transition-transform ${isExercisePickerOpen ? 'rotate-180 text-slate-200' : ''}`} />
+                  </span>
+                </button>
 
-                <div className="mt-3 flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedExerciseGroupFilter('all')}
-                    className={`touch-target-sm inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${selectedExerciseGroupFilter === 'all' ? 'border-mint/30 bg-mint/16 text-mint' : 'border-white/8 bg-white/[0.04] text-slate-300 hover:border-white/12 hover:bg-white/[0.06] hover:text-white'}`}
+                {isExercisePickerOpen && (
+                  <div
+                    id="exercise-progress-combobox-panel"
+                    className="absolute right-0 z-30 mt-2 w-full overflow-hidden rounded-[1rem] border border-mist/60 bg-charcoal shadow-lift"
                   >
-                    <span>Todos</span>
-                    <span className="rounded-full bg-black/15 px-1.5 py-0.5 text-[10px] text-current/80">{summaries.length}</span>
-                  </button>
+                    <div className="border-b border-white/8 p-2.5">
+                      <div className="relative">
+                        <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                        <input
+                          ref={exerciseSearchInputRef}
+                          id="exercise-progress-search"
+                          type="text"
+                          className="input input-sm touch-target pl-8 pr-8"
+                          value={exerciseSearchTerm}
+                          onChange={(event) => setExerciseSearchTerm(event.target.value)}
+                          placeholder="Buscar ejercicio"
+                        />
+                        {exerciseSearchTerm.trim() && (
+                          <button
+                            type="button"
+                            aria-label="Limpiar búsqueda"
+                            onClick={() => setExerciseSearchTerm('')}
+                            className="motion-interactive absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 hover:text-white"
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
+                      </div>
 
-                  {EXERCISE_GROUP_ORDER.map((group) => {
-                    const total = exerciseGroupCounts.get(group) ?? 0;
+                      <div className="mt-2 flex gap-1 overflow-x-auto pb-0.5 no-scrollbar">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedExerciseGroupFilter('all')}
+                          className={`touch-target-sm whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === 'all' ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
+                        >
+                          Todos
+                        </button>
+                        {EXERCISE_GROUP_ORDER.map((group) => (
+                          <button
+                            key={group}
+                            type="button"
+                            onClick={() => setSelectedExerciseGroupFilter(group)}
+                            className={`touch-target-sm whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold ${selectedExerciseGroupFilter === group ? 'bg-mint/16 text-mint' : 'bg-white/[0.05] text-slate-300'}`}
+                          >
+                            {MUSCLE_GROUPS[group].name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                    if (total === 0) {
-                      return null;
-                    }
+                    <div className="max-h-[17.5rem] overflow-y-auto p-2">
+                      {filteredSummaries.length === 0 ? (
+                        <div className="rounded-[0.85rem] bg-white/[0.04] px-3 py-5 text-center text-xs text-slate-400">
+                          Sin coincidencias. Ajusta la búsqueda o el filtro.
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {groupedSummaries.map((entry) => (
+                            <div key={entry.group} className="rounded-[0.85rem] bg-white/[0.02] p-1.5">
+                              <div className="mb-1 px-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                                {MUSCLE_GROUPS[entry.group].name} ({entry.items.length})
+                              </div>
+                              <div className="space-y-1">
+                                {entry.items.map((summary) => {
+                                  const isSelected = summary.exerciseId === selectedSummary.exerciseId;
 
-                    return (
-                      <button
-                        key={group}
-                        type="button"
-                        onClick={() => setSelectedExerciseGroupFilter(group)}
-                        className={`touch-target-sm inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-[11px] font-semibold transition-colors ${selectedExerciseGroupFilter === group ? 'border-mint/30 bg-mint/16 text-mint' : 'border-white/8 bg-white/[0.04] text-slate-300 hover:border-white/12 hover:bg-white/[0.06] hover:text-white'}`}
-                      >
-                        <span>{MUSCLE_GROUPS[group].name}</span>
-                        <span className="rounded-full bg-black/15 px-1.5 py-0.5 text-[10px] text-current/80">{total}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                                  return (
+                                    <button
+                                      key={summary.exerciseId}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedExerciseId(summary.exerciseId);
+                                        setIsExercisePickerOpen(false);
+                                      }}
+                                      className={`motion-interactive touch-target flex w-full items-center justify-between gap-2 rounded-[0.75rem] px-2.5 py-2 text-left ${isSelected ? 'bg-mint/12 text-white' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}
+                                    >
+                                      <span className="truncate text-sm">{summary.exerciseName}</span>
+                                      {isSelected && <Check size={13} className="shrink-0 text-mint" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

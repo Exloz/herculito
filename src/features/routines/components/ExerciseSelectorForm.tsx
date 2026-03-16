@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { Exercise, ExerciseVideo } from '../../../shared/types';
+import { AppCombobox, type AppComboboxOption } from '../../../shared/ui/AppCombobox';
 import type { MusclewikiSuggestion } from '../api/musclewikiApi';
 import type { CustomExerciseForm } from '../types/exercise-selector';
 import { ExerciseVideoPicker } from './ExerciseVideoPicker';
@@ -43,6 +44,10 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
   onPickSuggestion,
   onClearVideo
 }) => {
+  const [isManualCategoryMode, setIsManualCategoryMode] = useState(() => {
+    return customExercise.category.trim().length > 0 && !categories.includes(customExercise.category);
+  });
+
   const handleNumberChange = (field: 'sets' | 'reps' | 'restTime', value: string) => {
     if (value === '') {
       onCustomExerciseChange({ [field]: '' } as Partial<CustomExerciseForm>);
@@ -71,6 +76,37 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
         ? `El maximo es ${MAX_REST_TIME_SECONDS} segundos.`
         : ''
     : '';
+
+  const hasPresetCategory = customExercise.category.trim().length > 0 && categories.includes(customExercise.category);
+  const categoryOptions = useMemo<AppComboboxOption[]>(() => {
+    const options: AppComboboxOption[] = [
+      { value: '', label: 'Sin categoría por ahora' },
+      ...categories.map((category) => ({ value: category, label: category }))
+    ];
+
+    if (customExercise.category.trim().length > 0 && !categories.includes(customExercise.category)) {
+      options.push({
+        value: customExercise.category,
+        label: customExercise.category,
+        groupLabel: 'Manual'
+      });
+    }
+
+    return options;
+  }, [categories, customExercise.category]);
+
+  useEffect(() => {
+    if (customExercise.category.trim().length === 0) {
+      return;
+    }
+
+    if (!categories.includes(customExercise.category)) {
+      setIsManualCategoryMode(true);
+      return;
+    }
+
+    setIsManualCategoryMode(false);
+  }, [categories, customExercise.category]);
 
   return (
     <div className="p-3.5 pb-3 sm:p-4 sm:pb-4">
@@ -104,23 +140,47 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
 
         <div>
           <label htmlFor="custom-exercise-category" className="block text-sm text-slate-300 mb-1">Categoría</label>
-          <input
-            id="custom-exercise-category"
-            type="text"
-            value={customExercise.category}
-            onChange={(event) => onCustomExerciseChange({ category: event.target.value.slice(0, MAX_EXERCISE_CATEGORY_LENGTH) })}
-            className="input input-sm text-sm"
-            placeholder="Ej: Pecho, espalda o piernas"
-            list="categories"
-            maxLength={MAX_EXERCISE_CATEGORY_LENGTH}
-            dir="auto"
-          />
+          <div className="space-y-2.5 rounded-[1.1rem] border border-white/[0.06] bg-white/[0.03] p-2.5">
+            <AppCombobox
+              id="custom-exercise-category"
+              value={customExercise.category}
+              onChange={(value) => {
+                onCustomExerciseChange({ category: value });
+                if (value === '' || categories.includes(value)) {
+                  setIsManualCategoryMode(false);
+                }
+              }}
+              options={categoryOptions}
+              placeholder="Selecciona una categoría"
+              searchPlaceholder="Buscar categoría"
+              noResultsText="No hay categorías guardadas con ese nombre."
+              triggerClassName="w-full border-white/[0.08] bg-white/[0.04]"
+            />
+
+            <div className="flex items-center justify-between gap-2 rounded-[0.95rem] bg-black/10 px-3 py-2 text-xs text-slate-400">
+              <span>{hasPresetCategory ? 'Usando una categoría existente.' : 'Puedes escribir una categoría nueva si no existe.'}</span>
+              <button
+                type="button"
+                onClick={() => setIsManualCategoryMode((current) => !current)}
+                className={`touch-target-sm rounded-full px-3 py-1.5 font-semibold transition-colors ${isManualCategoryMode ? 'bg-mint/15 text-mint' : 'bg-white/[0.06] text-slate-200 hover:text-white'}`}
+              >
+                {isManualCategoryMode ? 'Usar lista' : 'Escribir manual'}
+              </button>
+            </div>
+
+            {isManualCategoryMode ? (
+              <input
+                type="text"
+                value={customExercise.category}
+                onChange={(event) => onCustomExerciseChange({ category: event.target.value.slice(0, MAX_EXERCISE_CATEGORY_LENGTH) })}
+                className="input input-sm border-white/[0.08] bg-white/[0.04] text-sm"
+                placeholder="Ej: Pecho, espalda o piernas"
+                maxLength={MAX_EXERCISE_CATEGORY_LENGTH}
+                dir="auto"
+              />
+            ) : null}
+          </div>
           <div className="mt-1 text-xs text-slate-400">{customExercise.category.length}/{MAX_EXERCISE_CATEGORY_LENGTH}</div>
-          <datalist id="categories">
-            {categories.map((category) => (
-              <option key={category} value={category} />
-            ))}
-          </datalist>
         </div>
 
         <div>

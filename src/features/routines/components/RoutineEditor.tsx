@@ -236,21 +236,21 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
         aria-hidden={showExerciseSelector}
         tabIndex={-1}
       >
-        <div className="shrink-0 border-b border-white/8 px-4 pb-4 pt-[calc(0.6rem+env(safe-area-inset-top))] sm:px-5 sm:pb-5 sm:pt-5">
+        <div className="shrink-0 border-b border-white/8 px-4 pb-3 pt-[calc(0.45rem+env(safe-area-inset-top))] sm:px-5 sm:pb-4 sm:pt-4">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-mint/85">
                 Rutinas
               </div>
-              <h2 id="routine-editor-title" className="mt-1 font-display text-[1.45rem] leading-[0.98] text-white sm:text-[1.85rem]">
+              <h2 id="routine-editor-title" className="mt-1 font-display text-[1.22rem] leading-[1] text-white sm:text-[1.6rem]">
                 {routine ? 'Editar rutina' : 'Nueva rutina'}
               </h2>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="rounded-[1rem] bg-white/[0.04] px-3 py-2 text-right">
+              <div className="rounded-[0.9rem] bg-white/[0.04] px-2.5 py-1.5 text-right">
                 <div className="text-[11px] uppercase tracking-[0.18em] text-slate-400">Ejercicios</div>
-                <div className="mt-1 font-display text-xl text-white">{exercises.length}</div>
+                <div className="mt-0.5 font-display text-lg text-white">{exercises.length}</div>
               </div>
               <button
                 type="button"
@@ -265,16 +265,16 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-6 pt-4 sm:px-5 sm:pb-8 sm:pt-5">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
-              <div className="space-y-4 rounded-[1.35rem] bg-white/[0.03] p-4">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-5 sm:pb-6 sm:pt-4">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+              <div className="space-y-3 rounded-[1.2rem] bg-white/[0.03] p-3.5">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Detalles</div>
-                  <h3 className="mt-1 font-display text-xl text-white">Información básica</h3>
+                  <h3 className="mt-1 font-display text-lg text-white">Información básica</h3>
                 </div>
 
                 <div>
-                  <label htmlFor="routine-name" className="mb-2 block text-sm font-medium text-slate-300">
+                  <label htmlFor="routine-name" className="mb-1 block text-sm font-medium text-slate-300">
                     Nombre de la rutina
                   </label>
                   <input
@@ -295,7 +295,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 </div>
 
                 <div>
-                  <label htmlFor="routine-description" className="mb-2 block text-sm font-medium text-slate-300">
+                  <label htmlFor="routine-description" className="mb-1 block text-sm font-medium text-slate-300">
                     Descripción (opcional)
                   </label>
                   <textarea
@@ -304,7 +304,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                     onChange={(e) => setDescription(e.target.value.slice(0, MAX_ROUTINE_DESCRIPTION_LENGTH))}
                     className="input"
                     placeholder="Describe tu rutina..."
-                    rows={3}
+                    rows={2}
                     maxLength={MAX_ROUTINE_DESCRIPTION_LENGTH}
                     dir="auto"
                   />
@@ -312,7 +312,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 </div>
 
                 <div>
-                  <label htmlFor="routine-primary-muscle-group" className="mb-2 block text-sm font-medium text-slate-300">
+                  <label htmlFor="routine-primary-muscle-group" className="mb-1 block text-sm font-medium text-slate-300">
                     Grupo muscular principal
                   </label>
                   <select
@@ -329,7 +329,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   </select>
                 </div>
 
-                <label htmlFor="isPublic" className="flex items-start gap-3 rounded-[1.2rem] border border-white/8 bg-slateDeep/60 px-4 py-3">
+                <label htmlFor="isPublic" className="flex items-start gap-3 rounded-[1.1rem] border border-white/8 bg-slateDeep/60 px-3 py-2.5">
                   <input
                     type="checkbox"
                     id="isPublic"
@@ -344,12 +344,12 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                 </label>
               </div>
 
-              <div className="rounded-[1.35rem] border border-mint/15 bg-mint/8 p-4">
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="rounded-[1.2rem] border border-mint/15 bg-mint/8 p-3.5">
+                <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/80">Ejercicios</div>
-                    <h3 className="mt-1 font-display text-xl text-white">Lista de ejercicios</h3>
-                    <p className="mt-2 text-sm text-slate-300">Agrega ejercicios y ajusta series, reps y descanso antes de guardar.</p>
+                    <h3 className="mt-1 font-display text-lg text-white">Lista de ejercicios</h3>
+                    <p className="mt-1.5 text-xs text-slate-300">Ajusta series, reps y descanso.</p>
                   </div>
                   <button
                     type="button"
@@ -361,7 +361,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   </button>
                 </div>
 
-                <div className="mb-4 rounded-[1rem] bg-white/[0.04] px-3 py-2.5 text-sm text-slate-300">
+                <div className="mb-3 rounded-[0.95rem] bg-white/[0.04] px-3 py-2 text-sm text-slate-300">
                   {exercises.length > 0
                     ? `Has agregado ${exercises.length} ejercicio${exercises.length === 1 ? '' : 's'}.`
                     : 'Agrega el primer ejercicio para poder guardar la rutina.'}
@@ -373,12 +373,12 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                     <p className="mt-2 text-sm">Añade al menos uno para completar la rutina.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {exercises.map((exercise, index) => {
                       const restTimeError = getExerciseRestTimeError(exercise.id);
 
                       return (
-                        <div key={exercise.id} className="motion-list-item app-surface-muted p-3">
+                        <div key={exercise.id} className="motion-list-item app-surface-muted p-2.5">
                           <div className="mb-3 flex items-center justify-between gap-3">
                             <div className="min-w-0 flex items-center gap-2">
                               <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
@@ -415,7 +415,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 text-sm">
+                          <div className="grid grid-cols-3 gap-1.5 text-sm">
                             <div>
                               <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="mb-1 block text-slate-300">Series</label>
                               <input
@@ -479,14 +479,14 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-white/8 bg-[linear-gradient(180deg,rgba(11,15,20,0.72),rgba(11,15,20,0.98))] px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4 sm:px-5 sm:pb-5">
+          <div className="shrink-0 border-t border-white/8 bg-[linear-gradient(180deg,rgba(11,15,20,0.72),rgba(11,15,20,0.98))] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
             {formError && (
               <div className="mb-3 rounded-xl border border-crimson/40 bg-crimson/10 px-3 py-2 text-sm text-crimson" role="alert">
                 {formError}
               </div>
             )}
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <button
                 type="button"
                 onClick={onCancel}

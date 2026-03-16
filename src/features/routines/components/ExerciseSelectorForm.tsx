@@ -73,16 +73,11 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
     : '';
 
   return (
-    <div className="p-4 pb-4 sm:p-5 sm:pb-6">
-      <div className="space-y-4">
-        <div className="rounded-[1.5rem] border border-white/8 bg-white/[0.03] p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-            {isEditing ? 'Detalles del ejercicio' : 'Nuevo ejercicio'}
-          </div>
-          <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            Completa la informacion basica para guardar este ejercicio y volver a usarlo despues.
-          </p>
-        </div>
+    <div className="p-3.5 pb-3 sm:p-4 sm:pb-4">
+      <div className="space-y-3">
+        <p className="text-xs text-slate-400">
+          {isEditing ? 'Ajusta los datos y guarda cambios.' : 'Completa los datos para crearlo y reutilizarlo.'}
+        </p>
 
         <div>
           <label htmlFor="custom-exercise-name" className="block text-sm text-slate-300 mb-1">Nombre del ejercicio *</label>
@@ -91,7 +86,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             type="text"
             value={customExercise.name}
             onChange={(event) => onCustomExerciseChange({ name: event.target.value.slice(0, MAX_EXERCISE_NAME_LENGTH) })}
-            className="input text-sm"
+            className="input input-sm text-sm"
             placeholder="Ej: Press de banca"
             maxLength={MAX_EXERCISE_NAME_LENGTH}
             dir="auto"
@@ -114,7 +109,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             type="text"
             value={customExercise.category}
             onChange={(event) => onCustomExerciseChange({ category: event.target.value.slice(0, MAX_EXERCISE_CATEGORY_LENGTH) })}
-            className="input text-sm"
+            className="input input-sm text-sm"
             placeholder="Ej: Pecho, espalda o piernas"
             list="categories"
             maxLength={MAX_EXERCISE_CATEGORY_LENGTH}
@@ -154,7 +149,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
           onClearVideo={onClearVideo}
         />
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <div>
             <label htmlFor="custom-exercise-sets" className="block text-sm text-slate-300 mb-1">Series</label>
             <input

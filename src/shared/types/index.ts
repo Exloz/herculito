@@ -165,16 +165,6 @@ export interface Routine {
   secondaryMuscleGroups?: MuscleGroup[]; // grupos musculares secundarios
 }
 
-// Nueva interface para rutinas que un usuario ha adoptado/guardado
-export interface UserRoutine {
-  id: string;
-  userId: string;
-  routineId: string;
-  addedAt: Date;
-  customName?: string; // nombre personalizado por el usuario
-  isFavorite?: boolean;
-}
-
 export interface WorkoutSession {
   id: string;
   routineId: string;
@@ -239,25 +229,9 @@ export interface DashboardData {
   exerciseProgress: DashboardExerciseProgressSummary[];
 }
 
-export interface ExerciseHistory {
-  exerciseId: string;
-  exerciseName: string;
-  userId: string;
-  lastWeight: number[];
-  lastDate: string;
-  personalRecord: number;
-}
-
-// Tipos legacy (mantener por compatibilidad)
 export interface Workout {
   id: string;
-  day: string; // 'monday', 'tuesday', etc.
+  day: string;
   exercises: Exercise[];
   name: string;
-}
-
-export interface WorkoutRoutine {
-  id: string;
-  name: string;
-  workouts: { [key: string]: Workout }; // key is day of week
 }

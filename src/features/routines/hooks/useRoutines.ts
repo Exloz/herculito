@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Routine, ExerciseHistory, Exercise, MuscleGroup } from '../../../shared/types';
+import { Routine, Exercise, MuscleGroup } from '../../../shared/types';
 import {
   fetchRoutines,
   createRoutine as apiCreateRoutine,
@@ -153,33 +153,5 @@ export const useRoutines = (userId: string, options?: { includeVideos?: boolean 
     canEditRoutine,
     getPublicRoutines,
     getUserRoutines
-  };
-};
-
-export const useExerciseHistory = (userId: string) => {
-  const [history] = useState<ExerciseHistory[]>([]);
-
-  const updateExerciseHistory = async (
-    exerciseId: string,
-    exerciseName: string,
-    weights: number[],
-    personalRecord: number
-  ) => {
-    if (!userId) return;
-
-    void exerciseId;
-    void exerciseName;
-    void weights;
-    void personalRecord;
-  };
-
-  const getExerciseHistory = (exerciseId: string): ExerciseHistory | undefined => {
-    return history.find((entry) => entry.exerciseId === exerciseId);
-  };
-
-  return {
-    history,
-    updateExerciseHistory,
-    getExerciseHistory
   };
 };

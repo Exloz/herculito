@@ -8,11 +8,12 @@ import {
   TrendingDown,
   TrendingUp
 } from 'lucide-react';
-import { DashboardExerciseProgressSummary, Routine, WorkoutSession } from '../../../shared/types';
+import { DashboardExerciseProgressSummary, MuscleGroup, Routine, WorkoutSession } from '../../../shared/types';
 import { formatDateForDisplay, getDateStringInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { APP_LOCALE, formatCountLabel, formatDateValue, formatNumber } from '../../../shared/lib/intl';
 import { buildExerciseProgress } from '../lib/workoutProgress';
 import { useExerciseNameMap } from '../hooks/useExerciseNameMap';
+import { detectMuscleGroup, MUSCLE_GROUPS } from '../lib/muscleGroups';
 
 interface ExerciseProgressPanelProps {
   sessions?: WorkoutSession[];
@@ -34,6 +35,15 @@ const CHART_HEIGHT = 220;
 const CHART_PADDING = { top: 18, right: 16, bottom: 34, left: 46 };
 const CHART_MIN_TICKS = 4;
 const CHART_MAX_TICKS = 6;
+const EXERCISE_GROUP_ORDER: MuscleGroup[] = ['pecho', 'espalda', 'piernas', 'hombros', 'brazos', 'core', 'fullbody'];
+
+const normalizeSearchText = (value: string): string => {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+};
 
 const roundChartValue = (value: number): number => {
   return Number(value.toFixed(3));
@@ -188,16 +198,70 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   summaries: precomputedSummaries
 }) => {
   const exerciseNameMap = useExerciseNameMap(!precomputedSummaries);
-  const summaries = useMemo(() => {
+  const rawSummaries = useMemo(() => {
     if (precomputedSummaries) {
       return precomputedSummaries;
     }
 
     return buildExerciseProgress(sessions, routines, exerciseNameMap);
   }, [exerciseNameMap, precomputedSummaries, routines, sessions]);
+  const summaryGroupById = useMemo(() => {
+    const groupMap = new Map<string, MuscleGroup>();
+
+    rawSummaries.forEach((summary) => {
+      groupMap.set(summary.exerciseId, detectMuscleGroup(summary.exerciseName));
+    });
+
+    return groupMap;
+  }, [rawSummaries]);
+  const summaries = useMemo(() => {
+    return [...rawSummaries].sort((left, right) => {
+      const leftGroup = summaryGroupById.get(left.exerciseId) ?? 'fullbody';
+      const rightGroup = summaryGroupById.get(right.exerciseId) ?? 'fullbody';
+      const groupDelta = EXERCISE_GROUP_ORDER.indexOf(leftGroup) - EXERCISE_GROUP_ORDER.indexOf(rightGroup);
+
+      if (groupDelta !== 0) {
+        return groupDelta;
+      }
+
+      return left.exerciseName.localeCompare(right.exerciseName, APP_LOCALE, { sensitivity: 'base' });
+    });
+  }, [rawSummaries, summaryGroupById]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>('');
+  const [exerciseSearchTerm, setExerciseSearchTerm] = useState('');
+  const [selectedExerciseGroupFilter, setSelectedExerciseGroupFilter] = useState<MuscleGroup | 'all'>('all');
   const [selectedRangeDays, setSelectedRangeDays] = useState<RangeValue>('all');
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+
+  const groupedSummaries = useMemo(() => {
+    const normalizedSearchTerm = normalizeSearchText(exerciseSearchTerm);
+    const matchesSearch = (exerciseName: string) => {
+      if (!normalizedSearchTerm) return true;
+      return normalizeSearchText(exerciseName).includes(normalizedSearchTerm);
+    };
+
+    return EXERCISE_GROUP_ORDER
+      .map((group) => {
+        const items = summaries.filter((summary) => {
+          const summaryGroup = summaryGroupById.get(summary.exerciseId) ?? 'fullbody';
+          if (selectedExerciseGroupFilter !== 'all' && summaryGroup !== selectedExerciseGroupFilter) {
+            return false;
+          }
+
+          return summaryGroup === group && matchesSearch(summary.exerciseName);
+        });
+
+        return {
+          group,
+          items
+        };
+      })
+      .filter((entry) => entry.items.length > 0);
+  }, [exerciseSearchTerm, selectedExerciseGroupFilter, summaries, summaryGroupById]);
+
+  const filteredSummaries = useMemo(() => {
+    return groupedSummaries.flatMap((entry) => entry.items);
+  }, [groupedSummaries]);
 
   useEffect(() => {
     if (summaries.length === 0) {
@@ -219,10 +283,24 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
     }
   }, [selectedExerciseId, selectedRangeDays]);
 
+  useEffect(() => {
+    if (filteredSummaries.length === 0) {
+      return;
+    }
+
+    const selectedExists = filteredSummaries.some((summary) => summary.exerciseId === selectedExerciseId);
+    if (!selectedExists) {
+      setSelectedExerciseId(filteredSummaries[0].exerciseId);
+    }
+  }, [filteredSummaries, selectedExerciseId]);
+
   const selectedSummary = useMemo(() => {
     if (summaries.length === 0) return null;
     return summaries.find((summary) => summary.exerciseId === selectedExerciseId) ?? summaries[0];
   }, [selectedExerciseId, summaries]);
+  const selectedSummaryGroup = selectedSummary
+    ? summaryGroupById.get(selectedSummary.exerciseId) ?? 'fullbody'
+    : null;
 
   const pointsInRange = useMemo(() => {
     if (!selectedSummary) return [];
@@ -343,6 +421,11 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
                 <span className="rounded-full bg-white/[0.05] px-2.5 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
                 <span className="rounded-full bg-white/[0.05] px-2.5 py-1">Último: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
+                {selectedSummaryGroup && (
+                  <span className="rounded-full bg-white/[0.05] px-2.5 py-1">
+                    Grupo: {MUSCLE_GROUPS[selectedSummaryGroup].name}
+                  </span>
+                )}
                 <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold ${trendCopy.tone}`}>
                   <trendCopy.Icon size={13} />
                   {trendCopy.label}
@@ -350,22 +433,76 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </div>
             </div>
 
-            <div className="xl:min-w-[18rem] xl:max-w-[20rem] xl:flex-1">
-              <label className="block min-w-0" htmlFor="exercise-progress-selector">
-                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ejercicio</span>
-                <select
-                  id="exercise-progress-selector"
+            <div className="space-y-2 xl:min-w-[18rem] xl:max-w-[20rem] xl:flex-1">
+              <label className="block min-w-0" htmlFor="exercise-progress-search">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Buscar ejercicio</span>
+                <input
+                  id="exercise-progress-search"
+                  type="text"
                   className="input input-sm"
-                  value={selectedSummary.exerciseId}
-                  onChange={(event) => setSelectedExerciseId(event.target.value)}
+                  value={exerciseSearchTerm}
+                  onChange={(event) => setExerciseSearchTerm(event.target.value)}
+                  placeholder="Escribe nombre del ejercicio"
+                />
+              </label>
+
+              <label className="block min-w-0" htmlFor="exercise-progress-group-filter">
+                <span className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Grupo muscular</span>
+                <select
+                  id="exercise-progress-group-filter"
+                  className="input input-sm"
+                  value={selectedExerciseGroupFilter}
+                  onChange={(event) => setSelectedExerciseGroupFilter(event.target.value as MuscleGroup | 'all')}
                 >
-                  {summaries.map((summary) => (
-                    <option key={summary.exerciseId} value={summary.exerciseId}>
-                      {summary.exerciseName}
+                  <option value="all">Todos los grupos</option>
+                  {EXERCISE_GROUP_ORDER.map((group) => (
+                    <option key={group} value={group}>
+                      {MUSCLE_GROUPS[group].name}
                     </option>
                   ))}
                 </select>
               </label>
+
+              <label className="block min-w-0" htmlFor="exercise-progress-selector">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Seleccionar</span>
+                  <span className="text-[10px] text-slate-500">{filteredSummaries.length}/{summaries.length}</span>
+                </div>
+                <select
+                  id="exercise-progress-selector"
+                  className="input input-sm"
+                  value={filteredSummaries.length > 0 ? selectedSummary.exerciseId : ''}
+                  onChange={(event) => setSelectedExerciseId(event.target.value)}
+                  disabled={filteredSummaries.length === 0}
+                >
+                  {filteredSummaries.length === 0 ? (
+                    <option value="">Sin resultados</option>
+                  ) : (
+                    groupedSummaries.map((entry) => (
+                      <optgroup key={entry.group} label={`${MUSCLE_GROUPS[entry.group].name} (${entry.items.length})`}>
+                        {entry.items.map((summary) => (
+                          <option key={summary.exerciseId} value={summary.exerciseId}>
+                            {summary.exerciseName}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))
+                  )}
+                </select>
+              </label>
+
+              {filteredSummaries.length === 0 && (
+                <p className="text-xs text-slate-400">
+                  No encontramos ejercicios con ese nombre.{' '}
+                  <button
+                    type="button"
+                    className="font-semibold text-mint"
+                    onClick={() => setExerciseSearchTerm('')}
+                  >
+                    Limpiar búsqueda
+                  </button>
+                </p>
+              )}
             </div>
           </div>
 

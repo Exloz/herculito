@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { EndInput } from './EndInput';
 
@@ -21,6 +21,23 @@ Object.defineProperty(globalThis, 'localStorage', {
 });
 
 const STORAGE_KEY = 'herculito:archery:inputMode';
+
+const mockSvgBounds = (svg: Element) => {
+  Object.defineProperty(svg, 'getBoundingClientRect', {
+    configurable: true,
+    value: () => ({
+      width: 400,
+      height: 400,
+      top: 0,
+      left: 0,
+      right: 400,
+      bottom: 400,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    }),
+  });
+};
 
 describe('EndInput', () => {
   let mockOnComplete: (arrows: { score: number; isGold: boolean }[]) => void;
@@ -47,10 +64,11 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      expect(switches).toHaveLength(2);
-      expect(switches[0]).toHaveAttribute('aria-checked', 'true');
-      expect(switches[1]).toHaveAttribute('aria-checked', 'false');
+      // Now uses role="radio" instead of "switch"
+      const radios = screen.getAllByRole('radio');
+      expect(radios).toHaveLength(2);
+      expect(radios[0]).toHaveAttribute('aria-checked', 'true');
+      expect(radios[1]).toHaveAttribute('aria-checked', 'false');
     });
 
     it('renders the correct number of arrow inputs', () => {
@@ -61,7 +79,7 @@ describe('EndInput', () => {
         />
       );
 
-      const arrows = screen.getAllByLabelText(/flecha sin puntuar/i);
+      const arrows = screen.getAllByLabelText(/flecha/i);
       expect(arrows).toHaveLength(ARROWS_PER_END);
     });
 
@@ -73,10 +91,11 @@ describe('EndInput', () => {
         />
       );
 
-      expect(screen.getByText(/Flecha 1 de 6/)).toBeInTheDocument();
+      // New format: "Flecha X" without "de Y"
+      expect(screen.getByText(/Flecha 1/)).toBeInTheDocument();
     });
 
-    it('shows initial subtotal of 0', () => {
+    it('shows initial subtotal', () => {
       render(
         <EndInput
           arrowsPerEnd={ARROWS_PER_END}
@@ -84,8 +103,9 @@ describe('EndInput', () => {
         />
       );
 
-      expect(screen.getByText(/Subtotal:/)).toBeInTheDocument();
-      expect(screen.getByText(/0 pts/)).toBeInTheDocument();
+      // New format: shows just the number with "pts"
+      expect(screen.getByText('0')).toBeInTheDocument();
+      expect(screen.getByText('pts')).toBeInTheDocument();
     });
 
     it('does not show undo button initially', () => {
@@ -98,6 +118,17 @@ describe('EndInput', () => {
 
       expect(screen.queryByRole('button', { name: /deshacer/i })).not.toBeInTheDocument();
     });
+
+    it('does not expose empty arrows as clickable buttons', () => {
+      render(
+        <EndInput
+          arrowsPerEnd={ARROWS_PER_END}
+          onComplete={mockOnComplete}
+        />
+      );
+
+      expect(screen.queryByRole('button', { name: /flecha sin puntuar/i })).not.toBeInTheDocument();
+    });
   });
 
   describe('toggle between target and numpad', () => {
@@ -109,9 +140,9 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      expect(switches[0]).toHaveAttribute('aria-checked', 'true');
-      expect(switches[1]).toHaveAttribute('aria-checked', 'false');
+      const radios = screen.getAllByRole('radio');
+      expect(radios[0]).toHaveAttribute('aria-checked', 'true');
+      expect(radios[1]).toHaveAttribute('aria-checked', 'false');
     });
 
     it('toggles to numpad mode when clicking keyboard button', () => {
@@ -122,11 +153,12 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
 
-      expect(switches[1]).toHaveAttribute('aria-checked', 'true');
-      expect(switches[0]).toHaveAttribute('aria-checked', 'false');
+      const radios = screen.getAllByRole('radio');
+      expect(radios[1]).toHaveAttribute('aria-checked', 'true');
+      expect(radios[0]).toHaveAttribute('aria-checked', 'false');
     });
 
     it('toggles back to target mode when clicking target button', () => {
@@ -137,11 +169,14 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
-      fireEvent.click(switches[0]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
+      
+      const targetButton = screen.getByRole('radio', { name: /diana/i });
+      fireEvent.click(targetButton);
 
-      expect(switches[0]).toHaveAttribute('aria-checked', 'true');
+      const radios = screen.getAllByRole('radio');
+      expect(radios[0]).toHaveAttribute('aria-checked', 'true');
     });
 
     it('renders TargetFace when in target mode', () => {
@@ -164,15 +199,13 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
 
       expect(screen.getByRole('button', { name: /siete puntos/i })).toBeInTheDocument();
     });
-  });
 
-  describe('score flow from TargetFace', () => {
-    it('records score when clicking target ring', () => {
+    it('supports keyboard navigation between toggle options', () => {
       render(
         <EndInput
           arrowsPerEnd={ARROWS_PER_END}
@@ -180,11 +213,28 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[4]); // Score 5
+      const targetButton = screen.getByRole('radio', { name: /diana/i });
+      fireEvent.keyDown(targetButton, { key: 'ArrowRight' });
+
+      expect(screen.getByRole('radio', { name: /teclado/i })).toHaveAttribute('aria-checked', 'true');
+    });
+  });
+
+  describe('score flow from TargetFace', () => {
+    it('records score when clicking X button', () => {
+      render(
+        <EndInput
+          arrowsPerEnd={ARROWS_PER_END}
+          onComplete={mockOnComplete}
+        />
+      );
+
+      // Click the X button
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
 
       const arrows = screen.getAllByLabelText(/flecha/i);
-      expect(arrows[0]).toHaveTextContent('5');
+      expect(arrows[0]).toHaveTextContent('X');
     });
 
     it('tracks multiple arrows correctly', () => {
@@ -195,30 +245,15 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[4]);
-      fireEvent.click(rings[8]);
-      fireEvent.click(rings[0]);
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+      
+      // Click again for next arrow
+      fireEvent.click(xButton);
 
       const arrows = screen.getAllByLabelText(/flecha/i);
-      expect(arrows[0]).toHaveTextContent('5');
-      expect(arrows[1]).toHaveTextContent('9');
-      expect(arrows[2]).toHaveTextContent('1');
-    });
-
-    it('marks gold rings correctly', () => {
-      render(
-        <EndInput
-          arrowsPerEnd={ARROWS_PER_END}
-          onComplete={mockOnComplete}
-        />
-      );
-
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[9]); // Score 10 (gold)
-
-      const arrows = screen.getAllByLabelText(/flecha/i);
-      expect(arrows[0]).toHaveAttribute('aria-label', 'Flecha: 10 puntos');
+      expect(arrows[0]).toHaveTextContent('X');
+      expect(arrows[1]).toHaveTextContent('X');
     });
 
     it('shows undo button after entering first arrow', () => {
@@ -229,11 +264,58 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[0]);
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
 
-      const undoButtons = screen.getAllByText('Deshacer última');
+      const undoButtons = screen.getAllByText('Deshacer');
       expect(undoButtons.length).toBeGreaterThan(0);
+    });
+
+    it('maps SVG hits to the expected ring scores', () => {
+      render(
+        <EndInput
+          arrowsPerEnd={ARROWS_PER_END}
+          onComplete={mockOnComplete}
+        />
+      );
+
+      const svg = screen.getByRole('img', { name: /diana de tiro con arco/i });
+      mockSvgBounds(svg);
+
+      fireEvent.click(svg, { clientX: 230, clientY: 200 });
+      fireEvent.click(svg, { clientX: 270, clientY: 200 });
+
+      const arrows = screen.getAllByLabelText(/flecha/i);
+      expect(arrows[0]).toHaveTextContent('9');
+      expect(arrows[1]).toHaveTextContent('7');
+    });
+  });
+
+  describe('editing existing arrows', () => {
+    it('allows editing an earlier arrow without losing completion flow', () => {
+      render(
+        <EndInput
+          arrowsPerEnd={3}
+          onComplete={mockOnComplete}
+        />
+      );
+
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
+
+      const arrows = screen.getAllByLabelText(/flecha/i);
+      fireEvent.click(arrows[1]);
+
+      expect(screen.getByText(/Editando flecha 2/i)).toBeInTheDocument();
+
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
+      fireEvent.click(screen.getByRole('button', { name: /siete puntos/i }));
+
+      expect(arrows[1]).toHaveTextContent('7');
+      expect(screen.getByRole('button', { name: /confirmar tanda/i })).toBeInTheDocument();
     });
   });
 
@@ -246,8 +328,8 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
 
       const numpadButton = screen.getByRole('button', { name: /siete puntos/i });
       fireEvent.click(numpadButton);
@@ -264,8 +346,8 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
 
       const missButton = screen.getByRole('button', { name: /fallo/i });
       fireEvent.click(missButton);
@@ -282,14 +364,14 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
 
       const xButton = screen.getByRole('button', { name: /diez de oro/i });
       fireEvent.click(xButton);
 
       const arrows = screen.getAllByLabelText(/flecha/i);
-      expect(arrows[0]).toHaveTextContent('10');
+      expect(arrows[0]).toHaveTextContent('X');
     });
   });
 
@@ -302,8 +384,8 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
 
       expect(localStorage.getItem(STORAGE_KEY)).toBe('numpad');
     });
@@ -316,9 +398,11 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      fireEvent.click(switches[1]);
-      fireEvent.click(switches[0]);
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
+      
+      const targetButton = screen.getByRole('radio', { name: /diana/i });
+      fireEvent.click(targetButton);
 
       expect(localStorage.getItem(STORAGE_KEY)).toBe('target');
     });
@@ -333,8 +417,8 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      expect(switches[1]).toHaveAttribute('aria-checked', 'true');
+      const radios = screen.getAllByRole('radio');
+      expect(radios[1]).toHaveAttribute('aria-checked', 'true');
     });
 
     it('ignores invalid localStorage values', () => {
@@ -347,8 +431,8 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      expect(switches[0]).toHaveAttribute('aria-checked', 'true');
+      const radios = screen.getAllByRole('radio');
+      expect(radios[0]).toHaveAttribute('aria-checked', 'true');
     });
   });
 
@@ -361,16 +445,16 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
       for (let i = 0; i < ARROWS_PER_END; i++) {
-        fireEvent.click(rings[i]);
+        fireEvent.click(xButton);
       }
 
       const confirmButtons = screen.getAllByText('Confirmar tanda');
       expect(confirmButtons.length).toBeGreaterThan(0);
     });
 
-    it('calls onComplete with all arrows when confirming', () => {
+    it('calls onComplete with all arrows when confirming', async () => {
       render(
         <EndInput
           arrowsPerEnd={ARROWS_PER_END}
@@ -378,26 +462,24 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
       for (let i = 0; i < ARROWS_PER_END; i++) {
-        fireEvent.click(rings[i]);
+        fireEvent.click(xButton);
       }
 
       const confirmButtons = screen.getAllByText('Confirmar tanda');
       fireEvent.click(confirmButtons[0]);
 
-      expect(mockOnComplete).toHaveBeenCalledTimes(1);
-      expect(mockOnComplete).toHaveBeenCalledWith([
-        { score: 1, isGold: false },
-        { score: 2, isGold: false },
-        { score: 3, isGold: false },
-        { score: 4, isGold: false },
-        { score: 5, isGold: false },
-        { score: 6, isGold: false },
-      ]);
+      await waitFor(() => {
+        expect(mockOnComplete).toHaveBeenCalledTimes(1);
+      });
+
+      // All arrows should be X (10 gold)
+      const expectedArrows = Array(ARROWS_PER_END).fill(null).map(() => ({ score: 10, isGold: true }));
+      expect(mockOnComplete).toHaveBeenCalledWith(expectedArrows);
     });
 
-    it('resets state after completing end', () => {
+    it('resets state after completing end', async () => {
       render(
         <EndInput
           arrowsPerEnd={ARROWS_PER_END}
@@ -405,19 +487,22 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
       for (let i = 0; i < ARROWS_PER_END; i++) {
-        fireEvent.click(rings[i]);
+        fireEvent.click(xButton);
       }
 
       const confirmButtons = screen.getAllByText('Confirmar tanda');
       fireEvent.click(confirmButtons[0]);
 
-      const arrows = screen.getAllByLabelText(/flecha/i);
-      expect(arrows[0]).toHaveTextContent('');
+      await waitFor(() => {
+        expect(mockOnComplete).toHaveBeenCalledTimes(1);
+      });
+
+      expect(screen.getByLabelText(/Flecha activa, sin puntuar/i)).toBeInTheDocument();
     });
 
-    it('shows correct button when not complete', () => {
+    it('shows Corregir button when complete', () => {
       render(
         <EndInput
           arrowsPerEnd={ARROWS_PER_END}
@@ -425,30 +510,38 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[0]);
-      fireEvent.click(rings[1]);
-      fireEvent.click(rings[2]);
-
-      const confirmButtons = screen.queryAllByText('Confirmar tanda');
-      expect(confirmButtons).toHaveLength(0);
-    });
-
-    it('shows Corregir button when complete instead of Deshacer', () => {
-      render(
-        <EndInput
-          arrowsPerEnd={ARROWS_PER_END}
-          onComplete={mockOnComplete}
-        />
-      );
-
-      const rings = screen.getAllByRole('button');
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
       for (let i = 0; i < ARROWS_PER_END; i++) {
-        fireEvent.click(rings[i]);
+        fireEvent.click(xButton);
       }
 
       const corregirButtons = screen.getAllByText('Corregir');
       expect(corregirButtons.length).toBeGreaterThan(0);
+    });
+
+    it('preserves arrows if onComplete fails', async () => {
+      const failingOnComplete = vi.fn().mockRejectedValue(new Error('save failed'));
+
+      render(
+        <EndInput
+          arrowsPerEnd={3}
+          onComplete={failingOnComplete}
+        />
+      );
+
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
+
+      fireEvent.click(screen.getByRole('button', { name: /confirmar tanda/i }));
+
+      expect(await screen.findByText(/No se pudo guardar la tanda/i)).toBeInTheDocument();
+
+      const arrows = screen.getAllByLabelText(/flecha/i);
+      expect(arrows[0]).toHaveTextContent('X');
+      expect(arrows[1]).toHaveTextContent('X');
+      expect(arrows[2]).toHaveTextContent('X');
     });
   });
 
@@ -461,12 +554,12 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[4]);
-      fireEvent.click(rings[8]);
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
 
-      const undoButton = screen.getAllByText('Deshacer última');
-      fireEvent.click(undoButton[0]);
+      const undoButton = screen.getByText('Deshacer');
+      fireEvent.click(undoButton);
 
       const arrows = screen.getAllByLabelText(/flecha/i);
       expect(arrows[1]).toHaveTextContent('');
@@ -480,16 +573,16 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[4]);
-      fireEvent.click(rings[8]);
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
 
-      expect(screen.getByText(/Flecha 3 de 6/)).toBeInTheDocument();
+      expect(screen.getByText(/Flecha 3/)).toBeInTheDocument();
 
-      const undoButton = screen.getAllByText('Deshacer última');
-      fireEvent.click(undoButton[0]);
+      const undoButton = screen.getByText('Deshacer');
+      fireEvent.click(undoButton);
 
-      expect(screen.getByText(/Flecha 2 de 6/)).toBeInTheDocument();
+      expect(screen.getByText(/Flecha 2/)).toBeInTheDocument();
     });
 
     it('does not undo when currentIndex is 0', () => {
@@ -500,7 +593,7 @@ describe('EndInput', () => {
         />
       );
 
-      const undoButtons = screen.queryAllByText('Deshacer última');
+      const undoButtons = screen.queryAllByText('Deshacer');
       expect(undoButtons).toHaveLength(0);
     });
 
@@ -512,15 +605,15 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[4]);
-      fireEvent.click(rings[8]);
-      fireEvent.click(rings[0]);
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
 
-      const undoButton = screen.getAllByText('Deshacer última');
-      fireEvent.click(undoButton[0]);
-      fireEvent.click(undoButton[0]);
-      fireEvent.click(undoButton[0]);
+      const undoButton = screen.getByText('Deshacer');
+      fireEvent.click(undoButton);
+      fireEvent.click(undoButton);
+      fireEvent.click(undoButton);
 
       const arrows = screen.getAllByLabelText(/flecha/i);
       expect(arrows[0]).toHaveTextContent('');
@@ -537,8 +630,8 @@ describe('EndInput', () => {
         />
       );
 
-      const switches = screen.getAllByRole('switch');
-      expect(switches[0]).toBeDisabled();
+      const radios = screen.getAllByRole('radio');
+      expect(radios[0]).toBeDisabled();
     });
 
     it('does not accept scores when disabled', () => {
@@ -550,8 +643,8 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[4]);
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
 
       const arrows = screen.getAllByLabelText(/flecha/i);
       expect(arrows[0]).toHaveTextContent('');
@@ -566,9 +659,9 @@ describe('EndInput', () => {
         />
       );
 
-      const rings = screen.getAllByRole('button');
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
       for (let i = 0; i < ARROWS_PER_END; i++) {
-        fireEvent.click(rings[i]);
+        fireEvent.click(xButton);
       }
 
       expect(mockOnComplete).not.toHaveBeenCalled();
@@ -638,12 +731,12 @@ describe('EndInput', () => {
         />
       );
 
-      expect(screen.getByText(/Flecha 1 de 3/)).toBeInTheDocument();
+      expect(screen.getByText(/Flecha 1/)).toBeInTheDocument();
 
-      const rings = screen.getAllByRole('button');
-      fireEvent.click(rings[0]);
-      fireEvent.click(rings[1]);
-      fireEvent.click(rings[2]);
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
+      fireEvent.click(xButton);
 
       const confirmButtons = screen.getAllByText('Confirmar tanda');
       expect(confirmButtons.length).toBeGreaterThan(0);
@@ -657,7 +750,7 @@ describe('EndInput', () => {
         />
       );
 
-      expect(screen.getByText(/Flecha 1 de 12/)).toBeInTheDocument();
+      expect(screen.getByText(/Flecha 1/)).toBeInTheDocument();
     });
   });
 });

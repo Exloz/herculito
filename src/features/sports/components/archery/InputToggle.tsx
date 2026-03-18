@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 interface InputToggleProps {
   mode: 'target' | 'numpad';
@@ -47,52 +47,110 @@ export const InputToggle: React.FC<InputToggleProps> = ({
   disabled = false
 }) => {
   const isTargetMode = mode === 'target';
+  const targetRef = useRef<HTMLButtonElement | null>(null);
+  const numpadRef = useRef<HTMLButtonElement | null>(null);
+
+  const selectMode = (nextMode: 'target' | 'numpad') => {
+    if (disabled || nextMode === mode) {
+      return;
+    }
+
+    onToggle();
+  };
+
+  const handleRadioKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, nextMode: 'target' | 'numpad') => {
+    if (disabled) {
+      return;
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      selectMode('target');
+      targetRef.current?.focus();
+      return;
+    }
+
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      selectMode('numpad');
+      numpadRef.current?.focus();
+      return;
+    }
+
+    if (event.key === 'Home') {
+      event.preventDefault();
+      selectMode('target');
+      targetRef.current?.focus();
+      return;
+    }
+
+    if (event.key === 'End') {
+      event.preventDefault();
+      selectMode('numpad');
+      numpadRef.current?.focus();
+      return;
+    }
+
+    if (event.key === ' ' || event.key === 'Enter') {
+      event.preventDefault();
+      selectMode(nextMode);
+    }
+  };
 
   return (
-    <div
-      className="flex items-center gap-2"
-      role="radiogroup"
-      aria-label="Método de entrada de puntuación"
-    >
-      <button
-        type="button"
-        onClick={() => !isTargetMode && onToggle()}
-        disabled={disabled}
-        className={`
-          relative flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200
-          touch-target select-none
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          ${isTargetMode
-            ? 'bg-mint/20 border border-mint/50 text-mint'
-            : 'bg-slateDeep/50 border border-mist/40 text-slate-400 hover:border-mint/30 hover:text-slate-300'
-          }
-        `}
-        role="radio"
-        aria-checked={isTargetMode}
+    <div className="input-toggle-container">
+      <div 
+        className="input-toggle-track"
+        role="radiogroup"
+        aria-label="Método de entrada de puntuación"
       >
-        <TargetIcon className="w-4 h-4" />
-        <span className="text-sm font-medium">Diana</span>
-      </button>
+        {/* Slider background */}
+        <div 
+          className="input-toggle-slider"
+          style={{
+            width: ' calc(50% - 4px)',
+            transform: isTargetMode ? 'translateX(0)' : 'translateX(calc(100% + 8px))'
+          }}
+        />
+        
+        {/* Target/Diana option */}
+        <button
+          ref={targetRef}
+          type="button"
+          onClick={() => selectMode('target')}
+          disabled={disabled}
+          className={`
+            input-toggle-option
+            ${isTargetMode ? 'active' : 'inactive'}
+          `}
+          role="radio"
+          aria-checked={isTargetMode}
+          tabIndex={isTargetMode ? 0 : -1}
+          onKeyDown={(event) => handleRadioKeyDown(event, 'target')}
+        >
+          <TargetIcon className="w-5 h-5" />
+          <span className="text-sm font-semibold">Diana</span>
+        </button>
 
-      <button
-        type="button"
-        onClick={() => isTargetMode && onToggle()}
-        disabled={disabled}
-        className={`
-          relative flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-200
-          touch-target select-none
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-          ${!isTargetMode
-            ? 'bg-amberGlow/20 border border-amberGlow/50 text-amberGlow'
-            : 'bg-slateDeep/50 border border-mist/40 text-slate-400 hover:border-amberGlow/30 hover:text-slate-300'
-          }
-        `}
-        role="radio"
-        aria-checked={!isTargetMode}
-      >
-        <NumpadIcon className="w-4 h-4" />
-        <span className="text-sm font-medium">Teclado</span>
-      </button>
+        {/* Numpad/Teclado option */}
+        <button
+          ref={numpadRef}
+          type="button"
+          onClick={() => selectMode('numpad')}
+          disabled={disabled}
+          className={`
+            input-toggle-option
+            ${!isTargetMode ? 'active' : 'inactive'}
+          `}
+          role="radio"
+          aria-checked={!isTargetMode}
+          tabIndex={!isTargetMode ? 0 : -1}
+          onKeyDown={(event) => handleRadioKeyDown(event, 'numpad')}
+        >
+          <NumpadIcon className="w-5 h-5" />
+          <span className="text-sm font-semibold">Teclado</span>
+        </button>
+      </div>
     </div>
   );
 };

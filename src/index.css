@@ -514,23 +514,6 @@ body.dialog-open .app-bottom-nav {
   @apply cursor-not-allowed;
 }
 
-.arrow-input {
-  @apply w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl font-bold transition-all;
-  @apply bg-slateDeep border-2 border-mist/40;
-}
-
-.arrow-input.filled {
-  @apply bg-graphite border-mint/60 text-mint;
-}
-
-.arrow-input.gold {
-  @apply bg-amberGlow/20 border-amberGlow text-amberGlow;
-}
-
-.arrow-input.empty {
-  @apply text-slate-500;
-}
-
 .score-display-lg {
   @apply text-4xl sm:text-5xl font-display font-bold tracking-tight;
 }
@@ -574,24 +557,6 @@ body.dialog-open .app-bottom-nav {
   @apply bg-crimson/10 border-crimson/40 text-crimson;
 }
 
-/* Miss button for TargetFace component */
-.btn-miss {
-  @apply bg-crimson/10 border-crimson/40 text-crimson rounded-xl font-semibold transition-all;
-  @apply touch-target flex flex-col items-center justify-center gap-1 py-3;
-}
-
-.btn-miss:hover:not(:disabled) {
-  @apply bg-crimson/20 border-crimson/60;
-}
-
-.btn-miss:active:not(:disabled) {
-  @apply scale-95;
-}
-
-.btn-miss:disabled {
-  @apply opacity-50 cursor-not-allowed;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .motion-enter,
   .motion-enter-delay-1,
@@ -621,8 +586,360 @@ body.dialog-open .app-bottom-nav {
   .btn-secondary,
   .btn-ghost,
   .input,
-  .app-card-hover {
+   .app-card-hover,
+   .arrow-input,
+   .target-hit-zone,
+   .target-ring-shape,
+   .btn-miss-premium,
+   .target-x-shortcut,
+   .input-toggle-option,
+   .input-toggle-slider {
     transition-duration: 1ms !important;
     transform: none !important;
   }
+
+  .arrow-input.editing,
+  .target-ring-hit,
+  .active-arrow-indicator,
+  .end-complete-badge,
+  .score-select-flash {
+    animation: none !important;
+  }
+}
+
+/* =============================================
+   Archery Premium Input Styles
+   ============================================= */
+
+/* --- Arrow Input Premium Cards --- */
+.arrow-input {
+  @apply relative isolate overflow-hidden w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl font-bold transition-all;
+  @apply bg-slateDeep border-2 border-mist/40;
+}
+
+.arrow-input.filled {
+  @apply bg-graphite border-mint/60 text-mint;
+}
+
+.arrow-input.gold {
+  @apply bg-amberGlow/20 border-amberGlow text-amberGlow;
+}
+
+.arrow-input.empty {
+  @apply text-slate-500;
+}
+
+.arrow-input.is-clickable {
+  @apply cursor-pointer;
+}
+
+.arrow-input.is-clickable:hover {
+  transform: translateY(-1px);
+}
+
+/* Active/selected arrow state - very prominent */
+.arrow-input.active {
+  @apply bg-mint/25 border-mint shadow-[0_0_20px_rgba(72,229,163,0.35)];
+  transform: scale(1.08);
+}
+
+/* Arrow being edited - pulsing glow */
+.arrow-input.editing {
+  @apply bg-amberGlow/25 border-amberGlow;
+  animation: arrow-pulse-glow 1.5s ease-in-out infinite;
+}
+
+.arrow-input-indicator {
+  @apply absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-mint;
+  box-shadow: 0 0 10px rgba(72, 229, 163, 0.65);
+}
+
+@keyframes arrow-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(245, 158, 11, 0.45);
+  }
+}
+
+/* --- Target Face Premium --- */
+.target-face-container {
+  @apply relative flex flex-col items-center;
+}
+
+.target-face-stage {
+  @apply w-full rounded-[28px] border border-mist/20 bg-charcoal/45 p-4 sm:p-5;
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.38);
+}
+
+.target-face-meta {
+  @apply mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.target-face-eyebrow {
+  @apply text-[11px] uppercase tracking-[0.22em] text-slate-500;
+}
+
+.target-face-title {
+  @apply mt-1 text-sm font-semibold text-white sm:text-base;
+}
+
+.target-face-tip {
+  @apply inline-flex items-center gap-2 rounded-full border border-mist/20 bg-slateDeep/60 px-3 py-1.5 text-xs text-slate-300;
+}
+
+.target-face-tip-dot {
+  @apply h-2 w-2 rounded-full bg-amberGlow;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.55);
+}
+
+.target-face-svg {
+  @apply mx-auto block w-full select-none;
+  max-width: clamp(280px, 82vw, 380px);
+  touch-action: manipulation;
+}
+
+.target-ring-shape {
+  transition: opacity 160ms var(--ease-standard), transform 160ms var(--ease-standard), filter 160ms var(--ease-standard);
+}
+
+/* Premium score display panel */
+.target-score-panel {
+  @apply mt-4 flex justify-center rounded-2xl border border-mist/20 bg-charcoal/85 px-5 py-3 backdrop-blur;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.28);
+  min-height: 76px;
+}
+
+.target-score-display {
+  @apply flex min-w-[180px] items-baseline justify-center gap-2;
+}
+
+.target-score-value {
+  @apply text-3xl font-display font-bold text-white;
+}
+
+.target-score-label {
+  @apply text-xs text-slate-400 uppercase tracking-wider;
+}
+
+.target-score-panel.gold .target-score-value {
+  @apply text-amberGlow;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+}
+
+/* Hit zone indicator - shows which ring is being hovered */
+.target-hit-zone {
+  pointer-events: none;
+  transition: all 180ms var(--ease-standard);
+}
+
+/* Center X button - extra large touch target */
+.target-center-x {
+  fill: #fff7d6;
+  font-family: 'Khand', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Ring hit feedback animation */
+@keyframes ring-hit {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.target-ring-hit {
+  animation: ring-hit 200ms var(--ease-emphasis);
+}
+
+/* Miss button integrated with target */
+.btn-miss {
+  @apply bg-crimson/10 border-crimson/40 text-crimson rounded-xl font-semibold transition-all;
+  @apply touch-target flex flex-col items-center justify-center gap-1 py-3;
+}
+
+.btn-miss:hover:not(:disabled) {
+  @apply bg-crimson/20 border-crimson/60;
+}
+
+.btn-miss:active:not(:disabled) {
+  @apply scale-95;
+}
+
+.btn-miss:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Premium miss button with better integration */
+.btn-miss-premium {
+  @apply flex flex-1 flex-col items-center justify-center bg-charcoal/80 border border-crimson/30 text-crimson rounded-2xl px-6 py-3;
+  @apply transition-all duration-200;
+  backdrop-filter: blur(8px);
+}
+
+.btn-miss-premium:hover:not(:disabled) {
+  @apply bg-crimson/15 border-crimson/50;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.2);
+}
+
+.btn-miss-premium:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.target-face-actions {
+  @apply mt-4 flex gap-3;
+}
+
+.target-x-shortcut {
+  @apply flex flex-1 flex-col items-center justify-center rounded-2xl border border-amberGlow/25 bg-amberGlow/10 px-4 py-3 text-amberGlow transition-all duration-200;
+}
+
+.target-x-shortcut:hover:not(:disabled) {
+  @apply border-amberGlow/50 bg-amberGlow/15;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.18);
+}
+
+.target-x-shortcut:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.target-x-shortcut-mark {
+  @apply text-2xl font-display font-bold leading-none;
+}
+
+/* --- End Input Premium --- */
+.end-input-container {
+  @apply space-y-5;
+}
+
+/* Header with subtotal and progress */
+.end-input-header {
+  @apply text-center space-y-2;
+}
+
+.end-input-subtotal {
+  @apply flex items-center justify-center gap-4;
+}
+
+.end-input-subtotal-value {
+  @apply text-2xl font-display font-bold text-white;
+}
+
+.end-input-gold-badge {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amberGlow/20 text-amberGlow text-sm font-semibold;
+}
+
+.end-input-progress {
+  @apply text-sm text-slate-400;
+}
+
+.end-input-helper {
+  @apply mx-auto max-w-[28rem] text-sm text-slate-400;
+}
+
+.end-input-progress-current {
+  @apply text-mint font-semibold;
+}
+
+/* Active arrow indicator */
+.active-arrow-indicator {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint/20 text-mint text-sm font-medium;
+  animation: active-pulse 2s ease-in-out infinite;
+}
+
+@keyframes active-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(72, 229, 163, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(72, 229, 163, 0);
+  }
+}
+
+/* Completion celebration */
+.end-complete-badge {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-mint/20 text-mint font-semibold;
+  animation: complete-badge-pop 400ms var(--ease-emphasis);
+}
+
+@keyframes complete-badge-pop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* --- Input Toggle Premium --- */
+.input-toggle-container {
+  @apply flex items-center justify-center;
+}
+
+.input-toggle-track {
+  @apply relative flex bg-slateDeep/60 backdrop-blur rounded-2xl p-1 border border-mist/30;
+}
+
+.input-toggle-option {
+  @apply relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200;
+  @apply touch-target select-none;
+}
+
+.input-toggle-option:disabled {
+  @apply opacity-40 cursor-not-allowed;
+}
+
+.input-toggle-option.active {
+  @apply text-white;
+}
+
+.input-toggle-option.inactive {
+  @apply text-slate-400 hover:text-slate-300;
+}
+
+.input-toggle-slider {
+  @apply absolute inset-y-1 left-1 rounded-xl transition-all duration-200;
+  @apply bg-charcoal border border-mist/40 shadow-lg;
+}
+
+/* --- Score Selection Feedback --- */
+.score-select-flash {
+  animation: score-flash 300ms var(--ease-emphasis);
+}
+
+@keyframes score-flash {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Keyboard navigation hints */
+.keyboard-hint {
+  @apply text-xs text-slate-500 mt-1;
 }

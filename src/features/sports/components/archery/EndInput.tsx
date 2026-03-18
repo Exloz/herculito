@@ -1,7 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ArrowInput } from './ArrowInput';
 import { ScoreNumpad } from './ScoreNumpad';
+import { TargetFace } from './TargetFace';
+import { InputToggle } from './InputToggle';
 import { Check, RotateCcw } from 'lucide-react';
+
+const STORAGE_KEY = 'herculito:archery:inputMode';
 
 interface EndInputProps {
   arrowsPerEnd: number;
@@ -20,6 +24,22 @@ export const EndInput: React.FC<EndInputProps> = ({
     Array(arrowsPerEnd).fill(null).map(() => ({ score: null, isGold: false }))
   );
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [inputMode, setInputMode] = useState<'target' | 'numpad'>('target');
+
+  // Load saved preference from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === 'target' || saved === 'numpad') {
+      setInputMode(saved);
+    }
+  }, []);
+
+  // Save preference when it changes
+  const handleToggleMode = useCallback(() => {
+    const newMode = inputMode === 'target' ? 'numpad' : 'target';
+    setInputMode(newMode);
+    localStorage.setItem(STORAGE_KEY, newMode);
+  }, [inputMode]);
 
   const handleScore = useCallback((score: number, isGold: boolean) => {
     if (currentIndex >= arrowsPerEnd) return;
@@ -44,7 +64,7 @@ export const EndInput: React.FC<EndInputProps> = ({
   }, [arrows, currentIndex]);
 
   const handleComplete = useCallback(() => {
-    const completedArrows = arrows.filter(a => a.score !== null) as { score: number; isGold: boolean }[];
+    const completedArrows = arrows.filter((a): a is { score: number; isGold: boolean } => a.score !== null);
     if (completedArrows.length === arrowsPerEnd) {
       onComplete(completedArrows);
       // Reset for next end
@@ -84,14 +104,29 @@ export const EndInput: React.FC<EndInputProps> = ({
         </div>
       </div>
 
+      {/* Input Toggle */}
+      <InputToggle
+        mode={inputMode}
+        onToggle={handleToggleMode}
+        disabled={disabled}
+      />
+
       {/* Numpad or Complete Button */}
       {!isComplete ? (
         <div className="space-y-3">
-          <ScoreNumpad
-            onScore={handleScore}
-            onMiss={handleMiss}
-            disabled={disabled}
-          />
+          {inputMode === 'target' ? (
+            <TargetFace
+              onScore={handleScore}
+              onMiss={handleMiss}
+              disabled={disabled}
+            />
+          ) : (
+            <ScoreNumpad
+              onScore={handleScore}
+              onMiss={handleMiss}
+              disabled={disabled}
+            />
+          )}
           {currentIndex > 0 && (
             <button
               type="button"

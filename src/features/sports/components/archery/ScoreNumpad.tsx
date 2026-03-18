@@ -112,7 +112,16 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
         3
       </button>
 
-      {/* Row 4: X (Gold), 0, Miss */}
+      {/* Row 4: 10, X, Miss */}
+      <button
+        type="button"
+        onClick={() => handleScore(10, false)}
+        disabled={disabled}
+        className="gold touch-target"
+        aria-label="Diez puntos"
+      >
+        10
+      </button>
       <button
         type="button"
         onClick={() => handleScore(10, true)}
@@ -121,15 +130,6 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
         aria-label="Diez de oro"
       >
         X
-      </button>
-      <button
-        type="button"
-        onClick={() => handleScore(0)}
-        disabled={disabled}
-        className="touch-target"
-        aria-label="Cero puntos"
-      >
-        0
       </button>
       <button
         type="button"

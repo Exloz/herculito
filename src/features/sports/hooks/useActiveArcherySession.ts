@@ -61,6 +61,27 @@ const mapEnd = (end: ArcheryEndResponse): ArcheryEnd => ({
   }))
 });
 
+const reviveSession = (session: SportSession): SportSession => ({
+  ...session,
+  startedAt: new Date(session.startedAt),
+  completedAt: session.completedAt ? new Date(session.completedAt) : undefined,
+  archeryData: session.archeryData ? {
+    ...session.archeryData,
+    rounds: session.archeryData.rounds.map((round) => ({
+      ...round,
+      createdAt: new Date(round.createdAt),
+      ends: round.ends.map((end) => ({
+        ...end,
+        createdAt: new Date(end.createdAt),
+        arrows: end.arrows.map((arrow) => ({
+          ...arrow,
+          timestamp: new Date(arrow.timestamp),
+        })),
+      })),
+    })),
+  } : undefined,
+});
+
 export const useActiveArcherySession = () => {
   const [activeSession, setActiveSession] = useState<SportSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,8 +92,12 @@ export const useActiveArcherySession = () => {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        if (Date.now() - parsed.timestamp < EXPIRATION_MS && parsed.session) {
-          setActiveSession(parsed.session);
+        if (
+          Date.now() - parsed.timestamp < EXPIRATION_MS
+          && parsed.session
+          && parsed.session.status === 'active'
+        ) {
+          setActiveSession(reviveSession(parsed.session));
         } else {
           localStorage.removeItem(ACTIVE_ARCHERY_KEY);
         }
@@ -85,7 +110,7 @@ export const useActiveArcherySession = () => {
 
   // Persist to localStorage when session changes
   useEffect(() => {
-    if (activeSession) {
+    if (activeSession?.status === 'active') {
       localStorage.setItem(ACTIVE_ARCHERY_KEY, JSON.stringify({
         session: activeSession,
         timestamp: Date.now()
@@ -121,8 +146,9 @@ export const useActiveArcherySession = () => {
     arrowsPerEnd: number = 6
   ): Promise<ArcheryRound> => {
     if (!activeSession) throw new Error('No active session');
+    const sessionId = activeSession.id;
 
-    const round = await apiAddRound(activeSession.id, {
+    const round = await apiAddRound(sessionId, {
       distance,
       targetSize,
       arrowsPerEnd
@@ -131,7 +157,7 @@ export const useActiveArcherySession = () => {
     const mappedRound = mapRound(round);
 
     setActiveSession(prev => {
-      if (!prev || !prev.archeryData) return prev;
+      if (!prev || !prev.archeryData || prev.id !== sessionId) return prev;
       return {
         ...prev,
         archeryData: {
@@ -149,12 +175,13 @@ export const useActiveArcherySession = () => {
     scores: { score: number; isGold: boolean }[]
   ): Promise<ArcheryEnd> => {
     if (!activeSession) throw new Error('No active session');
+    const sessionId = activeSession.id;
 
-    const end = await apiAddEnd(activeSession.id, roundId, scores);
+    const end = await apiAddEnd(sessionId, roundId, scores);
     const mappedEnd = mapEnd(end);
 
     setActiveSession(prev => {
-      if (!prev || !prev.archeryData) return prev;
+      if (!prev || !prev.archeryData || prev.id !== sessionId) return prev;
 
       const updatedRounds = prev.archeryData.rounds.map(round => {
         if (round.id === roundId) {
@@ -195,10 +222,22 @@ export const useActiveArcherySession = () => {
 
   const completeSession = useCallback(async (notes?: string) => {
     if (!activeSession) throw new Error('No active session');
+    const sessionId = activeSession.id;
 
-    await apiCompleteSession(activeSession.id, notes);
+    await apiCompleteSession(sessionId, notes);
     localStorage.removeItem(ACTIVE_ARCHERY_KEY);
-    setActiveSession(null);
+    setActiveSession(prev => {
+      if (!prev || prev.id !== sessionId) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        notes: notes ?? prev.notes,
+        completedAt: new Date(),
+        status: 'completed',
+      };
+    });
   }, [activeSession]);
 
   const abandonSession = useCallback(() => {

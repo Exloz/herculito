@@ -6,7 +6,7 @@ import { EndInput } from './EndInput';
 interface RoundCardProps {
   round: ArcheryRound;
   isActive: boolean;
-  onAddEnd: (roundId: string, arrows: { score: number; isGold: boolean }[]) => void;
+  onAddEnd: (roundId: string, arrows: { score: number; isGold: boolean }[]) => Promise<void> | void;
   disabled?: boolean;
 }
 
@@ -19,8 +19,8 @@ export const RoundCard: React.FC<RoundCardProps> = ({
   const [isExpanded, setIsExpanded] = useState(isActive);
   const [showEndInput, setShowEndInput] = useState(false);
 
-  const handleAddEnd = (arrows: { score: number; isGold: boolean }[]) => {
-    onAddEnd(round.id, arrows);
+  const handleAddEnd = async (arrows: { score: number; isGold: boolean }[]) => {
+    await onAddEnd(round.id, arrows);
     setShowEndInput(false);
   };
 

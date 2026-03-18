@@ -28,7 +28,6 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     loading,
     error,
     startSession,
-    completeSession: apiCompleteSession,
     deleteSession,
     refresh
   } = useSportSessions(user);
@@ -86,9 +85,13 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const handleCompleteSession = useCallback(async (notes?: string) => {
     if (!activeSession) return;
     await completeActiveSession(notes);
-    await apiCompleteSession(activeSession.id, notes);
     refresh();
-  }, [activeSession, completeActiveSession, apiCompleteSession, refresh]);
+  }, [activeSession, completeActiveSession, refresh]);
+
+  const handleCloseCompletedSession = useCallback(() => {
+    abandonSession();
+    refresh();
+  }, [abandonSession, refresh]);
 
   const handleAbandonSession = useCallback(() => {
     abandonSession();
@@ -122,7 +125,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
         onAddEnd={handleAddEnd}
         onComplete={handleCompleteSession}
         onAbandon={handleAbandonSession}
-        onBack={() => {}}
+        onBack={handleCloseCompletedSession}
       />
     );
   }

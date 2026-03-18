@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowInput } from './ArrowInput';
 import { ScoreNumpad } from './ScoreNumpad';
 import { TargetFace } from './TargetFace';
@@ -34,6 +34,7 @@ export const EndInput: React.FC<EndInputProps> = ({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -140,46 +141,47 @@ export const EndInput: React.FC<EndInputProps> = ({
     }
   }, [arrows, arrowsPerEnd, isSubmitting, onComplete]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (disabled) {
-        return;
-      }
+  const handleShortcutKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (disabled) {
+      return;
+    }
 
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      return;
+    }
 
-      if (event.key === 'Escape') {
-        setEditingIndex(null);
-        return;
-      }
+    if (event.key === 'Escape') {
+      setEditingIndex(null);
+      return;
+    }
 
-      if (editingIndex === null && currentIndex >= arrowsPerEnd) {
-        return;
-      }
+    if (editingIndex === null && currentIndex >= arrowsPerEnd) {
+      return;
+    }
 
-      if (event.key >= '0' && event.key <= '9') {
-        event.preventDefault();
-        handleScore(Number(event.key), false);
-        return;
-      }
+    if (event.key >= '0' && event.key <= '9') {
+      event.preventDefault();
+      handleScore(Number(event.key), false);
+      return;
+    }
 
-      if (event.key.toLowerCase() === 'x') {
-        event.preventDefault();
-        handleScore(10, true);
-        return;
-      }
+    if (event.key.toLowerCase() === 'd' || event.key === '+') {
+      event.preventDefault();
+      handleScore(10, false);
+      return;
+    }
 
-      if (event.key.toLowerCase() === 'm') {
-        event.preventDefault();
-        handleMiss();
-      }
-    };
+    if (event.key.toLowerCase() === 'x') {
+      event.preventDefault();
+      handleScore(10, true);
+      return;
+    }
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [arrowsPerEnd, currentIndex, disabled, editingIndex, handleMiss, handleScore]);
+    if (event.key.toLowerCase() === 'm') {
+      event.preventDefault();
+      handleMiss();
+    }
+  }, [currentIndex, disabled, editingIndex, handleMiss, handleScore, arrowsPerEnd]);
 
   const subtotal = arrows.reduce((sum, arrow) => sum + (arrow.score ?? 0), 0);
   const goldCount = arrows.filter((arrow) => arrow.isGold).length;
@@ -194,6 +196,16 @@ export const EndInput: React.FC<EndInputProps> = ({
 
   return (
     <div className="end-input-container">
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        onKeyDown={handleShortcutKeyDown}
+        onPointerDownCapture={(event) => {
+          if (event.target instanceof Element && !event.target.closest('button')) {
+            containerRef.current?.focus();
+          }
+        }}
+      >
       <div className="end-input-header">
         <div className="end-input-subtotal">
           <span className="end-input-subtotal-value">{subtotal}</span>
@@ -237,7 +249,7 @@ export const EndInput: React.FC<EndInputProps> = ({
             isActive={activeArrowNumber !== null && index === activeIndex}
             isEditing={index === editingIndex}
             onClick={() => handleArrowClick(index)}
-            disabled={disabled}
+            disabled={disabled || isSubmitting}
           />
         ))}
       </div>
@@ -329,6 +341,7 @@ export const EndInput: React.FC<EndInputProps> = ({
           Cancelar
         </button>
       )}
+      </div>
     </div>
   );
 };

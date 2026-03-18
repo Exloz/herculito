@@ -289,6 +289,23 @@ describe('EndInput', () => {
       expect(arrows[0]).toHaveTextContent('9');
       expect(arrows[1]).toHaveTextContent('7');
     });
+
+    it('supports keyboard shortcut D for a regular 10', () => {
+      const { container } = render(
+        <EndInput
+          arrowsPerEnd={ARROWS_PER_END}
+          onComplete={mockOnComplete}
+        />
+      );
+
+      const shortcutHost = container.querySelector('.end-input-container > div[tabindex="-1"]');
+      expect(shortcutHost).not.toBeNull();
+
+      fireEvent.keyDown(shortcutHost as Element, { key: 'd' });
+
+      const arrows = screen.getAllByLabelText(/flecha/i);
+      expect(arrows[0]).toHaveTextContent('10');
+    });
   });
 
   describe('editing existing arrows', () => {
@@ -372,6 +389,24 @@ describe('EndInput', () => {
 
       const arrows = screen.getAllByLabelText(/flecha/i);
       expect(arrows[0]).toHaveTextContent('X');
+    });
+
+    it('handles regular 10 in numpad mode', () => {
+      render(
+        <EndInput
+          arrowsPerEnd={ARROWS_PER_END}
+          onComplete={mockOnComplete}
+        />
+      );
+
+      const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
+      fireEvent.click(keyboardButton);
+
+      const tenButton = screen.getByRole('button', { name: /diez puntos/i });
+      fireEvent.click(tenButton);
+
+      const arrows = screen.getAllByLabelText(/flecha/i);
+      expect(arrows[0]).toHaveTextContent('10');
     });
   });
 
@@ -665,6 +700,26 @@ describe('EndInput', () => {
       }
 
       expect(mockOnComplete).not.toHaveBeenCalled();
+    });
+
+    it('scopes keyboard shortcuts to the focused end input', () => {
+      const { container } = render(
+        <div>
+          <EndInput arrowsPerEnd={3} onComplete={mockOnComplete} />
+          <EndInput arrowsPerEnd={3} onComplete={mockOnComplete} />
+        </div>
+      );
+
+      const shortcutHosts = container.querySelectorAll('.end-input-container > div[tabindex="-1"]');
+      expect(shortcutHosts).toHaveLength(2);
+
+      fireEvent.keyDown(shortcutHosts[0], { key: '7' });
+
+      const firstArrows = shortcutHosts[0].querySelectorAll('[aria-label*="Flecha"]');
+      const secondArrows = shortcutHosts[1].querySelectorAll('[aria-label*="Flecha"]');
+
+      expect(firstArrows[0]).toHaveTextContent('7');
+      expect(secondArrows[0]).not.toHaveTextContent('7');
     });
 
     it('shows cancel button when provided and disabled', () => {

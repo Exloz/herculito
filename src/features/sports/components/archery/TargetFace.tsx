@@ -425,7 +425,7 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
 
         {!disabled && (
           <p className="keyboard-hint text-center mt-2">
-            Toca la diana, o usa `0-9`, `X` y `M` para cargar rapido.
+            Toca la diana, o usa `0-9`, `D` para 10, `X` y `M` para cargar rapido.
           </p>
         )}
       </div>

@@ -59,6 +59,7 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
       showToast('Tanda registrada', 'success');
     } catch (error) {
       showToast(toUserMessage(error, 'Error registrando tanda'), 'error');
+      throw error;
     }
   }, [onAddEnd, showToast]);
 

@@ -611,10 +611,10 @@ body.dialog-open .app-bottom-nav {
    Archery Premium Input Styles
    ============================================= */
 
-/* --- Arrow Input Premium Cards --- */
+/* --- Arrow Input Compact --- */
 .arrow-input {
-  @apply relative isolate overflow-hidden w-14 h-14 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center text-2xl font-bold transition-all;
-  @apply bg-slateDeep border-2 border-mist/40;
+  @apply relative isolate overflow-hidden w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold transition-all;
+  @apply bg-slateDeep border border-mist/40;
 }
 
 .arrow-input.filled {
@@ -637,66 +637,28 @@ body.dialog-open .app-bottom-nav {
   transform: translateY(-1px);
 }
 
-/* Active/selected arrow state - very prominent */
+/* Active/selected arrow state */
 .arrow-input.active {
-  @apply bg-mint/25 border-mint shadow-[0_0_20px_rgba(72,229,163,0.35)];
-  transform: scale(1.08);
+  @apply bg-mint/20 border-mint;
 }
 
-/* Arrow being edited - pulsing glow */
+/* Arrow being edited */
 .arrow-input.editing {
-  @apply bg-amberGlow/25 border-amberGlow;
-  animation: arrow-pulse-glow 1.5s ease-in-out infinite;
+  @apply bg-amberGlow/20 border-amberGlow;
 }
 
 .arrow-input-indicator {
-  @apply absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-mint;
-  box-shadow: 0 0 10px rgba(72, 229, 163, 0.65);
+  @apply absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-mint;
 }
 
-@keyframes arrow-pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
-  }
-  50% {
-    box-shadow: 0 0 24px rgba(245, 158, 11, 0.45);
-  }
-}
-
-/* --- Target Face Premium --- */
-.target-face-container {
-  @apply relative flex flex-col items-center;
-}
-
-.target-face-stage {
-  @apply w-full rounded-[28px] border border-mist/20 bg-charcoal/45 p-4 sm:p-5;
-  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.38);
-}
-
-.target-face-meta {
-  @apply mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between;
-}
-
-.target-face-eyebrow {
-  @apply text-[11px] uppercase tracking-[0.22em] text-slate-500;
-}
-
-.target-face-title {
-  @apply mt-1 text-sm font-semibold text-white sm:text-base;
-}
-
-.target-face-tip {
-  @apply inline-flex items-center gap-2 rounded-full border border-mist/20 bg-slateDeep/60 px-3 py-1.5 text-xs text-slate-300;
-}
-
-.target-face-tip-dot {
-  @apply h-2 w-2 rounded-full bg-amberGlow;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.55);
+/* --- Target Face Compact (Max Space) --- */
+.target-face-compact {
+  @apply flex flex-col items-center;
 }
 
 .target-face-svg {
-  @apply mx-auto block w-full select-none;
-  max-width: clamp(280px, 82vw, 380px);
+  @apply w-full select-none;
+  max-width: min(92vw, 420px);
   touch-action: manipulation;
 }
 
@@ -704,28 +666,21 @@ body.dialog-open .app-bottom-nav {
   transition: opacity 160ms var(--ease-standard), transform 160ms var(--ease-standard), filter 160ms var(--ease-standard);
 }
 
-/* Premium score display panel */
-.target-score-panel {
-  @apply mt-4 flex justify-center rounded-2xl border border-mist/20 bg-charcoal/85 px-5 py-3 backdrop-blur;
-  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.28);
-  min-height: 76px;
+/* Compact score display */
+.target-score-compact {
+  @apply flex items-center gap-2 mt-2 px-3 py-1.5 rounded-lg bg-charcoal/60 text-sm;
 }
 
-.target-score-display {
-  @apply flex min-w-[180px] items-baseline justify-center gap-2;
-}
-
-.target-score-value {
-  @apply text-3xl font-display font-bold text-white;
-}
-
-.target-score-label {
-  @apply text-xs text-slate-400 uppercase tracking-wider;
-}
-
-.target-score-panel.gold .target-score-value {
+.target-score-compact.gold {
   @apply text-amberGlow;
-  text-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
+}
+
+.target-score-compact .target-score-value {
+  @apply text-lg font-bold;
+}
+
+.target-score-compact .target-score-helper {
+  @apply text-xs text-slate-400;
 }
 
 /* Hit zone indicator - shows which ring is being hovered */
@@ -798,126 +753,115 @@ body.dialog-open .app-bottom-nav {
   transform: translateY(0) scale(0.98);
 }
 
-.target-face-actions {
-  @apply mt-4 flex gap-3;
+.target-actions-compact {
+  @apply flex gap-2 mt-2 w-full max-w-[320px];
 }
 
-.target-x-shortcut {
-  @apply flex flex-1 flex-col items-center justify-center rounded-2xl border border-amberGlow/25 bg-amberGlow/10 px-4 py-3 text-amberGlow transition-all duration-200;
+.target-btn-miss {
+  @apply flex-1 py-2 rounded-lg bg-crimson/10 text-crimson text-sm font-medium border border-crimson/30;
 }
 
-.target-x-shortcut:hover:not(:disabled) {
-  @apply border-amberGlow/50 bg-amberGlow/15;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.18);
+.target-btn-miss:hover:not(:disabled) {
+  @apply bg-crimson/20;
 }
 
-.target-x-shortcut:active:not(:disabled) {
-  transform: scale(0.98);
+.target-btn-x {
+  @apply flex-1 py-2 rounded-lg bg-amberGlow/10 text-amberGlow text-sm font-bold border border-amberGlow/30;
 }
 
-.target-x-shortcut-mark {
-  @apply text-2xl font-display font-bold leading-none;
+.target-btn-x:hover:not(:disabled) {
+  @apply bg-amberGlow/20;
 }
 
-/* --- End Input Premium --- */
-.end-input-container {
-  @apply space-y-5;
+/* --- End Input Compact --- */
+.end-input-compact {
+  @apply flex flex-col items-center gap-2;
 }
 
-/* Header with subtotal and progress */
-.end-input-header {
-  @apply text-center space-y-2;
+/* Header compact */
+.end-input-top {
+  @apply flex items-center gap-3;
 }
 
-.end-input-subtotal {
-  @apply flex items-center justify-center gap-4;
+.end-input-scoreline {
+  @apply flex items-baseline gap-1;
 }
 
-.end-input-subtotal-value {
-  @apply text-2xl font-display font-bold text-white;
+.end-total {
+  @apply text-xl font-bold text-white;
 }
 
-.end-input-gold-badge {
-  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amberGlow/20 text-amberGlow text-sm font-semibold;
+.end-pts {
+  @apply text-xs text-slate-400;
 }
 
-.end-input-progress {
-  @apply text-sm text-slate-400;
+.end-golds {
+  @apply ml-1 text-xs font-semibold text-amberGlow;
 }
 
-.end-input-helper {
-  @apply mx-auto max-w-[28rem] text-sm text-slate-400;
+.end-status {
+  @apply text-xs;
 }
 
-.end-input-progress-current {
+.end-active {
+  @apply text-mint font-medium;
+}
+
+.end-editing {
+  @apply text-amberGlow font-medium;
+}
+
+.end-complete {
   @apply text-mint font-semibold;
 }
 
-/* Active arrow indicator */
-.active-arrow-indicator {
-  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-mint/20 text-mint text-sm font-medium;
-  animation: active-pulse 2s ease-in-out infinite;
+/* Arrows row */
+.end-arrows-row {
+  @apply flex flex-wrap justify-center gap-1.5;
 }
 
-@keyframes active-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(72, 229, 163, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 0 6px rgba(72, 229, 163, 0);
-  }
+/* Undo button */
+.end-undo-btn {
+  @apply flex items-center gap-1 px-3 py-1.5 text-xs text-slate-400 hover:text-slate-200 transition-colors;
 }
 
-/* Completion celebration */
-.end-complete-badge {
-  @apply inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-mint/20 text-mint font-semibold;
-  animation: complete-badge-pop 400ms var(--ease-emphasis);
+/* Complete actions */
+.end-complete-actions {
+  @apply flex flex-col items-center gap-2 w-full;
 }
 
-@keyframes complete-badge-pop {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
+.end-confirm-btn {
+  @apply w-full max-w-[280px] flex items-center justify-center gap-2 py-2.5 rounded-lg bg-mint text-ink font-semibold text-sm;
 }
 
-/* --- Input Toggle Premium --- */
-.input-toggle-container {
-  @apply flex items-center justify-center;
+.end-correct-btn {
+  @apply text-xs text-slate-400 hover:text-slate-200;
 }
 
-.input-toggle-track {
-  @apply relative flex bg-slateDeep/60 backdrop-blur rounded-2xl p-1 border border-mist/30;
+.end-error {
+  @apply text-xs text-crimson text-center;
 }
 
-.input-toggle-option {
-  @apply relative z-10 flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all duration-200;
-  @apply touch-target select-none;
+.end-cancel-btn {
+  @apply text-xs text-slate-500 hover:text-slate-300 mt-1;
 }
 
-.input-toggle-option:disabled {
+/* --- Input Toggle Simple (No Overflow) --- */
+.input-toggle-simple {
+  @apply flex items-center justify-center gap-1;
+}
+
+.input-toggle-btn {
+  @apply flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-all;
+  @apply bg-slateDeep/50 text-slate-400 hover:text-slate-200;
+}
+
+.input-toggle-btn.active {
+  @apply bg-charcoal text-white border border-mist/40;
+}
+
+.input-toggle-btn:disabled {
   @apply opacity-40 cursor-not-allowed;
-}
-
-.input-toggle-option.active {
-  @apply text-white;
-}
-
-.input-toggle-option.inactive {
-  @apply text-slate-400 hover:text-slate-300;
-}
-
-.input-toggle-slider {
-  @apply absolute inset-y-1 left-1 rounded-xl transition-all duration-200;
-  @apply bg-charcoal border border-mist/40 shadow-lg;
 }
 
 /* --- Score Selection Feedback --- */
@@ -939,7 +883,12 @@ body.dialog-open .app-bottom-nav {
   }
 }
 
-/* Keyboard navigation hints */
-.keyboard-hint {
-  @apply text-xs text-slate-500 mt-1;
+/* Reduced motion support for compact styles */
+@media (prefers-reduced-motion: reduce) {
+  .target-score-compact,
+  .end-confirm-btn,
+  .target-btn-miss,
+  .target-btn-x {
+    transition-duration: 1ms !important;
+  }
 }

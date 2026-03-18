@@ -98,59 +98,35 @@ export const InputToggle: React.FC<InputToggleProps> = ({
   };
 
   return (
-    <div className="input-toggle-container">
-      <div 
-        className="input-toggle-track"
-        role="radiogroup"
-        aria-label="Método de entrada de puntuación"
+    <div className="input-toggle-simple" role="radiogroup" aria-label="Método de entrada de puntuación">
+      <button
+        ref={targetRef}
+        type="button"
+        onClick={() => selectMode('target')}
+        disabled={disabled}
+        className={`input-toggle-btn ${isTargetMode ? 'active' : ''}`}
+        role="radio"
+        aria-checked={isTargetMode}
+        tabIndex={isTargetMode ? 0 : -1}
+        onKeyDown={(event) => handleRadioKeyDown(event, 'target')}
       >
-        {/* Slider background */}
-        <div 
-          className="input-toggle-slider"
-          style={{
-            width: ' calc(50% - 4px)',
-            transform: isTargetMode ? 'translateX(0)' : 'translateX(calc(100% + 8px))'
-          }}
-        />
-        
-        {/* Target/Diana option */}
-        <button
-          ref={targetRef}
-          type="button"
-          onClick={() => selectMode('target')}
-          disabled={disabled}
-          className={`
-            input-toggle-option
-            ${isTargetMode ? 'active' : 'inactive'}
-          `}
-          role="radio"
-          aria-checked={isTargetMode}
-          tabIndex={isTargetMode ? 0 : -1}
-          onKeyDown={(event) => handleRadioKeyDown(event, 'target')}
-        >
-          <TargetIcon className="w-5 h-5" />
-          <span className="text-sm font-semibold">Diana</span>
-        </button>
-
-        {/* Numpad/Teclado option */}
-        <button
-          ref={numpadRef}
-          type="button"
-          onClick={() => selectMode('numpad')}
-          disabled={disabled}
-          className={`
-            input-toggle-option
-            ${!isTargetMode ? 'active' : 'inactive'}
-          `}
-          role="radio"
-          aria-checked={!isTargetMode}
-          tabIndex={!isTargetMode ? 0 : -1}
-          onKeyDown={(event) => handleRadioKeyDown(event, 'numpad')}
-        >
-          <NumpadIcon className="w-5 h-5" />
-          <span className="text-sm font-semibold">Teclado</span>
-        </button>
-      </div>
+        <TargetIcon className="w-4 h-4" />
+        <span>Diana</span>
+      </button>
+      <button
+        ref={numpadRef}
+        type="button"
+        onClick={() => selectMode('numpad')}
+        disabled={disabled}
+        className={`input-toggle-btn ${!isTargetMode ? 'active' : ''}`}
+        role="radio"
+        aria-checked={!isTargetMode}
+        tabIndex={!isTargetMode ? 0 : -1}
+        onKeyDown={(event) => handleRadioKeyDown(event, 'numpad')}
+      >
+        <NumpadIcon className="w-4 h-4" />
+        <span>Teclado</span>
+      </button>
     </div>
   );
 };

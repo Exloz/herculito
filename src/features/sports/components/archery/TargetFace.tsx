@@ -217,28 +217,16 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
   const previewStroke = getZoneStroke(previewZone && previewZone.key !== 'miss' ? previewZone : null);
 
   return (
-    <div className="target-face-container">
-      <div className="target-face-stage">
-        <div className="target-face-meta">
-          <div>
-            <p className="target-face-eyebrow">Modo diana</p>
-            <p className="target-face-title">Toca el anillo real donde impactaste</p>
-          </div>
-          <div className="target-face-tip">
-            <span className="target-face-tip-dot" />
-            Centro = X, dorado exterior = 10
-          </div>
-        </div>
-
-        <svg
-          viewBox="0 0 400 400"
-          className={`target-face-svg ${hitPulse ? 'target-ring-hit' : ''}`}
-          role="img"
-          aria-label="Diana de tiro con arco"
-          onPointerMove={handlePointerMove}
-          onPointerLeave={handlePointerLeave}
-          onClick={handleTargetClick}
-        >
+    <div className="target-face-compact">
+      <svg
+        viewBox="0 0 400 400"
+        className={`target-face-svg ${hitPulse ? 'target-ring-hit' : ''}`}
+        role="img"
+        aria-label="Diana de tiro con arco - Toca donde impactaste"
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
+        onClick={handleTargetClick}
+      >
           <defs>
             <radialGradient id="target-gold" cx="35%" cy="35%" r="75%">
               <stop offset="0%" stopColor="#fde68a" />
@@ -380,54 +368,30 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
           </g>
         </svg>
 
-        <div className={`target-score-panel ${previewZone?.isGold ? 'gold' : ''} ${selectedZone ? 'score-select-flash' : ''}`}>
-          <div className="target-score-display">
-            <span className="target-score-value">
-              {previewZone ? previewZone.label : '...'}
-            </span>
-            <span className="target-score-label">
-              {previewZone ? previewZone.helper : 'Listo para puntuar'}
-            </span>
-          </div>
-        </div>
+      <div className={`target-score-compact ${previewZone?.isGold ? 'gold' : ''} ${selectedZone ? 'flash' : ''}`}>
+        <span className="target-score-value">{previewZone ? previewZone.label : '-'}</span>
+        <span className="target-score-helper">{previewZone ? previewZone.helper : 'Toca la diana'}</span>
+      </div>
 
-        <div className="target-face-actions">
-          <button
-            type="button"
-            onClick={() => registerSelection(null)}
-            disabled={disabled}
-            className="btn-miss-premium"
-            aria-label="Fallo (0 puntos)"
-          >
-            <span className="text-base font-bold">Miss</span>
-            <span className="text-xs opacity-70">Fuera de la diana</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleQuickKey(10, true)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                handleQuickKey(10, true);
-              }
-            }}
-            disabled={disabled}
-            className="target-x-shortcut"
-            aria-label="Diez de oro (X)"
-            tabIndex={disabled ? -1 : 0}
-            role="button"
-          >
-            <span className="target-x-shortcut-mark">10/X</span>
-            <span className="text-xs text-amberGlow/80">Centro exacto</span>
-          </button>
-        </div>
-
-        {!disabled && (
-          <p className="keyboard-hint text-center mt-2">
-            Toca la diana, o usa `0-9`, `D` para 10, `X` y `M` para cargar rapido.
-          </p>
-        )}
+      <div className="target-actions-compact">
+        <button
+          type="button"
+          onClick={() => registerSelection(null)}
+          disabled={disabled}
+          className="target-btn-miss"
+          aria-label="Fallo (0 puntos)"
+        >
+          Miss
+        </button>
+        <button
+          type="button"
+          onClick={() => handleQuickKey(10, true)}
+          disabled={disabled}
+          className="target-btn-x"
+          aria-label="Diez de oro (X)"
+        >
+          X
+        </button>
       </div>
     </div>
   );

@@ -298,7 +298,7 @@ describe('EndInput', () => {
         />
       );
 
-      const shortcutHost = container.querySelector('.end-input-container > div[tabindex="-1"]');
+      const shortcutHost = container.querySelector('.end-input-compact[tabindex="-1"]');
       expect(shortcutHost).not.toBeNull();
 
       fireEvent.keyDown(shortcutHost as Element, { key: 'd' });
@@ -325,14 +325,14 @@ describe('EndInput', () => {
       const arrows = screen.getAllByLabelText(/flecha/i);
       fireEvent.click(arrows[1]);
 
-      expect(screen.getByText(/Editando flecha 2/i)).toBeInTheDocument();
+      expect(screen.getByText(/Editando 2/i)).toBeInTheDocument();
 
       const keyboardButton = screen.getByRole('radio', { name: /teclado/i });
       fireEvent.click(keyboardButton);
       fireEvent.click(screen.getByRole('button', { name: /siete puntos/i }));
 
       expect(arrows[1]).toHaveTextContent('7');
-      expect(screen.getByRole('button', { name: /confirmar tanda/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /confirmar/i })).toBeInTheDocument();
     });
   });
 
@@ -485,7 +485,7 @@ describe('EndInput', () => {
         fireEvent.click(xButton);
       }
 
-      const confirmButtons = screen.getAllByText('Confirmar tanda');
+      const confirmButtons = screen.getAllByText('Confirmar');
       expect(confirmButtons.length).toBeGreaterThan(0);
     });
 
@@ -502,7 +502,7 @@ describe('EndInput', () => {
         fireEvent.click(xButton);
       }
 
-      const confirmButtons = screen.getAllByText('Confirmar tanda');
+      const confirmButtons = screen.getAllByText('Confirmar');
       fireEvent.click(confirmButtons[0]);
 
       await waitFor(() => {
@@ -527,7 +527,7 @@ describe('EndInput', () => {
         fireEvent.click(xButton);
       }
 
-      const confirmButtons = screen.getAllByText('Confirmar tanda');
+      const confirmButtons = screen.getAllByText('Confirmar');
       fireEvent.click(confirmButtons[0]);
 
       await waitFor(() => {
@@ -569,7 +569,7 @@ describe('EndInput', () => {
       fireEvent.click(xButton);
       fireEvent.click(xButton);
 
-      fireEvent.click(screen.getByRole('button', { name: /confirmar tanda/i }));
+      fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
 
       expect(await screen.findByText(/No se pudo guardar la tanda/i)).toBeInTheDocument();
 
@@ -710,7 +710,7 @@ describe('EndInput', () => {
         </div>
       );
 
-      const shortcutHosts = container.querySelectorAll('.end-input-container > div[tabindex="-1"]');
+      const shortcutHosts = container.querySelectorAll('.end-input-compact[tabindex="-1"]');
       expect(shortcutHosts).toHaveLength(2);
 
       fireEvent.keyDown(shortcutHosts[0], { key: '7' });
@@ -793,7 +793,7 @@ describe('EndInput', () => {
       fireEvent.click(xButton);
       fireEvent.click(xButton);
 
-      const confirmButtons = screen.getAllByText('Confirmar tanda');
+      const confirmButtons = screen.getAllByText('Confirmar');
       expect(confirmButtons.length).toBeGreaterThan(0);
     });
 

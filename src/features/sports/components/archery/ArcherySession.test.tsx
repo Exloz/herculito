@@ -87,7 +87,7 @@ describe('ArcherySession', () => {
     fireEvent.click(xButton);
     fireEvent.click(xButton);
 
-    fireEvent.click(screen.getByRole('button', { name: /confirmar tanda/i }));
+    fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
 
     expect(await screen.findByText(/No se pudo guardar la tanda/i)).toBeInTheDocument();
     expect(screen.getByText(/Nueva tanda/i)).toBeInTheDocument();

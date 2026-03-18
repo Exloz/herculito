@@ -32,32 +32,34 @@ describe('TargetFace', () => {
   describe('rendering', () => {
     it('renders the SVG target face', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
-      const svg = screen.getByRole('img', { name: /diana de tiro con arco/i });
+
+      const svg = screen.getByRole('img', { name: /diana/i });
       expect(svg).toBeInTheDocument();
     });
 
     it('renders the miss button', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
+
       const missButton = screen.getByRole('button', { name: /fallo/i });
       expect(missButton).toBeInTheDocument();
       expect(missButton).toHaveTextContent('Miss');
     });
 
-    it('renders X in the center', () => {
+    it('renders X button', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      expect(screen.getByText('X')).toBeInTheDocument();
+
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      expect(xButton).toBeInTheDocument();
     });
   });
 
   describe('score selection via X button', () => {
     it('calls onScore with score 10 and isGold=true when clicking X', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
-      const xButton = screen.getByRole('button', { name: /diez de oro \(X\)/i });
+
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
       fireEvent.click(xButton);
-      
+
       expect(mockOnScore).toHaveBeenCalledWith(10, true);
     });
   });
@@ -84,22 +86,13 @@ describe('TargetFace', () => {
     });
   });
 
-  describe('keyboard accessibility for X button', () => {
-    it('calls onScore with score 10 and isGold=true when pressing Enter on X', () => {
+  describe('X button functionality', () => {
+    it('X button is clickable and triggers onScore', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
-      const xButton = screen.getByRole('button', { name: /diez de oro \(X\)/i });
-      fireEvent.keyDown(xButton, { key: 'Enter' });
-      
-      expect(mockOnScore).toHaveBeenCalledWith(10, true);
-    });
 
-    it('calls onScore with score 10 and isGold=true when pressing Space on X', () => {
-      render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
-      const xButton = screen.getByRole('button', { name: /diez de oro \(X\)/i });
-      fireEvent.keyDown(xButton, { key: ' ' });
-      
+      const xButton = screen.getByRole('button', { name: /diez de oro/i });
+      fireEvent.click(xButton);
+
       expect(mockOnScore).toHaveBeenCalledWith(10, true);
     });
   });
@@ -107,63 +100,56 @@ describe('TargetFace', () => {
   describe('disabled state', () => {
     it('does not call onScore when disabled', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} disabled={true} />);
-      
+
       const xButton = screen.getByRole('button', { name: /diez de oro/i });
       fireEvent.click(xButton);
-      
+
       expect(mockOnScore).not.toHaveBeenCalled();
     });
 
     it('does not call onMiss when disabled', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} disabled={true} />);
-      
+
       const missButton = screen.getByRole('button', { name: /fallo/i });
       fireEvent.click(missButton);
-      
+
       expect(mockOnMiss).not.toHaveBeenCalled();
     });
 
     it('miss button is disabled when prop is true', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} disabled={true} />);
-      
+
       const missButton = screen.getByRole('button', { name: /fallo/i });
       expect(missButton).toBeDisabled();
     });
 
-    it('X button has tabIndex -1 when disabled', () => {
+    it('X button is disabled when prop is true', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} disabled={true} />);
-      
+
       const xButton = screen.getByRole('button', { name: /diez de oro/i });
-      expect(xButton).toHaveAttribute('tabindex', '-1');
+      expect(xButton).toBeDisabled();
     });
   });
 
   describe('accessibility', () => {
     it('has correct aria-label on SVG', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
+
       const svg = screen.getByRole('img');
-      expect(svg).toHaveAttribute('aria-label', 'Diana de tiro con arco');
+      expect(svg).toHaveAttribute('aria-label', expect.stringContaining('Diana'));
     });
 
     it('X button has aria-label', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
-      expect(screen.getByRole('button', { name: /diez de oro \(X\)/i })).toBeInTheDocument();
+
+      expect(screen.getByRole('button', { name: /diez de oro/i })).toBeInTheDocument();
     });
 
     it('miss button has aria-label', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
+
       const missButton = screen.getByRole('button', { name: /fallo/i });
       expect(missButton).toBeInTheDocument();
-    });
-
-    it('X button has role button', () => {
-      render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-      
-      const xButton = screen.getByRole('button', { name: /diez de oro/i });
-      expect(xButton).toHaveAttribute('role', 'button');
     });
   });
 
@@ -187,14 +173,4 @@ describe('TargetFace', () => {
     });
   });
 
-  describe('keyboard navigation for X', () => {
-    it('calls onScore for X when pressing Enter', () => {
-      render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
-
-      const xButton = screen.getByRole('button', { name: /diez de oro \(X\)/i });
-      fireEvent.keyDown(xButton, { key: 'Enter' });
-
-      expect(mockOnScore).toHaveBeenCalledWith(10, true);
-    });
-  });
 });

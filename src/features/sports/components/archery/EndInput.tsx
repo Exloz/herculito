@@ -3,7 +3,7 @@ import { ArrowInput } from './ArrowInput';
 import { ScoreNumpad } from './ScoreNumpad';
 import { TargetFace } from './TargetFace';
 import { InputToggle } from './InputToggle';
-import { Check, RotateCcw, Edit3, Crosshair } from 'lucide-react';
+import { Check, RotateCcw } from 'lucide-react';
 
 const STORAGE_KEY = 'herculito:archery:inputMode';
 
@@ -186,61 +186,41 @@ export const EndInput: React.FC<EndInputProps> = ({
   const subtotal = arrows.reduce((sum, arrow) => sum + (arrow.score ?? 0), 0);
   const goldCount = arrows.filter((arrow) => arrow.isGold).length;
   const activeArrowNumber = activeIndex < arrowsPerEnd ? activeIndex + 1 : null;
-  const helperText = editingIndex !== null
-    ? `Flecha ${editingIndex + 1} en edicion. Elige el nuevo puntaje.`
-    : isComplete
-      ? 'Revisa la tanda y confirma cuando este lista.'
-      : `Flecha ${currentIndex + 1} de ${arrowsPerEnd}. Marca el puntaje.`;
 
   const shouldShowInput = !isComplete || editingIndex !== null;
 
   return (
-    <div className="end-input-container">
-      <div
-        ref={containerRef}
-        tabIndex={-1}
-        onKeyDown={handleShortcutKeyDown}
-        onPointerDownCapture={(event) => {
-          if (event.target instanceof Element && !event.target.closest('button')) {
-            containerRef.current?.focus();
-          }
-        }}
-      >
-      <div className="end-input-header">
-        <div className="end-input-subtotal">
-          <span className="end-input-subtotal-value">{subtotal}</span>
-          <span className="text-slate-400">pts</span>
-          {goldCount > 0 && (
-            <span className="end-input-gold-badge">
-              <span className="w-1.5 h-1.5 rounded-full bg-amberGlow" />
-              {goldCount} Oro{goldCount > 1 ? 's' : ''}
-            </span>
-          )}
+    <div
+      ref={containerRef}
+      className="end-input-compact"
+      tabIndex={-1}
+      onKeyDown={handleShortcutKeyDown}
+      onPointerDownCapture={(event) => {
+        if (event.target instanceof Element && !event.target.closest('button')) {
+          containerRef.current?.focus();
+        }
+      }}
+    >
+      {/* Header compacto */}
+      <div className="end-input-top">
+        <div className="end-input-scoreline">
+          <span className="end-total">{subtotal}</span>
+          <span className="end-pts">pts</span>
+          {goldCount > 0 && <span className="end-golds">{goldCount}X</span>}
         </div>
-
-        <div className="end-input-progress">
+        <div className="end-status">
           {editingIndex !== null ? (
-            <span className="active-arrow-indicator">
-              <Edit3 size={14} />
-              Editando flecha {editingIndex + 1}
-            </span>
+            <span className="end-editing">Editando {editingIndex + 1}</span>
           ) : isComplete ? (
-            <span className="end-complete-badge">
-              <Check size={16} />
-              Tanda completa
-            </span>
+            <span className="end-complete">Completa</span>
           ) : (
-            <span className="active-arrow-indicator">
-              <Crosshair size={14} />
-              Flecha activa {currentIndex + 1}
-            </span>
+            <span className="end-active">Flecha {currentIndex + 1}/{arrowsPerEnd}</span>
           )}
         </div>
-
-        <p className="end-input-helper">{helperText}</p>
       </div>
 
-      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+      {/* Flechas */}
+      <div className="end-arrows-row">
         {arrows.map((arrow, index) => (
           <ArrowInput
             key={index}
@@ -254,14 +234,16 @@ export const EndInput: React.FC<EndInputProps> = ({
         ))}
       </div>
 
+      {/* Toggle */}
       <InputToggle
         mode={inputMode}
         onToggle={handleToggleMode}
         disabled={disabled || isSubmitting}
       />
 
+      {/* Input area */}
       {shouldShowInput && (
-        <div className="space-y-3">
+        <>
           {inputMode === 'target' ? (
             <TargetFace
               onScore={handleScore}
@@ -276,58 +258,43 @@ export const EndInput: React.FC<EndInputProps> = ({
             />
           )}
 
-          <div className="flex gap-2">
-            {hasEntries && editingIndex === null && (
-              <button
-                type="button"
-                onClick={handleUndo}
-                disabled={disabled || isSubmitting}
-                className="flex-1 btn-secondary inline-flex items-center justify-center gap-2"
-              >
-                <RotateCcw size={16} />
-                <span>Deshacer</span>
-              </button>
-            )}
-
-            {editingIndex !== null && (
-              <button
-                type="button"
-                onClick={handleCancelEditing}
-                disabled={disabled || isSubmitting}
-                className="flex-1 btn-ghost inline-flex items-center justify-center gap-2 text-slate-400"
-              >
-                <span>Cancelar edicion</span>
-              </button>
-            )}
-          </div>
-        </div>
+          {(hasEntries || editingIndex !== null) && (
+            <button
+              type="button"
+              onClick={editingIndex !== null ? handleCancelEditing : handleUndo}
+              disabled={disabled || isSubmitting}
+              className="end-undo-btn"
+            >
+              <RotateCcw size={14} />
+              {editingIndex !== null ? 'Cancelar' : 'Deshacer'}
+            </button>
+          )}
+        </>
       )}
 
+      {/* Completion */}
       {isComplete && editingIndex === null && (
-        <div className="space-y-3">
+        <div className="end-complete-actions">
           <button
             type="button"
             onClick={handleComplete}
             disabled={disabled || isSubmitting}
-            className="w-full btn-primary inline-flex items-center justify-center gap-2"
+            className="end-confirm-btn"
           >
-            <Check size={20} />
-            <span>{isSubmitting ? 'Guardando...' : 'Confirmar tanda'}</span>
+            <Check size={18} />
+            {isSubmitting ? 'Guardando...' : 'Confirmar'}
           </button>
 
           <button
             type="button"
             onClick={handleUndo}
             disabled={disabled || isSubmitting}
-            className="w-full btn-ghost inline-flex items-center justify-center gap-2 text-slate-400"
+            className="end-correct-btn"
           >
-            <RotateCcw size={16} />
-            <span>Corregir</span>
+            Corregir
           </button>
 
-          {submitError && (
-            <p className="text-center text-sm text-crimson">{submitError}</p>
-          )}
+          {submitError && <p className="end-error">{submitError}</p>}
         </div>
       )}
 
@@ -336,12 +303,11 @@ export const EndInput: React.FC<EndInputProps> = ({
           type="button"
           onClick={onCancel}
           disabled={disabled || isSubmitting}
-          className="w-full btn-ghost text-slate-400 text-sm mt-2"
+          className="end-cancel-btn"
         >
           Cancelar
         </button>
       )}
-      </div>
     </div>
   );
 };

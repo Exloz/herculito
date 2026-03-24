@@ -186,10 +186,21 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
       const logsToSave = routine.exercises.map((exercise) => {
         const log = getLogForExerciseCustom(exercise.id);
+        const normalizedSets = normalizeWorkoutSets(log.sets ?? [], exercise.sets).map((set, index) => {
+          const fallbackReps = exercise.repsBySet?.[index];
+          if (set.reps !== undefined || fallbackReps !== undefined) {
+            return {
+              ...set,
+              reps: set.reps ?? fallbackReps ?? exercise.reps
+            };
+          }
+
+          return set;
+        });
 
         return {
           ...log,
-          sets: normalizeWorkoutSets(log.sets ?? [], exercise.sets)
+          sets: normalizedSets
         };
       });
 

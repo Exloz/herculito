@@ -23,6 +23,7 @@ export const areWorkoutSetsEqual = (left: WorkoutSet[], right: WorkoutSet[]): bo
 
     if (leftSet.setNumber !== rightSet.setNumber) return false;
     if (leftSet.weight !== rightSet.weight) return false;
+    if (leftSet.reps !== rightSet.reps) return false;
     if (leftSet.completed !== rightSet.completed) return false;
 
     const leftCompletedAt = toComparableDateValue(leftSet.completedAt);

@@ -337,7 +337,13 @@ export const updateSessionProgress = async (sessionId: string, exercises: Exerci
   });
 };
 
-export const completeSession = async (sessionId: string, exercises: ExerciseLog[], completedAt?: number, totalDuration?: number): Promise<void> => {
+export const completeSession = async (
+  sessionId: string,
+  exercises: ExerciseLog[],
+  completedAt?: number,
+  totalDuration?: number,
+  repsBySetUpdates?: Record<string, number[]>
+): Promise<void> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();
   await fetchJson<{ ok: boolean }>(`${origin}/v1/data/sessions/complete`, {
@@ -346,7 +352,7 @@ export const completeSession = async (sessionId: string, exercises: ExerciseLog[
       'content-type': 'application/json',
       authorization: `Bearer ${token}`
     },
-    body: JSON.stringify({ sessionId, exercises, completedAt, totalDuration })
+    body: JSON.stringify({ sessionId, exercises, completedAt, totalDuration, repsBySetUpdates })
   });
 };
 

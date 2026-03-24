@@ -94,7 +94,12 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
 
             <div className="mt-3 text-sm text-slate-300">
               {previewExercises.length > 0
-                ? previewExercises.map((exercise) => `${exercise.name} (${exercise.sets}x${exercise.reps})`).join(' - ')
+                ? previewExercises.map((exercise) => {
+                    const repsDisplay = exercise.repsBySet && exercise.repsBySet.length > 0
+                      ? exercise.repsBySet.join('/')
+                      : String(exercise.reps);
+                    return `${exercise.name} (${exercise.sets}x${repsDisplay})`;
+                  }).join(' - ')
                 : 'Sin ejercicios todavía'}
             </div>
           </div>
@@ -179,12 +184,17 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
               <div>
                 <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Ejercicios</p>
                 <div className="space-y-1.5">
-                  {routine.exercises.slice(0, 4).map((exercise) => (
-                    <div key={exercise.id} className="flex items-center justify-between rounded-xl bg-black/10 px-3 py-2 text-sm text-slate-200">
-                      <span className="truncate pr-3">{exercise.name}</span>
-                      <span className="shrink-0 text-xs text-slate-500">{exercise.sets} x {exercise.reps}</span>
-                    </div>
-                  ))}
+                  {routine.exercises.slice(0, 4).map((exercise) => {
+                    const repsDisplay = exercise.repsBySet && exercise.repsBySet.length > 0
+                      ? exercise.repsBySet.join('/')
+                      : String(exercise.reps);
+                    return (
+                      <div key={exercise.id} className="flex items-center justify-between rounded-xl bg-black/10 px-3 py-2 text-sm text-slate-200">
+                        <span className="truncate pr-3">{exercise.name}</span>
+                        <span className="shrink-0 text-xs text-slate-500">{exercise.sets} x {repsDisplay}</span>
+                      </div>
+                    );
+                  })}
                   {routine.exercises.length > 4 && (
                     <div className="text-xs text-slate-500">... y {routine.exercises.length - 4} más</div>
                   )}

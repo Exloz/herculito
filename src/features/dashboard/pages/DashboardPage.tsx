@@ -460,6 +460,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
   const handleUpdateProgress = useCallback(async (sessionId: string, exerciseLogs: ExerciseLog[]) => {
     await apiUpdateSessionProgress(sessionId, exerciseLogs);
+
+    setActiveWorkout((previousWorkout) => {
+      if (!previousWorkout || previousWorkout.session.id !== sessionId) {
+        return previousWorkout;
+      }
+
+      const nextWorkout = {
+        ...previousWorkout,
+        session: {
+          ...previousWorkout.session,
+          exercises: exerciseLogs
+        }
+      };
+
+      saveActiveWorkoutToStorage(nextWorkout);
+      return nextWorkout;
+    });
   }, []);
 
   const previousWeightsByExercise = useMemo(() => {
@@ -471,17 +488,68 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const handleCompleteWorkout = useCallback(async (exerciseLogs: ExerciseLog[]) => {
     if (!activeWorkout) return;
 
+    // Calculate repsBySetUpdates for exercises that use reps-by-set mode
+    // Materializes ALL sets using fallback: set.reps ?? exercise.repsBySet[idx] ?? exercise.reps
+    const calculateRepsBySetUpdates = (): Record<string, number[]> => {
+      const updates: Record<string, number[]> = {};
+      const routine = activeWorkout.routine;
+
+      for (const exercise of routine.exercises) {
+        // Only process exercises that have repsBySet defined in the routine
+        if (!exercise.repsBySet || exercise.repsBySet.length === 0) continue;
+
+        // Find the log for this exercise
+        const log = exerciseLogs.find(l => l.exerciseId === exercise.id);
+        if (!log || !log.sets) continue;
+
+        // Build effective reps for each set up to exercise.sets
+        // Use fallback: set.reps ?? exercise.repsBySet[idx] ?? exercise.reps
+        const effectiveReps: number[] = [];
+        for (let idx = 0; idx < exercise.sets; idx++) {
+          const set = log.sets.find(s => s.setNumber === idx + 1);
+          const repsForSet = set?.reps ?? exercise.repsBySet[idx] ?? exercise.reps;
+          effectiveReps.push(repsForSet);
+        }
+
+        // Only include update if we have exactly exercise.sets completed sets
+        // and at least one value differs from the original
+        const completedCount = log.sets.filter(s => s.completed).length;
+        if (completedCount === exercise.sets) {
+          const hasChanges = effectiveReps.some((reps, idx) => reps !== exercise.repsBySet![idx]);
+          if (hasChanges) {
+            updates[exercise.id] = effectiveReps;
+          }
+        }
+      }
+
+      return updates;
+    };
+
     const finishWorkout = async () => {
       try {
         const completedAt = Date.now();
         const startedAtMs = activeWorkout.session.startedAt.getTime();
         const totalDuration = Math.max(1, Math.round((completedAt - startedAtMs) / (1000 * 60)));
+        const repsBySetUpdates = calculateRepsBySetUpdates();
 
-        await apiCompleteSession(activeWorkout.session.id, exerciseLogs, completedAt, totalDuration);
-        await apiIncrementRoutineUsage(activeWorkout.routine.id);
+        // Fire and forget the routine update - session completion is more important
+        // If routine update fails, the session is still saved
+        await apiCompleteSession(
+          activeWorkout.session.id,
+          exerciseLogs,
+          completedAt,
+          totalDuration,
+          Object.keys(repsBySetUpdates).length > 0 ? repsBySetUpdates : undefined
+        );
+
         setActiveWorkout(null);
         setShowActiveWorkout(false);
         saveActiveWorkoutToStorage(null);
+
+        void apiIncrementRoutineUsage(activeWorkout.routine.id).catch(() => {
+          // El contador de usos no debe impedir cerrar el workout ya completado.
+        });
+
         showToast('Entrenamiento completado', 'success');
         void refresh();
       } catch (error) {

@@ -112,6 +112,7 @@ export interface Exercise {
   name: string;
   sets: number;
   reps: number;
+  repsBySet?: number[]; // modo opcional: reps por serie (e.g., [12, 10, 8, 6])
   restTime?: number; // en segundos
   muscleGroup?: MuscleGroup; // nuevo campo opcional
   video?: ExerciseVideo;
@@ -136,6 +137,7 @@ export interface ExerciseTemplate {
 export interface WorkoutSet {
   setNumber: number;
   weight: number;
+  reps?: number; // reps realizadas en esta serie (para modo reps por serie)
   completed: boolean;
   completedAt?: Date;
 }

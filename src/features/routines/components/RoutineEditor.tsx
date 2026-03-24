@@ -17,6 +17,7 @@ interface ExerciseDraftValues {
   sets?: string;
   reps?: string;
   restTime?: string;
+  repsBySet?: string[]; // drafts for reps by set inputs
 }
 
 interface RoutineEditorProps {
@@ -43,6 +44,19 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [exerciseError, setExerciseError] = useState('');
   const [exerciseDrafts, setExerciseDrafts] = useState<Record<string, ExerciseDraftValues>>({});
   const [formError, setFormError] = useState('');
+  const [repsBySetMode, setRepsBySetMode] = useState<Record<string, boolean>>(
+    () => {
+      // Initialize from existing routine data
+      const initial: Record<string, boolean> = {};
+      (routine?.exercises || []).forEach((ex) => {
+        if (ex.repsBySet && ex.repsBySet.length > 0) {
+          initial[ex.id] = true;
+        }
+      });
+      return initial;
+    }
+  );
+  const [repsBySetDrafts, setRepsBySetDrafts] = useState<Record<string, string[]>>({});
 
   useDialogA11y(dialogRef, { enabled: !showExerciseSelector, onClose: onCancel });
 
@@ -78,12 +92,133 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
   const handleRemoveExercise = (exerciseId: string) => {
     setExercises(exercises.filter(e => e.id !== exerciseId));
+    // Clean up reps-by-set state
+    setRepsBySetMode((prev) => {
+      const next = { ...prev };
+      delete next[exerciseId];
+      return next;
+    });
+    setRepsBySetDrafts((prev) => {
+      const next = { ...prev };
+      delete next[exerciseId];
+      return next;
+    });
+  };
+
+  // Atomic update for exercise that handles sets + repsBySet synchronization
+  const updateExerciseAtomic = (exerciseId: string, updates: Partial<Exercise>) => {
+    setExercises(prevExercises => {
+      return prevExercises.map(e => {
+        if (e.id !== exerciseId) return e;
+
+        // If updating sets AND reps-by-set mode is enabled, synchronize both atomically
+        if (updates.sets !== undefined && repsBySetMode[exerciseId]) {
+          const newSets = updates.sets;
+          const currentRepsBySet = e.repsBySet ?? [];
+          const currentSetsCount = currentRepsBySet.length;
+          const newRepsBySet = [...currentRepsBySet];
+
+          if (newSets > currentSetsCount) {
+            // Add more sets - replicate the last rep value
+            const lastRep = currentRepsBySet[currentRepsBySet.length - 1] ?? e.reps;
+            for (let i = currentSetsCount; i < newSets; i++) {
+              newRepsBySet.push(lastRep);
+            }
+          } else if (newSets < currentSetsCount) {
+            // Remove excess sets
+            newRepsBySet.splice(newSets);
+          }
+
+          // Sync drafts
+          setRepsBySetDrafts((prevDrafts) => ({
+            ...prevDrafts,
+            [exerciseId]: newRepsBySet.map(String)
+          }));
+
+          return { ...e, ...updates, repsBySet: newRepsBySet };
+        }
+
+        return { ...e, ...updates };
+      });
+    });
   };
 
   const handleUpdateExercise = (exerciseId: string, updates: Partial<Exercise>) => {
-    setExercises(exercises.map(e =>
-      e.id === exerciseId ? { ...e, ...updates } : e
-    ));
+    setExercises((previousExercises) => previousExercises.map((exercise) => (
+      exercise.id === exerciseId ? { ...exercise, ...updates } : exercise
+    )));
+  };
+
+  const toggleRepsBySetMode = (exerciseId: string) => {
+    const exercise = exercises.find(e => e.id === exerciseId);
+    if (!exercise) return;
+
+    setRepsBySetMode((prev) => {
+      const isCurrentlyEnabled = prev[exerciseId] ?? false;
+      const next = { ...prev, [exerciseId]: !isCurrentlyEnabled };
+
+      if (!isCurrentlyEnabled) {
+        // Turning ON: initialize repsBySet from current reps
+        const initialRepsBySet = Array.from({ length: exercise.sets }, () => String(exercise.reps));
+        setRepsBySetDrafts((prevDrafts) => ({
+          ...prevDrafts,
+          [exerciseId]: initialRepsBySet
+        }));
+        // Update the exercise with the initial repsBySet
+        handleUpdateExercise(exerciseId, { repsBySet: Array.from({ length: exercise.sets }, () => exercise.reps) });
+      } else {
+        // Turning OFF: clear repsBySet and drafts
+        setRepsBySetDrafts((prevDrafts) => {
+          const nextDrafts = { ...prevDrafts };
+          delete nextDrafts[exerciseId];
+          return nextDrafts;
+        });
+        handleUpdateExercise(exerciseId, { repsBySet: undefined });
+      }
+
+      return next;
+    });
+  };
+
+  const handleRepsBySetChange = (exerciseId: string, setIndex: number, rawValue: string) => {
+    setRepsBySetDrafts((prevDrafts) => {
+      const currentDrafts = prevDrafts[exerciseId] ?? [];
+      const nextDrafts = [...currentDrafts];
+      nextDrafts[setIndex] = rawValue;
+      return { ...prevDrafts, [exerciseId]: nextDrafts };
+    });
+
+    // Also update the exercise directly with parsed value if valid
+    const parsedValue = Number.parseInt(rawValue, 10);
+    if (!Number.isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= MAX_REPS) {
+      const exercise = exercises.find(e => e.id === exerciseId);
+      if (exercise?.repsBySet) {
+        const newRepsBySet = [...exercise.repsBySet];
+        newRepsBySet[setIndex] = parsedValue;
+        handleUpdateExercise(exerciseId, { repsBySet: newRepsBySet });
+      }
+    }
+  };
+
+  const handleRepsBySetBlur = (exerciseId: string, setIndex: number) => {
+    const drafts = repsBySetDrafts[exerciseId];
+    if (!drafts) return;
+
+    const rawValue = drafts[setIndex];
+    const parsedValue = Number.parseInt(rawValue, 10);
+
+    if (rawValue.trim() === '' || Number.isNaN(parsedValue) || parsedValue < 1 || parsedValue > MAX_REPS) {
+      // Reset to current value from exercise
+      const exercise = exercises.find(e => e.id === exerciseId);
+      if (exercise?.repsBySet) {
+        const correctedValue = String(exercise.repsBySet[setIndex] ?? exercise.reps);
+        setRepsBySetDrafts((prevDrafts) => {
+          const nextDrafts = [...(prevDrafts[exerciseId] ?? [])];
+          nextDrafts[setIndex] = correctedValue;
+          return { ...prevDrafts, [exerciseId]: nextDrafts };
+        });
+      }
+    }
   };
 
   const clearExerciseDraftField = (exerciseId: string, field: keyof ExerciseDraftValues) => {
@@ -155,7 +290,14 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
     const minValue = 1;
     const maxValue = field === 'reps' ? MAX_REPS : MAX_SETS;
-    handleUpdateExercise(exerciseId, { [field]: clampInteger(parsedValue, minValue, maxValue) } as Partial<Exercise>);
+    const clampedValue = clampInteger(parsedValue, minValue, maxValue);
+
+    // Use atomic update for sets changes to keep sets/repsBySet in sync
+    if (field === 'sets') {
+      updateExerciseAtomic(exerciseId, { sets: clampedValue });
+    } else {
+      handleUpdateExercise(exerciseId, { [field]: clampedValue } as Partial<Exercise>);
+    }
   };
 
   const handleExerciseNumberBlur = (exerciseId: string, field: keyof ExerciseDraftValues, fallback: number) => {
@@ -164,9 +306,16 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
       return;
     }
 
-    const parsedValue = Number.parseInt(draftValue, 10);
+    // Handle repsBySet array field separately
+    if (field === 'repsBySet' && Array.isArray(draftValue)) {
+      // repsBySet is handled by its own blur handler
+      return;
+    }
+
+    const stringValue = draftValue as string;
+    const parsedValue = Number.parseInt(stringValue, 10);
     if (field === 'restTime') {
-      if (draftValue.trim() === '') {
+      if (stringValue.trim() === '') {
         return;
       }
 
@@ -428,19 +577,51 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                                 max={MAX_SETS}
                               />
                             </div>
-                            <div>
-                              <label htmlFor={`routine-exercise-${exercise.id}-reps`} className="mb-1 block text-slate-300">Reps</label>
-                              <input
-                                id={`routine-exercise-${exercise.id}-reps`}
-                                type="number"
-                                value={exerciseDrafts[exercise.id]?.reps ?? String(exercise.reps)}
-                                onChange={(e) => handleExerciseNumberChange(exercise.id, 'reps', e.target.value)}
-                                onBlur={() => handleExerciseNumberBlur(exercise.id, 'reps', exercise.reps)}
-                                className="input input-sm"
-                                min="1"
-                                max={MAX_REPS}
-                              />
-                            </div>
+
+                            {/* Reps column - either single input or reps-by-set toggle */}
+                            {repsBySetMode[exercise.id] ? (
+                              <div className="col-span-1">
+                                <div className="mb-1 flex items-center justify-between">
+                                  <span className="text-slate-300">Reps x serie</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleRepsBySetMode(exercise.id)}
+                                    className="text-[10px] text-mint hover:text-mintDeep transition-colors"
+                                    title="Desactivar reps por serie"
+                                  >
+                                    Cambiar
+                                  </button>
+                                </div>
+                                <div className="rounded-lg border border-mint/30 bg-mint/5 px-2 py-1.5 text-mint text-xs font-medium">
+                                  {exercise.repsBySet?.join(' / ') ?? exercise.reps}
+                                </div>
+                              </div>
+                            ) : (
+                              <div>
+                                <label htmlFor={`routine-exercise-${exercise.id}-reps`} className="mb-1 block text-slate-300">
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleRepsBySetMode(exercise.id)}
+                                    className="text-slate-300 hover:text-mint transition-colors flex items-center gap-1"
+                                    title="Activar reps por serie"
+                                  >
+                                    Reps
+                                    <span className="text-[9px] text-mint/60 uppercase tracking-wider">x serie</span>
+                                  </button>
+                                </label>
+                                <input
+                                  id={`routine-exercise-${exercise.id}-reps`}
+                                  type="number"
+                                  value={exerciseDrafts[exercise.id]?.reps ?? String(exercise.reps)}
+                                  onChange={(e) => handleExerciseNumberChange(exercise.id, 'reps', e.target.value)}
+                                  onBlur={() => handleExerciseNumberBlur(exercise.id, 'reps', exercise.reps)}
+                                  className="input input-sm"
+                                  min="1"
+                                  max={MAX_REPS}
+                                />
+                              </div>
+                            )}
+
                             <div>
                               <label htmlFor={`routine-exercise-${exercise.id}-rest`} className="mb-1 block text-slate-300">Desc. (s)</label>
                               <input
@@ -463,6 +644,45 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                               )}
                             </div>
                           </div>
+
+                          {/* Reps-by-set detailed editor when enabled */}
+                          {repsBySetMode[exercise.id] && (
+                            <div className="mt-3 rounded-lg border border-mint/20 bg-mint/5 p-3">
+                              <div className="mb-2 flex items-center justify-between">
+                                <span className="text-xs font-medium text-mint">Reps por serie</span>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleRepsBySetMode(exercise.id)}
+                                  className="text-[10px] text-slate-400 hover:text-white transition-colors"
+                                >
+                                  Usar reps fijo
+                                </button>
+                              </div>
+                              <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(exercise.sets, 6)}, 1fr)` }}>
+                                {(repsBySetDrafts[exercise.id] ?? exercise.repsBySet?.map(String) ?? []).map((repsStr, setIdx) => (
+                                  <div key={setIdx} className="text-center">
+                                    <label className="mb-1 block text-[10px] uppercase tracking-wider text-slate-400">
+                                      Serie {setIdx + 1}
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={repsStr}
+                                      onChange={(e) => handleRepsBySetChange(exercise.id, setIdx, e.target.value)}
+                                      onBlur={() => handleRepsBySetBlur(exercise.id, setIdx)}
+                                      className="input input-sm w-full text-center"
+                                      min="1"
+                                      max={MAX_REPS}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                              {exercise.sets > 6 && (
+                                <p className="mt-2 text-center text-[10px] text-slate-400">
+                                  Mostrando {Math.min(exercise.sets, 6)} de {exercise.sets} series. Ajusta las series para ver más.
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}

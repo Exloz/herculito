@@ -5,6 +5,7 @@ import { getCurrentDateString } from '../../../shared/lib/dateUtils';
 import { vibrateLight, vibrateSuccess } from '../../../shared/lib/mobileFeedback';
 
 const MAX_WEIGHT_KG = 2000;
+const MAX_REPS = 200;
 
 const parseWeightInput = (rawValue: string): number | null => {
   const normalizedValue = rawValue.replace(',', '.').trim();
@@ -48,6 +49,26 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 }) => {
   const [showVideo, setShowVideo] = React.useState(false);
   const [draftWeights, setDraftWeights] = React.useState<Record<number, string>>({});
+  const [draftReps, setDraftReps] = React.useState<Record<number, string>>({});
+
+  // Determine if this exercise uses reps-by-set mode
+  const hasRepsBySet = exercise.repsBySet && exercise.repsBySet.length > 0;
+  const exerciseSummaryReps = hasRepsBySet
+    ? exercise.repsBySet!.join('/')
+    : String(exercise.reps);
+
+  // Get the reps for a specific set - use draft, log, or default
+  const getRepsForSet = (setNumber: number): number => {
+    const currentSet = currentSets.find(s => s.setNumber === setNumber);
+    if (currentSet?.reps !== undefined) {
+      return currentSet.reps;
+    }
+    if (hasRepsBySet && exercise.repsBySet) {
+      const idx = setNumber - 1;
+      return exercise.repsBySet[idx] ?? exercise.reps;
+    }
+    return exercise.reps;
+  };
 
   const currentSets = React.useMemo((): WorkoutSet[] => {
     const normalizedBySetNumber = new Map<number, WorkoutSet>();
@@ -187,6 +208,61 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     updateSetWeight(setNumber, Number(newWeight.toFixed(1)));
   };
 
+  const handleRepsChange = (setNumber: number, rawValue: string) => {
+    setDraftReps((prev) => ({
+      ...prev,
+      [setNumber]: rawValue
+    }));
+
+    const normalizedValue = rawValue.replace(',', '.').trim();
+    if (normalizedValue === '') return;
+
+    const parsedValue = Number.parseInt(normalizedValue, 10);
+    if (Number.isNaN(parsedValue) || parsedValue < 1 || parsedValue > MAX_REPS) return;
+
+    // Update the set with the new reps
+    const updatedSets = currentSets.map(set =>
+      set.setNumber === setNumber
+        ? { ...set, reps: parsedValue }
+        : set
+    );
+
+    const updatedLog: ExerciseLog = {
+      exerciseId: exercise.id,
+      userId,
+      date: getCurrentDateString(),
+      sets: updatedSets
+    };
+
+    onUpdateLog(updatedLog);
+  };
+
+  const handleRepsBlur = (setNumber: number) => {
+    const rawValue = draftReps[setNumber];
+    if (rawValue === undefined) return;
+
+    const normalizedValue = rawValue.replace(',', '.').trim();
+    if (normalizedValue === '') {
+      // Clear draft to reset to actual value
+      setDraftReps((prev) => {
+        const next = { ...prev };
+        delete next[setNumber];
+        return next;
+      });
+      return;
+    }
+
+    const parsedValue = Number.parseInt(normalizedValue, 10);
+    if (Number.isNaN(parsedValue) || parsedValue < 1 || parsedValue > MAX_REPS) {
+      // Clear draft to reset to actual value
+      setDraftReps((prev) => {
+        const next = { ...prev };
+        delete next[setNumber];
+        return next;
+      });
+    }
+  };
+
   const toggleSetCompleted = (setNumber: number) => {
     const currentSet = currentSets.find(s => s.setNumber === setNumber);
     if (!currentSet) return;
@@ -253,7 +329,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           </div>
           <div className="flex shrink-0 items-center gap-2 text-sm text-slate-400">
             <Weight size={16} />
-            <span>{exercise.sets} × {exercise.reps}</span>
+            <span>{exercise.sets} × {exerciseSummaryReps}</span>
           </div>
         </div>
 
@@ -383,9 +459,27 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                       <Plus size={14} />
                     </button>
                   </div>
-                   <span className="whitespace-nowrap text-xs text-slate-400 sm:text-sm">kg × {exercise.reps}</span>
+
+                  {/* Reps display/input */}
+                  {hasRepsBySet ? (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-slate-500">×</span>
+                      <input
+                        type="number"
+                        value={draftReps[setNumber] ?? String(getRepsForSet(setNumber))}
+                        onChange={(e) => handleRepsChange(setNumber, e.target.value)}
+                        onBlur={() => handleRepsBlur(setNumber)}
+                        className="w-12 rounded-md border border-mist/40 bg-slateDeep py-1 pl-1.5 text-center text-xs font-medium text-mint focus:border-mint/60 focus:outline-none focus:ring-1 focus:ring-mint/40"
+                        min="1"
+                        max={MAX_REPS}
+                        aria-label={`Reps para serie ${setNumber}`}
+                      />
+                    </div>
+                  ) : (
+                    <span className="whitespace-nowrap text-xs text-slate-400 sm:text-sm">kg × {exercise.reps}</span>
+                  )}
                  </div>
-               </div>
+                </div>
 
               <button
                 type="button"

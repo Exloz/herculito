@@ -39,6 +39,24 @@ const getNumericValue = (value: number | '', fallback: number, min: number) => {
   return Math.max(min, resolvedValue);
 };
 
+const syncRepsBySetWithSets = (exercise: Exercise, nextSets: number, fallbackReps: number): number[] | undefined => {
+  if (!exercise.repsBySet || exercise.repsBySet.length === 0) {
+    return undefined;
+  }
+
+  const nextRepsBySet = [...exercise.repsBySet];
+  if (nextSets < nextRepsBySet.length) {
+    nextRepsBySet.splice(nextSets);
+  } else if (nextSets > nextRepsBySet.length) {
+    const lastRep = nextRepsBySet[nextRepsBySet.length - 1] ?? fallbackReps;
+    for (let index = nextRepsBySet.length; index < nextSets; index += 1) {
+      nextRepsBySet.push(lastRep);
+    }
+  }
+
+  return nextRepsBySet;
+};
+
 const LoadingOverlay = ({
   dialogRef,
   label,
@@ -209,10 +227,12 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
 
     try {
       if (isEditing && editingExercise && onUpdateExercise) {
+        const repsBySet = syncRepsBySetWithSets(editingExercise, resolvedSets, resolvedReps);
         const updates: Partial<Exercise> = {
           name: normalizedName,
           sets: resolvedSets,
           reps: resolvedReps,
+          ...(repsBySet ? { repsBySet } : {}),
           restTime: resolvedRestTime,
           ...(selectedVideo ? { video: selectedVideo } : { video: undefined })
         };

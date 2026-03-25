@@ -401,6 +401,12 @@
   contain: layout paint;
 }
 
+/* iOS overscroll / rubber-band fix when a dialog is open */
+body.dialog-open {
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
 body.dialog-open .app-bottom-nav {
   opacity: 0;
   transform: translate3d(0, calc(100% + env(safe-area-inset-bottom)), 0);

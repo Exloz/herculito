@@ -1,7 +1,8 @@
 import { useEffect, type RefObject } from 'react';
 
 const activeDialogStack: HTMLElement[] = [];
-let rootBodyOverflow = '';
+let rootBodyStyle = { overflow: '', position: '', top: '', paddingRight: '' };
+let savedScrollY = 0;
 const DIALOG_OPEN_CLASS = 'dialog-open';
 
 const FOCUSABLE_SELECTOR = [
@@ -43,7 +44,13 @@ export const useDialogA11y = (
     removeFromStack();
 
     if (activeDialogStack.length === 0) {
-      rootBodyOverflow = document.body.style.overflow;
+      rootBodyStyle = {
+        overflow: document.body.style.overflow,
+        position: document.body.style.position,
+        top: document.body.style.top,
+        paddingRight: document.body.style.paddingRight
+      };
+      savedScrollY = window.scrollY;
     }
 
     activeDialogStack.push(container);
@@ -51,7 +58,16 @@ export const useDialogA11y = (
     const previousActiveElement = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
+
+    // Lock body scroll and position to prevent iOS rubber-band overscroll
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${savedScrollY}px`;
+    // Compensate for any scrollbar that disappeared to prevent layout shift
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     document.body.classList.add(DIALOG_OPEN_CLASS);
 
     const focusableElements = getFocusableElements(container);
@@ -104,10 +120,19 @@ export const useDialogA11y = (
       removeFromStack();
 
       if (activeDialogStack.length === 0) {
-        document.body.style.overflow = rootBodyOverflow;
+        // Restore original body styles and scroll position
+        document.body.style.overflow = rootBodyStyle.overflow;
+        document.body.style.position = rootBodyStyle.position;
+        document.body.style.top = rootBodyStyle.top;
+        document.body.style.paddingRight = rootBodyStyle.paddingRight;
         document.body.classList.remove(DIALOG_OPEN_CLASS);
+        // Restore scroll position on body (used with position:fixed)
+        window.scrollTo(0, savedScrollY);
       } else {
+        // Another dialog is still open; keep body locked but reset top
         document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${savedScrollY}px`;
         document.body.classList.add(DIALOG_OPEN_CLASS);
       }
 

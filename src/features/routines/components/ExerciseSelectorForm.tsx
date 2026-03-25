@@ -109,7 +109,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
   }, [categories, customExercise.category]);
 
   return (
-    <div className="p-3.5 pb-3 sm:p-4 sm:pb-4">
+    <div className="p-3.5 pb-6 sm:p-4 sm:pb-6">
       <div className="space-y-3">
         <p className="text-xs text-slate-400">
           {isEditing ? 'Ajusta los datos y guarda cambios.' : 'Completa los datos para crearlo y reutilizarlo.'}

@@ -133,7 +133,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   });
 
   useDialogA11y(dialogRef, { onClose: onCancel });
-  const { backdropStyle, panelStyle } = useDialogViewport({ trimOffset: 12 });
+  const { backdropStyle, panelStyle } = useDialogViewport();
 
   useEffect(() => {
     if (isEditing && editingExercise) {
@@ -316,7 +316,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     >
       <div
         ref={dialogRef}
-        className="motion-dialog-panel dialog-height-trim flex w-full max-w-2xl flex-col overflow-hidden rounded-[1.35rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem]"
+        className="motion-dialog-panel dialog-height-full flex w-full max-w-2xl flex-col overflow-hidden border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem]"
         style={panelStyle}
         role="dialog"
         aria-modal="true"
@@ -381,7 +381,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto overscroll-contain ${showCustomForm ? 'pb-[calc(0.5rem+env(safe-area-inset-bottom))] sm:pb-2' : ''}`}
+        >
           {!showCustomForm ? (
             <ExerciseSelectorTemplateList
               searchTerm={searchTerm}

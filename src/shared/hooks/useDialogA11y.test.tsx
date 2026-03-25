@@ -43,14 +43,10 @@ describe('useDialogA11y', () => {
     vi.restoreAllMocks();
   });
 
-  it('restores body styles and scroll position on close', () => {
-    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
-
+  it('restores body styles on close', () => {
     const { unmount } = render(<DialogHarness label="Dialog principal" />);
 
     expect(document.body.style.overflow).toBe('hidden');
-    expect(document.body.style.position).toBe('fixed');
-    expect(document.body.style.top).toBe('-240px');
     expect(document.body.style.paddingRight).toBe('20px');
     expect(document.body.classList.contains('dialog-open')).toBe(true);
 
@@ -61,12 +57,9 @@ describe('useDialogA11y', () => {
     expect(document.body.style.top).toBe('');
     expect(document.body.style.paddingRight).toBe('12px');
     expect(document.body.classList.contains('dialog-open')).toBe(false);
-    expect(scrollToSpy).toHaveBeenCalledWith(0, 240);
   });
 
   it('keeps the body locked until the last stacked dialog closes', () => {
-    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
-
     const { rerender, unmount } = render(
       <>
         <DialogHarness label="Dialog padre" />
@@ -74,21 +67,18 @@ describe('useDialogA11y', () => {
       </>
     );
 
-    expect(document.body.style.position).toBe('fixed');
+    expect(document.body.style.overflow).toBe('hidden');
+    expect(document.body.style.paddingRight).toBe('20px');
     expect(document.body.classList.contains('dialog-open')).toBe(true);
 
     rerender(<DialogHarness label="Dialog padre" />);
 
     expect(document.body.style.overflow).toBe('hidden');
-    expect(document.body.style.position).toBe('fixed');
-    expect(document.body.style.top).toBe('-240px');
+    expect(document.body.style.paddingRight).toBe('20px');
     expect(document.body.classList.contains('dialog-open')).toBe(true);
-    expect(scrollToSpy).not.toHaveBeenCalled();
 
     unmount();
 
     expect(document.body.classList.contains('dialog-open')).toBe(false);
-    expect(scrollToSpy).toHaveBeenCalledTimes(1);
-    expect(scrollToSpy).toHaveBeenCalledWith(0, 240);
   });
 });

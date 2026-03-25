@@ -1,9 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Plus, Trash2, Save, X, Pencil, Play, VideoOff } from 'lucide-react';
 import { Routine, Exercise, MuscleGroup } from '../../../shared/types';
 import { ExerciseSelector } from './ExerciseSelector';
 import { MUSCLE_GROUPS } from '../../dashboard/lib/muscleGroups';
 import { useDialogA11y } from '../../../shared/hooks/useDialogA11y';
+import { useDialogViewport } from '../../../shared/hooks/useDialogViewport';
 import { clampInteger, normalizeMultiline, normalizeSingleLine } from '../../../shared/lib/inputSanitizers';
 import { AppCombobox } from '../../../shared/ui/AppCombobox';
 
@@ -59,6 +60,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   const [repsBySetDrafts, setRepsBySetDrafts] = useState<Record<string, string[]>>({});
 
   useDialogA11y(dialogRef, { enabled: !showExerciseSelector, onClose: onCancel });
+  const { backdropStyle, panelStyle } = useDialogViewport({ enabled: true });
 
   const closeExerciseSelector = () => {
     setShowExerciseSelector(false);
@@ -376,10 +378,14 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
   };
 
   return (
-    <div className="motion-dialog-backdrop fixed inset-0 z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4">
+    <div
+      className="motion-dialog-backdrop fixed inset-x-0 top-0 h-screen z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4"
+      style={backdropStyle}
+    >
       <div
         ref={dialogRef}
         className={`motion-dialog-panel dialog-height-full flex w-full max-w-3xl flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.12),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[88vh] sm:rounded-[1.7rem] ${showExerciseSelector ? 'pointer-events-none opacity-70' : ''}`}
+        style={panelStyle}
         role="dialog"
         aria-modal={!showExerciseSelector}
         aria-labelledby="routine-editor-title"

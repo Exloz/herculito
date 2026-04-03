@@ -8,6 +8,10 @@ import { useUI } from './providers/ui-context';
 import { PageSkeleton } from '../shared/ui/PageSkeleton';
 import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
 
+const AgentationComponent = lazy(() =>
+  import('agentation').then(mod => ({ default: mod.Agentation }))
+);
+
 // Lazy load pages for better performance
 const loadLoginPage = () => import('../features/auth/pages/LoginPage');
 const loadDashboardPage = () => import('../features/dashboard/pages/DashboardPage');
@@ -138,6 +142,16 @@ function AppContent() {
         </Suspense>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} />
       </div>
+      {isAdmin && typeof window !== 'undefined' && (
+        <Suspense fallback={null}>
+          <AgentationComponent
+            endpoint="http://localhost:4747"
+            onSessionCreated={(sessionId: string) => {
+              console.log('Agentation session:', sessionId);
+            }}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

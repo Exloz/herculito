@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 const activeDialogStack: HTMLElement[] = [];
 let rootBodyStyle = { overflow: '', paddingRight: '' };
@@ -27,6 +27,11 @@ export const useDialogA11y = (
 ): void => {
   const enabled = options?.enabled ?? true;
   const onClose = options?.onClose;
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -76,7 +81,7 @@ export const useDialogA11y = (
       }
 
       if (event.key === 'Escape') {
-        onClose?.();
+        onCloseRef.current?.();
         return;
       }
 
@@ -126,5 +131,5 @@ export const useDialogA11y = (
         previousActiveElement.focus();
       }
     };
-  }, [containerRef, enabled, onClose]);
+  }, [containerRef, enabled]);
 };

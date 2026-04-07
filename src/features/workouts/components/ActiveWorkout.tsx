@@ -7,6 +7,7 @@ import { ExerciseCard } from './ExerciseCard';
 import { Timer } from './Timer';
 import { ActiveWorkoutHeader } from './ActiveWorkoutHeader';
 import { useExerciseLogs } from '../hooks/useExerciseLogs';
+import { useFinishWorkoutSound } from '../hooks/useFinishWorkoutSound';
 import { getLastWeightsForRoutineFromSessions } from '../lib/workoutSessions';
 import {
   areWorkoutSetsEqual,
@@ -63,6 +64,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     loading: logsLoading,
     flushPendingLogs
   } = useExerciseLogs(today, user.id, { deferRemoteSync: true });
+
+  const { playFinishSound } = useFinishWorkoutSound();
 
   const showExerciseSkeleton = useDelayedLoading(logsLoading, 140);
   const hasMigratedSessionLogsRef = useRef(false);
@@ -204,6 +207,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         };
       });
 
+      playFinishSound();
       await Promise.resolve(onCompleteWorkout(logsToSave));
       clearProgressFromStorage(session.id);
       localStorage.removeItem(`workoutStartTime_${session.id}`);
@@ -211,7 +215,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     };
 
     void finish();
-  }, [flushPendingLogs, getLogForExerciseCustom, onCompleteWorkout, routine.exercises, session.id]);
+  }, [flushPendingLogs, getLogForExerciseCustom, onCompleteWorkout, playFinishSound, routine.exercises, session.id]);
 
   useEffect(() => {
     return () => {

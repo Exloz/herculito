@@ -44,6 +44,7 @@ const AuthErrorToast = ({ message }: { message: string | null }) => {
 function AppContent() {
   const { currentPage, transitionDirection, transitionVersion, handlePageChange } = usePageNavigation();
   const [canPreloadRoutines, setCanPreloadRoutines] = useState(false);
+  const shouldEnableAgentation = import.meta.env.DEV;
   const {
     user,
     isAdmin,
@@ -142,7 +143,7 @@ function AppContent() {
         </Suspense>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} />
       </div>
-      {isAdmin && typeof window !== 'undefined' && (
+      {shouldEnableAgentation && isAdmin && typeof window !== 'undefined' && (
         <Suspense fallback={null}>
           <AgentationComponent
             endpoint="http://localhost:4747"

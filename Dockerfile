@@ -33,6 +33,7 @@ FROM nginx:1.25-alpine
 # wget ya está incluido en Alpine/busybox
 
 COPY --from=builder /app/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/nginx-security-headers.inc /etc/nginx/conf.d/security-headers.inc
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 8080

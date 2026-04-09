@@ -1,0 +1,4 @@
+Contact: mailto:exloz@hotmail.com
+Expires: 2027-04-09T00:00:00.000Z
+Preferred-Languages: es, en
+Canonical: https://herculito.exloz.site/.well-known/security.txt

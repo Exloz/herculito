@@ -8,9 +8,9 @@ import { useUI } from './providers/ui-context';
 import { PageSkeleton } from '../shared/ui/PageSkeleton';
 import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
 
-const AgentationComponent = lazy(() =>
-  import('agentation').then(mod => ({ default: mod.Agentation }))
-);
+const AgentationComponent = import.meta.env.DEV
+  ? lazy(() => import('agentation').then(mod => ({ default: mod.Agentation })))
+  : null;
 
 // Lazy load pages for better performance
 const loadLoginPage = () => import('../features/auth/pages/LoginPage');
@@ -143,7 +143,7 @@ function AppContent() {
         </Suspense>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} />
       </div>
-      {shouldEnableAgentation && isAdmin && typeof window !== 'undefined' && (
+      {AgentationComponent && shouldEnableAgentation && isAdmin && typeof window !== 'undefined' && (
         <Suspense fallback={null}>
           <AgentationComponent
             endpoint="http://localhost:4747"

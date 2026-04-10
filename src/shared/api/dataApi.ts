@@ -1,4 +1,4 @@
-import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup, AdminOverview, WorkoutCalendarDay } from '../types';
+import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup, AdminOverview, WorkoutCalendarDay, UserBodyMeasurement } from '../types';
 import { fetchJson, getIdToken } from './apiClient';
 import { getPushApiOrigin } from '../../features/workouts/api/pushApi';
 
@@ -412,5 +412,109 @@ export const upsertWorkout = async (workout: Workout): Promise<void> => {
       authorization: `Bearer ${token}`
     },
     body: JSON.stringify({ workout })
+  });
+};
+
+// ===== PROFILE MEASUREMENTS API =====
+
+export type BodyMeasurementResponse = {
+  id: string;
+  uid: string;
+  measuredAtMs: number;
+  weightKg: number | null;
+  heightCm: number | null;
+  bodyFatPercentage: number | null;
+  waistCm: number | null;
+  hipsCm: number | null;
+  chestCm: number | null;
+  armsCm: number | null;
+  thighsCm: number | null;
+  calvesCm: number | null;
+  notes: string | null;
+  createdAtMs: number;
+  updatedAtMs: number;
+};
+
+const toDateFromMs = (value: unknown): Date | undefined => {
+  if (!value) return undefined;
+  if (value instanceof Date) return value;
+  if (typeof value === 'number') {
+    const ms = value < 1e12 ? value * 1000 : value;
+    return new Date(ms);
+  }
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) return new Date(parsed);
+  }
+  return undefined;
+};
+
+const mapMeasurementResponse = (response: BodyMeasurementResponse): UserBodyMeasurement => {
+  return {
+    id: response.id,
+    uid: response.uid,
+    measuredAt: toDateFromMs(response.measuredAtMs) ?? new Date(),
+    weightKg: response.weightKg,
+    heightCm: response.heightCm,
+    bodyFatPercentage: response.bodyFatPercentage,
+    waistCm: response.waistCm,
+    hipsCm: response.hipsCm,
+    chestCm: response.chestCm,
+    armsCm: response.armsCm,
+    thighsCm: response.thighsCm,
+    calvesCm: response.calvesCm,
+    notes: response.notes,
+    createdAt: toDateFromMs(response.createdAtMs) ?? new Date(),
+    updatedAt: toDateFromMs(response.updatedAtMs) ?? new Date()
+  };
+};
+
+export const fetchBodyMeasurements = async (limit = 50): Promise<UserBodyMeasurement[]> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  const data = await fetchJson<{ measurements: BodyMeasurementResponse[] }>(
+    `${origin}/v1/data/profile/measurements?limit=${limit}`,
+    {
+      headers: { authorization: `Bearer ${token}` }
+    }
+  );
+  return (data.measurements ?? []).map(mapMeasurementResponse);
+};
+
+export const upsertBodyMeasurement = async (payload: {
+  id?: string;
+  measuredAt: number;
+  weightKg?: number | null;
+  heightCm?: number | null;
+  bodyFatPercentage?: number | null;
+  waistCm?: number | null;
+  hipsCm?: number | null;
+  chestCm?: number | null;
+  armsCm?: number | null;
+  thighsCm?: number | null;
+  calvesCm?: number | null;
+  notes?: string | null;
+}): Promise<{ ok: boolean; id?: string; updated?: boolean }> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  return fetchJson<{ ok: boolean; id?: string; updated?: boolean }>(
+    `${origin}/v1/data/profile/measurements`,
+    {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    }
+  );
+};
+
+export const deleteBodyMeasurement = async (id: string): Promise<void> => {
+  const origin = getPushApiOrigin();
+  const token = await getIdToken();
+  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/profile/measurements/${id}`, {
+    method: 'DELETE',
+    headers: { authorization: `Bearer ${token}` }
   });
 };

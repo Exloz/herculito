@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-export type AppPage = 'dashboard' | 'routines' | 'admin' | 'sports';
+export type AppPage = 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile';
 
 export type PageTransitionDirection = 'forward' | 'backward';
 
@@ -14,6 +14,9 @@ const getPageFromPathname = (pathname: string): AppPage => {
   if (pathname.startsWith('/sports')) {
     return 'sports';
   }
+  if (pathname.startsWith('/profile')) {
+    return 'profile';
+  }
   return 'dashboard';
 };
 
@@ -21,6 +24,7 @@ const getPathnameFromPage = (page: AppPage): string => {
   if (page === 'routines') return '/routines';
   if (page === 'admin') return '/admin';
   if (page === 'sports') return '/sports';
+  if (page === 'profile') return '/profile';
   return '/';
 };
 
@@ -62,7 +66,7 @@ export const usePageNavigation = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    const allowedPaths = new Set(['/', '/routines', '/admin', '/sso-callback', '/sports']);
+    const allowedPaths = new Set(['/', '/routines', '/admin', '/sso-callback', '/sports', '/profile']);
     if (!allowedPaths.has(window.location.pathname)) {
       window.history.replaceState({}, '', '/');
       setCurrentPage('dashboard');

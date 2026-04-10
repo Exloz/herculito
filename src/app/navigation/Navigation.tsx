@@ -4,8 +4,8 @@ import { Dumbbell, Home, PlayCircle, Shield, Target } from 'lucide-react';
 const ACTIVE_WORKOUT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
 
 interface NavigationProps {
-  currentPage: 'dashboard' | 'routines' | 'admin' | 'sports';
-  onPageChange: (page: 'dashboard' | 'routines' | 'admin' | 'sports') => void;
+  currentPage: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile';
+  onPageChange: (page: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile') => void;
   isAdmin: boolean;
 }
 

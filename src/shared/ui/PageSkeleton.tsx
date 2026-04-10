@@ -1,6 +1,6 @@
 import React from 'react';
 
-type PageSkeletonVariant = 'dashboard' | 'routines' | 'admin' | 'sports';
+type PageSkeletonVariant = 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile';
 
 interface PageSkeletonProps {
   page?: PageSkeletonVariant;
@@ -208,6 +208,32 @@ const SportsSkeleton = ({ compact = false }: { compact?: boolean }) => {
   );
 };
 
+const ProfileSkeleton = ({ compact = false }: { compact?: boolean }) => {
+  return (
+    <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
+      <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
+        <section className="mb-5 flex items-center gap-3">
+          <SkeletonBlock className="h-11 w-11 rounded-[1rem]" />
+          <div className="min-w-0 flex-1">
+            <SkeletonBlock className="h-3 w-24 rounded-lg" />
+            <SkeletonBlock className="mt-2 h-8 w-40 rounded-lg" />
+          </div>
+        </section>
+
+        <SkeletonBlock className="mb-6 h-40 rounded-[1.45rem]" />
+
+        <SkeletonBlock className="mb-4 h-12 w-40 rounded-xl" />
+
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <SkeletonBlock key={index} className="h-48 rounded-[1.2rem]" />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard', compact = false, className = '' }) => {
   return (
     <div role="status" aria-live="polite" className={className}>
@@ -216,6 +242,7 @@ export const PageSkeleton: React.FC<PageSkeletonProps> = ({ page = 'dashboard', 
       {page === 'admin' && <AdminSkeleton compact={compact} />}
       {page === 'dashboard' && <DashboardSkeleton compact={compact} />}
       {page === 'sports' && <SportsSkeleton compact={compact} />}
+      {page === 'profile' && <ProfileSkeleton compact={compact} />}
     </div>
   );
 };

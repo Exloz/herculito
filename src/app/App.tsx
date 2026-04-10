@@ -18,12 +18,14 @@ const loadDashboardPage = () => import('../features/dashboard/pages/DashboardPag
 const loadRoutinesPage = () => import('../features/routines/pages/RoutinesPage');
 const loadAdminPage = () => import('../features/admin/pages/AdminPage');
 const loadSportsPage = () => import('../features/sports/pages/SportsPage');
+const loadProfilePage = () => import('../features/profile/pages/ProfilePage');
 
 const Login = lazy(() => loadLoginPage().then(module => ({ default: module.Login })));
 const Dashboard = lazy(() => loadDashboardPage().then(module => ({ default: module.Dashboard })));
 const Routines = lazy(() => loadRoutinesPage().then(module => ({ default: module.Routines })));
 const AdminPage = lazy(() => loadAdminPage().then(module => ({ default: module.AdminPage })));
 const Sports = lazy(() => loadSportsPage().then(module => ({ default: module.default })));
+const Profile = lazy(() => loadProfilePage().then(module => ({ default: module.ProfilePage })));
 
 const LoadingScreen = () => (
   <PageSkeleton page="dashboard" />
@@ -108,6 +110,7 @@ function AppContent() {
           user={user}
           onLogout={logout}
           onReadyForBackgroundPreload={() => setCanPreloadRoutines(true)}
+          onNavigateToProfile={() => handlePageChange('profile')}
         />
       );
     }
@@ -118,6 +121,10 @@ function AppContent() {
 
     if (page === 'sports') {
       return <Sports user={user} />;
+    }
+
+    if (page === 'profile') {
+      return <Profile user={user} onBack={() => handlePageChange('dashboard')} />;
     }
 
     return <Routines user={user} />;

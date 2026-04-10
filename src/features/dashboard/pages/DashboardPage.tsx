@@ -24,6 +24,7 @@ interface DashboardProps {
   user: User;
   onLogout: () => void;
   onReadyForBackgroundPreload?: () => void;
+  onNavigateToProfile?: () => void;
 }
 
 const ACTIVE_WORKOUT_KEY = 'activeWorkout';
@@ -166,7 +167,7 @@ const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSes
   }
 };
 
-export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload, onNavigateToProfile }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeWorkout, setActiveWorkout] = useState<{
     routine: Routine;
@@ -634,7 +635,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                       </div>
                     )}
                   >
-                    <DeferredClerkUserButton />
+                    <DeferredClerkUserButton onNavigateToProfile={onNavigateToProfile} />
                   </Suspense>
                 </div>
                 <div className="min-w-0">

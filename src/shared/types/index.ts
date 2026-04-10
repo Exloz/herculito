@@ -317,3 +317,27 @@ export interface SportStats {
   averageScore: number;
   personalBest: number;
 }
+
+// ===== PROFILE TYPES =====
+
+export interface UserBodyMeasurement {
+  id: string;
+  uid: string;
+  measuredAt: Date;
+  weightKg?: number | null;
+  heightCm?: number | null;
+  bodyFatPercentage?: number | null;
+  waistCm?: number | null;
+  hipsCm?: number | null;
+  chestCm?: number | null;
+  armsCm?: number | null;
+  thighsCm?: number | null;
+  calvesCm?: number | null;
+  notes?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type BodyMeasurementInput = Omit<UserBodyMeasurement, 'id' | 'uid' | 'createdAt' | 'updatedAt'> & {
+  id?: string;
+};

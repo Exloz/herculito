@@ -1,6 +1,11 @@
 import { UserButton } from '@clerk/react';
+import { Ruler } from 'lucide-react';
 
-export default function ClerkUserButton() {
+interface ClerkUserButtonProps {
+  onNavigateToProfile?: () => void;
+}
+
+export default function ClerkUserButton({ onNavigateToProfile }: ClerkUserButtonProps) {
   return (
     <UserButton
       appearance={{
@@ -10,6 +15,16 @@ export default function ClerkUserButton() {
           userButtonTrigger: 'h-9 w-9 rounded-2xl p-0 leading-none align-middle sm:h-11 sm:w-11'
         }
       }}
-    />
+    >
+      <UserButton.MenuItems>
+        {onNavigateToProfile && (
+          <UserButton.Action
+            label="Mis Medidas"
+            labelIcon={<Ruler size={16} />}
+            onClick={onNavigateToProfile}
+          />
+        )}
+      </UserButton.MenuItems>
+    </UserButton>
   );
 }

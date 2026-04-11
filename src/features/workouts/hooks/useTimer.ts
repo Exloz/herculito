@@ -12,18 +12,16 @@ interface TimerState {
   hasNotified: boolean;
 }
 
-const isMobileDevice = (): boolean => {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || /iPad|iPhone|iPod/.test(navigator.userAgent);
-};
-
 const showAlertFallback = (title: string, body: string): void => {
   if (typeof globalThis !== 'undefined' && typeof globalThis.alert === 'function') {
     globalThis.alert(`${title}: ${body}`);
   }
 };
 
+const DEBUG_TIMERS = import.meta.env.DEV;
+
 const logTimerEvent = (event: string, details?: Record<string, unknown>): void => {
-  console.info('[timer]', event, details ?? {});
+  if (DEBUG_TIMERS) console.info('[timer]', event, details ?? {});
 };
 
 const waitForServiceWorkerReady = async (timeoutMs: number): Promise<ServiceWorkerRegistration> => {
@@ -81,7 +79,7 @@ const showTimerNotification = async (
     return;
   }
 
-  const notificationTag = `rest-timer:${Date.now()}`;
+  const notificationTag = 'rest-timer';
   const nativeOptions: NotificationOptions = {
     body,
     icon: '/app-logo.png',
@@ -185,7 +183,7 @@ export const useTimer = () => {
   }, []);
 
   const acquireWakeLock = useCallback(async () => {
-    if ('wakeLock' in navigator && !isMobileDevice()) {
+    if ('wakeLock' in navigator) {
       try {
         wakeLockRef.current = await navigator.wakeLock.request('screen');
       } catch {
@@ -287,7 +285,7 @@ export const useTimer = () => {
 
       const { commandAtMs } = nextRestPushCommand();
       void cancelRestPush({ commandAtMs }).catch(() => {
-        console.warn('Failed to cancel iOS background push');
+        console.warn('Failed to cancel background push');
       });
 
       releaseWakeLock();
@@ -329,7 +327,7 @@ export const useTimer = () => {
 
           const { commandAtMs } = nextRestPushCommand();
           void cancelRestPush({ commandAtMs }).catch(() => {
-            console.warn('Failed to cancel iOS background push');
+            console.warn('Failed to cancel background push');
           });
 
           void showTimerNotification(
@@ -399,7 +397,7 @@ export const useTimer = () => {
 
     const { commandAtMs } = nextRestPushCommand();
     void cancelRestPush({ commandAtMs }).catch(() => {
-      console.warn('Failed to cancel iOS background push');
+      console.warn('Failed to cancel background push');
     });
 
     releaseWakeLock();
@@ -423,7 +421,7 @@ export const useTimer = () => {
     }
 
     void cancelRestPush({ commandAtMs }).catch(() => {
-      console.warn('Failed to cancel iOS background push');
+      console.warn('Failed to cancel background push');
     });
 
     releaseWakeLock();

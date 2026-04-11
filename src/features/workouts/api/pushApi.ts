@@ -2,8 +2,10 @@ import { fetchJson, getIdToken } from '../../../shared/api/apiClient';
 
 const DEVICE_ID_KEY = 'pushDeviceId';
 
+const DEBUG_PUSH = import.meta.env.DEV;
+
 const logPushEvent = (event: string, details?: Record<string, unknown>): void => {
-  console.info('[push]', event, details ?? {});
+  if (DEBUG_PUSH) console.info('[push]', event, details ?? {});
 };
 
 export const getPushApiOrigin = (): string => {

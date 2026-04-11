@@ -91,8 +91,7 @@ export const shouldUseBackgroundRestPushForPlatform = (args: {
   standalonePwa: boolean;
   androidBackgroundPushEnabled: boolean;
 }): boolean => {
-  if (!args.standalonePwa) return false;
-  if (args.iosPushCapable) return true;
+  if (args.iosPushCapable) return args.standalonePwa;
   return args.androidPushCapable && args.androidBackgroundPushEnabled;
 };
 
@@ -195,8 +194,8 @@ export const ensureBackgroundRestPushReady = async (): Promise<{ deviceId: strin
     return null;
   }
 
-  if (!isStandalonePwa()) {
-    if (isIosDevice() && typeof globalThis.alert === 'function') {
+  if (isIosDevice() && !isStandalonePwa()) {
+    if (typeof globalThis.alert === 'function') {
       globalThis.alert('Para notificaciones con pantalla bloqueada en iPhone, instala la app: Compartir → Añadir a pantalla de inicio.');
     }
     return null;

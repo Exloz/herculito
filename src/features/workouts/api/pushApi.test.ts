@@ -32,15 +32,26 @@ describe('pushApi background push gating', () => {
     expect(disabledResult).toBe(false);
   });
 
-  it('requires standalone mode for any background push scheduling', () => {
+  it('keeps iOS standalone requirement', () => {
     const result = shouldUseBackgroundRestPushForPlatform({
       iosPushCapable: true,
-      androidPushCapable: true,
+      androidPushCapable: false,
       standalonePwa: false,
       androidBackgroundPushEnabled: true
     });
 
     expect(result).toBe(false);
+  });
+
+  it('does not require standalone mode on Android', () => {
+    const result = shouldUseBackgroundRestPushForPlatform({
+      iosPushCapable: false,
+      androidPushCapable: true,
+      standalonePwa: false,
+      androidBackgroundPushEnabled: true
+    });
+
+    expect(result).toBe(true);
   });
 });
 

@@ -2,6 +2,10 @@ import { fetchJson, getIdToken } from '../../../shared/api/apiClient';
 
 const DEVICE_ID_KEY = 'pushDeviceId';
 
+const logPushEvent = (event: string, details?: Record<string, unknown>): void => {
+  console.info('[push]', event, details ?? {});
+};
+
 export const getPushApiOrigin = (): string => {
   const value = import.meta.env.VITE_PUSH_API_ORIGIN;
   return typeof value === 'string' && value.trim() ? value.trim() : 'https://api.herculito.exloz.site';
@@ -44,6 +48,11 @@ export const isIosDevice = (): boolean => {
   return /iPhone|iPad|iPod/i.test(ua);
 };
 
+export const isAndroidDevice = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  return /Android/i.test(navigator.userAgent);
+};
+
 export const isStandalonePwa = (): boolean => {
   if (typeof window === 'undefined') return false;
 
@@ -63,8 +72,37 @@ export const isIosPushCapable = (): boolean => {
   return isIosDevice() && isPushSupported();
 };
 
+export const isAndroidPushCapable = (): boolean => {
+  return isAndroidDevice() && isPushSupported();
+};
+
+export const parseBooleanEnvFlag = (value: unknown): boolean => {
+  if (typeof value !== 'string') return false;
+  return ['1', 'true', 'yes', 'on'].includes(value.trim().toLowerCase());
+};
+
+export const isAndroidBackgroundPushEnabled = (): boolean => {
+  return parseBooleanEnvFlag(import.meta.env.VITE_ANDROID_BACKGROUND_PUSH_ENABLED);
+};
+
+export const shouldUseBackgroundRestPushForPlatform = (args: {
+  iosPushCapable: boolean;
+  androidPushCapable: boolean;
+  standalonePwa: boolean;
+  androidBackgroundPushEnabled: boolean;
+}): boolean => {
+  if (!args.standalonePwa) return false;
+  if (args.iosPushCapable) return true;
+  return args.androidPushCapable && args.androidBackgroundPushEnabled;
+};
+
 export const shouldUseBackgroundRestPush = (): boolean => {
-  return isIosPushCapable() && isStandalonePwa();
+  return shouldUseBackgroundRestPushForPlatform({
+    iosPushCapable: isIosPushCapable(),
+    androidPushCapable: isAndroidPushCapable(),
+    standalonePwa: isStandalonePwa(),
+    androidBackgroundPushEnabled: isAndroidBackgroundPushEnabled()
+  });
 };
 
 const urlBase64ToArrayBuffer = (base64String: string): ArrayBuffer => {
@@ -152,11 +190,13 @@ export const registerSubscriptionInApi = async (deviceId: string, subscription: 
   });
 };
 
-export const ensureIosBackgroundPushReady = async (): Promise<{ deviceId: string } | null> => {
-  if (!isIosPushCapable()) return null;
+export const ensureBackgroundRestPushReady = async (): Promise<{ deviceId: string } | null> => {
+  if (!shouldUseBackgroundRestPush()) {
+    return null;
+  }
 
   if (!isStandalonePwa()) {
-    if (typeof globalThis.alert === 'function') {
+    if (isIosDevice() && typeof globalThis.alert === 'function') {
       globalThis.alert('Para notificaciones con pantalla bloqueada en iPhone, instala la app: Compartir → Añadir a pantalla de inicio.');
     }
     return null;
@@ -169,7 +209,16 @@ export const ensureIosBackgroundPushReady = async (): Promise<{ deviceId: string
   const deviceId = getOrCreateDeviceId();
   const subscription = await ensurePushSubscription();
   await registerSubscriptionInApi(deviceId, subscription);
+  logPushEvent('background_push_ready', {
+    deviceId,
+    platform: isIosDevice() ? 'ios' : isAndroidDevice() ? 'android' : 'other'
+  });
   return { deviceId };
+};
+
+export const ensureIosBackgroundPushReady = async (): Promise<{ deviceId: string } | null> => {
+  if (!isIosPushCapable()) return null;
+  return ensureBackgroundRestPushReady();
 };
 
 export const scheduleRestPush = async (
@@ -189,6 +238,9 @@ export const scheduleRestPush = async (
     return;
   }
 
+  const commandAtMs = options?.commandAtMs ?? Date.now();
+  const notificationTag = isIosDevice() ? 'rest-timer' : `rest-timer:${commandAtMs}`;
+
   await fetchJson<{ ok: boolean }>(`${origin}/v1/rest/schedule`, {
     method: 'POST',
     headers: {
@@ -198,12 +250,15 @@ export const scheduleRestPush = async (
     body: JSON.stringify({
       deviceId,
       seconds,
-      commandAtMs: options?.commandAtMs ?? Date.now(),
+      commandAtMs,
       title: overrides?.title,
       body: overrides?.body,
-      url: overrides?.url
+      url: overrides?.url,
+      tag: notificationTag
     })
   });
+
+  logPushEvent('rest_schedule_sent', { deviceId, seconds, commandAtMs, notificationTag });
 };
 
 export const cancelRestPush = async (options?: { commandAtMs?: number }): Promise<void> => {
@@ -213,6 +268,8 @@ export const cancelRestPush = async (options?: { commandAtMs?: number }): Promis
   const token = await getIdToken();
   const deviceId = getOrCreateDeviceId();
 
+  const commandAtMs = options?.commandAtMs ?? Date.now();
+
   await fetchJson<{ ok: boolean }>(`${origin}/v1/rest/cancel`, {
     method: 'POST',
     headers: {
@@ -221,7 +278,9 @@ export const cancelRestPush = async (options?: { commandAtMs?: number }): Promis
     },
     body: JSON.stringify({
       deviceId,
-      commandAtMs: options?.commandAtMs ?? Date.now()
+      commandAtMs
     })
   });
+
+  logPushEvent('rest_cancel_sent', { deviceId, commandAtMs });
 };

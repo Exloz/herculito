@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { cancelRestPush, ensureIosBackgroundPushReady, scheduleRestPush, shouldUseBackgroundRestPush } from '../api/pushApi';
+import { cancelRestPush, ensureBackgroundRestPushReady, scheduleRestPush, shouldUseBackgroundRestPush } from '../api/pushApi';
 
 const TIMER_STORAGE_KEY = 'workoutTimerState';
+const SW_READY_TIMEOUT_MS = 1200;
 
 interface TimerState {
   timeLeft: number;
@@ -19,6 +20,23 @@ const showAlertFallback = (title: string, body: string): void => {
   if (typeof globalThis !== 'undefined' && typeof globalThis.alert === 'function') {
     globalThis.alert(`${title}: ${body}`);
   }
+};
+
+const logTimerEvent = (event: string, details?: Record<string, unknown>): void => {
+  console.info('[timer]', event, details ?? {});
+};
+
+const waitForServiceWorkerReady = async (timeoutMs: number): Promise<ServiceWorkerRegistration> => {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('sw_ready_timeout')), timeoutMs);
+  });
+
+  return Promise.race([navigator.serviceWorker.ready, timeoutPromise]);
+};
+
+type ShowTimerNotificationOptions = {
+  suppressAlertFallback?: boolean;
+  source?: 'interval' | 'resume';
 };
 
 const requestNotificationPermission = async (): Promise<boolean> => {
@@ -42,32 +60,42 @@ const requestNotificationPermission = async (): Promise<boolean> => {
   }
 };
 
-const showTimerNotification = async (title: string, body: string): Promise<void> => {
+const showTimerNotification = async (
+  title: string,
+  body: string,
+  notificationOptions?: ShowTimerNotificationOptions
+): Promise<void> => {
   if (typeof window === 'undefined') return;
 
   if (!('Notification' in window)) {
-    showAlertFallback(title, body);
+    if (!notificationOptions?.suppressAlertFallback) {
+      showAlertFallback(title, body);
+    }
     return;
   }
 
   if (Notification.permission !== 'granted') {
-    showAlertFallback(title, body);
+    if (!notificationOptions?.suppressAlertFallback) {
+      showAlertFallback(title, body);
+    }
     return;
   }
 
-  const options: NotificationOptions = {
+  const notificationTag = `rest-timer:${Date.now()}`;
+  const nativeOptions: NotificationOptions = {
     body,
     icon: '/app-logo.png',
     badge: '/app-logo.png',
-    tag: 'rest-timer',
+    tag: notificationTag,
     requireInteraction: false,
     silent: false
   };
 
   if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification(title, options);
+      const registration = await waitForServiceWorkerReady(SW_READY_TIMEOUT_MS);
+      await registration.showNotification(title, nativeOptions);
+      logTimerEvent('notification_shown', { source: notificationOptions?.source ?? 'interval', channel: 'service_worker' });
 
       if ('vibrate' in navigator) {
         navigator.vibrate([200, 100, 200, 100, 200]);
@@ -79,15 +107,19 @@ const showTimerNotification = async (title: string, body: string): Promise<void>
   }
 
   try {
-    const notification = new Notification(title, options);
+    const notification = new Notification(title, nativeOptions);
     notification.onclick = () => {
       window.focus();
       notification.close();
     };
   } catch (error) {
     console.warn('Notification failed:', error);
-    showAlertFallback(title, body);
+    if (!notificationOptions?.suppressAlertFallback) {
+      showAlertFallback(title, body);
+    }
   }
+
+  logTimerEvent('notification_shown', { source: notificationOptions?.source ?? 'interval', channel: 'window' });
 
   if ('vibrate' in navigator) {
     navigator.vibrate([200, 100, 200, 100, 200]);
@@ -186,20 +218,22 @@ export const useTimer = () => {
     }
   }, []);
 
-  const loadState = useCallback(() => {
+  const loadState = useCallback((): TimerState | null => {
     const savedState = loadTimerState();
-    if (savedState && savedState.isActive && savedState.timeLeft > 0) {
+    if (savedState) {
       setTimeLeft(savedState.timeLeft);
-      setIsActive(savedState.isActive);
+      setIsActive(savedState.isActive && savedState.timeLeft > 0);
       setInitialTime(savedState.initialTime);
-      setStartTime(savedState.startTime);
-      setHasNotified(false);
+      setStartTime(savedState.isActive && savedState.timeLeft > 0 ? savedState.startTime : null);
+      setHasNotified(savedState.hasNotified);
+      return savedState;
     } else {
       setTimeLeft(0);
       setIsActive(false);
       setInitialTime(0);
       setStartTime(null);
       setHasNotified(false);
+      return null;
     }
   }, []);
 
@@ -215,13 +249,32 @@ export const useTimer = () => {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        loadState();
+        const restored = loadState();
+
+        if (restored && !restored.isActive && restored.timeLeft === 0 && restored.initialTime > 0 && !restored.hasNotified) {
+          const nextState = { ...restored, hasNotified: true };
+          saveTimerState(nextState);
+          setHasNotified(true);
+
+          const { commandAtMs } = nextRestPushCommand();
+          void cancelRestPush({ commandAtMs }).catch(() => {
+            console.warn('Failed to cancel background push on resume');
+          });
+
+          void showTimerNotification(
+            '¡Descanso terminado!',
+            'Continúa con tu entrenamiento.',
+            { suppressAlertFallback: true, source: 'resume' }
+          );
+
+          logTimerEvent('resume_expired_timer_notified');
+        }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [loadState]);
+  }, [loadState, nextRestPushCommand]);
 
   useEffect(() => {
     return () => {
@@ -281,7 +334,8 @@ export const useTimer = () => {
 
           void showTimerNotification(
             '¡Descanso terminado!',
-            'Continúa con tu entrenamiento.'
+            'Continúa con tu entrenamiento.',
+            { source: 'interval' }
           );
         }
 
@@ -323,13 +377,14 @@ export const useTimer = () => {
     if (shouldUseBackgroundRestPush()) {
       void (async () => {
         try {
-          const ready = await ensureIosBackgroundPushReady();
+          const ready = await ensureBackgroundRestPushReady();
+          logTimerEvent('background_push_ready_check', { ready: !!ready, seconds });
           if (!ready) return;
           if (sequence !== restPushCommandSeqRef.current) return;
 
           await scheduleRestPush(seconds, undefined, { commandAtMs });
         } catch {
-          console.warn('Failed to schedule iOS background push');
+          console.warn('Failed to schedule background push');
         }
       })();
     }

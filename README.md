@@ -53,6 +53,7 @@ cp .env.example .env
 - `VITE_CLERK_PUBLISHABLE_KEY`
 - `VITE_CLERK_JWT_TEMPLATE` (ejemplo: `herculito_api`)
 - `VITE_PUSH_API_ORIGIN` (URL base de la API)
+- `VITE_ANDROID_BACKGROUND_PUSH_ENABLED` (`true` para habilitar push de descanso en segundo plano en Android PWA; por defecto `false`)
 
 5. Inicia en desarrollo:
 

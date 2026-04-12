@@ -240,7 +240,7 @@ export interface Workout {
 
 // ===== SPORTS TYPES =====
 
-export type SportType = 'archery';
+export type SportType = 'archery' | 'hiit';
 
 export type ArcheryBowType = 'recurve' | 'compound' | 'barebow' | 'longbow';
 
@@ -292,6 +292,7 @@ export interface SportSession {
     averageArrow: number;
     goldCount?: number;
   };
+  hiitData?: HiitSessionData;
 }
 
 export interface SportSessionSummary {
@@ -316,6 +317,33 @@ export interface SportStats {
   totalArrowsShot: number;
   averageScore: number;
   personalBest: number;
+}
+
+// ===== HIIT TIMER TYPES =====
+
+export interface HiitConfig {
+  intervals: number;
+  workDuration: number;
+  restEnabled: boolean;
+  restDuration: number;
+}
+
+export type HiitPhase = 'idle' | 'prep' | 'work' | 'rest' | 'done';
+
+export interface HiitState {
+  phase: HiitPhase;
+  currentInterval: number;
+  secondsRemaining: number;
+  totalElapsed: number;
+}
+
+export interface HiitSessionData {
+  intervals: number;
+  workDuration: number;
+  restEnabled: boolean;
+  restDuration: number;
+  totalWorkTime: number;
+  totalRestTime: number;
 }
 
 // ===== PROFILE TYPES =====

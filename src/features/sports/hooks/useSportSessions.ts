@@ -60,7 +60,15 @@ const mapSession = (session: SportSessionResponse): SportSession => {
           }))
         }))
       }))
-    } : undefined
+    } : undefined,
+    hiitData: session.hiitData ? {
+      intervals: session.hiitData.intervals,
+      workDuration: session.hiitData.workDuration,
+      restEnabled: session.hiitData.restEnabled,
+      restDuration: session.hiitData.restDuration,
+      totalWorkTime: session.hiitData.totalWorkTime,
+      totalRestTime: session.hiitData.totalRestTime,
+    } : undefined,
   };
 };
 
@@ -101,6 +109,12 @@ export const useSportSessions = (user: User) => {
       archeryConfig?: {
         bowType: 'recurve' | 'compound' | 'barebow' | 'longbow';
         arrowsUsed: number;
+      };
+      hiitConfig?: {
+        intervals: number;
+        workDuration: number;
+        restEnabled: boolean;
+        restDuration: number;
       };
     }
   ): Promise<SportSession> => {

@@ -3,12 +3,22 @@ import type {
   SportSession,
   SportStats,
   SportType,
-  ArcheryBowType
+  ArcheryBowType,
+  HiitConfig
 } from '../types';
 import { getPushApiOrigin } from '../../features/workouts/api/pushApi';
 
 // Response types from API
-export type SportSessionResponse = Omit<SportSession, 'startedAt' | 'completedAt' | 'archeryData'> & {
+export type HiitSessionDataResponse = {
+  intervals: number;
+  workDuration: number;
+  restEnabled: boolean;
+  restDuration: number;
+  totalWorkTime: number;
+  totalRestTime: number;
+};
+
+export type SportSessionResponse = Omit<SportSession, 'startedAt' | 'completedAt' | 'hiitData'> & {
   startedAt: number;
   completedAt?: number;
   archeryData?: {
@@ -20,6 +30,7 @@ export type SportSessionResponse = Omit<SportSession, 'startedAt' | 'completedAt
     averageArrow: number;
     goldCount?: number;
   };
+  hiitData?: HiitSessionDataResponse;
 };
 
 export type ArcheryRoundResponse = {
@@ -95,6 +106,7 @@ export const startSportSession = async (payload: {
     bowType: ArcheryBowType;
     arrowsUsed: number;
   };
+  hiitConfig?: HiitConfig;
 }): Promise<SportSessionResponse> => {
   const origin = getPushApiOrigin();
   const token = await getIdToken();

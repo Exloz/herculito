@@ -1,11 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { Target, Plus, Trophy, Calendar, Trash2, MapPin } from 'lucide-react';
-import type { User, ArcheryBowType } from '../../../shared/types';
+import { Target, Plus, Calendar, Trash2, MapPin, Timer } from 'lucide-react';
+import type { User, ArcheryBowType, HiitConfig } from '../../../shared/types';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { useSportSessions } from '../hooks/useSportSessions';
 import { useActiveArcherySession } from '../hooks/useActiveArcherySession';
 import { ArcherySession } from '../components/archery/ArcherySession';
+import { HiitConfig as HiitConfigPanel } from '../components/hiit/HiitConfig';
+import { HiitActive } from '../components/hiit/HiitActive';
 import { useUI } from '../../../app/providers/ui-context';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
@@ -48,6 +50,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const [bowType, setBowType] = useState<ArcheryBowType>('recurve');
   const [arrowsUsed, setArrowsUsed] = useState(12);
   const [isStarting, setIsStarting] = useState(false);
+  const [activeHiitConfig, setActiveHiitConfig] = useState<HiitConfig | null>(null);
+  const [showHiitConfig, setShowHiitConfig] = useState(false);
 
   const handleStartSession = useCallback(async () => {
     setIsStarting(true);
@@ -64,6 +68,22 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
       setIsStarting(false);
     }
   }, [startSession, startActiveSession, bowType, arrowsUsed, showToast]);
+
+  const handleStartHiit = useCallback(async (config: HiitConfig) => {
+    setIsStarting(true);
+    try {
+      await startSession('hiit', {
+        hiitConfig: config
+      });
+      setActiveHiitConfig(config);
+      setShowHiitConfig(false);
+      showToast('Sesión HIIT iniciada', 'success');
+    } catch (err) {
+      showToast(toUserMessage(err, 'Error iniciando sesión HIIT'), 'error');
+    } finally {
+      setIsStarting(false);
+    }
+  }, [startSession, showToast]);
 
   const handleAddRound = useCallback(async (
     distance: number,
@@ -126,6 +146,21 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
         onComplete={handleCompleteSession}
         onAbandon={handleAbandonSession}
         onBack={handleCloseCompletedSession}
+      />
+    );
+  }
+
+  // Show active HIIT session
+  if (activeHiitConfig) {
+    return (
+      <HiitActive
+        config={activeHiitConfig}
+        onAbandon={() => setActiveHiitConfig(null)}
+        onComplete={() => {
+          setActiveHiitConfig(null);
+          refresh();
+          showToast('Sesión HIIT completada', 'success');
+        }}
       />
     );
   }
@@ -236,6 +271,15 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
           </div>
         )}
 
+        {/* HIIT Config Modal */}
+        {showHiitConfig && (
+          <HiitConfigPanel
+            onStart={handleStartHiit}
+            onClose={() => setShowHiitConfig(false)}
+            isStarting={isStarting}
+          />
+        )}
+
         {/* Sports Selection */}
         <section className="motion-enter motion-enter-delay-1 mb-5">
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-3">
@@ -257,15 +301,20 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               </div>
             </button>
 
-            <div className="sport-card locked opacity-50">
-              <div className="w-12 h-12 rounded-2xl bg-slateDeep flex items-center justify-center">
-                <Trophy size={24} className="text-slate-500" />
+            <button
+              onClick={() => setShowHiitConfig(true)}
+              className="sport-card active motion-interactive"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-amberGlow/15 flex items-center justify-center">
+                <Timer size={24} className="text-amberGlow" />
               </div>
               <div className="text-center">
-                <div className="font-semibold text-slate-400">Tiro Deportivo</div>
-                <div className="text-xs text-slate-500 mt-1">Próximamente</div>
+                <div className="font-semibold text-white">HIIT</div>
+                <div className="text-xs text-slate-400 mt-1">
+                  Temporizador
+                </div>
               </div>
-            </div>
+            </button>
 
             <div className="sport-card locked opacity-50">
               <div className="w-12 h-12 rounded-2xl bg-slateDeep flex items-center justify-center">

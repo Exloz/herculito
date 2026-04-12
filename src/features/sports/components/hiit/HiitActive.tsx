@@ -48,9 +48,19 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
 
   // Auto-start on first render
   React.useEffect(() => {
+    window.dispatchEvent(new CustomEvent('app-navigation-visibility', { detail: { hidden: true } }));
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
     if (timer.state.phase === 'idle') {
       handleStart();
     }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.dispatchEvent(new CustomEvent('app-navigation-visibility', { detail: { hidden: false } }));
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -73,7 +83,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
         : 'text-slate-400';
 
   return (
-    <div className="app-shell flex flex-col min-h-screen">
+    <div className="fixed inset-0 z-50 app-shell flex flex-col min-h-screen bg-ink">
       {/* Header */}
       <header className="px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-3">
         <div className="flex items-center justify-between">
@@ -123,7 +133,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
       </main>
 
       {/* Controls */}
-      <footer className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <footer className="px-4 pb-[calc(2.75rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center justify-center gap-4">
           {timer.state.phase !== 'idle' && timer.state.phase !== 'done' && (
             <>

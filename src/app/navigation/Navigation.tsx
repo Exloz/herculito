@@ -15,6 +15,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   isAdmin
 }) => {
   const [hasActiveWorkout, setHasActiveWorkout] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
 
   useEffect(() => {
     const checkActiveWorkout = () => {
@@ -53,6 +54,16 @@ export const Navigation: React.FC<NavigationProps> = ({
     };
   }, []);
 
+  useEffect(() => {
+    const handleVisibilityChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ hidden?: boolean }>).detail;
+      setIsHidden(detail?.hidden === true);
+    };
+
+    window.addEventListener('app-navigation-visibility', handleVisibilityChange);
+    return () => window.removeEventListener('app-navigation-visibility', handleVisibilityChange);
+  }, []);
+
   const handleResumeClick = () => {
     localStorage.setItem('activeWorkoutForceOpen', 'true');
     if (currentPage === 'dashboard') {
@@ -63,7 +74,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <div className="app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full justify-center pb-[env(safe-area-inset-bottom)] pointer-events-none transition-all duration-200">
+    <div className={`app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full justify-center pb-[env(safe-area-inset-bottom)] pointer-events-none transition-all duration-300 ease-out ${isHidden ? 'opacity-0 translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
       <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal px-2 py-2 shadow-soft">
         <div className={`grid ${isAdmin ? (hasActiveWorkout ? 'grid-cols-5' : 'grid-cols-4') : (hasActiveWorkout ? 'grid-cols-4' : 'grid-cols-3')} gap-2`}>
           <button

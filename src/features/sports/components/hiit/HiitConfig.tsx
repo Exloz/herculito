@@ -81,7 +81,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
   const totalSecondsRem = totalTime % 60;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
       <div className="motion-dialog-panel w-full max-w-md rounded-2xl border border-mist/60 bg-charcoal shadow-2xl">
         <div className="flex items-center justify-between p-5 pb-3">
           <div className="flex items-center gap-3">

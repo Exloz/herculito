@@ -217,7 +217,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
 
         {/* Setup Modal */}
         {showSetup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
             <div className="motion-dialog-panel w-full max-w-lg rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
               <h2 className="text-xl font-display font-bold text-white mb-4">
                 Nueva sesión de tiro con arco
@@ -298,7 +298,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
 
         {/* Session Detail Modal */}
         {selectedSession && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
             <div className="motion-dialog-panel w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
               <button
                 type="button"

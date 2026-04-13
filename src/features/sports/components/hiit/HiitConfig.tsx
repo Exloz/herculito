@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Timer, Minus, Plus, X } from 'lucide-react';
 import type { HiitConfig as HiitConfigType } from '../../../../shared/types';
 
@@ -12,7 +13,6 @@ const CONFIG_PRESETS: Array<{ label: string; config: HiitConfigType }> = [
   { label: 'Rápido', config: { intervals: 4, workDuration: 20, restEnabled: true, restDuration: 10 } },
   { label: 'Clásico', config: { intervals: 8, workDuration: 30, restEnabled: true, restDuration: 15 } },
   { label: 'Intenso', config: { intervals: 12, workDuration: 40, restEnabled: true, restDuration: 20 } },
-  { label: 'Tabata', config: { intervals: 8, workDuration: 20, restEnabled: true, restDuration: 10 } },
 ];
 
 const NumberStepper: React.FC<{
@@ -79,10 +79,11 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
   const totalTime = 5 + totalWorkTime + totalRestTime; // 5 = prep
   const totalMinutes = Math.floor(totalTime / 60);
   const totalSecondsRem = totalTime % 60;
+  const hasDom = typeof document !== 'undefined';
 
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="motion-dialog-panel w-full max-w-md rounded-2xl border border-mist/60 bg-charcoal shadow-2xl">
+  const modal = (
+    <div className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:items-center">
+      <div className="motion-dialog-panel w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl sm:max-h-[85vh]">
         <div className="flex items-center justify-between p-5 pb-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-mint/15">
@@ -107,7 +108,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
           {/* Presets */}
           <div className="mb-5">
             <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Presets</div>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               {CONFIG_PRESETS.map((preset) => (
                 <button
                   key={preset.label}
@@ -153,13 +154,11 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
                   role="switch"
                   aria-checked={restEnabled}
                   onClick={() => setRestEnabled(!restEnabled)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    restEnabled ? 'bg-mint' : 'bg-slate-600'
-                  }`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${restEnabled ? 'bg-mint' : 'bg-slate-600'
+                    }`}
                 >
-                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    restEnabled ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
+                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${restEnabled ? 'translate-x-5' : 'translate-x-0'
+                    }`} />
                 </button>
               </div>
 
@@ -182,17 +181,17 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
               <div className="text-2xl font-display font-bold text-mint">{intervals}</div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">Intervalos</div>
+              <div className="px-1 text-[9px] uppercase tracking-[0.14em] leading-tight text-slate-400 sm:text-[10px] sm:tracking-widest">Intervalos</div>
             </div>
             <div>
               <div className="text-2xl font-display font-bold text-amberGlow">
                 {totalMinutes > 0 ? `${totalMinutes}:${String(totalSecondsRem).padStart(2, '0')}` : `${totalTime}s`}
               </div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">Duración total</div>
+              <div className="px-1 text-[9px] uppercase tracking-[0.14em] leading-tight text-slate-400 sm:text-[10px] sm:tracking-widest">Duración total</div>
             </div>
             <div>
               <div className="text-2xl font-display font-bold text-white">{workDuration}/{restEnabled ? restDuration : 0}</div>
-              <div className="text-[10px] uppercase tracking-widest text-slate-400">Trabajo/Descanso</div>
+              <div className="px-1 text-[9px] uppercase tracking-[0.14em] leading-tight break-words text-slate-400 sm:text-[10px] sm:tracking-widest">Trabajo/Descanso</div>
             </div>
           </div>
         </div>
@@ -218,4 +217,6 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
       </div>
     </div>
   );
+
+  return hasDom ? createPortal(modal, document.body) : null;
 };

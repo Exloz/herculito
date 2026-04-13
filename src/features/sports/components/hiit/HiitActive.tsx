@@ -83,7 +83,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
         : 'text-slate-400';
 
   return (
-    <div className="fixed inset-0 z-50 app-shell flex flex-col min-h-screen bg-ink">
+    <div className="app-shell flex min-h-[100dvh] flex-col bg-ink">
       {/* Header */}
       <header className="px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-3">
         <div className="flex items-center justify-between">

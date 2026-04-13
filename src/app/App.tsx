@@ -1,4 +1,4 @@
-import { useEffect, Suspense, lazy, useState } from 'react';
+import { useEffect, Suspense, lazy, useState, Component, type ReactNode } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/react';
 import { Navigation } from './navigation/Navigation';
 import { useAuth } from '../features/auth/hooks/useAuth';
@@ -8,9 +8,27 @@ import { useUI } from './providers/ui-context';
 import { PageSkeleton } from '../shared/ui/PageSkeleton';
 import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
 
-const AgentationComponent = import.meta.env.DEV
-  ? lazy(() => import('agentation').then(mod => ({ default: mod.Agentation })))
-  : null;
+const AgentationComponent = lazy(() =>
+  import('agentation').then(mod => ({ default: mod.Agentation }))
+);
+
+class AgentationErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 // Lazy load pages for better performance
 const loadLoginPage = () => import('../features/auth/pages/LoginPage');
@@ -46,7 +64,6 @@ const AuthErrorToast = ({ message }: { message: string | null }) => {
 function AppContent() {
   const { currentPage, transitionDirection, transitionVersion, handlePageChange } = usePageNavigation();
   const [canPreloadRoutines, setCanPreloadRoutines] = useState(false);
-  const shouldEnableAgentation = import.meta.env.DEV;
   const {
     user,
     isAdmin,
@@ -150,15 +167,17 @@ function AppContent() {
         </Suspense>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} />
       </div>
-      {AgentationComponent && shouldEnableAgentation && isAdmin && typeof window !== 'undefined' && (
-        <Suspense fallback={null}>
-          <AgentationComponent
-            endpoint="http://localhost:4747"
-            onSessionCreated={(sessionId: string) => {
-              console.log('Agentation session:', sessionId);
-            }}
-          />
-        </Suspense>
+      {isAdmin && typeof window !== 'undefined' && (
+        <AgentationErrorBoundary>
+          <Suspense fallback={null}>
+            <AgentationComponent
+              endpoint="http://localhost:4747"
+              onSessionCreated={(sessionId: string) => {
+                console.log('Agentation session:', sessionId);
+              }}
+            />
+          </Suspense>
+        </AgentationErrorBoundary>
       )}
     </>
   );

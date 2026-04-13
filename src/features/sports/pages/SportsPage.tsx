@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Target, Plus, Calendar, Timer, TrendingUp, Flame } from 'lucide-react';
 import type { User, ArcheryBowType, HiitConfig, SportSession } from '../../../shared/types';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
@@ -183,6 +184,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
 
   const completedSessions = sessions.filter(s => s.status === 'completed');
   const hasSessions = completedSessions.length > 0;
+  const hasDom = typeof document !== 'undefined';
 
   // Check for sport-specific data
   const hasArcheryStats = stats && (stats.totalArrowsShot != null || stats.averageScore != null);
@@ -216,8 +218,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
         </section>
 
         {/* Setup Modal */}
-        {showSetup && (
-          <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
+        {showSetup && hasDom && createPortal(
+          <div className="fixed inset-0 z-[120] grid place-items-center bg-black/60 backdrop-blur-sm p-4">
             <div className="motion-dialog-panel w-full max-w-lg rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
               <h2 className="text-xl font-display font-bold text-white mb-4">
                 Nueva sesión de tiro con arco
@@ -284,7 +286,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
                 </button>
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* HIIT Config Modal */}
@@ -297,8 +300,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
         )}
 
         {/* Session Detail Modal */}
-        {selectedSession && (
-          <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 backdrop-blur-sm p-4">
+        {selectedSession && hasDom && createPortal(
+          <div className="fixed inset-0 z-[120] grid place-items-center bg-black/60 backdrop-blur-sm p-4">
             <div className="motion-dialog-panel w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
               <button
                 type="button"
@@ -313,7 +316,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
                 <HiitSessionSummary session={selectedSession} onClose={() => setSelectedSession(null)} />
               ) : null}
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* Sports Selection */}

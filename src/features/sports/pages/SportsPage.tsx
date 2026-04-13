@@ -1,13 +1,16 @@
 import React, { useState, useCallback } from 'react';
-import { Target, Plus, Calendar, Trash2, MapPin, Timer } from 'lucide-react';
-import type { User, ArcheryBowType, HiitConfig } from '../../../shared/types';
+import { Target, Plus, Calendar, Timer, TrendingUp, Flame } from 'lucide-react';
+import type { User, ArcheryBowType, HiitConfig, SportSession } from '../../../shared/types';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { useSportSessions } from '../hooks/useSportSessions';
 import { useActiveArcherySession } from '../hooks/useActiveArcherySession';
 import { ArcherySession } from '../components/archery/ArcherySession';
+import { SessionSummary } from '../components/archery/SessionSummary';
 import { HiitConfig as HiitConfigPanel } from '../components/hiit/HiitConfig';
 import { HiitActive } from '../components/hiit/HiitActive';
+import { HiitSessionSummary } from '../components/hiit/HiitSessionSummary';
+import { SportSessionCard } from '../components/SportSessionCard';
 import { useUI } from '../../../app/providers/ui-context';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
@@ -21,6 +24,14 @@ const BOW_TYPE_OPTIONS: { value: ArcheryBowType; label: string }[] = [
   { value: 'barebow', label: 'Barebow' },
   { value: 'longbow', label: 'Longbow' }
 ];
+
+const formatMinutes = (mins: number | undefined): string => {
+  if (!mins) return '--';
+  if (mins < 60) return `${mins}m`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+};
 
 const Sports: React.FC<SportsProps> = ({ user }) => {
   const { showToast, confirm } = useUI();
@@ -52,6 +63,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const [isStarting, setIsStarting] = useState(false);
   const [activeHiitConfig, setActiveHiitConfig] = useState<HiitConfig | null>(null);
   const [showHiitConfig, setShowHiitConfig] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<SportSession | null>(null);
 
   const handleStartSession = useCallback(async () => {
     setIsStarting(true);
@@ -172,6 +184,10 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const completedSessions = sessions.filter(s => s.status === 'completed');
   const hasSessions = completedSessions.length > 0;
 
+  // Check for sport-specific data
+  const hasArcheryStats = stats && (stats.totalArrowsShot != null || stats.averageScore != null);
+  const hasHiitStats = stats && (stats.totalHiitIntervals != null || stats.totalHiitWorkTime != null);
+
   return (
     <div className="app-shell pb-28">
       <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
@@ -185,7 +201,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               Deportes
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-300">
-              Registra y analiza tus sesiones de tiro con arco y otros deportes.
+              Registra y analiza tus sesiones deportivas.
             </p>
           </div>
 
@@ -280,6 +296,26 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
           />
         )}
 
+        {/* Session Detail Modal */}
+        {selectedSession && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="motion-dialog-panel w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
+              <button
+                type="button"
+                onClick={() => setSelectedSession(null)}
+                className="mb-4 text-sm text-slate-400 hover:text-white transition-colors"
+              >
+                ← Volver
+              </button>
+              {selectedSession.sportType === 'archery' ? (
+                <SessionSummary session={selectedSession} onClose={() => setSelectedSession(null)} />
+              ) : selectedSession.sportType === 'hiit' ? (
+                <HiitSessionSummary session={selectedSession} onClose={() => setSelectedSession(null)} />
+              ) : null}
+            </div>
+          </div>
+        )}
+
         {/* Sports Selection */}
         <section className="motion-enter motion-enter-delay-1 mb-5">
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-3">
@@ -328,7 +364,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
           </div>
         </section>
 
-        {/* Stats Summary */}
+        {/* Stats Summary — Generic */}
         {stats && (
           <section className="motion-enter motion-enter-delay-2 mb-5">
             <div className="app-card p-4">
@@ -336,24 +372,82 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
                 <div className="section-title">Resumen</div>
                 <div className="text-xs text-slate-400">Últimos 30 días</div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+
+              {/* Generic stats */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                 <div className="text-center">
                   <div className="score-display-lg text-mint">{stats.totalSessions}</div>
                   <div className="score-label mt-1">Sesiones</div>
                 </div>
                 <div className="text-center">
-                  <div className="score-display-lg text-amberGlow">{stats.totalArrowsShot}</div>
-                  <div className="score-label mt-1">Flechas</div>
+                  <div className="score-display-lg text-amberGlow">{formatMinutes(stats.totalDuration)}</div>
+                  <div className="score-label mt-1">Duración</div>
                 </div>
                 <div className="text-center">
-                  <div className="score-display-lg text-white">{stats.averageScore}</div>
-                  <div className="score-label mt-1">Promedio</div>
+                  <div className="score-display-lg text-white">{stats.thisWeekSessions}</div>
+                  <div className="score-label mt-1">Esta semana</div>
                 </div>
                 <div className="text-center">
-                  <div className="score-display-lg text-mint">{stats.personalBest}</div>
-                  <div className="score-label mt-1">Mejor</div>
+                  <div className="score-display-lg text-white">{stats.currentStreak} días</div>
+                  <div className="score-label mt-1">Racha</div>
                 </div>
               </div>
+
+              {/* Archery-specific stats */}
+              {hasArcheryStats && (
+                <div className="border-t border-mist/20 pt-3 mt-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target size={14} className="text-mint" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Tiro con Arco</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {stats.totalArrowsShot != null && (
+                      <div className="text-center">
+                        <div className="text-lg font-display font-bold text-white">{stats.totalArrowsShot}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Flechas</div>
+                      </div>
+                    )}
+                    {stats.averageScore != null && (
+                      <div className="text-center">
+                        <div className="text-lg font-display font-bold text-white">{stats.averageScore}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Promedio</div>
+                      </div>
+                    )}
+                    {stats.personalBest != null && (
+                      <div className="text-center">
+                        <div className="text-lg font-display font-bold text-mint">{stats.personalBest}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Mejor</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* HIIT-specific stats */}
+              {hasHiitStats && (
+                <div className="border-t border-mist/20 pt-3 mt-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Flame size={14} className="text-amberGlow" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">HIIT</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {stats.totalHiitIntervals != null && (
+                      <div className="text-center">
+                        <div className="text-lg font-display font-bold text-white">{stats.totalHiitIntervals}</div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Intervalos</div>
+                      </div>
+                    )}
+                    {stats.totalHiitWorkTime != null && (
+                      <div className="text-center">
+                        <div className="text-lg font-display font-bold text-amberGlow">
+                          {Math.round(stats.totalHiitWorkTime / 60)}m
+                        </div>
+                        <div className="text-[10px] text-slate-500 uppercase tracking-wider">Tiempo trabajo</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         )}
@@ -401,13 +495,13 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               {!hasSessions ? (
                 <div className="app-card p-8 text-center">
                   <div className="w-16 h-16 rounded-2xl bg-mint/10 flex items-center justify-center mx-auto mb-4">
-                    <Target size={32} className="text-mint" />
+                    <TrendingUp size={32} className="text-mint" />
                   </div>
                   <h3 className="text-lg font-semibold text-white mb-2">
                     No hay sesiones aún
                   </h3>
                   <p className="text-slate-400 text-sm mb-4 max-w-sm mx-auto">
-                    Comienza registrando tu primera sesión de tiro con arco. Podrás llevar un control detallado de tus puntuaciones y progreso.
+                    Comienza registrando tu primera sesión deportiva. Lleva control de tu progreso y rendimiento.
                   </p>
                   <button
                     onClick={() => setShowSetup(true)}
@@ -420,54 +514,12 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               ) : (
                 <div className="space-y-3">
                   {completedSessions.map((session) => (
-                    <div
+                    <SportSessionCard
                       key={session.id}
-                      className="app-card p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-mint/15 flex items-center justify-center">
-                          <Target size={18} className="text-mint" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-white">
-                            {session.startedAt.toLocaleDateString('es-ES', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric'
-                            })}
-                          </div>
-                          <div className="text-xs text-slate-400 flex items-center gap-2">
-                            <span>{session.archeryData?.rounds.length ?? 0} rondas</span>
-                            {session.location && (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin size={10} />
-                                  {session.location}
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-xl font-display font-bold text-white">
-                            {session.archeryData?.totalScore ?? 0}
-                          </div>
-                          <div className="text-xs text-slate-400">
-                            {session.archeryData?.averageArrow ?? 0} avg
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleDeleteSession(session.id)}
-                          className="p-2 text-slate-400 hover:text-crimson transition-colors"
-                          aria-label="Eliminar sesión"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
+                      session={session}
+                      onDelete={handleDeleteSession}
+                      onClick={setSelectedSession}
+                    />
                   ))}
                 </div>
               )}
@@ -505,6 +557,60 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
                   </div>
                 </div>
               </div>
+
+              {hasArcheryStats && (
+                <div className="app-card p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target size={16} className="text-mint" />
+                    <span className="text-sm font-medium text-white">Tiro con Arco</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {stats.totalArrowsShot != null && (
+                      <div className="bg-slateDeep/50 rounded-lg p-3 text-center">
+                        <div className="text-xs text-slate-400">Flechas</div>
+                        <div className="text-xl font-display font-bold text-white">{stats.totalArrowsShot}</div>
+                      </div>
+                    )}
+                    {stats.averageScore != null && (
+                      <div className="bg-slateDeep/50 rounded-lg p-3 text-center">
+                        <div className="text-xs text-slate-400">Promedio</div>
+                        <div className="text-xl font-display font-bold text-white">{stats.averageScore}</div>
+                      </div>
+                    )}
+                    {stats.personalBest != null && (
+                      <div className="bg-slateDeep/50 rounded-lg p-3 text-center">
+                        <div className="text-xs text-slate-400">Mejor</div>
+                        <div className="text-xl font-display font-bold text-mint">{stats.personalBest}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {hasHiitStats && (
+                <div className="app-card p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Flame size={16} className="text-amberGlow" />
+                    <span className="text-sm font-medium text-white">HIIT</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {stats.totalHiitIntervals != null && (
+                      <div className="bg-slateDeep/50 rounded-lg p-3 text-center">
+                        <div className="text-xs text-slate-400">Intervalos</div>
+                        <div className="text-xl font-display font-bold text-white">{stats.totalHiitIntervals}</div>
+                      </div>
+                    )}
+                    {stats.totalHiitWorkTime != null && (
+                      <div className="bg-slateDeep/50 rounded-lg p-3 text-center">
+                        <div className="text-xs text-slate-400">Tiempo trabajo</div>
+                        <div className="text-xl font-display font-bold text-amberGlow">
+                          {Math.round(stats.totalHiitWorkTime / 60)}m
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </section>

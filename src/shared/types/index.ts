@@ -314,9 +314,15 @@ export interface SportStats {
   thisMonthSessions: number;
   currentStreak: number;
   longestStreak: number;
-  totalArrowsShot: number;
-  averageScore: number;
-  personalBest: number;
+  // Generic
+  totalDuration?: number;
+  // Archery
+  totalArrowsShot?: number;
+  averageScore?: number;
+  personalBest?: number;
+  // HIIT
+  totalHiitIntervals?: number;
+  totalHiitWorkTime?: number;
 }
 
 // ===== HIIT TIMER TYPES =====

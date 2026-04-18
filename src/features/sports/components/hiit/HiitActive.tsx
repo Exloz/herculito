@@ -28,7 +28,11 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
     timer.resume();
   }, [timer]);
 
-  const handleRestart = useCallback(() => {
+  const handleRestartCurrentPhase = useCallback(() => {
+    timer.restartCurrentPhase();
+  }, [timer]);
+
+  const handleRestartSession = useCallback(() => {
     timer.start(config);
   }, [timer, config]);
 
@@ -126,7 +130,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
           <div className="mt-6 text-center">
             <div className="font-display text-2xl font-bold text-mint">¡Sesión completada!</div>
             <div className="mt-2 text-sm text-slate-400">
-              {config.intervals} intervalos · {timer.formatTime(timer.state.totalElapsed)} en total
+              {config.intervals} intervalos · {timer.formatTime(timer.effectiveElapsed)} en total
             </div>
           </div>
         )}
@@ -148,7 +152,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
 
               <button
                 type="button"
-                onClick={handleRestart}
+                onClick={handleRestartCurrentPhase}
                 className="flex h-11 w-11 items-center justify-center rounded-full bg-slateDeep text-slate-300 transition-colors hover:bg-slate-600 touch-target"
                 aria-label="Reiniciar"
               >
@@ -160,7 +164,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onCom
           {timer.state.phase === 'done' && (
             <button
               type="button"
-              onClick={handleRestart}
+              onClick={handleRestartSession}
               className="btn-primary inline-flex items-center justify-center gap-2"
             >
               <RotateCcw size={16} />

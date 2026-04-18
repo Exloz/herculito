@@ -5,7 +5,9 @@ import {
   pauseHiit,
   resumeHiit,
   resetHiit,
+  restartCurrentPhase,
   tickHiit,
+  getEffectiveElapsed,
   getHiitProgress,
   getPhaseDuration,
   getPhaseLabel,
@@ -252,6 +254,84 @@ describe('hiitTimerEngine', () => {
     });
   });
 
+  describe('restartCurrentPhase', () => {
+    it('restarts current work phase without changing interval', () => {
+      const config: HiitConfig = { intervals: 1, workDuration: 10, restEnabled: false, restDuration: 0 };
+      let current = startHiit(createHiitEngine(config));
+
+      // Skip prep (5s)
+      for (let i = 0; i < 5; i++) {
+        const result = tickHiit(current);
+        current = { ...current, state: result.state, isRunning: result.isRunning };
+      }
+
+      // Consume 3 seconds of work: 10 -> 7
+      for (let i = 0; i < 3; i++) {
+        const result = tickHiit(current);
+        current = { ...current, state: result.state, isRunning: result.isRunning };
+      }
+
+      const restarted = restartCurrentPhase(current);
+      expect(restarted.state.phase).toBe('work');
+      expect(restarted.state.currentInterval).toBe(1);
+      expect(restarted.state.secondsRemaining).toBe(10);
+      expect(restarted.state.totalElapsed).toBe(5); // only prep counted
+    });
+
+    it('restarts current rest phase without changing interval', () => {
+      const config: HiitConfig = { intervals: 2, workDuration: 2, restEnabled: true, restDuration: 5 };
+      let current = startHiit(createHiitEngine(config));
+
+      // Skip prep + first work (5 + 2)
+      for (let i = 0; i < 7; i++) {
+        const result = tickHiit(current);
+        current = { ...current, state: result.state, isRunning: result.isRunning };
+      }
+
+      // In rest (5s), consume 2s: 5 -> 3
+      for (let i = 0; i < 2; i++) {
+        const result = tickHiit(current);
+        current = { ...current, state: result.state, isRunning: result.isRunning };
+      }
+
+      const restarted = restartCurrentPhase(current);
+      expect(restarted.state.phase).toBe('rest');
+      expect(restarted.state.currentInterval).toBe(1);
+      expect(restarted.state.secondsRemaining).toBe(5);
+      expect(restarted.state.totalElapsed).toBe(7); // prep + first work
+    });
+
+    it('does nothing on idle and done', () => {
+      const idle = createHiitEngine(defaultConfig);
+      expect(restartCurrentPhase(idle)).toBe(idle);
+
+      let doneEngine = startHiit(createHiitEngine({ intervals: 1, workDuration: 1, restEnabled: false, restDuration: 0 }));
+      while (doneEngine.state.phase !== 'done') {
+        const result = tickHiit(doneEngine);
+        doneEngine = { ...doneEngine, state: result.state, isRunning: result.isRunning };
+      }
+
+      expect(restartCurrentPhase(doneEngine)).toBe(doneEngine);
+    });
+  });
+
+  describe('getEffectiveElapsed', () => {
+    it('returns 0 during prep', () => {
+      const state = { phase: 'prep' as const, currentInterval: 0, secondsRemaining: 3, totalElapsed: 2 };
+      expect(getEffectiveElapsed(state)).toBe(0);
+    });
+
+    it('excludes prep once work starts', () => {
+      const state = { phase: 'work' as const, currentInterval: 1, secondsRemaining: 4, totalElapsed: 6 };
+      expect(getEffectiveElapsed(state)).toBe(1);
+    });
+
+    it('returns full effective time when done', () => {
+      const state = { phase: 'done' as const, currentInterval: 2, secondsRemaining: 0, totalElapsed: 13 };
+      expect(getEffectiveElapsed(state)).toBe(8);
+    });
+  });
+
   describe('getHiitProgress', () => {
     it('returns 0 for idle', () => {
       const state = { phase: 'idle' as const, currentInterval: 0, secondsRemaining: 0, totalElapsed: 0 };
@@ -263,12 +343,18 @@ describe('hiitTimerEngine', () => {
       expect(getHiitProgress(state, defaultConfig)).toBe(100);
     });
 
-    it('returns progress percentage during session', () => {
-      // Prep phase, after 2 seconds
+    it('returns 0 while still in prep', () => {
       const state = { phase: 'prep' as const, currentInterval: 0, secondsRemaining: 3, totalElapsed: 2 };
       const progress = getHiitProgress(state, defaultConfig);
-      // Total = 5 (prep) + 15 (3×5 work) + 6 (2×3 rest) = 26
-      expect(progress).toBeCloseTo((2 / 26) * 100, 1);
+      expect(progress).toBe(0);
+    });
+
+    it('returns progress percentage during effective session time', () => {
+      // After prep (5s) + 1s in work = effective 1s
+      const state = { phase: 'work' as const, currentInterval: 1, secondsRemaining: 4, totalElapsed: 6 };
+      const progress = getHiitProgress(state, defaultConfig);
+      // Effective total = 15 (3×5 work) + 6 (2×3 rest) = 21
+      expect(progress).toBeCloseTo((1 / 21) * 100, 1);
     });
   });
 

@@ -6,8 +6,10 @@ import {
   pauseHiit,
   resumeHiit,
   resetHiit,
+  restartCurrentPhase as restartCurrentHiitPhase,
   tickHiit,
   getHiitProgress,
+  getEffectiveElapsed,
   getPhaseLabel,
   saveHiitTimerState,
   loadHiitTimerState,
@@ -36,6 +38,8 @@ export interface UseHiitTimerReturn {
   pause: () => void;
   resume: () => void;
   reset: () => void;
+  restartCurrentPhase: () => void;
+  effectiveElapsed: number;
   formatTime: (seconds: number) => string;
 }
 
@@ -324,6 +328,14 @@ export const useHiitTimer = (): UseHiitTimerReturn => {
     startedAtRef.current = null;
   }, [nextPushCommand, releaseWakeLock]);
 
+  const handleRestartCurrentPhase = useCallback(() => {
+    setEngine((prev) => {
+      const restarted = restartCurrentHiitPhase(prev);
+      setProgress(getHiitProgress(restarted.state, restarted.config));
+      return restarted;
+    });
+  }, []);
+
   const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -341,6 +353,8 @@ export const useHiitTimer = (): UseHiitTimerReturn => {
     pause: handlePause,
     resume: handleResume,
     reset: handleReset,
+    restartCurrentPhase: handleRestartCurrentPhase,
+    effectiveElapsed: getEffectiveElapsed(engine.state),
     formatTime,
   };
 };

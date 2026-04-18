@@ -76,7 +76,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
 
   const totalWorkTime = intervals * workDuration;
   const totalRestTime = restEnabled ? Math.max(0, intervals - 1) * restDuration : 0;
-  const totalTime = 5 + totalWorkTime + totalRestTime; // 5 = prep
+  const totalTime = totalWorkTime + totalRestTime;
   const totalMinutes = Math.floor(totalTime / 60);
   const totalSecondsRem = totalTime % 60;
   const hasDom = typeof document !== 'undefined';

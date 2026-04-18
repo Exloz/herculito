@@ -34,6 +34,11 @@ const formatMinutes = (mins: number | undefined): string => {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 };
 
+type ActiveHiitSessionState = {
+  config: HiitConfig;
+  sessionId: string;
+};
+
 const Sports: React.FC<SportsProps> = ({ user }) => {
   const { showToast, confirm } = useUI();
   const {
@@ -42,6 +47,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     loading,
     error,
     startSession,
+    completeSession,
     deleteSession,
     refresh
   } = useSportSessions(user);
@@ -62,7 +68,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const [bowType, setBowType] = useState<ArcheryBowType>('recurve');
   const [arrowsUsed, setArrowsUsed] = useState(12);
   const [isStarting, setIsStarting] = useState(false);
-  const [activeHiitConfig, setActiveHiitConfig] = useState<HiitConfig | null>(null);
+  const [activeHiitSession, setActiveHiitSession] = useState<ActiveHiitSessionState | null>(null);
   const [showHiitConfig, setShowHiitConfig] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SportSession | null>(null);
 
@@ -85,10 +91,13 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const handleStartHiit = useCallback(async (config: HiitConfig) => {
     setIsStarting(true);
     try {
-      await startSession('hiit', {
+      const session = await startSession('hiit', {
         hiitConfig: config
       });
-      setActiveHiitConfig(config);
+      setActiveHiitSession({
+        config,
+        sessionId: session.id
+      });
       setShowHiitConfig(false);
       showToast('Sesión HIIT iniciada', 'success');
     } catch (err) {
@@ -97,6 +106,23 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
       setIsStarting(false);
     }
   }, [startSession, showToast]);
+
+  const handleCompleteHiitSession = useCallback(async () => {
+    if (!activeHiitSession) return;
+
+    try {
+      await completeSession(activeHiitSession.sessionId);
+      setActiveHiitSession(null);
+      refresh();
+      showToast('Sesión HIIT completada', 'success');
+    } catch (err) {
+      showToast(toUserMessage(err, 'Error completando sesión HIIT'), 'error');
+    }
+  }, [activeHiitSession, completeSession, refresh, showToast]);
+
+  const handleAbandonHiitSession = useCallback(() => {
+    setActiveHiitSession(null);
+  }, []);
 
   const handleAddRound = useCallback(async (
     distance: number,
@@ -164,15 +190,13 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   }
 
   // Show active HIIT session
-  if (activeHiitConfig) {
+  if (activeHiitSession) {
     return (
       <HiitActive
-        config={activeHiitConfig}
-        onAbandon={() => setActiveHiitConfig(null)}
+        config={activeHiitSession.config}
+        onAbandon={handleAbandonHiitSession}
         onComplete={() => {
-          setActiveHiitConfig(null);
-          refresh();
-          showToast('Sesión HIIT completada', 'success');
+          void handleCompleteHiitSession();
         }}
       />
     );

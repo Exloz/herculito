@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import type { User, SportSession } from '../../../shared/types';
+import type { HiitConfig, User, SportSession } from '../../../shared/types';
 import Sports from './SportsPage';
 
 const mocks = vi.hoisted(() => ({
@@ -9,10 +9,15 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   refresh: vi.fn(),
   apiCompleteSession: vi.fn(),
+  startSportSession: vi.fn(),
   completeActiveSession: vi.fn(),
   abandonSession: vi.fn(),
   addRound: vi.fn(),
   addEnd: vi.fn(),
+  archeryState: {
+    activeSession: null as SportSession | null,
+    hasActiveSession: false,
+  },
 }));
 
 vi.mock('../../../app/providers/ui-context', () => ({
@@ -32,7 +37,7 @@ vi.mock('../hooks/useSportSessions', () => ({
     stats: null,
     loading: false,
     error: null,
-    startSession: vi.fn(),
+    startSession: mocks.startSportSession,
     completeSession: mocks.apiCompleteSession,
     deleteSession: vi.fn(),
     refresh: mocks.refresh,
@@ -59,14 +64,36 @@ const activeSession: SportSession = {
 
 vi.mock('../hooks/useActiveArcherySession', () => ({
   useActiveArcherySession: () => ({
-    activeSession,
-    hasActiveSession: true,
+    activeSession: mocks.archeryState.activeSession,
+    hasActiveSession: mocks.archeryState.hasActiveSession,
     startSession: vi.fn(),
     addRound: mocks.addRound,
     addEnd: mocks.addEnd,
     completeSession: mocks.completeActiveSession,
     abandonSession: mocks.abandonSession,
   }),
+}));
+
+vi.mock('../components/hiit/HiitConfig', () => ({
+  HiitConfig: ({ onStart }: { onStart: (config: HiitConfig) => Promise<void> }) => (
+    <div>
+      <button
+        type="button"
+        onClick={() => void onStart({ intervals: 8, workDuration: 30, restEnabled: true, restDuration: 15 })}
+      >
+        Iniciar HIIT mock
+      </button>
+    </div>
+  ),
+}));
+
+vi.mock('../components/hiit/HiitActive', () => ({
+  HiitActive: ({ onComplete, onAbandon }: { onComplete: () => void; onAbandon: () => void }) => (
+    <div>
+      <button type="button" onClick={onComplete}>Completar HIIT mock</button>
+      <button type="button" onClick={onAbandon}>Abandonar HIIT mock</button>
+    </div>
+  ),
 }));
 
 vi.mock('../components/archery/ArcherySession', () => ({
@@ -87,7 +114,26 @@ describe('SportsPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.archeryState.activeSession = activeSession;
+    mocks.archeryState.hasActiveSession = true;
     mocks.completeActiveSession.mockResolvedValue(undefined);
+    mocks.startSportSession.mockResolvedValue({
+      id: 'hiit-session-1',
+      userId: 'user-1',
+      sportType: 'hiit',
+      sportName: 'HIIT',
+      startedAt: new Date('2026-01-01T10:00:00Z'),
+      status: 'active',
+      hiitData: {
+        intervals: 8,
+        workDuration: 30,
+        restEnabled: true,
+        restDuration: 15,
+        totalWorkTime: 240,
+        totalRestTime: 105,
+      },
+    });
+    mocks.apiCompleteSession.mockResolvedValue(undefined);
   });
 
   it('completes the active session only through the active session hook', async () => {
@@ -110,5 +156,35 @@ describe('SportsPage', () => {
 
     expect(mocks.abandonSession).toHaveBeenCalledTimes(1);
     expect(mocks.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('completes HIIT through the sports API when timer finishes', async () => {
+    mocks.archeryState.activeSession = null;
+    mocks.archeryState.hasActiveSession = false;
+
+    render(<Sports user={user} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /hiit/i }));
+    fireEvent.click(screen.getByRole('button', { name: /iniciar hiit mock/i }));
+
+    await waitFor(() => {
+      expect(mocks.startSportSession).toHaveBeenCalledWith('hiit', {
+        hiitConfig: {
+          intervals: 8,
+          workDuration: 30,
+          restEnabled: true,
+          restDuration: 15,
+        },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /completar hiit mock/i }));
+
+    await waitFor(() => {
+      expect(mocks.apiCompleteSession).toHaveBeenCalledWith('hiit-session-1');
+    });
+
+    expect(mocks.refresh).toHaveBeenCalledTimes(1);
+    expect(mocks.showToast).toHaveBeenCalledWith('Sesión HIIT completada', 'success');
   });
 });

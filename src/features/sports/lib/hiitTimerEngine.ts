@@ -88,6 +88,25 @@ export const resetHiit = (engine: HiitEngine): HiitEngine => {
   };
 };
 
+export const restartCurrentPhase = (engine: HiitEngine): HiitEngine => {
+  const { phase, secondsRemaining, totalElapsed } = engine.state;
+  if (phase === 'idle' || phase === 'done') return engine;
+
+  const phaseDuration = getPhaseDuration(phase, engine.config);
+  if (phaseDuration <= 0) return engine;
+
+  const elapsedInPhase = Math.max(0, phaseDuration - secondsRemaining);
+
+  return {
+    ...engine,
+    state: {
+      ...engine.state,
+      secondsRemaining: phaseDuration,
+      totalElapsed: Math.max(0, totalElapsed - elapsedInPhase),
+    },
+  };
+};
+
 // --- Tick ---
 
 export const tickHiit = (engine: HiitEngine): HiitTickResult => {
@@ -178,16 +197,26 @@ export const getHiitProgress = (state: HiitState, config: HiitConfig): number =>
   if (state.phase === 'idle') return 0;
   if (state.phase === 'done') return 100;
 
-  const totalPrepSeconds = PREP_SECONDS;
   const totalWorkSeconds = config.workDuration * config.intervals;
   const totalRestSeconds = config.restEnabled
     ? config.restDuration * Math.max(0, config.intervals - 1)
     : 0;
-  const totalSessionSeconds = totalPrepSeconds + totalWorkSeconds + totalRestSeconds;
+  const totalSessionSeconds = totalWorkSeconds + totalRestSeconds;
+  const effectiveElapsed = getEffectiveElapsed(state);
 
   if (totalSessionSeconds === 0) return 0;
 
-  return Math.min(100, (state.totalElapsed / totalSessionSeconds) * 100);
+  return Math.min(100, (effectiveElapsed / totalSessionSeconds) * 100);
+};
+
+export const getEffectiveElapsed = (state: HiitState): number => {
+  if (state.phase === 'idle') return 0;
+
+  const prepElapsed = state.phase === 'prep'
+    ? Math.max(0, Math.min(PREP_SECONDS, PREP_SECONDS - state.secondsRemaining))
+    : PREP_SECONDS;
+
+  return Math.max(0, state.totalElapsed - prepElapsed);
 };
 
 export const getPhaseDuration = (phase: HiitPhase, config: HiitConfig): number => {

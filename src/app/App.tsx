@@ -167,7 +167,7 @@ function AppContent() {
         </Suspense>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} />
       </div>
-      {isAdmin && typeof window !== 'undefined' && (
+      {import.meta.env.DEV && isAdmin && typeof window !== 'undefined' && (
         <AgentationErrorBoundary>
           <Suspense fallback={null}>
             <AgentationComponent

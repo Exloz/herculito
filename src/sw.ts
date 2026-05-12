@@ -45,7 +45,7 @@ const getString = (value: unknown): string | undefined =>
 const DEFAULT_NOTIFICATION_URL = self.location.origin;
 const ALLOWED_NOTIFICATION_ORIGINS = new Set<string>([
   self.location.origin,
-  'https://herculito.exloz.site'
+  'https://herculito.exloz.co'
 ]);
 
 const getSafeNotificationUrl = (value: unknown): string => {

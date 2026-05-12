@@ -3,7 +3,7 @@
 FROM node:20-alpine AS builder
 
 # Usar corepack (incluido en Node 20+) para gestionar pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
 
 WORKDIR /app
 

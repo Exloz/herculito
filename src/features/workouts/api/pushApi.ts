@@ -10,7 +10,7 @@ const logPushEvent = (event: string, details?: Record<string, unknown>): void =>
 
 export const getPushApiOrigin = (): string => {
   const value = import.meta.env.VITE_PUSH_API_ORIGIN;
-  return typeof value === 'string' && value.trim() ? value.trim() : 'https://api.herculito.exloz.site';
+  return typeof value === 'string' && value.trim() ? value.trim() : 'https://api-herculito.exloz.co';
 };
 
 const generateDeviceId = (): string => {

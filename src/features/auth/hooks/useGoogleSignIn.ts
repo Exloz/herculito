@@ -14,7 +14,7 @@ export const useGoogleSignIn = () => {
         throw new Error('clerk_signin_not_ready');
       }
 
-      const origin = typeof window === 'undefined' ? 'https://herculito.exloz.site' : window.location.origin;
+      const origin = typeof window === 'undefined' ? 'https://herculito.exloz.co' : window.location.origin;
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
         redirectUrl: `${origin}/sso-callback`,

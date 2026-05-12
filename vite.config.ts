@@ -16,13 +16,16 @@ export default defineConfig({
         name: 'Herculito - Workout Tracker',
         short_name: 'Herculito',
         description: 'Track your workouts and exercise routines',
+        id: '/',
         theme_color: '#111827',
         background_color: '#1f2937',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
         start_url: '/',
+        lang: 'es',
         categories: ['health', 'fitness', 'sports'],
+        prefer_related_applications: false,
         icons: [
           {
             src: 'manifest-icon-192.maskable.png',

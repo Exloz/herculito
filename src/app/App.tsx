@@ -103,7 +103,12 @@ function AppContent() {
   if (typeof window !== 'undefined' && window.location.pathname === '/sso-callback') {
     return (
       <div className="app-shell flex items-center justify-center">
-        <AuthenticateWithRedirectCallback />
+        <AuthenticateWithRedirectCallback
+          signInForceRedirectUrl="/"
+          signInFallbackRedirectUrl="/"
+          signUpForceRedirectUrl="/"
+          signUpFallbackRedirectUrl="/"
+        />
       </div>
     );
   }

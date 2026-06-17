@@ -18,7 +18,9 @@ export const useGoogleSignIn = () => {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
         redirectUrl: `${origin}/sso-callback`,
-        redirectUrlComplete: `${origin}/`
+        redirectUrlComplete: `${origin}/`,
+        continueSignIn: true,
+        continueSignUp: true
       });
     } catch (signInError) {
       setError(toUserMessage(signInError, 'No se pudo iniciar sesión con Clerk. Inténtalo de nuevo.'));

@@ -3,12 +3,24 @@ import { SignInButton, SignUpButton } from '@clerk/react';
 export default function ClerkAuthOptions() {
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-      <SignInButton mode="modal">
+      <SignInButton
+        mode="modal"
+        forceRedirectUrl="/"
+        fallbackRedirectUrl="/"
+        signUpForceRedirectUrl="/"
+        signUpFallbackRedirectUrl="/"
+      >
         <button type="button" className="btn-secondary w-full text-sm">
           Iniciar con Clerk
         </button>
       </SignInButton>
-      <SignUpButton mode="modal">
+      <SignUpButton
+        mode="modal"
+        forceRedirectUrl="/"
+        fallbackRedirectUrl="/"
+        signInForceRedirectUrl="/"
+        signInFallbackRedirectUrl="/"
+      >
         <button type="button" className="btn-ghost w-full text-sm">
           Crear cuenta
         </button>

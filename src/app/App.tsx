@@ -172,9 +172,6 @@ function AppContent() {
           <Suspense fallback={null}>
             <AgentationComponent
               endpoint="http://localhost:4747"
-              onSessionCreated={(sessionId: string) => {
-                console.log('Agentation session:', sessionId);
-              }}
             />
           </Suspense>
         </AgentationErrorBoundary>

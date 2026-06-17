@@ -3,12 +3,12 @@
 FROM node:20-alpine AS builder
 
 # Usar corepack (incluido en Node 20+) para gestionar pnpm
-RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
+RUN corepack enable && corepack prepare pnpm@11.7.0 --activate
 
 WORKDIR /app
 
 # Copiar archivos de dependencias primero (mejor cacheo de capas)
-COPY pnpm-lock.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 
 # Cache mount para acelerar pnpm install en builds repetidos
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \

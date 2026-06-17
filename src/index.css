@@ -665,7 +665,7 @@ body.dialog-open .app-bottom-nav {
 .target-face-svg {
   @apply w-full select-none;
   max-width: min(92vw, 420px);
-  touch-action: manipulation;
+  touch-action: none;
 }
 
 .target-ring-shape {

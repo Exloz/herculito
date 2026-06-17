@@ -119,6 +119,7 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
   const [hoveredZone, setHoveredZone] = useState<ZoneInfo | null>(null);
   const [selectedZone, setSelectedZone] = useState<ZoneInfo | null>(null);
   const [hitPulse, setHitPulse] = useState(false);
+  const isAimingRef = useRef(false);
   const hitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -145,8 +146,13 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
     return Math.sqrt((dx * dx) + (dy * dy));
   }, []);
 
-  const registerSelection = useCallback((zone: ZoneInfo | null) => {
+  const registerSelection = useCallback((zone: ZoneInfo | null, shouldRegisterMiss = false) => {
     if (disabled) {
+      return;
+    }
+
+    if (!zone && !shouldRegisterMiss) {
+      setHoveredZone(null);
       return;
     }
 
@@ -183,27 +189,55 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
     }, 1100);
   }, [disabled, onMiss, onScore]);
 
+  const updateAimingPreview = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
+    const distance = getPointFromEvent(event, event.currentTarget);
+    const zone = getZoneFromDistance(distance);
+    setHoveredZone(zone);
+    return zone;
+  }, [getPointFromEvent]);
+
+  const handlePointerDown = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
+    if (disabled) {
+      return;
+    }
+
+    event.preventDefault();
+    isAimingRef.current = true;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    updateAimingPreview(event);
+  }, [disabled, updateAimingPreview]);
+
   const handlePointerMove = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     if (disabled) {
       return;
     }
 
-    const distance = getPointFromEvent(event, event.currentTarget);
-    setHoveredZone(getZoneFromDistance(distance));
-  }, [disabled, getPointFromEvent]);
+    updateAimingPreview(event);
+  }, [disabled, updateAimingPreview]);
 
-  const handlePointerLeave = useCallback(() => {
-    setHoveredZone(null);
-  }, []);
-
-  const handleTargetClick = useCallback((event: React.MouseEvent<SVGSVGElement>) => {
-    if (disabled) {
+  const handlePointerUp = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
+    if (disabled || !isAimingRef.current) {
       return;
     }
 
-    const distance = getPointFromEvent(event, event.currentTarget);
-    registerSelection(getZoneFromDistance(distance));
-  }, [disabled, getPointFromEvent, registerSelection]);
+    event.preventDefault();
+    isAimingRef.current = false;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    const zone = updateAimingPreview(event);
+    registerSelection(zone);
+  }, [disabled, registerSelection, updateAimingPreview]);
+
+  const handlePointerCancel = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
+    isAimingRef.current = false;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    setHoveredZone(null);
+  }, []);
+
+  const handlePointerLeave = useCallback(() => {
+    if (!isAimingRef.current) {
+      setHoveredZone(null);
+    }
+  }, []);
 
   const handleQuickKey = useCallback((score: number, isGold: boolean) => {
     registerSelection({
@@ -225,9 +259,11 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
         className={`target-face-svg ${hitPulse ? 'target-ring-hit' : ''}`}
         role="img"
         aria-label="Diana de tiro con arco - Toca donde impactaste"
+        onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
         onPointerLeave={handlePointerLeave}
-        onClick={handleTargetClick}
       >
           <defs>
             <radialGradient id="target-gold" cx="34%" cy="34%" r="78%">
@@ -395,7 +431,7 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
       <div className="target-actions-compact">
         <button
           type="button"
-          onClick={() => registerSelection(null)}
+          onClick={() => registerSelection(null, true)}
           disabled={disabled}
           className="target-btn-miss"
           aria-label="Fallo (0 puntos)"

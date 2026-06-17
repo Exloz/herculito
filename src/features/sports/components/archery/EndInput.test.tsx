@@ -282,8 +282,10 @@ describe('EndInput', () => {
       const svg = screen.getByRole('img', { name: /diana de tiro con arco/i });
       mockSvgBounds(svg);
 
-      fireEvent.click(svg, { clientX: 230, clientY: 200 });
-      fireEvent.click(svg, { clientX: 270, clientY: 200 });
+      fireEvent.pointerDown(svg, { pointerId: 1, clientX: 230, clientY: 200 });
+      fireEvent.pointerUp(svg, { pointerId: 1, clientX: 230, clientY: 200 });
+      fireEvent.pointerDown(svg, { pointerId: 2, clientX: 270, clientY: 200 });
+      fireEvent.pointerUp(svg, { pointerId: 2, clientX: 270, clientY: 200 });
 
       const arrows = screen.getAllByLabelText(/flecha/i);
       expect(arrows[0]).toHaveTextContent('9');

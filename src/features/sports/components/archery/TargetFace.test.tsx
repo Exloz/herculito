@@ -64,25 +64,44 @@ describe('TargetFace', () => {
     });
   });
 
-  describe('score selection via target hit testing', () => {
-    it('maps a click in the 9 ring to score 9', () => {
+  describe('score selection via target aiming', () => {
+    it('does not register a score until the pointer is released', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
 
       const svg = screen.getByRole('img', { name: /diana de tiro con arco/i });
       mockSvgBounds(svg);
-      fireEvent.click(svg, { clientX: 230, clientY: 200 });
+      fireEvent.pointerDown(svg, { pointerId: 1, clientX: 230, clientY: 200 });
+
+      expect(mockOnScore).not.toHaveBeenCalled();
+
+      fireEvent.pointerUp(svg, { pointerId: 1, clientX: 230, clientY: 200 });
 
       expect(mockOnScore).toHaveBeenCalledWith(9, false);
     });
 
-    it('maps a click in the 7 ring to score 7', () => {
+    it('registers the zone where the pointer is released', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
 
       const svg = screen.getByRole('img', { name: /diana de tiro con arco/i });
       mockSvgBounds(svg);
-      fireEvent.click(svg, { clientX: 270, clientY: 200 });
+      fireEvent.pointerDown(svg, { pointerId: 1, clientX: 230, clientY: 200 });
+      fireEvent.pointerMove(svg, { pointerId: 1, clientX: 270, clientY: 200 });
+      fireEvent.pointerUp(svg, { pointerId: 1, clientX: 270, clientY: 200 });
 
       expect(mockOnScore).toHaveBeenCalledWith(7, false);
+    });
+
+    it('does not register anything when released outside the target', () => {
+      render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
+
+      const svg = screen.getByRole('img', { name: /diana de tiro con arco/i });
+      mockSvgBounds(svg);
+      fireEvent.pointerDown(svg, { pointerId: 1, clientX: 230, clientY: 200 });
+      fireEvent.pointerMove(svg, { pointerId: 1, clientX: 430, clientY: 200 });
+      fireEvent.pointerUp(svg, { pointerId: 1, clientX: 430, clientY: 200 });
+
+      expect(mockOnScore).not.toHaveBeenCalled();
+      expect(mockOnMiss).not.toHaveBeenCalled();
     });
   });
 

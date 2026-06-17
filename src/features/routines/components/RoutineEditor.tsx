@@ -530,6 +530,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   <div className="space-y-2">
                     {exercises.map((exercise, index) => {
                       const restTimeError = getExerciseRestTimeError(exercise.id);
+                      const isRepsBySetMode = repsBySetMode[exercise.id] ?? false;
 
                       return (
                         <div key={exercise.id} className="motion-list-item app-surface-muted p-2.5">
@@ -569,6 +570,43 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                             </div>
                           </div>
 
+                          <div className="mb-3 rounded-[0.95rem] border border-white/8 bg-white/[0.035] p-1.5">
+                            <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
+                              <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Modo de reps</span>
+                              <span className="text-[11px] text-slate-500">
+                                {isRepsBySetMode ? 'Edita cada serie' : 'Mismo valor para todas'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isRepsBySetMode) toggleRepsBySetMode(exercise.id);
+                                }}
+                                className={`motion-interactive touch-target-sm rounded-[0.8rem] px-3 py-2 text-sm font-semibold transition-colors ${!isRepsBySetMode
+                                  ? 'border border-mint/45 bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.16)]'
+                                  : 'border border-white/8 bg-slateDeep/80 text-slate-300 hover:border-mint/35 hover:text-white'}`}
+                                aria-pressed={!isRepsBySetMode}
+                                aria-label={`Usar repeticiones fijas en ${exercise.name}`}
+                              >
+                                Reps fijas
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!isRepsBySetMode) toggleRepsBySetMode(exercise.id);
+                                }}
+                                className={`motion-interactive touch-target-sm rounded-[0.8rem] px-3 py-2 text-sm font-semibold transition-colors ${isRepsBySetMode
+                                  ? 'border border-mint/45 bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.16)]'
+                                  : 'border border-white/8 bg-slateDeep/80 text-slate-300 hover:border-mint/35 hover:text-white'}`}
+                                aria-pressed={isRepsBySetMode}
+                                aria-label={`Usar repeticiones por serie en ${exercise.name}`}
+                              >
+                                Por serie
+                              </button>
+                            </div>
+                          </div>
+
                           <div className="grid grid-cols-3 gap-1.5 text-sm">
                             <div>
                               <label htmlFor={`routine-exercise-${exercise.id}-sets`} className="mb-1 block text-slate-300">Series</label>
@@ -585,36 +623,16 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                             </div>
 
                             {/* Reps column - either single input or reps-by-set toggle */}
-                            {repsBySetMode[exercise.id] ? (
+                            {isRepsBySetMode ? (
                               <div className="col-span-1">
-                                <div className="mb-1 flex items-center justify-between">
-                                  <span className="text-slate-300">Reps x serie</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleRepsBySetMode(exercise.id)}
-                                    className="text-[10px] text-mint hover:text-mintDeep transition-colors"
-                                    title="Desactivar reps por serie"
-                                  >
-                                    Cambiar
-                                  </button>
-                                </div>
+                                <span className="mb-1 block text-slate-300">Reps por serie</span>
                                 <div className="rounded-lg border border-mint/30 bg-mint/5 px-2 py-1.5 text-mint text-xs font-medium">
                                   {exercise.repsBySet?.join(' / ') ?? exercise.reps}
                                 </div>
                               </div>
                             ) : (
                               <div>
-                                <label htmlFor={`routine-exercise-${exercise.id}-reps`} className="mb-1 block text-slate-300">
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleRepsBySetMode(exercise.id)}
-                                    className="text-slate-300 hover:text-mint transition-colors flex items-center gap-1"
-                                    title="Activar reps por serie"
-                                  >
-                                    Reps
-                                    <span className="text-[9px] text-mint/60 uppercase tracking-wider">x serie</span>
-                                  </button>
-                                </label>
+                                <label htmlFor={`routine-exercise-${exercise.id}-reps`} className="mb-1 block text-slate-300">Reps</label>
                                 <input
                                   id={`routine-exercise-${exercise.id}-reps`}
                                   type="number"
@@ -652,16 +670,20 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                           </div>
 
                           {/* Reps-by-set detailed editor when enabled */}
-                          {repsBySetMode[exercise.id] && (
-                            <div className="mt-3 rounded-lg border border-mint/20 bg-mint/5 p-3">
-                              <div className="mb-2 flex items-center justify-between">
-                                <span className="text-xs font-medium text-mint">Reps por serie</span>
+                          {isRepsBySetMode && (
+                            <div className="mt-3 rounded-lg border border-mint/25 bg-mint/5 p-3">
+                              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <span className="block text-xs font-semibold text-mint">Reps por serie</span>
+                                  <span className="text-[11px] text-slate-400">Ajusta el objetivo de cada serie.</span>
+                                </div>
                                 <button
                                   type="button"
                                   onClick={() => toggleRepsBySetMode(exercise.id)}
-                                  className="text-[10px] text-slate-400 hover:text-white transition-colors"
+                                  className="touch-target-sm self-start rounded-full border border-white/10 bg-slateDeep/70 px-3 py-1 text-[11px] font-semibold text-slate-300 transition-colors hover:border-mint/35 hover:text-white sm:self-auto"
+                                  aria-label={`Volver a repeticiones fijas en ${exercise.name}`}
                                 >
-                                  Usar reps fijo
+                                  Volver a reps fijas
                                 </button>
                               </div>
                               <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(exercise.sets, 6)}, 1fr)` }}>

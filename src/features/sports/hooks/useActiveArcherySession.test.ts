@@ -83,6 +83,30 @@ describe('useActiveArcherySession', () => {
     vi.clearAllMocks();
     localStorageMock.clear();
     apiMocks.completeSportSession.mockResolvedValue(undefined);
+    apiMocks.addArcheryRound.mockResolvedValue({
+      id: 'round-server',
+      sessionId: 'session-1',
+      distance: 70,
+      targetSize: 122,
+      arrowsPerEnd: 3,
+      order: 1,
+      totalScore: 0,
+      createdAt: Date.now(),
+      ends: [],
+    });
+    apiMocks.addArcheryEnd.mockResolvedValue({
+      id: 'end-server',
+      roundId: 'round-1',
+      endNumber: 2,
+      subtotal: 27,
+      goldCount: 0,
+      createdAt: Date.now(),
+      arrows: [
+        { id: 'arrow-server-1', score: 9, isGold: false, timestamp: Date.now() },
+        { id: 'arrow-server-2', score: 9, isGold: false, timestamp: Date.now() },
+        { id: 'arrow-server-3', score: 9, isGold: false, timestamp: Date.now() },
+      ],
+    });
   });
 
   it('rehydrates stored session dates as Date instances', async () => {
@@ -158,6 +182,14 @@ describe('useActiveArcherySession', () => {
       result.current.startSession({
         ...buildStoredSession(),
         id: 'session-2',
+        archeryData: {
+          ...buildStoredSession().archeryData!,
+          rounds: [],
+          totalScore: 0,
+          maxPossibleScore: 0,
+          averageArrow: 0,
+          goldCount: 0,
+        },
       }, {
         bowType: 'recurve',
         arrowsUsed: 12,
@@ -183,6 +215,126 @@ describe('useActiveArcherySession', () => {
     expect(result.current.activeSession?.archeryData?.rounds).toHaveLength(0);
   });
 
+  it('keeps a locally added round when the API write fails', async () => {
+    apiMocks.addArcheryRound.mockRejectedValueOnce(new Error('offline'));
+
+    const { result } = renderHook(() => useActiveArcherySession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.startSession({
+        ...buildStoredSession(),
+        archeryData: {
+          ...buildStoredSession().archeryData!,
+          rounds: [],
+          totalScore: 0,
+          maxPossibleScore: 0,
+          averageArrow: 0,
+          goldCount: 0,
+        },
+      }, {
+        bowType: 'recurve',
+        arrowsUsed: 12,
+      });
+    });
+
+    await act(async () => {
+      await result.current.addRound(30, 80, 3);
+    });
+
+    expect(result.current.activeSession?.archeryData?.rounds).toHaveLength(1);
+    expect(result.current.pendingSyncCount).toBe(1);
+
+    const stored = JSON.parse(localStorageMock.getItem(ACTIVE_ARCHERY_KEY) ?? '{}') as { pendingOps?: unknown[] };
+    expect(stored.pendingOps).toHaveLength(1);
+  });
+
+  it('keeps a locally added end when the API write fails', async () => {
+    apiMocks.addArcheryEnd.mockRejectedValueOnce(new Error('offline'));
+
+    const { result } = renderHook(() => useActiveArcherySession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.startSession(buildStoredSession(), {
+        bowType: 'recurve',
+        arrowsUsed: 12,
+      });
+    });
+
+    await act(async () => {
+      await result.current.addEnd('round-1', [
+        { score: 9, isGold: false },
+        { score: 9, isGold: false },
+        { score: 9, isGold: false },
+      ]);
+    });
+
+    expect(result.current.activeSession?.archeryData?.rounds[0].ends).toHaveLength(2);
+    expect(result.current.activeSession?.archeryData?.totalScore).toBe(57);
+    expect(result.current.pendingSyncCount).toBe(1);
+  });
+
+  it('syncs pending local rounds when the browser comes back online', async () => {
+    apiMocks.addArcheryRound
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({
+        id: 'round-synced',
+        sessionId: 'session-1',
+        distance: 30,
+        targetSize: 80,
+        arrowsPerEnd: 3,
+        order: 1,
+        totalScore: 0,
+        createdAt: Date.now(),
+        ends: [],
+      });
+
+    const { result } = renderHook(() => useActiveArcherySession());
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    act(() => {
+      result.current.startSession({
+        ...buildStoredSession(),
+        archeryData: {
+          ...buildStoredSession().archeryData!,
+          rounds: [],
+          totalScore: 0,
+          maxPossibleScore: 0,
+          averageArrow: 0,
+          goldCount: 0,
+        },
+      }, {
+        bowType: 'recurve',
+        arrowsUsed: 12,
+      });
+    });
+
+    await act(async () => {
+      await result.current.addRound(30, 80, 3);
+    });
+
+    expect(result.current.pendingSyncCount).toBe(1);
+
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+    });
+
+    await waitFor(() => {
+      expect(result.current.pendingSyncCount).toBe(0);
+    });
+    expect(result.current.activeSession?.archeryData?.rounds[0].id).toBe('round-synced');
+  });
+
   it('does not mark a newer session as completed when an older completion resolves', async () => {
     let resolveComplete: (() => void) | null = null;
     apiMocks.completeSportSession.mockImplementation(() => new Promise<void>((resolve) => {
@@ -204,10 +356,22 @@ describe('useActiveArcherySession', () => {
 
     const pendingComplete = result.current.completeSession('nota final');
 
+    await waitFor(() => {
+      expect(resolveComplete).not.toBeNull();
+    });
+
     act(() => {
       result.current.startSession({
         ...buildStoredSession(),
         id: 'session-2',
+        archeryData: {
+          ...buildStoredSession().archeryData!,
+          rounds: [],
+          totalScore: 0,
+          maxPossibleScore: 0,
+          averageArrow: 0,
+          goldCount: 0,
+        },
       }, {
         bowType: 'recurve',
         arrowsUsed: 12,

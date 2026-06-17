@@ -10,6 +10,15 @@ import {
 } from '../../../shared/api/sportsApi';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
+const SPORTS_CACHE_KEY = 'sports-data-cache';
+const SPORTS_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+type CachedSportsEntry = {
+  savedAt: number;
+  sessions: SportSessionResponse[];
+  stats: SportStats;
+};
+
 const toDate = (value: unknown): Date | undefined => {
   if (!value) return undefined;
   if (value instanceof Date) return value;
@@ -72,10 +81,53 @@ const mapSession = (session: SportSessionResponse): SportSession => {
   };
 };
 
+const readSportsCache = (userId: string): CachedSportsEntry | null => {
+  if (!userId || typeof window === 'undefined') return null;
+
+  try {
+    const rawCache = window.localStorage.getItem(SPORTS_CACHE_KEY);
+    if (!rawCache) return null;
+
+    const parsedCache = JSON.parse(rawCache) as Record<string, CachedSportsEntry>;
+    const cacheEntry = parsedCache[userId];
+    if (!cacheEntry) return null;
+
+    if (Date.now() - cacheEntry.savedAt > SPORTS_CACHE_MAX_AGE_MS) {
+      delete parsedCache[userId];
+      window.localStorage.setItem(SPORTS_CACHE_KEY, JSON.stringify(parsedCache));
+      return null;
+    }
+
+    return cacheEntry;
+  } catch {
+    return null;
+  }
+};
+
+const writeSportsCache = (userId: string, sessions: SportSessionResponse[], stats: SportStats): void => {
+  if (!userId || typeof window === 'undefined') return;
+
+  try {
+    const rawCache = window.localStorage.getItem(SPORTS_CACHE_KEY);
+    const parsedCache = rawCache ? JSON.parse(rawCache) as Record<string, CachedSportsEntry> : {};
+    parsedCache[userId] = {
+      savedAt: Date.now(),
+      sessions,
+      stats,
+    };
+    window.localStorage.setItem(SPORTS_CACHE_KEY, JSON.stringify(parsedCache));
+  } catch {
+    // ignore cache write failures
+  }
+};
+
 export const useSportSessions = (user: User) => {
-  const [sessions, setSessions] = useState<SportSession[]>([]);
-  const [stats, setStats] = useState<SportStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [sessions, setSessions] = useState<SportSession[]>(() => {
+    const cachedEntry = readSportsCache(user.id);
+    return cachedEntry ? cachedEntry.sessions.map(mapSession) : [];
+  });
+  const [stats, setStats] = useState<SportStats | null>(() => readSportsCache(user.id)?.stats ?? null);
+  const [loading, setLoading] = useState(() => !readSportsCache(user.id));
   const [error, setError] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
@@ -86,14 +138,20 @@ export const useSportSessions = (user: User) => {
         fetchSportSessions({ limit: 100 }),
         fetchSportStats()
       ]);
+      writeSportsCache(user.id, sessionsData, statsData);
       setSessions(sessionsData.map(mapSession));
       setStats(statsData);
     } catch (err) {
+      const cachedEntry = readSportsCache(user.id);
+      if (cachedEntry) {
+        setSessions(cachedEntry.sessions.map(mapSession));
+        setStats(cachedEntry.stats);
+      }
       setError(toUserMessage(err, 'Error cargando sesiones'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user.id]);
 
   useEffect(() => {
     if (user?.id) {

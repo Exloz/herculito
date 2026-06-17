@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ArrowLeft, Plus, CheckCircle, MapPin } from 'lucide-react';
 import type { SportSession } from '../../../../shared/types';
 import { RoundCard } from './RoundCard';
@@ -12,8 +12,10 @@ interface ArcherySessionProps {
   onAddRound: (distance: number, targetSize: number, arrowsPerEnd: number) => Promise<void>;
   onAddEnd: (roundId: string, arrows: { score: number; isGold: boolean }[]) => Promise<void>;
   onComplete: (notes?: string) => Promise<void>;
+  onNotesChange?: (notes: string) => void;
   onAbandon: () => void;
   onBack: () => void;
+  pendingSyncCount?: number;
 }
 
 const SUGGESTED_DISTANCES = [18, 25, 30, 50, 60, 70, 90] as const;
@@ -32,8 +34,10 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
   onAddRound,
   onAddEnd,
   onComplete,
+  onNotesChange,
   onAbandon,
-  onBack
+  onBack,
+  pendingSyncCount = 0
 }) => {
   const { showToast, confirm } = useUI();
   const [showAddRound, setShowAddRound] = useState(false);
@@ -42,7 +46,11 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
   const [arrowsPerEnd, setArrowsPerEnd] = useState(DEFAULT_ARROWS_PER_END);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(session.notes ?? '');
+
+  useEffect(() => {
+    onNotesChange?.(notes);
+  }, [notes, onNotesChange]);
 
   const handleAddRound = useCallback(async () => {
     try {
@@ -173,6 +181,12 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
             className="input"
           />
         </div>
+
+        {pendingSyncCount > 0 && (
+          <div className="mb-5 rounded-2xl border border-amberGlow/30 bg-amberGlow/10 px-4 py-3 text-sm text-amberGlow">
+            Guardado local. {pendingSyncCount} cambio{pendingSyncCount === 1 ? '' : 's'} pendiente{pendingSyncCount === 1 ? '' : 's'} de sincronizar.
+          </div>
+        )}
 
         {/* Rounds */}
         <div className="space-y-3 mb-5">

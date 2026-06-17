@@ -64,6 +64,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     addRound,
     addEnd,
     completeSession: completeActiveSession,
+    updateSessionNotes,
+    pendingSyncCount,
     abandonSession
   } = useActiveArcherySession();
 
@@ -187,10 +189,12 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
         session={activeSession}
         onAddRound={handleAddRound}
         onAddEnd={handleAddEnd}
-        onComplete={handleCompleteSession}
-        onAbandon={handleAbandonSession}
-        onBack={handleCloseCompletedSession}
-      />
+          onComplete={handleCompleteSession}
+          onNotesChange={updateSessionNotes}
+          onAbandon={handleAbandonSession}
+          onBack={handleCloseCompletedSession}
+          pendingSyncCount={pendingSyncCount}
+        />
     );
   }
 

@@ -570,7 +570,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                             </div>
                           </div>
 
-                          <div className="mb-3 rounded-[0.95rem] border border-white/8 bg-white/[0.035] p-1.5">
+                          <div className="mb-3 rounded-[0.95rem] bg-white/[0.035] p-1.5">
                             <div className="mb-1.5 flex items-center justify-between gap-2 px-1">
                               <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">Modo de reps</span>
                               <span className="text-[11px] text-slate-500">
@@ -584,8 +584,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                                   if (isRepsBySetMode) toggleRepsBySetMode(exercise.id);
                                 }}
                                 className={`motion-interactive touch-target-sm rounded-[0.8rem] px-3 py-2 text-sm font-semibold transition-colors ${!isRepsBySetMode
-                                  ? 'border border-mint/45 bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.16)]'
-                                  : 'border border-white/8 bg-slateDeep/80 text-slate-300 hover:border-mint/35 hover:text-white'}`}
+                                  ? 'bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.14)]'
+                                  : 'bg-slateDeep/55 text-slate-300 hover:bg-white/[0.07] hover:text-white'}`}
                                 aria-pressed={!isRepsBySetMode}
                                 aria-label={`Usar repeticiones fijas en ${exercise.name}`}
                               >
@@ -597,8 +597,8 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                                   if (!isRepsBySetMode) toggleRepsBySetMode(exercise.id);
                                 }}
                                 className={`motion-interactive touch-target-sm rounded-[0.8rem] px-3 py-2 text-sm font-semibold transition-colors ${isRepsBySetMode
-                                  ? 'border border-mint/45 bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.16)]'
-                                  : 'border border-white/8 bg-slateDeep/80 text-slate-300 hover:border-mint/35 hover:text-white'}`}
+                                  ? 'bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.14)]'
+                                  : 'bg-slateDeep/55 text-slate-300 hover:bg-white/[0.07] hover:text-white'}`}
                                 aria-pressed={isRepsBySetMode}
                                 aria-label={`Usar repeticiones por serie en ${exercise.name}`}
                               >

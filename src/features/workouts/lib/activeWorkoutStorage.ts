@@ -1,4 +1,4 @@
-import type { ExerciseLog, WorkoutSet } from '../../../shared/types';
+import type { Exercise, ExerciseLog, WorkoutSet } from '../../../shared/types';
 
 const PROGRESS_KEY = 'activeWorkoutProgress';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
@@ -61,6 +61,41 @@ export const normalizeWorkoutSets = (sets: WorkoutSet[], expectedSets: number): 
   }
 
   return normalizedSets;
+};
+
+export const buildWorkoutCompletionLogs = (
+  exercises: Exercise[],
+  exerciseLogs: ExerciseLog[],
+  userId: string,
+  date: string
+): ExerciseLog[] => {
+  return exercises.map((exercise) => {
+    const log = exerciseLogs.find((entry) => entry.exerciseId === exercise.id) ?? {
+      exerciseId: exercise.id,
+      userId,
+      date,
+      sets: []
+    };
+
+    const normalizedSets = normalizeWorkoutSets(log.sets ?? [], exercise.sets).map((set, index) => {
+      const fallbackReps = exercise.repsBySet?.[index];
+      if (set.reps !== undefined || fallbackReps !== undefined) {
+        return {
+          ...set,
+          reps: set.reps ?? fallbackReps ?? exercise.reps
+        };
+      }
+
+      return set;
+    });
+
+    return {
+      ...log,
+      userId: log.userId || userId,
+      date: log.date || date,
+      sets: normalizedSets
+    };
+  });
 };
 
 export const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: number): boolean => {

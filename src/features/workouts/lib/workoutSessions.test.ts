@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { WorkoutSession } from '../../../shared/types';
-import { getLastWeightsForRoutineFromSessions } from './workoutSessions';
+import type { ExerciseLog, WorkoutSession } from '../../../shared/types';
+import { getCompletedWeightsByExerciseFromLogs, getLastWeightsForRoutineFromSessions } from './workoutSessions';
 
 describe('getLastWeightsForRoutineFromSessions', () => {
   it('falls back to the latest non-zero weights per exercise within the same routine', () => {
@@ -82,6 +82,37 @@ describe('getLastWeightsForRoutineFromSessions', () => {
     expect(getLastWeightsForRoutineFromSessions(sessions, 'routine-1')).toEqual({
       bench: [40, 42.5],
       row: [55, 55]
+    });
+  });
+});
+
+describe('getCompletedWeightsByExerciseFromLogs', () => {
+  it('returns completed non-zero weights ordered by set number', () => {
+    const logs: ExerciseLog[] = [
+      {
+        exerciseId: 'bench',
+        userId: 'user-1',
+        date: '2026-06-17',
+        sets: [
+          { setNumber: 2, weight: 55, reps: 7, completed: true },
+          { setNumber: 1, weight: 50, reps: 10, completed: true },
+          { setNumber: 3, weight: 60, reps: 5, completed: false }
+        ]
+      },
+      {
+        exerciseId: 'row',
+        userId: 'user-1',
+        date: '2026-06-17',
+        sets: [
+          { setNumber: 1, weight: 0, completed: true },
+          { setNumber: 2, weight: 45, completed: true }
+        ]
+      }
+    ];
+
+    expect(getCompletedWeightsByExerciseFromLogs(logs)).toEqual({
+      bench: [50, 55],
+      row: [45]
     });
   });
 });

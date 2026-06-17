@@ -32,3 +32,22 @@ export const getLastWeightsForRoutineFromSessions = (
 
   return lastWeights;
 };
+
+export const getCompletedWeightsByExerciseFromLogs = (
+  exerciseLogs: ExerciseLog[]
+): Record<string, number[]> => {
+  const lastWeights: Record<string, number[]> = {};
+
+  exerciseLogs.forEach((exerciseLog) => {
+    const weights = (exerciseLog.sets ?? [])
+      .filter((set) => set.completed && set.weight > 0)
+      .sort((left, right) => left.setNumber - right.setNumber)
+      .map((set) => set.weight);
+
+    if (weights.length > 0) {
+      lastWeights[exerciseLog.exerciseId] = weights;
+    }
+  });
+
+  return lastWeights;
+};

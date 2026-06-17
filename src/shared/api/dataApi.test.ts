@@ -350,6 +350,39 @@ describe('dataApi', () => {
         expect.objectContaining({ method: 'POST' })
       );
     });
+
+    it('serializes final exercise weights, reps and reps-by-set updates', async () => {
+      mockFetchJson.mockResolvedValueOnce({ ok: true });
+      const exercises = [
+        {
+          exerciseId: 'bench',
+          userId: 'user-1',
+          date: '2026-06-17',
+          sets: [
+            { setNumber: 1, weight: 50, reps: 10, completed: true },
+            { setNumber: 2, weight: 55, reps: 7, completed: true }
+          ]
+        }
+      ];
+      const completedAt = 1781690400000;
+      const repsBySetUpdates = { bench: [10, 7] };
+
+      await completeSession('s1', exercises, completedAt, 45, repsBySetUpdates);
+
+      expect(mockFetchJson).toHaveBeenCalledWith(
+        'https://api.test.com/v1/data/sessions/complete',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            sessionId: 's1',
+            exercises,
+            completedAt,
+            totalDuration: 45,
+            repsBySetUpdates
+          })
+        })
+      );
+    });
   });
 
   describe('upsertExerciseLog', () => {

@@ -13,6 +13,7 @@ import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { MUSCLE_GROUPS, getRecommendedMuscleGroup } from '../lib/muscleGroups';
+import { getCompletedWeightsByExerciseFromLogs } from '../../workouts/lib/workoutSessions';
 import { useUI } from '../../../app/providers/ui-context';
 import { formatDateInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
@@ -175,6 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   } | null>(null);
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
+  const [optimisticLastWeightsByRoutine, setOptimisticLastWeightsByRoutine] = useState<Record<string, Record<string, number[]>>>({});
   const hasTriggeredBackgroundPreload = useRef(false);
   const { showToast, confirm } = useUI();
 
@@ -482,8 +484,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
   const previousWeightsByExercise = useMemo(() => {
     if (!activeWorkout) return undefined;
-    return dashboardData?.lastWeightsByRoutine[activeWorkout.routine.id];
-  }, [activeWorkout, dashboardData]);
+    const serverWeights = dashboardData?.lastWeightsByRoutine[activeWorkout.routine.id];
+    const optimisticWeights = optimisticLastWeightsByRoutine[activeWorkout.routine.id];
+    if (!optimisticWeights) return serverWeights;
+    return {
+      ...(serverWeights ?? {}),
+      ...optimisticWeights
+    };
+  }, [activeWorkout, dashboardData, optimisticLastWeightsByRoutine]);
 
 
   const handleCompleteWorkout = useCallback(async (exerciseLogs: ExerciseLog[]) => {
@@ -542,6 +550,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           totalDuration,
           Object.keys(repsBySetUpdates).length > 0 ? repsBySetUpdates : undefined
         );
+
+        const completedWeightsByExercise = getCompletedWeightsByExerciseFromLogs(exerciseLogs);
+        if (Object.keys(completedWeightsByExercise).length > 0) {
+          setOptimisticLastWeightsByRoutine((previousWeights) => ({
+            ...previousWeights,
+            [activeWorkout.routine.id]: {
+              ...(previousWeights[activeWorkout.routine.id] ?? {}),
+              ...completedWeightsByExercise
+            }
+          }));
+        }
 
         setActiveWorkout(null);
         setShowActiveWorkout(false);

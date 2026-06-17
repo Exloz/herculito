@@ -8,6 +8,7 @@ import { useSportSessions } from '../hooks/useSportSessions';
 import { useActiveArcherySession } from '../hooks/useActiveArcherySession';
 import { ArcherySession } from '../components/archery/ArcherySession';
 import { SessionSummary } from '../components/archery/SessionSummary';
+import { PresetNumericInput } from '../components/archery/PresetNumericInput';
 import { HiitConfig as HiitConfigPanel } from '../components/hiit/HiitConfig';
 import { HiitActive } from '../components/hiit/HiitActive';
 import { HiitSessionSummary } from '../components/hiit/HiitSessionSummary';
@@ -25,6 +26,10 @@ const BOW_TYPE_OPTIONS: { value: ArcheryBowType; label: string }[] = [
   { value: 'barebow', label: 'Barebow' },
   { value: 'longbow', label: 'Longbow' }
 ];
+
+const SUGGESTED_ARROWS_AVAILABLE = [6, 12, 18, 24, 36] as const;
+const DEFAULT_ARROWS_AVAILABLE = 12;
+const MAX_ARROWS_AVAILABLE = 120;
 
 const formatMinutes = (mins: number | undefined): string => {
   if (!mins) return '--';
@@ -66,7 +71,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<'sessions' | 'stats'>('sessions');
   const [showSetup, setShowSetup] = useState(false);
   const [bowType, setBowType] = useState<ArcheryBowType>('recurve');
-  const [arrowsUsed, setArrowsUsed] = useState(12);
+  const [arrowsUsed, setArrowsUsed] = useState(DEFAULT_ARROWS_AVAILABLE);
   const [isStarting, setIsStarting] = useState(false);
   const [activeHiitSession, setActiveHiitSession] = useState<ActiveHiitSessionState | null>(null);
   const [showHiitConfig, setShowHiitConfig] = useState(false);
@@ -271,24 +276,14 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
                 </div>
 
                 <div>
-                  <label className="text-sm text-slate-400 block mb-2">
-                    Flechas disponibles: {arrowsUsed}
-                  </label>
-                  <input
-                    type="range"
-                    min="6"
-                    max="24"
-                    step="6"
+                  <PresetNumericInput
+                    label="Flechas disponibles"
                     value={arrowsUsed}
-                    onChange={(e) => setArrowsUsed(Number(e.target.value))}
-                    className="w-full"
+                    onChange={setArrowsUsed}
+                    presets={SUGGESTED_ARROWS_AVAILABLE}
+                    min={1}
+                    max={MAX_ARROWS_AVAILABLE}
                   />
-                  <div className="flex justify-between text-xs text-slate-500 mt-1">
-                    <span>6</span>
-                    <span>12</span>
-                    <span>18</span>
-                    <span>24</span>
-                  </div>
                 </div>
               </div>
 

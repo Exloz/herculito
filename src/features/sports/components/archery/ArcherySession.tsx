@@ -3,6 +3,7 @@ import { ArrowLeft, Plus, CheckCircle, MapPin } from 'lucide-react';
 import type { SportSession } from '../../../../shared/types';
 import { RoundCard } from './RoundCard';
 import { SessionSummary } from './SessionSummary';
+import { PresetNumericInput } from './PresetNumericInput';
 import { useUI } from '../../../../app/providers/ui-context';
 import { toUserMessage } from '../../../../shared/lib/errorMessages';
 
@@ -15,17 +16,16 @@ interface ArcherySessionProps {
   onBack: () => void;
 }
 
-const DISTANCE_OPTIONS = [
-  { distance: 18, targetSize: 40, label: '18m Indoor (40cm)' },
-  { distance: 25, targetSize: 60, label: '25m Indoor (60cm)' },
-  { distance: 30, targetSize: 80, label: '30m (80cm)' },
-  { distance: 50, targetSize: 80, label: '50m (80cm)' },
-  { distance: 60, targetSize: 122, label: '60m (122cm)' },
-  { distance: 70, targetSize: 122, label: '70m (122cm)' },
-  { distance: 90, targetSize: 122, label: '90m (122cm)' },
-];
+const SUGGESTED_DISTANCES = [18, 25, 30, 50, 60, 70, 90] as const;
+const SUGGESTED_TARGET_SIZES = [40, 60, 80, 122] as const;
+const SUGGESTED_ARROWS_PER_END = [3, 6] as const;
 
-const ARROWS_PER_END_OPTIONS = [3, 6];
+const DEFAULT_DISTANCE = 70;
+const DEFAULT_TARGET_SIZE = 122;
+const DEFAULT_ARROWS_PER_END = 6;
+const MAX_ARROWS_PER_END = 12;
+const MAX_DISTANCE = 200;
+const MAX_TARGET_SIZE = 200;
 
 export const ArcherySession: React.FC<ArcherySessionProps> = ({
   session,
@@ -37,21 +37,22 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
 }) => {
   const { showToast, confirm } = useUI();
   const [showAddRound, setShowAddRound] = useState(false);
-  const [selectedDistance, setSelectedDistance] = useState(DISTANCE_OPTIONS[4]); // 70m default
-  const [arrowsPerEnd, setArrowsPerEnd] = useState(6);
+  const [distance, setDistance] = useState(DEFAULT_DISTANCE);
+  const [targetSize, setTargetSize] = useState(DEFAULT_TARGET_SIZE);
+  const [arrowsPerEnd, setArrowsPerEnd] = useState(DEFAULT_ARROWS_PER_END);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [notes, setNotes] = useState('');
 
   const handleAddRound = useCallback(async () => {
     try {
-      await onAddRound(selectedDistance.distance, selectedDistance.targetSize, arrowsPerEnd);
+      await onAddRound(distance, targetSize, arrowsPerEnd);
       setShowAddRound(false);
       showToast('Ronda agregada', 'success');
     } catch (error) {
       showToast(toUserMessage(error, 'Error agregando ronda'), 'error');
     }
-  }, [onAddRound, selectedDistance, arrowsPerEnd, showToast]);
+  }, [onAddRound, distance, targetSize, arrowsPerEnd, showToast]);
 
   const handleAddEnd = useCallback(async (roundId: string, arrows: { score: number; isGold: boolean }[]) => {
     try {
@@ -203,42 +204,32 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
               Nueva ronda
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs text-slate-400 block mb-2">Distancia</label>
-                <select
-                  value={selectedDistance.distance}
-                  onChange={(e) => {
-                    const dist = DISTANCE_OPTIONS.find(d => d.distance === Number(e.target.value));
-                    if (dist) setSelectedDistance(dist);
-                  }}
-                  className="input"
-                >
-                  {DISTANCE_OPTIONS.map(opt => (
-                    <option key={opt.distance} value={opt.distance}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-slate-400 block mb-2">Flechas por tanda</label>
-                <div className="flex gap-2">
-                  {ARROWS_PER_END_OPTIONS.map(count => (
-                    <button
-                      key={count}
-                      type="button"
-                      onClick={() => setArrowsPerEnd(count)}
-                      className={`flex-1 py-2 rounded-xl font-medium transition-colors ${
-                        arrowsPerEnd === count
-                          ? 'bg-mint text-ink'
-                          : 'bg-slateDeep text-slate-300 hover:bg-slateDeep/80'
-                      }`}
-                    >
-                      {count} flechas
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <PresetNumericInput
+                label="Distancia (m)"
+                value={distance}
+                onChange={setDistance}
+                presets={SUGGESTED_DISTANCES}
+                min={1}
+                max={MAX_DISTANCE}
+                unit="m"
+              />
+              <PresetNumericInput
+                label="Tamaño del blanco (cm)"
+                value={targetSize}
+                onChange={setTargetSize}
+                presets={SUGGESTED_TARGET_SIZES}
+                min={1}
+                max={MAX_TARGET_SIZE}
+                unit="cm"
+              />
+              <PresetNumericInput
+                label="Flechas por tanda"
+                value={arrowsPerEnd}
+                onChange={setArrowsPerEnd}
+                presets={SUGGESTED_ARROWS_PER_END}
+                min={1}
+                max={MAX_ARROWS_PER_END}
+              />
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"

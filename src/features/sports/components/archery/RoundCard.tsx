@@ -118,7 +118,7 @@ export const RoundCard: React.FC<RoundCardProps> = ({
           )}
 
           {isActive && showEndInput && (
-            <div className="bg-slateDeep/30 rounded-xl p-4">
+            <div className="bg-slateDeep/30 rounded-xl">
               <div className="text-sm font-medium text-white mb-3">
                 Nueva tanda
               </div>

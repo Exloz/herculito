@@ -25,12 +25,12 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
 
   return (
     <div className="score-numpad">
-      {/* Row 1: 7, 8, 9 (Blue and Red rings) */}
+      {/* Row 1: 7, 8, 9 (Red and Gold rings) */}
       <button
         type="button"
         onClick={() => handleScore(7)}
         disabled={disabled}
-        className="score-blue touch-target"
+        className="score-red touch-target"
         aria-label="Siete puntos"
       >
         7
@@ -39,7 +39,7 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
         type="button"
         onClick={() => handleScore(8)}
         disabled={disabled}
-        className="score-blue touch-target"
+        className="score-red touch-target"
         aria-label="Ocho puntos"
       >
         8
@@ -48,7 +48,7 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
         type="button"
         onClick={() => handleScore(9)}
         disabled={disabled}
-        className="score-red touch-target"
+        className="gold touch-target"
         aria-label="Nueve puntos"
       >
         9
@@ -68,7 +68,7 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
         type="button"
         onClick={() => handleScore(5)}
         disabled={disabled}
-        className="score-black touch-target"
+        className="score-blue touch-target"
         aria-label="Cinco puntos"
       >
         5
@@ -83,7 +83,7 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
         6
       </button>
 
-      {/* Row 3: 1, 2, 3 (White ring) */}
+      {/* Row 3: 1, 2, 3 (White and Black rings) */}
       <button
         type="button"
         onClick={() => handleScore(1)}
@@ -106,7 +106,7 @@ export const ScoreNumpad: React.FC<ScoreNumpadProps> = ({
         type="button"
         onClick={() => handleScore(3)}
         disabled={disabled}
-        className="score-white touch-target"
+        className="score-black touch-target"
         aria-label="Tres puntos"
       >
         3

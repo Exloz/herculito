@@ -31,15 +31,17 @@ const X_RADIUS = 9;
 const RINGS: RingInfo[] = [
   { score: 1, outerRadius: 200, fill: 'url(#target-white)', hoverFill: 'url(#target-white-hover)', label: '1 punto' },
   { score: 2, outerRadius: 180, fill: 'url(#target-white)', hoverFill: 'url(#target-white-hover)', label: '2 puntos' },
-  { score: 3, outerRadius: 160, fill: 'url(#target-white)', hoverFill: 'url(#target-white-hover)', label: '3 puntos' },
+  { score: 3, outerRadius: 160, fill: 'url(#target-black)', hoverFill: 'url(#target-black-hover)', label: '3 puntos' },
   { score: 4, outerRadius: 140, fill: 'url(#target-black)', hoverFill: 'url(#target-black-hover)', label: '4 puntos' },
-  { score: 5, outerRadius: 120, fill: 'url(#target-black)', hoverFill: 'url(#target-black-hover)', label: '5 puntos' },
-  { score: 6, outerRadius: 100, fill: 'url(#target-black)', hoverFill: 'url(#target-black-hover)', label: '6 puntos' },
-  { score: 7, outerRadius: 80, fill: 'url(#target-blue)', hoverFill: 'url(#target-blue-hover)', label: '7 puntos' },
-  { score: 8, outerRadius: 60, fill: 'url(#target-blue)', hoverFill: 'url(#target-blue-hover)', label: '8 puntos' },
-  { score: 9, outerRadius: 40, fill: 'url(#target-red)', hoverFill: 'url(#target-red-hover)', label: '9 puntos' },
+  { score: 5, outerRadius: 120, fill: 'url(#target-blue)', hoverFill: 'url(#target-blue-hover)', label: '5 puntos' },
+  { score: 6, outerRadius: 100, fill: 'url(#target-blue)', hoverFill: 'url(#target-blue-hover)', label: '6 puntos' },
+  { score: 7, outerRadius: 80, fill: 'url(#target-red)', hoverFill: 'url(#target-red-hover)', label: '7 puntos' },
+  { score: 8, outerRadius: 60, fill: 'url(#target-red)', hoverFill: 'url(#target-red-hover)', label: '8 puntos' },
+  { score: 9, outerRadius: 40, fill: 'url(#target-gold)', hoverFill: 'url(#target-gold-hover)', label: '9 puntos' },
   { score: 10, outerRadius: 20, fill: 'url(#target-gold)', hoverFill: 'url(#target-gold-hover)', label: '10 puntos' },
 ];
+
+const RING_GUIDES = [20, 40, 60, 80, 100, 120, 140, 160, 180];
 
 const getZoneFromDistance = (distance: number): ZoneInfo | null => {
   if (distance > TARGET_RADIUS) {
@@ -228,46 +230,54 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
         onClick={handleTargetClick}
       >
           <defs>
-            <radialGradient id="target-gold" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#fde68a" />
-              <stop offset="55%" stopColor="#fbbf24" />
-              <stop offset="100%" stopColor="#d97706" />
+            <radialGradient id="target-gold" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#fff6a8" />
+              <stop offset="48%" stopColor="#fcd116" />
+              <stop offset="100%" stopColor="#e7a900" />
             </radialGradient>
-            <radialGradient id="target-gold-hover" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#fef3c7" />
-              <stop offset="55%" stopColor="#fbbf24" />
-              <stop offset="100%" stopColor="#f59e0b" />
+            <radialGradient id="target-gold-hover" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#fff9bf" />
+              <stop offset="48%" stopColor="#ffd84d" />
+              <stop offset="100%" stopColor="#f4b400" />
             </radialGradient>
-            <radialGradient id="target-red" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#fca5a5" />
-              <stop offset="100%" stopColor="#dc2626" />
+            <radialGradient id="target-red" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#ff746f" />
+              <stop offset="58%" stopColor="#e31b23" />
+              <stop offset="100%" stopColor="#b9151c" />
             </radialGradient>
-            <radialGradient id="target-red-hover" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#fecaca" />
-              <stop offset="100%" stopColor="#ef4444" />
+            <radialGradient id="target-red-hover" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#ff9a96" />
+              <stop offset="58%" stopColor="#f03a3f" />
+              <stop offset="100%" stopColor="#c91920" />
             </radialGradient>
-            <radialGradient id="target-blue" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#93c5fd" />
-              <stop offset="100%" stopColor="#2563eb" />
+            <radialGradient id="target-blue" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#6fd0ff" />
+              <stop offset="55%" stopColor="#0072ce" />
+              <stop offset="100%" stopColor="#004f9e" />
             </radialGradient>
-            <radialGradient id="target-blue-hover" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#bfdbfe" />
-              <stop offset="100%" stopColor="#3b82f6" />
+            <radialGradient id="target-blue-hover" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#9ee1ff" />
+              <stop offset="55%" stopColor="#1491e6" />
+              <stop offset="100%" stopColor="#0063bd" />
             </radialGradient>
-            <radialGradient id="target-black" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#6b7280" />
+            <radialGradient id="target-black" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#4b5563" />
+              <stop offset="60%" stopColor="#202632" />
+              <stop offset="100%" stopColor="#0b101a" />
+            </radialGradient>
+            <radialGradient id="target-black-hover" cx="34%" cy="34%" r="78%">
+              <stop offset="0%" stopColor="#64748b" />
+              <stop offset="60%" stopColor="#303847" />
               <stop offset="100%" stopColor="#111827" />
             </radialGradient>
-            <radialGradient id="target-black-hover" cx="35%" cy="35%" r="75%">
-              <stop offset="0%" stopColor="#9ca3af" />
-              <stop offset="100%" stopColor="#374151" />
-            </radialGradient>
-            <radialGradient id="target-white" cx="35%" cy="35%" r="75%">
+            <radialGradient id="target-white" cx="34%" cy="34%" r="78%">
               <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="100%" stopColor="#d1d5db" />
+              <stop offset="58%" stopColor="#f3f4f6" />
+              <stop offset="100%" stopColor="#d8dde5" />
             </radialGradient>
-            <radialGradient id="target-white-hover" cx="35%" cy="35%" r="75%">
+            <radialGradient id="target-white-hover" cx="34%" cy="34%" r="78%">
               <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="58%" stopColor="#fafafa" />
               <stop offset="100%" stopColor="#e5e7eb" />
             </radialGradient>
             <filter id="target-shadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -320,16 +330,25 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
               strokeWidth="2"
             />
 
-            {[20, 40, 60, 80, 100, 120, 140, 160, 180].map((radius) => (
-              <circle
-                key={radius}
-                cx="200"
-                cy="200"
-                r={radius}
-                fill="none"
-                stroke="rgba(255,255,255,0.16)"
-                strokeWidth="1"
-              />
+            {RING_GUIDES.map((radius) => (
+              <g key={radius}>
+                <circle
+                  cx="200"
+                  cy="200"
+                  r={radius}
+                  fill="none"
+                  stroke="rgba(2,6,23,0.5)"
+                  strokeWidth="2.2"
+                />
+                <circle
+                  cx="200"
+                  cy="200"
+                  r={radius}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.38)"
+                  strokeWidth="0.9"
+                />
+              </g>
             ))}
           </g>
 

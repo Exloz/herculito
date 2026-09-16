@@ -18,6 +18,7 @@ const STORAGE_KEY_PREFIX = `activity-sync:v${STORAGE_VERSION}:`;
 const LEGACY_ACTIVE_WORKOUT_KEY = 'activeWorkout';
 const LEGACY_ACTIVE_ARCHERY_KEY = 'activeArcherySession';
 const LEGACY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const ACTIVE_ACTIVITY_EXISTS_CODE = 'active_activity_exists';
 
 export interface ActivitySyncStorage {
   readonly length?: number;
@@ -223,16 +224,6 @@ export interface ActivitySync {
   syncPending(): Promise<void>;
 }
 
-export class ActiveActivityConflictError extends Error {
-  readonly active: ActiveActivitySnapshot;
-
-  constructor(active: ActiveActivitySnapshot) {
-    super('Ya hay una actividad en curso. Complétala o cancélala antes de iniciar otra.');
-    this.name = 'ActiveActivityConflictError';
-    this.active = active;
-  }
-}
-
 const MAX_AUTO_RETRIES = 5;
 const BASE_RETRY_DELAY_MS = 5_000;
 const MAX_RETRY_DELAY_MS = 5 * 60_000;
@@ -381,7 +372,10 @@ const parseStoredState = (raw: string | null, userId: string): PersistedUserStat
       };
     }
     const legacyFailures = Array.isArray(parsed.failedCommands)
-      ? parsed.failedCommands.filter((failure) => failure.command?.userId === userId)
+      ? parsed.failedCommands.filter((failure) => (
+          failure.command?.userId === userId
+          && failure.code !== ACTIVE_ACTIVITY_EXISTS_CODE
+        ))
       : [];
     const parsedFailureStates = isRecord(parsed.failureStates)
       ? Object.fromEntries(Object.entries(parsed.failureStates).filter(([, value]) => (
@@ -400,7 +394,9 @@ const parseStoredState = (raw: string | null, userId: string): PersistedUserStat
       }
     });
     const failureStates = Object.fromEntries(Object.entries(parsedFailureStates).filter(([, value]) => (
-      value.failure === null || value.failure?.command?.userId === userId
+      value.failure === null
+      || (value.failure?.command?.userId === userId
+        && value.failure.code !== ACTIVE_ACTIVITY_EXISTS_CODE)
     )));
     return {
       ...parsed,
@@ -533,15 +529,13 @@ const getErrorMessage = (error: unknown): string => (
   error instanceof Error ? error.message : 'Error de sincronización desconocido'
 );
 
-const ACTIVE_ACTIVITY_EXISTS_MESSAGE = 'Ya existe otra actividad activa en el servidor. Resuélvela y vuelve a intentar.';
-
 const isActiveActivityStartConflict = (
   command: ActivitySyncCommand,
   error: unknown
 ): boolean => (
   (command.kind === 'workout.start' || command.kind === 'sport.start')
   && isApiError(error)
-  && error.code === 'active_activity_exists'
+  && error.code === ACTIVE_ACTIVITY_EXISTS_CODE
 );
 
 const isRetryableSyncError = (error: unknown): boolean => {
@@ -831,7 +825,29 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
 
   const replaceActive = (next: ActiveActivitySnapshot, orderAtMs?: number): void => {
     if (state.active && state.active.id !== next.id) {
-      throw new ActiveActivityConflictError(state.active);
+      const previousActivityId = state.active.id;
+      const removedCommands = state.commands.filter((command) => (
+        command.activityId === previousActivityId
+      ));
+      const removedCommandIds = [
+        ...new Set([
+          ...removedCommands.map((command) => command.commandId),
+          ...state.failedCommands
+            .filter((failure) => failure.command.activityId === previousActivityId)
+            .map((failure) => failure.command.commandId)
+        ])
+      ];
+      state.commands = state.commands.filter((command) => (
+        command.activityId !== previousActivityId
+      ));
+      state.removedCommandIds = [
+        ...new Set([...state.removedCommandIds, ...removedCommandIds])
+      ];
+      removedCommandIds.forEach((commandId) => setCommandFailure(commandId, null));
+      if (state.retry && removedCommandIds.includes(state.retry.commandId)) {
+        state.retry = null;
+      }
+      removeActiveCandidate(previousActivityId);
     }
     setActiveCandidate(next, orderAtMs);
   };
@@ -845,7 +861,6 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
 
   const startWorkout = (workoutRoutine: Routine): WorkoutActivitySnapshot => {
     reload();
-    if (state.active) throw new ActiveActivityConflictError(state.active);
     const id = createId();
     const startedAtMs = now();
     const session: WorkoutSession = {
@@ -879,7 +894,6 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
     config: { archeryConfig?: { bowType: ArcheryBowType; arrowsUsed: number }; hiitConfig?: HiitConfig; location?: string; notes?: string }
   ): ArcheryActivitySnapshot | HiitActivitySnapshot => {
     reload();
-    if (state.active) throw new ActiveActivityConflictError(state.active);
     const id = createId();
     const startedAtMs = now();
     const session: SportSession = {
@@ -1019,9 +1033,19 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
             continue;
           }
           const activeActivityConflict = isActiveActivityStartConflict(command, error);
-          const message = activeActivityConflict
-            ? ACTIVE_ACTIVITY_EXISTS_MESSAGE
-            : getErrorMessage(error);
+          if (activeActivityConflict) {
+            setCommandFailure(command.commandId, null);
+            removeActiveCandidate(command.activityId);
+            const rejectedCommandIds = state.commands
+              .filter((candidate) => candidate.activityId === command.activityId)
+              .map((candidate) => candidate.commandId);
+            state.commands = state.commands.filter((candidate) => candidate.activityId !== command.activityId);
+            state.removedCommandIds = [...new Set([...state.removedCommandIds, ...rejectedCommandIds])];
+            state.retry = null;
+            persist();
+            continue;
+          }
+          const message = getErrorMessage(error);
           const previousAttempts = state.retry?.commandId === command.commandId
             ? state.retry.attemptCount
             : 0;
@@ -1034,17 +1058,6 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
               code: isApiError(error) ? error.code : undefined,
               details: isApiError(error) ? error.details : undefined
             });
-            if (activeActivityConflict) {
-              removeActiveCandidate(command.activityId);
-              const rejectedCommandIds = state.commands
-                .filter((candidate) => candidate.activityId === command.activityId)
-                .map((candidate) => candidate.commandId);
-              state.commands = state.commands.filter((candidate) => candidate.activityId !== command.activityId);
-              state.removedCommandIds = [...new Set([...state.removedCommandIds, ...rejectedCommandIds])];
-              state.retry = null;
-              persist();
-              continue;
-            }
             state.retry = null;
             persist();
             break;

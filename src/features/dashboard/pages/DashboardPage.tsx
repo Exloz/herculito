@@ -316,7 +316,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     } catch (error) {
       showToast(toUserMessage(
         error,
-        'Ya hay una actividad en curso. Complétala o cancélala antes de iniciar otra.'
+        'No se pudo iniciar la rutina. Inténtalo de nuevo.'
       ), 'error');
     }
   }, [activitySync, dashboardRoutines, showToast]);

@@ -18,6 +18,7 @@ _Avoid_: Workout
 
 **Active Activity**:
 The Workout Session or Sport Session currently in progress for a User, including durable local progress that may not yet be synchronized.
+Starting another activity replaces and abandons the previous one instead of blocking the User.
 _Avoid_: Draft, temporary session
 
 **Routine**:

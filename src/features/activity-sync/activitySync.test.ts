@@ -9,7 +9,6 @@ import type {
 import { ApiError } from '../../shared/api/apiClient';
 import { WireDecodeError } from '../../shared/api/wire';
 import {
-  ActiveActivityConflictError,
   createActivitySync,
   createMemoryActivitySyncStorage,
   type ActivitySyncCommand,
@@ -231,23 +230,24 @@ describe('activity synchronization', () => {
     expect(sync.getProjection().active).toMatchObject({ kind: 'hiit', id: 'hiit-new' });
   });
 
-  it('rejects starting another activity without replacing local progress', () => {
+  it('abandons the current local activity when another one starts', () => {
     const storage = createMemoryActivitySyncStorage();
     const { remote } = createRemote();
     const sync = createActivitySync({
-      userId: 'user-1', storage, remote, createId: createIds('workout-1', 'start'), now: () => 10
+      userId: 'user-1', storage, remote,
+      createId: createIds('workout-1', 'start', 'progress', 'hiit-1', 'start-hiit'),
+      now: () => 10
     });
     sync.startWorkout(routine);
     sync.updateWorkoutProgress('workout-1', logs);
 
-    expect(() => sync.startHiit(hiitConfig)).toThrow(ActiveActivityConflictError);
+    sync.startHiit(hiitConfig);
     expect(sync.getProjection().active).toMatchObject({
-      id: 'workout-1',
-      session: { exercises: logs }
+      kind: 'hiit',
+      id: 'hiit-1'
     });
     expect(sync.getPendingCommands().map((command) => command.kind)).toEqual([
-      'workout.start',
-      'workout.progress'
+      'sport.start'
     ]);
   });
 
@@ -509,7 +509,7 @@ describe('activity synchronization', () => {
     expect(first.getProjection()).toMatchObject({
       active: { id: 'workout-a' },
       pendingSyncCount: 0,
-      failedSyncCount: 1
+      failedSyncCount: 0
     });
     expect(calls.map((command) => command.activityId)).toEqual(['workout-a', 'hiit-b']);
 
@@ -633,7 +633,7 @@ describe('activity synchronization', () => {
     ]);
   });
 
-  it('tombstones an optimistic activity and keeps its rejected start as a dismissible notice', async () => {
+  it('silently clears obsolete active-activity conflict responses', async () => {
     const storage = createMemoryActivitySyncStorage();
     const conflicts = true;
     const calls: ActivitySyncCommand[] = [];
@@ -661,28 +661,23 @@ describe('activity synchronization', () => {
     expect(sync.getProjection()).toMatchObject({
       active: null,
       pendingSyncCount: 0,
-      failedSyncCount: 1,
-      syncFailureAction: 'dismiss',
-      syncError: 'Ya existe otra actividad activa en el servidor. Resuélvela y vuelve a intentar.'
+      failedSyncCount: 0,
+      syncFailureAction: null,
+      syncError: null
     });
     expect(sync.getPendingCommands()).toEqual([]);
     await sync.syncPending();
     expect(calls).toHaveLength(1);
-
-    sync.retryFailed();
-    await sync.syncPending();
-    expect(calls.map((command) => command.kind)).toEqual(['sport.start']);
 
     const reloaded = createActivitySync({
       userId: 'user-1', storage, remote,
       writerId: 'reloaded-tab', createId: createIds('unused'), now: () => 20
     });
     expect(reloaded.getProjection()).toMatchObject({
-      failedSyncCount: 1,
-      syncFailureAction: 'dismiss',
-      syncError: 'Ya existe otra actividad activa en el servidor. Resuélvela y vuelve a intentar.'
+      failedSyncCount: 0,
+      syncFailureAction: null,
+      syncError: null
     });
-    reloaded.dismissFailed();
     expect(reloaded.getProjection()).toMatchObject({ active: null, pendingSyncCount: 0, failedSyncCount: 0 });
   });
 
@@ -846,8 +841,6 @@ describe('activity synchronization', () => {
     expect(reload.getHiitTimerState(hiit.id)?.state.secondsRemaining).toBe(17);
     expect(reload.getHiitTimerState('another-session')).toBeNull();
 
-    expect(() => reload.startWorkout(routine)).toThrow(ActiveActivityConflictError);
-    reload.abandon(hiit.id);
     reload.startWorkout(routine);
     expect(reload.getHiitTimerState(hiit.id)).toBeNull();
   });

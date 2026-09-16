@@ -15,6 +15,7 @@ import { HiitSessionSummary } from '../components/hiit/HiitSessionSummary';
 import { SportSessionCard } from '../components/SportSessionCard';
 import { useUI } from '../../../app/providers/ui-context';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
+import { useActivitySync } from '../../activity-sync/useActivitySync';
 
 interface SportsProps {
   user: User;
@@ -39,20 +40,14 @@ const formatMinutes = (mins: number | undefined): string => {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 };
 
-type ActiveHiitSessionState = {
-  config: HiitConfig;
-  sessionId: string;
-};
-
 const Sports: React.FC<SportsProps> = ({ user }) => {
   const { showToast, confirm } = useUI();
+  const { activitySync, projection } = useActivitySync(user.id);
   const {
     sessions,
     stats,
     loading,
     error,
-    startSession,
-    completeSession,
     deleteSession,
     refresh
   } = useSportSessions(user);
@@ -67,7 +62,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     updateSessionNotes,
     pendingSyncCount,
     abandonSession
-  } = useActiveArcherySession();
+  } = useActiveArcherySession(user.id);
 
   const showSkeleton = useDelayedLoading(loading, 180);
   const [activeTab, setActiveTab] = useState<'sessions' | 'stats'>('sessions');
@@ -75,17 +70,14 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const [bowType, setBowType] = useState<ArcheryBowType>('recurve');
   const [arrowsUsed, setArrowsUsed] = useState(DEFAULT_ARROWS_AVAILABLE);
   const [isStarting, setIsStarting] = useState(false);
-  const [activeHiitSession, setActiveHiitSession] = useState<ActiveHiitSessionState | null>(null);
+  const activeHiitSession = projection.active?.kind === 'hiit' ? projection.active : null;
   const [showHiitConfig, setShowHiitConfig] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SportSession | null>(null);
 
-  const handleStartSession = useCallback(async () => {
+  const handleStartSession = useCallback(() => {
     setIsStarting(true);
     try {
-      const session = await startSession('archery', {
-        archeryConfig: { bowType, arrowsUsed }
-      });
-      startActiveSession(session, { bowType, arrowsUsed });
+      startActiveSession({ bowType, arrowsUsed });
       setShowSetup(false);
       showToast('Sesión iniciada', 'success');
     } catch (err) {
@@ -93,18 +85,13 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     } finally {
       setIsStarting(false);
     }
-  }, [startSession, startActiveSession, bowType, arrowsUsed, showToast]);
+  }, [startActiveSession, bowType, arrowsUsed, showToast]);
 
-  const handleStartHiit = useCallback(async (config: HiitConfig) => {
+  const handleStartHiit = useCallback((config: HiitConfig): Promise<void> => {
     setIsStarting(true);
     try {
-      const session = await startSession('hiit', {
-        hiitConfig: config
-      });
-      setActiveHiitSession({
-        config,
-        sessionId: session.id
-      });
+      activitySync.startHiit(config);
+      void activitySync.syncPending();
       setShowHiitConfig(false);
       showToast('Sesión HIIT iniciada', 'success');
     } catch (err) {
@@ -112,24 +99,26 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     } finally {
       setIsStarting(false);
     }
-  }, [startSession, showToast]);
+    return Promise.resolve();
+  }, [activitySync, showToast]);
 
   const handleCompleteHiitSession = useCallback(async () => {
     if (!activeHiitSession) return;
 
     try {
-      await completeSession(activeHiitSession.sessionId);
-      setActiveHiitSession(null);
-      refresh();
+      activitySync.completeHiit(activeHiitSession.id);
+      void activitySync.syncPending();
       showToast('Sesión HIIT completada', 'success');
     } catch (err) {
       showToast(toUserMessage(err, 'Error completando sesión HIIT'), 'error');
     }
-  }, [activeHiitSession, completeSession, refresh, showToast]);
+  }, [activeHiitSession, activitySync, showToast]);
 
   const handleAbandonHiitSession = useCallback(() => {
-    setActiveHiitSession(null);
-  }, []);
+    if (!activeHiitSession) return;
+    activitySync.abandon(activeHiitSession.id);
+    void activitySync.syncPending();
+  }, [activeHiitSession, activitySync]);
 
   const handleAddRound = useCallback(async (
     distance: number,
@@ -151,13 +140,11 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const handleCompleteSession = useCallback(async (notes?: string) => {
     if (!activeSession) return;
     await completeActiveSession(notes);
-    refresh();
-  }, [activeSession, completeActiveSession, refresh]);
+  }, [activeSession, completeActiveSession]);
 
   const handleCloseCompletedSession = useCallback(() => {
     abandonSession();
-    refresh();
-  }, [abandonSession, refresh]);
+  }, [abandonSession]);
 
   const handleAbandonSession = useCallback(() => {
     abandonSession();
@@ -203,6 +190,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     return (
       <HiitActive
         config={activeHiitSession.config}
+        userId={user.id}
+        sessionId={activeHiitSession.id}
         onAbandon={handleAbandonHiitSession}
         onComplete={() => {
           void handleCompleteHiitSession();

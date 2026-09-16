@@ -1,5 +1,4 @@
-import { fetchJson, getIdToken } from '../../../shared/api/apiClient';
-import { getPushApiOrigin } from '../../workouts/api/pushApi';
+import { fetchApiJson } from '../../../shared/api/transport';
 
 export type MusclewikiSuggestion = {
   slug: string;
@@ -22,16 +21,10 @@ export const fetchMusclewikiSuggestions = async (
   query: string,
   limit = 5
 ): Promise<MusclewikiSuggestion[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ suggestions: MusclewikiSuggestion[] }>(
-    `${origin}/v1/musclewiki/suggest`,
+  const data = await fetchApiJson<{ suggestions: MusclewikiSuggestion[] }>(
+    '/v1/musclewiki/suggest',
     {
       method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${token}`
-      },
       body: JSON.stringify({ query, limit })
     }
   );
@@ -39,14 +32,8 @@ export const fetchMusclewikiSuggestions = async (
 };
 
 export const fetchMusclewikiVideos = async (slug: string): Promise<MusclewikiVideosResponse> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  return fetchJson<MusclewikiVideosResponse>(`${origin}/v1/musclewiki/videos`, {
+  return fetchApiJson<MusclewikiVideosResponse>('/v1/musclewiki/videos', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ slug })
   });
 };

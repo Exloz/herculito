@@ -1,13 +1,7 @@
 import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, Trophy } from 'lucide-react';
-import { User, MuscleGroup, WorkoutSession, Routine, ExerciseLog } from '../../../shared/types';
-import {
-  completeSession as apiCompleteSession,
-  incrementRoutineUsage as apiIncrementRoutineUsage,
-  startSession as apiStartSession,
-  updateRoutine as apiUpdateRoutine,
-  updateSessionProgress as apiUpdateSessionProgress
-} from '../../../shared/api/dataApi';
+import { User, MuscleGroup, ExerciseLog } from '../../../shared/types';
+import { updateRoutine as apiUpdateRoutine } from '../../../shared/api/dataApi';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
@@ -20,6 +14,8 @@ import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { formatDateValue } from '../../../shared/lib/intl';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { version as appVersion } from '../../../../package.json';
+import { useActivitySync } from '../../activity-sync/useActivitySync';
+import { cancelWorkoutTimer } from '../../workouts/hooks/useTimer';
 
 interface DashboardProps {
   user: User;
@@ -28,9 +24,7 @@ interface DashboardProps {
   onNavigateToProfile?: () => void;
 }
 
-const ACTIVE_WORKOUT_KEY = 'activeWorkout';
 const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
-const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours in ms
 
 const DeferredClerkUserButton = lazy(() => import('../../auth/components/ClerkUserButton'));
 const DeferredWorkoutCalendar = lazy(() => import('../components/WorkoutCalendar').then((module) => ({ default: module.WorkoutCalendar })));
@@ -72,20 +66,6 @@ const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: number)
   return true;
 };
 
-const toDate = (value: unknown): Date | undefined => {
-  if (!value) return undefined;
-  if (value instanceof Date) return value;
-  if (typeof value === 'number') {
-    const ms = value < 1e12 ? value * 1000 : value;
-    return new Date(ms);
-  }
-  if (typeof value === 'string') {
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return new Date(parsed);
-  }
-  return undefined;
-};
-
 const getUserInitials = (name: string): string => {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return 'H';
@@ -119,61 +99,10 @@ const HOME_TABS: Array<{
     { id: 'calendar', label: 'Calendario', icon: CalendarRange, tone: 'text-mint' }
   ];
 
-const saveActiveWorkoutToStorage = (activeWorkout: { routine: Routine; session: WorkoutSession } | null) => {
-  if (activeWorkout) {
-    const data = {
-      ...activeWorkout,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem(ACTIVE_WORKOUT_KEY, JSON.stringify(data));
-  } else {
-    localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-  }
-
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new Event('active-workout-changed'));
-  }
-};
-
-const loadActiveWorkoutFromStorage = (): { routine: Routine; session: WorkoutSession } | null => {
-  const stored = localStorage.getItem(ACTIVE_WORKOUT_KEY);
-  if (!stored) return null;
-
-  try {
-    const data = JSON.parse(stored);
-    const now = Date.now();
-    if (now - data.timestamp > EXPIRATION_TIME) {
-      localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-      return null;
-    }
-
-    if (!data?.session?.id || !data?.routine) {
-      localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-      return null;
-    }
-
-    const routine = data.routine as Routine;
-    const session = data.session as WorkoutSession;
-
-    routine.createdAt = toDate((routine as unknown as { createdAt?: unknown }).createdAt) ?? new Date(0);
-    routine.updatedAt = toDate((routine as unknown as { updatedAt?: unknown }).updatedAt) ?? new Date(0);
-
-    session.startedAt = toDate((session as unknown as { startedAt?: unknown }).startedAt) ?? new Date(0);
-    session.completedAt = toDate((session as unknown as { completedAt?: unknown }).completedAt);
-
-    return { routine, session };
-  } catch {
-    localStorage.removeItem(ACTIVE_WORKOUT_KEY);
-    return null;
-  }
-};
-
 export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload, onNavigateToProfile }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [activeWorkout, setActiveWorkout] = useState<{
-    routine: Routine;
-    session: WorkoutSession;
-  } | null>(null);
+  const { activitySync, projection } = useActivitySync(user.id);
+  const activeWorkout = projection.active?.kind === 'workout' ? projection.active : null;
   const [showActiveWorkout, setShowActiveWorkout] = useState(false);
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
   const [optimisticLastWeightsByRoutine, setOptimisticLastWeightsByRoutine] = useState<Record<string, Record<string, number[]>>>({});
@@ -181,37 +110,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const { showToast, confirm } = useUI();
 
 
-  // Restore active workout from localStorage on mount
   useEffect(() => {
-    const checkAndResume = () => {
-      const stored = loadActiveWorkoutFromStorage();
-      if (stored) {
-        setActiveWorkout(stored);
-
-        const forceOpen = localStorage.getItem('activeWorkoutForceOpen');
-        if (forceOpen === 'true') {
-          setShowActiveWorkout(true);
-          localStorage.removeItem('activeWorkoutForceOpen');
-        } else {
-          setShowActiveWorkout(false);
-        }
-      }
-    };
-
-    checkAndResume();
-
     const handleResumeEvent = () => {
-      const stored = loadActiveWorkoutFromStorage();
-      if (stored) {
-        setActiveWorkout(stored);
+      if (activitySync.getProjection().active?.kind === 'workout') {
         setShowActiveWorkout(true);
       }
       localStorage.removeItem('activeWorkoutForceOpen');
     };
 
+    if (activeWorkout && localStorage.getItem('activeWorkoutForceOpen') === 'true') {
+      setShowActiveWorkout(true);
+      localStorage.removeItem('activeWorkoutForceOpen');
+    }
+
     window.addEventListener('resume-active-workout', handleResumeEvent);
     return () => window.removeEventListener('resume-active-workout', handleResumeEvent);
-  }, []);
+  }, [activeWorkout, activitySync]);
 
   useEffect(() => {
     if (!isIOSDevice()) return;
@@ -389,35 +303,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     };
   }, [homeTabBottomSpacerPx]);
 
-  const handleStartWorkout = useCallback(async (routineId: string) => {
-    try {
-      const routine = dashboardRoutines.find((entry) => entry.id === routineId);
-
-      if (routine) {
-        const sessionResponse = await apiStartSession({
-          id: `${routine.id}_${user.id}_${Date.now()}`,
-          routineId: routine.id,
-          routineName: routine.name,
-          primaryMuscleGroup: routine.primaryMuscleGroup,
-          startedAt: Date.now()
-        });
-        const session: WorkoutSession = {
-          ...sessionResponse,
-          startedAt: toDate(sessionResponse.startedAt) ?? new Date(),
-          completedAt: toDate(sessionResponse.completedAt),
-          exercises: sessionResponse.exercises
-        };
-        const newActiveWorkout = { routine, session };
-        setActiveWorkout(newActiveWorkout);
-        setShowActiveWorkout(true);
-        saveActiveWorkoutToStorage(newActiveWorkout);
-      } else {
-        showToast('Rutina no encontrada', 'error');
-      }
-    } catch (error) {
-      showToast(toUserMessage(error, 'Error al iniciar el entrenamiento. Inténtalo de nuevo.'), 'error');
+  const handleStartWorkout = useCallback((routineId: string) => {
+    const routine = dashboardRoutines.find((entry) => entry.id === routineId);
+    if (!routine) {
+      showToast('Rutina no encontrada', 'error');
+      return;
     }
-  }, [dashboardRoutines, showToast, user.id]);
+    try {
+      activitySync.startWorkout(routine);
+      setShowActiveWorkout(true);
+      void activitySync.syncPending();
+    } catch (error) {
+      showToast(toUserMessage(
+        error,
+        'Ya hay una actividad en curso. Complétala o cancélala antes de iniciar otra.'
+      ), 'error');
+    }
+  }, [activitySync, dashboardRoutines, showToast]);
 
   const handleRoutineMuscleGroupChange = useCallback(async (routineId: string, newMuscleGroup: MuscleGroup) => {
     try {
@@ -434,10 +336,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
-    if (activeWorkout) {
-      saveActiveWorkoutToStorage(activeWorkout);
-    }
-  }, [activeWorkout]);
+  }, []);
 
   const handleDismissIosGuide = useCallback(() => {
     setShowIosNotificationGuide(false);
@@ -453,34 +352,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       cancelText: 'Volver',
       isDanger: true,
       onConfirm: () => {
-        setActiveWorkout(null);
+        cancelWorkoutTimer(user.id);
+        activitySync.abandon(activeWorkout.id);
         setShowActiveWorkout(false);
-        saveActiveWorkoutToStorage(null);
+        void activitySync.syncPending();
         showToast('Entrenamiento activo cancelado', 'info');
       }
     });
-  }, [activeWorkout, confirm, showToast]);
-
-  const handleUpdateProgress = useCallback(async (sessionId: string, exerciseLogs: ExerciseLog[]) => {
-    await apiUpdateSessionProgress(sessionId, exerciseLogs);
-
-    setActiveWorkout((previousWorkout) => {
-      if (!previousWorkout || previousWorkout.session.id !== sessionId) {
-        return previousWorkout;
-      }
-
-      const nextWorkout = {
-        ...previousWorkout,
-        session: {
-          ...previousWorkout.session,
-          exercises: exerciseLogs
-        }
-      };
-
-      saveActiveWorkoutToStorage(nextWorkout);
-      return nextWorkout;
-    });
-  }, []);
+  }, [activeWorkout, activitySync, confirm, showToast, user.id]);
 
   const previousWeightsByExercise = useMemo(() => {
     if (!activeWorkout) return undefined;
@@ -541,15 +420,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         const totalDuration = Math.max(1, Math.round((completedAt - startedAtMs) / (1000 * 60)));
         const repsBySetUpdates = calculateRepsBySetUpdates();
 
-        // Fire and forget the routine update - session completion is more important
-        // If routine update fails, the session is still saved
-        await apiCompleteSession(
-          activeWorkout.session.id,
-          exerciseLogs,
-          completedAt,
+        cancelWorkoutTimer(user.id);
+        activitySync.completeWorkout(activeWorkout.session.id, {
+          exercises: exerciseLogs,
+          completedAtMs: completedAt,
           totalDuration,
-          Object.keys(repsBySetUpdates).length > 0 ? repsBySetUpdates : undefined
-        );
+          repsBySetUpdates: Object.keys(repsBySetUpdates).length > 0 ? repsBySetUpdates : undefined
+        });
+        void activitySync.syncPending();
 
         const completedWeightsByExercise = getCompletedWeightsByExerciseFromLogs(exerciseLogs);
         if (Object.keys(completedWeightsByExercise).length > 0) {
@@ -562,16 +440,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           }));
         }
 
-        setActiveWorkout(null);
         setShowActiveWorkout(false);
-        saveActiveWorkoutToStorage(null);
-
-        void apiIncrementRoutineUsage(activeWorkout.routine.id).catch(() => {
-          // El contador de usos no debe impedir cerrar el workout ya completado.
-        });
 
         showToast('Entrenamiento completado', 'success');
-        void refresh();
       } catch (error) {
         showToast(toUserMessage(error, 'Error al completar el entrenamiento. Inténtalo de nuevo.'), 'error');
       }
@@ -594,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     } else {
       finishWorkout();
     }
-  }, [activeWorkout, confirm, refresh, showToast]);
+  }, [activeWorkout, activitySync, confirm, showToast, user.id]);
 
   // Si hay un entrenamiento activo, mostrar la vista de entrenamiento
   if (activeWorkout && showActiveWorkout) {
@@ -607,7 +478,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
           previousWeightsByExercise={previousWeightsByExercise}
           onBackToDashboard={handleBackToDashboard}
           onCompleteWorkout={handleCompleteWorkout}
-          onUpdateProgress={handleUpdateProgress}
         />
       </div>
     );

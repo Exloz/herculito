@@ -1,10 +1,5 @@
 import type { Exercise, ExerciseLog, WorkoutSet } from '../../../shared/types';
 
-const PROGRESS_KEY = 'activeWorkoutProgress';
-const EXPIRATION_TIME = 24 * 60 * 60 * 1000;
-
-export const SESSION_LOGS_MIGRATION_KEY = 'activeWorkoutSessionLogsMigration_v1';
-
 const toComparableDateValue = (value: unknown): number | null => {
   if (value instanceof Date) return value.getTime();
   if (typeof value === 'string' || typeof value === 'number') {
@@ -116,47 +111,4 @@ export const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: 
   }
 
   return true;
-};
-
-export const saveProgressToStorage = (sessionId: string, exerciseLogs: ExerciseLog[]) => {
-  const data = {
-    sessionId,
-    exerciseLogs,
-    timestamp: Date.now()
-  };
-  localStorage.setItem(`${PROGRESS_KEY}_${sessionId}`, JSON.stringify(data));
-};
-
-export const clearProgressFromStorage = (sessionId: string) => {
-  localStorage.removeItem(`${PROGRESS_KEY}_${sessionId}`);
-};
-
-export const loadProgressFromStorage = (sessionId: string): ExerciseLog[] | null => {
-  const stored = localStorage.getItem(`${PROGRESS_KEY}_${sessionId}`);
-  if (!stored) return null;
-
-  try {
-    const data = JSON.parse(stored);
-    const now = Date.now();
-    if (now - data.timestamp > EXPIRATION_TIME) {
-      clearProgressFromStorage(sessionId);
-      return null;
-    }
-    const logs = data.exerciseLogs as ExerciseLog[];
-    logs.forEach((log) => {
-      (log.sets ?? []).forEach((set) => {
-        const completedAt = (set as unknown as { completedAt?: unknown }).completedAt;
-        if (typeof completedAt === 'string') {
-          const parsed = Date.parse(completedAt);
-          if (Number.isFinite(parsed)) {
-            (set as unknown as { completedAt?: Date }).completedAt = new Date(parsed);
-          }
-        }
-      });
-    });
-    return logs;
-  } catch {
-    clearProgressFromStorage(sessionId);
-    return null;
-  }
 };

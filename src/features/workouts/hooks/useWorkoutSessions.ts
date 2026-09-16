@@ -1,34 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Routine, WorkoutSession, User, ExerciseLog } from '../../../shared/types';
-import { getRoutinePrimaryMuscleGroup } from '../../dashboard/lib/muscleGroups';
-import {
-  fetchSessions,
-  startSession as apiStartSession,
-  completeSession as apiCompleteSession,
-  updateSessionProgress as apiUpdateSessionProgress,
-  type WorkoutSessionResponse
-} from '../../../shared/api/dataApi';
+import { WorkoutSession, User } from '../../../shared/types';
+import { fetchWorkoutSessions } from '../api/workoutSessionsRemote';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { getLastWeightsForRoutineFromSessions } from '../lib/workoutSessions';
 
 const SESSION_SUMMARY_LIMIT = 500;
 const SESSION_DETAILS_LIMIT = 200;
-
-const toDate = (value: unknown): Date | undefined => {
-  if (!value) return undefined;
-  if (value instanceof Date) return value;
-  if (typeof value === 'number') {
-    const ms = value < 1e12 ? value * 1000 : value;
-    return new Date(ms);
-  }
-  if (typeof value === 'string') {
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return new Date(parsed);
-  }
-  const maybe = value as { toDate?: () => Date };
-  if (typeof maybe?.toDate === 'function') return maybe.toDate();
-  return undefined;
-};
 
 const toDateKey = (date: Date): string => {
   const year = date.getFullYear();
@@ -58,14 +35,6 @@ const getCompletedSessionDayKeys = (sessions: WorkoutSession[]): string[] => {
   return Array.from(uniqueDays).sort();
 };
 
-const mapSession = (session: WorkoutSessionResponse): WorkoutSession => {
-  return {
-    ...session,
-    startedAt: toDate(session.startedAt) ?? new Date(),
-    completedAt: toDate(session.completedAt)
-  } as WorkoutSession;
-};
-
 export const useWorkoutSessions = (user: User) => {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,18 +59,18 @@ export const useWorkoutSessions = (user: User) => {
 
     const loadSessions = async () => {
       try {
-        const data = await fetchSessions({ limit: SESSION_SUMMARY_LIMIT, includeExercises: false });
+        const data = await fetchWorkoutSessions({ limit: SESSION_SUMMARY_LIMIT, includeExercises: false });
         clearTimeout(loadingTimeout);
-        setSessions(data.map(mapSession));
+        setSessions(data);
         setLoading(false);
         setError(null);
 
-        void fetchSessions({
+        void fetchWorkoutSessions({
           limit: SESSION_DETAILS_LIMIT,
           includeExercises: true,
           completedOnly: true
         }).then((detailedData) => {
-          const detailedSessions = detailedData.map(mapSession);
+          const detailedSessions = detailedData;
           setSessions((previous) => {
             const detailsById = new Map(detailedSessions.map((session) => [session.id, session]));
             return previous.map((session) => {
@@ -125,52 +94,6 @@ export const useWorkoutSessions = (user: User) => {
       clearTimeout(loadingTimeout);
     };
   }, [user.id]);
-
-  const startWorkoutSession = useCallback(async (routine: Routine): Promise<WorkoutSession> => {
-    const sessionId = `${routine.id}_${user.id}_${Date.now()}`;
-    const session = await apiStartSession({
-      id: sessionId,
-      routineId: routine.id,
-      routineName: routine.name,
-      primaryMuscleGroup: routine.primaryMuscleGroup || getRoutinePrimaryMuscleGroup(routine),
-      startedAt: Date.now()
-    });
-
-    const mapped = mapSession(session);
-    setSessions((prev) => [mapped, ...prev]);
-    return mapped;
-  }, [user.id]);
-
-  const completeWorkoutSession = useCallback(async (sessionId: string, exercises: ExerciseLog[]) => {
-    const session = sessions.find((s) => s.id === sessionId);
-    if (!session) {
-      console.error('Session not found:', sessionId);
-      return;
-    }
-
-    const completedAt = new Date();
-    const totalDuration = Math.round((completedAt.getTime() - session.startedAt.getTime()) / (1000 * 60));
-
-    await apiCompleteSession(sessionId, exercises, completedAt.getTime(), totalDuration);
-    setSessions((prev) =>
-      prev.map((item) =>
-        item.id === sessionId
-          ? { ...item, completedAt, exercises, totalDuration }
-          : item
-      )
-    );
-  }, [sessions]);
-
-  const updateSessionProgress = useCallback(async (sessionId: string, exercises: ExerciseLog[]) => {
-    await apiUpdateSessionProgress(sessionId, exercises);
-    setSessions((prev) =>
-      prev.map((session) =>
-        session.id === sessionId
-          ? { ...session, exercises }
-          : session
-      )
-    );
-  }, []);
 
   const getRecentSessions = useCallback((days: number = 7): WorkoutSession[] => {
     const cutoffDate = new Date();
@@ -280,9 +203,6 @@ export const useWorkoutSessions = (user: User) => {
     sessions,
     loading,
     error,
-    startWorkoutSession,
-    completeWorkoutSession,
-    updateSessionProgress,
     getRecentSessions,
     getWorkoutStats,
     getLastWeightsForRoutine

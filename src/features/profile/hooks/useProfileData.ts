@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { UserBodyMeasurement } from '../../../shared/types';
 import {
+  decodeBodyMeasurements,
   fetchBodyMeasurements,
   upsertBodyMeasurement,
   deleteBodyMeasurement
-} from '../../../shared/api/dataApi';
+} from '../api/profileRemote';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
 const PROFILE_MEASUREMENTS_CACHE_KEY = 'profile-measurements-cache';
@@ -32,12 +33,7 @@ const readMeasurementsCache = (userId: string): UserBodyMeasurement[] | null => 
       return null;
     }
 
-    return entry.measurements.map((m) => ({
-      ...m,
-      measuredAt: new Date(m.measuredAt),
-      createdAt: new Date(m.createdAt),
-      updatedAt: new Date(m.updatedAt)
-    }));
+    return decodeBodyMeasurements(entry.measurements);
   } catch {
     return null;
   }
@@ -121,7 +117,7 @@ export const useProfileData = (userId: string) => {
   const saveMeasurement = useCallback(
     async (payload: {
       id?: string;
-      measuredAt: number;
+      measuredAt?: number;
       weightKg?: number | null;
       heightCm?: number | null;
       bodyFatPercentage?: number | null;

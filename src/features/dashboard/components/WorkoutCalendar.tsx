@@ -47,7 +47,8 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
       workouts.push({
         muscleGroup: session.primaryMuscleGroup || 'fullbody',
         routineName: session.routineName,
-        sessionId: session.id
+        sessionId: session.id,
+        activityKind: 'workout'
       });
       map.set(dateStr, workouts);
     });
@@ -184,7 +185,9 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                 <div className="absolute bottom-0.5 sm:bottom-1 left-0.5 sm:left-1 right-0.5 sm:right-1">
                   <div className="flex justify-center space-x-0.5">
                     {day.workouts.slice(0, 3).map((workout) => {
-                      const muscleGroup = MUSCLE_GROUPS[workout.muscleGroup];
+                      const muscleGroup = workout.muscleGroup
+                        ? MUSCLE_GROUPS[workout.muscleGroup]
+                        : { name: workout.routineName, color: workout.sportType === 'archery' ? '#f59e0b' : '#38bdf8' };
                       return (
                         <div
                           key={workout.sessionId}

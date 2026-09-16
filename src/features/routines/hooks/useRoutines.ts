@@ -5,7 +5,6 @@ import {
   createRoutine as apiCreateRoutine,
   updateRoutine as apiUpdateRoutine,
   deleteRoutine as apiDeleteRoutine,
-  incrementRoutineUsage as apiIncrementRoutineUsage,
   type RoutineResponse
 } from '../../../shared/api/dataApi';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
@@ -111,17 +110,6 @@ export const useRoutines = (userId: string, options?: { includeVideos?: boolean 
     setRoutines((prev) => prev.filter((routine) => routine.id !== routineId));
   };
 
-  const incrementRoutineUsage = async (routineId: string) => {
-    await apiIncrementRoutineUsage(routineId);
-    setRoutines((prev) =>
-      prev.map((routine) =>
-        routine.id === routineId
-          ? { ...routine, timesUsed: (routine.timesUsed || 0) + 1 }
-          : routine
-      )
-    );
-  };
-
   const canEditRoutine = (routine: Routine): boolean => {
     return routine.createdBy === userId || routine.userId === userId;
   };
@@ -149,7 +137,6 @@ export const useRoutines = (userId: string, options?: { includeVideos?: boolean 
     createRoutine,
     updateRoutine,
     deleteRoutine,
-    incrementRoutineUsage,
     canEditRoutine,
     getPublicRoutines,
     getUserRoutines

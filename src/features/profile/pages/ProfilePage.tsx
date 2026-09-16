@@ -5,25 +5,18 @@ import { useProfileData } from '../hooks/useProfileData';
 import { useUI } from '../../../app/providers/ui-context';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { formatDateValue } from '../../../shared/lib/intl';
+import {
+  buildMeasurementMutation,
+  type MeasurementFormValues
+} from '../lib/measurementForm';
 
 interface ProfilePageProps {
   user: User;
   onBack: () => void;
 }
 
-type MeasurementFormData = {
+type MeasurementFormData = MeasurementFormValues & {
   id?: string;
-  measuredAt: string;
-  weightKg: string;
-  heightCm: string;
-  bodyFatPercentage: string;
-  waistCm: string;
-  hipsCm: string;
-  chestCm: string;
-  armsCm: string;
-  thighsCm: string;
-  calvesCm: string;
-  notes: string;
 };
 
 const emptyFormData: MeasurementFormData = {
@@ -54,12 +47,6 @@ const toFormData = (measurement: UserBodyMeasurement): MeasurementFormData => ({
   calvesCm: measurement.calvesCm?.toString() ?? '',
   notes: measurement.notes ?? ''
 });
-
-const parseNumberInput = (value: string): number | null => {
-  if (!value.trim()) return null;
-  const parsed = parseFloat(value.replace(',', '.'));
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
-};
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
   const { measurements, loading, refreshing, saving, error, refresh, saveMeasurement, removeMeasurement } = useProfileData(user.id);
@@ -95,28 +82,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
   }, []);
 
   const handleSave = useCallback(async () => {
-    const measuredAtDate = new Date(formData.measuredAt);
-    if (Number.isNaN(measuredAtDate.getTime())) {
-      showToast('Fecha inválida', 'error');
+    const mutation = buildMeasurementMutation(formData, editingMeasurement);
+    if (!mutation.ok) {
+      showToast(mutation.message, 'error');
       return;
     }
 
-    const payload = {
-      id: editingMeasurement?.id,
-      measuredAt: measuredAtDate.getTime(),
-      weightKg: parseNumberInput(formData.weightKg),
-      heightCm: parseNumberInput(formData.heightCm),
-      bodyFatPercentage: parseNumberInput(formData.bodyFatPercentage),
-      waistCm: parseNumberInput(formData.waistCm),
-      hipsCm: parseNumberInput(formData.hipsCm),
-      chestCm: parseNumberInput(formData.chestCm),
-      armsCm: parseNumberInput(formData.armsCm),
-      thighsCm: parseNumberInput(formData.thighsCm),
-      calvesCm: parseNumberInput(formData.calvesCm),
-      notes: formData.notes.trim() || null
-    };
-
-    const success = await saveMeasurement(payload);
+    const success = await saveMeasurement(mutation.payload);
     if (success) {
       showToast(editingMeasurement ? 'Medición actualizada' : 'Medición guardada', 'success');
       setShowForm(false);

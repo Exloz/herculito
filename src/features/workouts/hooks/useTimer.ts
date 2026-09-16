@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { cancelRestPush, ensureBackgroundRestPushReady, scheduleRestPush, shouldUseBackgroundRestPush } from '../api/pushApi';
+import { remoteTimerScheduler } from '../lib/remoteTimerScheduler';
 
 const TIMER_STORAGE_KEY = 'workoutTimerState';
 const SW_READY_TIMEOUT_MS = 1200;
@@ -9,6 +9,7 @@ interface TimerState {
   isActive: boolean;
   initialTime: number;
   startTime: number | null;
+  endsAtMs: number | null;
   hasNotified: boolean;
 }
 
@@ -140,12 +141,17 @@ const loadTimerState = (): TimerState | null => {
     const state = JSON.parse(stored) as TimerState;
     const now = Date.now();
 
-    if (state.isActive && state.startTime) {
-      const elapsed = Math.floor((now - state.startTime) / 1000);
-      state.timeLeft = Math.max(0, state.initialTime - elapsed);
+    if (state.isActive) {
+      const endsAtMs = state.endsAtMs
+        ?? (state.startTime ? state.startTime + state.initialTime * 1000 : null);
+      if (endsAtMs) {
+        state.endsAtMs = endsAtMs;
+        state.timeLeft = Math.max(0, Math.ceil((endsAtMs - now) / 1000));
+      }
 
       if (state.timeLeft === 0) {
         state.isActive = false;
+        state.endsAtMs = null;
       }
     }
 
@@ -156,31 +162,29 @@ const loadTimerState = (): TimerState | null => {
   }
 };
 
-export const useTimer = () => {
+export const cancelWorkoutTimer = (userId: string): void => {
+  try {
+    localStorage.removeItem(TIMER_STORAGE_KEY);
+  } catch {
+    console.warn('Failed to clear timer state');
+  }
+  void remoteTimerScheduler.cancel(userId).catch(() => {
+    console.warn('Failed to cancel background push');
+  });
+};
+
+export const useTimer = (userId: string) => {
   const [timeLeft, setTimeLeft] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [initialTime, setInitialTime] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [endsAtMs, setEndsAtMs] = useState<number | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const timerStartTimeRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const endTimeRef = useRef<number | null>(null);
-  const restPushCommandSeqRef = useRef(0);
-  const restPushCommandAtRef = useRef(0);
-
-  const nextRestPushCommand = useCallback(() => {
-    const now = Date.now();
-    const commandAtMs = Math.max(now, restPushCommandAtRef.current + 1);
-    restPushCommandAtRef.current = commandAtMs;
-    restPushCommandSeqRef.current += 1;
-    return {
-      sequence: restPushCommandSeqRef.current,
-      commandAtMs
-    };
-  }, []);
 
   const acquireWakeLock = useCallback(async () => {
     if ('wakeLock' in navigator) {
@@ -223,6 +227,7 @@ export const useTimer = () => {
       setIsActive(savedState.isActive && savedState.timeLeft > 0);
       setInitialTime(savedState.initialTime);
       setStartTime(savedState.isActive && savedState.timeLeft > 0 ? savedState.startTime : null);
+      setEndsAtMs(savedState.isActive && savedState.timeLeft > 0 ? savedState.endsAtMs ?? null : null);
       setHasNotified(savedState.hasNotified);
       return savedState;
     } else {
@@ -230,6 +235,7 @@ export const useTimer = () => {
       setIsActive(false);
       setInitialTime(0);
       setStartTime(null);
+      setEndsAtMs(null);
       setHasNotified(false);
       return null;
     }
@@ -240,9 +246,9 @@ export const useTimer = () => {
   }, [loadState]);
 
   useEffect(() => {
-    const state: TimerState = { timeLeft, isActive, initialTime, startTime, hasNotified };
+    const state: TimerState = { timeLeft, isActive, initialTime, startTime, endsAtMs, hasNotified };
     saveTimerState(state);
-  }, [timeLeft, isActive, initialTime, startTime, hasNotified]);
+  }, [timeLeft, isActive, initialTime, startTime, endsAtMs, hasNotified]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -254,8 +260,7 @@ export const useTimer = () => {
           saveTimerState(nextState);
           setHasNotified(true);
 
-          const { commandAtMs } = nextRestPushCommand();
-          void cancelRestPush({ commandAtMs }).catch(() => {
+          void remoteTimerScheduler.cancel(userId).catch(() => {
             console.warn('Failed to cancel background push on resume');
           });
 
@@ -272,25 +277,17 @@ export const useTimer = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [loadState, nextRestPushCommand]);
+  }, [loadState, userId]);
 
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (audioContextRef.current) audioContextRef.current.close();
 
-      timerStartTimeRef.current = null;
       endTimeRef.current = null;
-      localStorage.removeItem(TIMER_STORAGE_KEY);
-
-      const { commandAtMs } = nextRestPushCommand();
-      void cancelRestPush({ commandAtMs }).catch(() => {
-        console.warn('Failed to cancel background push');
-      });
-
       releaseWakeLock();
     };
-  }, [nextRestPushCommand, releaseWakeLock]);
+  }, [releaseWakeLock]);
 
   useEffect(() => {
     if (!isActive) {
@@ -305,9 +302,7 @@ export const useTimer = () => {
     startAudioContext();
     acquireWakeLock();
 
-    const now = Date.now();
-    timerStartTimeRef.current = now;
-    endTimeRef.current = now + (initialTime * 1000);
+    endTimeRef.current = endsAtMs;
 
     intervalRef.current = setInterval(() => {
       if (!endTimeRef.current) return;
@@ -320,13 +315,13 @@ export const useTimer = () => {
         intervalRef.current = null;
         setIsActive(false);
         setStartTime(null);
+        setEndsAtMs(null);
         endTimeRef.current = null;
 
         if (!hasNotified) {
           setHasNotified(true);
 
-          const { commandAtMs } = nextRestPushCommand();
-          void cancelRestPush({ commandAtMs }).catch(() => {
+          void remoteTimerScheduler.cancel(userId).catch(() => {
             console.warn('Failed to cancel background push');
           });
 
@@ -347,7 +342,7 @@ export const useTimer = () => {
         intervalRef.current = null;
       }
     };
-  }, [isActive, hasNotified, initialTime, acquireWakeLock, startAudioContext, releaseWakeLock, nextRestPushCommand]);
+  }, [isActive, hasNotified, endsAtMs, acquireWakeLock, startAudioContext, releaseWakeLock, userId]);
 
   const requestPermission = useCallback(async () => {
     return requestNotificationPermission();
@@ -356,63 +351,54 @@ export const useTimer = () => {
   const startTimer = useCallback(async (seconds: number) => {
     if (seconds <= 0) return;
 
-    const { sequence, commandAtMs } = nextRestPushCommand();
+    const startedAtMs = Date.now();
+    const executeAtMs = startedAtMs + seconds * 1000;
 
     localStorage.removeItem(TIMER_STORAGE_KEY);
 
     setInitialTime(seconds);
     setTimeLeft(seconds);
     setIsActive(true);
-    setStartTime(Date.now());
+    setStartTime(startedAtMs);
+    setEndsAtMs(executeAtMs);
     setHasNotified(false);
 
-    if (typeof navigator !== 'undefined' && 'userActivation' in navigator) {
-      if ((navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive) {
-        await requestPermission();
-      }
-    }
-
-    if (shouldUseBackgroundRestPush()) {
-      void (async () => {
-        try {
-          const ready = await ensureBackgroundRestPushReady();
-          logTimerEvent('background_push_ready_check', { ready: !!ready, seconds });
-          if (!ready) return;
-          if (sequence !== restPushCommandSeqRef.current) return;
-
-          await scheduleRestPush(seconds, undefined, { commandAtMs });
-        } catch {
-          console.warn('Failed to schedule background push');
-        }
-      })();
-    }
-  }, [nextRestPushCommand, requestPermission]);
+    const canRequestPermission = typeof navigator !== 'undefined'
+      && 'userActivation' in navigator
+      && (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive === true;
+    void remoteTimerScheduler.schedule(userId, {
+      executeAtMs,
+      ...(canRequestPermission ? { requestPermission: true } : {})
+    }).catch(() => {
+      console.warn('Failed to schedule background push');
+    });
+  }, [userId]);
 
   const pauseTimer = useCallback(() => {
     setIsActive(false);
+    setStartTime(null);
+    setEndsAtMs(null);
+    endTimeRef.current = null;
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
 
-    const { commandAtMs } = nextRestPushCommand();
-    void cancelRestPush({ commandAtMs }).catch(() => {
+    void remoteTimerScheduler.cancel(userId).catch(() => {
       console.warn('Failed to cancel background push');
     });
 
     releaseWakeLock();
-  }, [nextRestPushCommand, releaseWakeLock]);
+  }, [releaseWakeLock, userId]);
 
   const resetTimer = useCallback(() => {
-    const { commandAtMs } = nextRestPushCommand();
-
-    localStorage.removeItem(TIMER_STORAGE_KEY);
+    cancelWorkoutTimer(userId);
     setIsActive(false);
     setTimeLeft(0);
     setInitialTime(0);
     setStartTime(null);
+    setEndsAtMs(null);
     setHasNotified(false);
-    timerStartTimeRef.current = null;
     endTimeRef.current = null;
 
     if (intervalRef.current) {
@@ -420,12 +406,8 @@ export const useTimer = () => {
       intervalRef.current = null;
     }
 
-    void cancelRestPush({ commandAtMs }).catch(() => {
-      console.warn('Failed to cancel background push');
-    });
-
     releaseWakeLock();
-  }, [nextRestPushCommand, releaseWakeLock]);
+  }, [releaseWakeLock, userId]);
 
   const formatTime = useCallback((seconds: number) => {
     const mins = Math.floor(seconds / 60);

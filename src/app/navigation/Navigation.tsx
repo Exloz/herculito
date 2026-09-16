@@ -1,58 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Dumbbell, Home, PlayCircle, Shield, Target } from 'lucide-react';
-
-const ACTIVE_WORKOUT_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+import { useActivitySync } from '../../features/activity-sync/useActivitySync';
+import { remoteTimerScheduler } from '../../features/workouts/lib/remoteTimerScheduler';
 
 interface NavigationProps {
   currentPage: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile';
   onPageChange: (page: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile') => void;
   isAdmin: boolean;
+  userId: string;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   currentPage,
   onPageChange,
-  isAdmin
+  isAdmin,
+  userId
 }) => {
-  const [hasActiveWorkout, setHasActiveWorkout] = useState(false);
+  const { activitySync, projection } = useActivitySync(userId);
+  const hasActiveWorkout = projection.active?.kind === 'workout';
   const [isHidden, setIsHidden] = useState(false);
-
-  useEffect(() => {
-    const checkActiveWorkout = () => {
-      try {
-        const stored = localStorage.getItem('activeWorkout');
-        if (!stored) {
-          setHasActiveWorkout(false);
-          return;
-        }
-
-        const parsed = JSON.parse(stored) as { timestamp?: number; session?: { id?: string } };
-        const timestamp = typeof parsed?.timestamp === 'number' ? parsed.timestamp : 0;
-        const hasValidSession = typeof parsed?.session?.id === 'string' && parsed.session.id.length > 0;
-
-        if (!hasValidSession || Date.now() - timestamp > ACTIVE_WORKOUT_EXPIRATION_MS) {
-          localStorage.removeItem('activeWorkout');
-          setHasActiveWorkout(false);
-          return;
-        }
-
-        setHasActiveWorkout(true);
-      } catch {
-        localStorage.removeItem('activeWorkout');
-        setHasActiveWorkout(false);
-      }
-    };
-
-    checkActiveWorkout();
-
-    window.addEventListener('active-workout-changed', checkActiveWorkout);
-    window.addEventListener('storage', checkActiveWorkout);
-
-    return () => {
-      window.removeEventListener('active-workout-changed', checkActiveWorkout);
-      window.removeEventListener('storage', checkActiveWorkout);
-    };
-  }, []);
 
   useEffect(() => {
     const handleVisibilityChange = (event: Event) => {
@@ -64,6 +30,12 @@ export const Navigation: React.FC<NavigationProps> = ({
     return () => window.removeEventListener('app-navigation-visibility', handleVisibilityChange);
   }, []);
 
+  useLayoutEffect(() => {
+    remoteTimerScheduler.setOwner(userId);
+    void remoteTimerScheduler.replayPending().catch(() => {});
+    return () => remoteTimerScheduler.setOwner(null);
+  }, [userId]);
+
   const handleResumeClick = () => {
     localStorage.setItem('activeWorkoutForceOpen', 'true');
     if (currentPage === 'dashboard') {
@@ -73,8 +45,28 @@ export const Navigation: React.FC<NavigationProps> = ({
     }
   };
 
+  const handleRetrySync = () => {
+    if (projection.syncFailureAction === 'dismiss') {
+      activitySync.dismissFailed();
+      return;
+    }
+    activitySync.retryFailed();
+    void activitySync.syncPending();
+  };
+
   return (
-    <div className={`app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full justify-center pb-[env(safe-area-inset-bottom)] pointer-events-none transition-all duration-300 ease-out ${isHidden ? 'opacity-0 translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+    <div className={`app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full flex-col items-center justify-center gap-2 pb-[env(safe-area-inset-bottom)] pointer-events-none transition-all duration-300 ease-out ${isHidden ? 'opacity-0 translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+      {projection.failedSyncCount > 0 && (
+        <button
+          type="button"
+          onClick={handleRetrySync}
+          className="pointer-events-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-amberGlow/50 bg-charcoal px-4 py-2 text-sm font-semibold text-amberGlow shadow-soft"
+        >
+          {projection.syncError
+            ?? `No se pudieron sincronizar ${projection.failedSyncCount} cambio${projection.failedSyncCount === 1 ? '' : 's'}.`}{' '}
+          {projection.syncFailureAction === 'dismiss' ? 'Entendido' : 'Reintentar'}
+        </button>
+      )}
       <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal px-2 py-2 shadow-soft">
         <div className={`grid ${isAdmin ? (hasActiveWorkout ? 'grid-cols-5' : 'grid-cols-4') : (hasActiveWorkout ? 'grid-cols-4' : 'grid-cols-3')} gap-2`}>
           <button

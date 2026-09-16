@@ -4,12 +4,13 @@ import { createPortal } from 'react-dom';
 import { useTimer } from '../hooks/useTimer';
 
 interface TimerProps {
+  userId: string;
   onClose: () => void;
   initialSeconds?: number;
 }
 
-export const Timer: React.FC<TimerProps> = ({ onClose, initialSeconds }) => {
-  const { timeLeft, isActive, progress, startTimer, pauseTimer, resetTimer, formatTime, requestPermission } = useTimer();
+export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds }) => {
+  const { timeLeft, isActive, progress, startTimer, pauseTimer, resetTimer, formatTime, requestPermission } = useTimer(userId);
   const startTimeRef = useRef<number | null>(null);
   const hasAutoClosed = useRef(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | 'unsupported'>(() => {

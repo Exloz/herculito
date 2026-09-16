@@ -21,6 +21,11 @@ export interface HiitTickResult {
   alert: HiitAlertType | null;
 }
 
+export interface HiitAdvanceResult {
+  engine: HiitEngine;
+  alerts: HiitAlertType[];
+}
+
 // --- Factory ---
 
 export const createHiitEngine = (config: HiitConfig): HiitEngine => {
@@ -191,6 +196,27 @@ export const tickHiit = (engine: HiitEngine): HiitTickResult => {
   };
 };
 
+export const advanceHiit = (engine: HiitEngine, elapsedSeconds: number): HiitAdvanceResult => {
+  const seconds = Math.max(0, Math.floor(elapsedSeconds));
+  if (seconds === 0 || !engine.isRunning || engine.isPaused) {
+    return { engine, alerts: [] };
+  }
+
+  let current = engine;
+  const alerts: HiitAlertType[] = [];
+  for (let index = 0; index < seconds && current.isRunning; index += 1) {
+    const result = tickHiit(current);
+    if (result.alert) alerts.push(result.alert);
+    current = {
+      ...current,
+      state: result.state,
+      isRunning: result.isRunning
+    };
+  }
+
+  return { engine: current, alerts };
+};
+
 // --- Derived values ---
 
 export const getHiitProgress = (state: HiitState, config: HiitConfig): number => {
@@ -238,40 +264,36 @@ export const getPhaseLabel = (phase: HiitPhase): string => {
   }
 };
 
-// --- Persistence helpers ---
-
-const HIIT_TIMER_STORAGE_KEY = 'hiitTimerState';
-
 export interface HiitPersistentState {
   config: HiitConfig;
   state: HiitState;
   startedAtMs: number;
+  lastTickAtMs?: number;
   pausedAtMs: number | null;
 }
 
-export const saveHiitTimerState = (config: HiitConfig, state: HiitState, startedAtMs: number, pausedAtMs: number | null): void => {
-  try {
-    const persistent: HiitPersistentState = { config, state, startedAtMs, pausedAtMs };
-    localStorage.setItem(HIIT_TIMER_STORAGE_KEY, JSON.stringify(persistent));
-  } catch {
-    // Storage full or unavailable — non-critical
-  }
-};
+export const restoreHiitEngine = (
+  saved: HiitPersistentState,
+  nowMs: number
+): { engine: HiitEngine; lastTickAtMs: number } => {
+  const isFinished = saved.state.phase === 'idle' || saved.state.phase === 'done';
+  const engine: HiitEngine = {
+    config: saved.config,
+    state: saved.state,
+    isRunning: !isFinished,
+    isPaused: !isFinished && saved.pausedAtMs !== null
+  };
 
-export const loadHiitTimerState = (): HiitPersistentState | null => {
-  try {
-    const stored = localStorage.getItem(HIIT_TIMER_STORAGE_KEY);
-    if (!stored) return null;
-    return JSON.parse(stored) as HiitPersistentState;
-  } catch {
-    return null;
+  if (engine.isPaused || !engine.isRunning) {
+    return { engine, lastTickAtMs: nowMs };
   }
-};
 
-export const clearHiitTimerState = (): void => {
-  try {
-    localStorage.removeItem(HIIT_TIMER_STORAGE_KEY);
-  } catch {
-    // Non-critical
-  }
+  const lastTickAtMs = saved.lastTickAtMs
+    ?? saved.startedAtMs + saved.state.totalElapsed * 1000;
+  const elapsedSeconds = Math.max(0, Math.floor((nowMs - lastTickAtMs) / 1000));
+  const advanced = advanceHiit(engine, elapsedSeconds);
+  return {
+    engine: advanced.engine,
+    lastTickAtMs: lastTickAtMs + elapsedSeconds * 1000
+  };
 };

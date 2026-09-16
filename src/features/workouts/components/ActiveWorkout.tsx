@@ -12,12 +12,8 @@ import { getLastWeightsForRoutineFromSessions } from '../lib/workoutSessions';
 import {
   areWorkoutSetsEqual,
   buildWorkoutCompletionLogs,
-  clearProgressFromStorage,
   isExerciseLogCompleted,
-  loadProgressFromStorage,
-  normalizeWorkoutSets,
-  saveProgressToStorage,
-  SESSION_LOGS_MIGRATION_KEY
+  normalizeWorkoutSets
 } from '../lib/activeWorkoutStorage';
 
 interface ActiveWorkoutProps {
@@ -28,7 +24,6 @@ interface ActiveWorkoutProps {
   previousWeightsByExercise?: Record<string, number[]>;
   onBackToDashboard: (hasProgress: boolean) => void;
   onCompleteWorkout: (exerciseLogs: ExerciseLog[]) => void | Promise<void>;
-  onUpdateProgress: (sessionId: string, exerciseLogs: ExerciseLog[]) => void | Promise<void>;
 }
 
 const ActiveWorkoutExerciseSkeleton = ({ count }: { count: number }) => {
@@ -56,24 +51,21 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   sessions = [],
   previousWeightsByExercise,
   onBackToDashboard,
-  onCompleteWorkout,
-  onUpdateProgress
+  onCompleteWorkout
 }) => {
   const today = getCurrentDateString();
   const {
     updateExerciseLog,
     loading: logsLoading,
     flushPendingLogs
-  } = useExerciseLogs(today, user.id, { deferRemoteSync: true });
+  } = useExerciseLogs(today, user.id, { activityId: session.id });
 
   const { playFinishSound } = useFinishWorkoutSound();
 
   const showExerciseSkeleton = useDelayedLoading(logsLoading, 140);
   const hasMigratedSessionLogsRef = useRef(false);
-  const lastSentProgressRef = useRef('');
   const exerciseLogsRef = useRef<ExerciseLog[]>([]);
 
-  const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
   const [exerciseLogs, setExerciseLogs] = useState<ExerciseLog[]>([]);
   const [showTimer, setShowTimer] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -96,53 +88,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   }, [exerciseLogs]);
 
   useEffect(() => {
-    const storedLogs = loadProgressFromStorage(session.id);
-    if (storedLogs) {
-      replaceExerciseLogs(storedLogs);
-    } else {
-      replaceExerciseLogs([]);
-    }
-
-    lastSentProgressRef.current = '';
-
-    const storedStartTime = localStorage.getItem(`workoutStartTime_${session.id}`);
-    if (storedStartTime) {
-      setWorkoutStartTime(Number.parseInt(storedStartTime, 10));
-      return;
-    }
-
-    const now = Date.now();
-    setWorkoutStartTime(now);
-    localStorage.setItem(`workoutStartTime_${session.id}`, now.toString());
-  }, [replaceExerciseLogs, session.id]);
-
-  useEffect(() => {
-    if (hasProgress) {
-      saveProgressToStorage(session.id, exerciseLogs);
-      return;
-    }
-
-    clearProgressFromStorage(session.id);
-  }, [exerciseLogs, hasProgress, session.id]);
-
-  useEffect(() => {
-    if (!session.id || exerciseLogs.length === 0) return;
-
-    const progressSignature = JSON.stringify(exerciseLogs);
-    if (progressSignature === lastSentProgressRef.current) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      void Promise.resolve(onUpdateProgress(session.id, exerciseLogs)).then(() => {
-        lastSentProgressRef.current = progressSignature;
-      });
-    }, 1200);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [exerciseLogs, onUpdateProgress, session.id]);
+    replaceExerciseLogs(session.exercises ?? []);
+  }, [replaceExerciseLogs, session.exercises, session.id]);
 
   const lastWeights = useMemo(() => {
     if (previousWeightsByExercise) {
@@ -197,13 +144,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
       playFinishSound();
       await Promise.resolve(onCompleteWorkout(logsToSave));
-      clearProgressFromStorage(session.id);
-      localStorage.removeItem(`workoutStartTime_${session.id}`);
-      lastSentProgressRef.current = '';
     };
 
     void finish();
-  }, [flushPendingLogs, onCompleteWorkout, playFinishSound, routine.exercises, session.id, today, user.id]);
+  }, [flushPendingLogs, onCompleteWorkout, playFinishSound, routine.exercises, today, user.id]);
 
   useEffect(() => {
     return () => {
@@ -220,16 +164,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
 
   useEffect(() => {
     if (logsLoading || hasMigratedSessionLogsRef.current) return;
-
-    const migrationKey = `${SESSION_LOGS_MIGRATION_KEY}_${session.id}`;
-    try {
-      if (localStorage.getItem(migrationKey) === 'done') {
-        hasMigratedSessionLogsRef.current = true;
-        return;
-      }
-    } catch {
-      // ignore storage read errors
-    }
 
     const migratedLogs: ExerciseLog[] = [];
     routine.exercises.forEach((exercise) => {
@@ -249,12 +183,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       handleUpdateLog(log);
     });
 
-    try {
-      localStorage.setItem(migrationKey, 'done');
-    } catch {
-      // ignore storage write errors
-    }
-
     hasMigratedSessionLogsRef.current = true;
   }, [getLogForExerciseCustom, handleUpdateLog, logsLoading, routine.exercises, session.id]);
 
@@ -268,7 +196,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     <div className="app-shell pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <ActiveWorkoutHeader
         routineName={routine.name}
-        workoutStartTime={workoutStartTime}
+        workoutStartTime={session.startedAt.getTime()}
         completedExercises={completedExercises}
         totalExercises={totalExercises}
         workoutProgress={workoutProgress}
@@ -324,7 +252,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
       </main>
 
       {showTimer && (
-        <Timer onClose={() => setShowTimer(false)} initialSeconds={timerSeconds} />
+        <Timer userId={user.id} onClose={() => setShowTimer(false)} initialSeconds={timerSeconds} />
       )}
     </div>
   );

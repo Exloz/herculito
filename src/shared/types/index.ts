@@ -84,10 +84,14 @@ export interface DashboardRecentSession {
   primaryMuscleGroup?: MuscleGroup;
   completedAt: Date;
   totalDuration?: number;
+  activityKind: ActivityKind;
+  sportType?: SportType;
 }
 
 // Nuevos tipos para categorización muscular
 export type MuscleGroup = 'pecho' | 'espalda' | 'piernas' | 'hombros' | 'brazos' | 'core' | 'fullbody';
+
+export type ActivityKind = 'workout' | 'sport';
 
 export interface MuscleGroupInfo {
   name: string;
@@ -184,9 +188,11 @@ export interface WorkoutSession {
 export interface WorkoutCalendarDay {
   date: string; // YYYY-MM-DD
   workouts: {
-    muscleGroup: MuscleGroup;
+    muscleGroup?: MuscleGroup;
     routineName: string;
     sessionId: string;
+    activityKind: ActivityKind;
+    sportType?: SportType;
   }[];
 }
 

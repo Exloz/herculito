@@ -1,10 +1,8 @@
-import { ExerciseLog, Routine, WorkoutSession, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup, AdminOverview, WorkoutCalendarDay, UserBodyMeasurement } from '../types';
-import { fetchJson, getIdToken } from './apiClient';
-import { getPushApiOrigin } from '../../features/workouts/api/pushApi';
+import { ExerciseLog, Routine, Workout, ExerciseVideo, ExerciseTemplate, MuscleGroup, AdminOverview } from '../types';
+import { fetchApiJson } from './transport';
 
 export type ExerciseTemplateResponse = Omit<ExerciseTemplate, 'createdAt'> & { createdAt: number };
 export type RoutineResponse = Omit<Routine, 'createdAt' | 'updatedAt'> & { createdAt: number; updatedAt: number };
-export type WorkoutSessionResponse = Omit<WorkoutSession, 'startedAt' | 'completedAt'> & { startedAt: number; completedAt?: number };
 export type LeaderboardEntryResponse = {
   userId: string;
   name?: string;
@@ -20,53 +18,11 @@ export type CompetitiveLeaderboardResponse = {
   week: LeaderboardPeriodResponse;
   month: LeaderboardPeriodResponse;
 };
-export type DashboardRecentSessionResponse = {
-  id: string;
-  routineId?: string;
-  routineName: string;
-  primaryMuscleGroup?: MuscleGroup;
-  completedAt: number;
-  totalDuration?: number;
-};
 export type DashboardCompetitionResponse = {
   weekLeader: LeaderboardEntryResponse | null;
   monthLeader: LeaderboardEntryResponse | null;
   userWeekRank: LeaderboardEntryResponse | null;
   userMonthRank: LeaderboardEntryResponse | null;
-};
-export type DashboardExerciseProgressPointResponse = {
-  timestamp: number;
-  bestWeight: number;
-  completedSets: number;
-  totalWeight: number;
-};
-export type DashboardExerciseProgressSummaryResponse = {
-  exerciseId: string;
-  exerciseName: string;
-  points: DashboardExerciseProgressPointResponse[];
-  totalSessions: number;
-  personalRecord: number;
-  lastWeight: number;
-  previousWeight: number | null;
-  trend: 'up' | 'down' | 'flat' | 'neutral';
-  lastCompletedAt: number;
-  weeklyVolumeKg: number;
-};
-export type DashboardDataResponse = {
-  summary: {
-    totalWorkouts: number;
-    thisWeekWorkouts: number;
-    thisMonthWorkouts: number;
-    currentStreak: number;
-    longestStreak: number;
-    averageDurationMin: number;
-  };
-  recentSessions: DashboardRecentSessionResponse[];
-  calendar: WorkoutCalendarDay[];
-  dashboardRoutines: Array<RoutineResponse & { exerciseCount: number }>;
-  competition: DashboardCompetitionResponse;
-  lastWeightsByRoutine: Record<string, Record<string, number[]>>;
-  exerciseProgress: DashboardExerciseProgressSummaryResponse[];
 };
 
 export const syncUserProfile = async (payload: {
@@ -74,24 +30,14 @@ export const syncUserProfile = async (payload: {
   avatarUrl?: string;
   email?: string;
 }): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/profile`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/profile', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify(payload)
   });
 };
 
 export const fetchExercises = async (): Promise<ExerciseTemplateResponse[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ exercises: ExerciseTemplateResponse[] }>(`${origin}/v1/data/exercises`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
+  const data = await fetchApiJson<{ exercises: ExerciseTemplateResponse[] }>('/v1/data/exercises');
   return data.exercises ?? [];
 };
 
@@ -107,14 +53,8 @@ export const createExerciseTemplate = async (payload: {
   muscleGroup?: MuscleGroup;
   video?: ExerciseVideo;
 }): Promise<ExerciseTemplateResponse> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ exercise: ExerciseTemplateResponse }>(`${origin}/v1/data/exercises`, {
+  const data = await fetchApiJson<{ exercise: ExerciseTemplateResponse }>('/v1/data/exercises', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify(payload)
   });
   return data.exercise;
@@ -131,41 +71,25 @@ export const updateExerciseTemplate = async (id: string, updates: Partial<{
   muscleGroup?: MuscleGroup;
   video?: ExerciseVideo;
 }>): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/exercises/update`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/exercises/update', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ id, updates })
   });
 };
 
 export const incrementExerciseUsage = async (id: string): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/exercises/use`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/exercises/use', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ id })
   });
 };
 
 export const fetchRoutines = async (options?: { includeVideos?: boolean; limit?: number }): Promise<RoutineResponse[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
   const searchParams = new URLSearchParams();
   if (options?.includeVideos) searchParams.set('includeVideos', '1');
   if (options?.limit) searchParams.set('limit', String(options.limit));
   const query = searchParams.toString();
-  const data = await fetchJson<{ routines: RoutineResponse[] }>(`${origin}/v1/data/routines${query ? `?${query}` : ''}`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
+  const data = await fetchApiJson<{ routines: RoutineResponse[] }>(`/v1/data/routines${query ? `?${query}` : ''}`);
   return data.routines ?? [];
 };
 
@@ -178,14 +102,8 @@ export const createRoutine = async (payload: {
   primaryMuscleGroup?: Routine['primaryMuscleGroup'];
   createdByName?: string;
 }): Promise<RoutineResponse> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ routine: RoutineResponse }>(`${origin}/v1/data/routines`, {
+  const data = await fetchApiJson<{ routine: RoutineResponse }>('/v1/data/routines', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify(payload)
   });
   return data.routine;
@@ -198,162 +116,41 @@ export const updateRoutine = async (id: string, updates: Partial<{
   isPublic?: boolean;
   primaryMuscleGroup?: Routine['primaryMuscleGroup'];
 }>): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/routines/update`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/routines/update', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ id, updates })
   });
 };
 
 export const deleteRoutine = async (id: string): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/routines/delete`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/routines/delete', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ id })
-  });
-};
-
-export const incrementRoutineUsage = async (id: string): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/routines/use`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ id })
   });
 };
 
 export const fetchHiddenPublicRoutineIds = async (): Promise<string[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ hiddenRoutineIds: unknown[] }>(`${origin}/v1/data/routines/visibility`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
+  const data = await fetchApiJson<{ hiddenRoutineIds: unknown[] }>('/v1/data/routines/visibility');
 
   const hiddenRoutineIds = Array.isArray(data.hiddenRoutineIds) ? data.hiddenRoutineIds : [];
   return hiddenRoutineIds.filter((value): value is string => typeof value === 'string');
 };
 
 export const updateRoutineVisibility = async (routineId: string, visible: boolean): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/routines/visibility`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/routines/visibility', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ routineId, visible })
   });
 };
 
-export const fetchSessions = async (options?: {
-  limit?: number;
-  includeExercises?: boolean;
-  completedOnly?: boolean;
-}): Promise<WorkoutSessionResponse[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const searchParams = new URLSearchParams();
-  if (options?.limit) searchParams.set('limit', String(options.limit));
-  if (options?.includeExercises) searchParams.set('includeExercises', '1');
-  if (options?.completedOnly) searchParams.set('completedOnly', '1');
-  const query = searchParams.toString();
-  const data = await fetchJson<{ sessions: WorkoutSessionResponse[] }>(`${origin}/v1/data/sessions${query ? `?${query}` : ''}`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
-  return data.sessions ?? [];
-};
-
 export const fetchAdminOverview = async (): Promise<AdminOverview> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  return fetchJson<AdminOverview>(`${origin}/v1/data/admin/overview`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
-};
-
-export const fetchDashboardData = async (): Promise<DashboardDataResponse> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  return fetchJson<DashboardDataResponse>(`${origin}/v1/data/dashboard`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
+  return fetchApiJson<AdminOverview>('/v1/data/admin/overview');
 };
 
 export const fetchCompetitiveLeaderboard = async (limit = 10): Promise<CompetitiveLeaderboardResponse> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
   const safeLimit = Math.min(50, Math.max(1, Math.floor(limit)));
 
-  return fetchJson<CompetitiveLeaderboardResponse>(`${origin}/v1/data/leaderboard?limit=${safeLimit}`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
-};
-
-export const startSession = async (payload: {
-  id?: string;
-  routineId?: string;
-  routineName: string;
-  primaryMuscleGroup?: Routine['primaryMuscleGroup'];
-  startedAt?: number;
-}): Promise<WorkoutSessionResponse> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ session: WorkoutSessionResponse }>(`${origin}/v1/data/sessions/start`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify(payload)
-  });
-  return data.session;
-};
-
-export const updateSessionProgress = async (sessionId: string, exercises: ExerciseLog[]): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/sessions/progress`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ sessionId, exercises })
-  });
-};
-
-export const completeSession = async (
-  sessionId: string,
-  exercises: ExerciseLog[],
-  completedAt?: number,
-  totalDuration?: number,
-  repsBySetUpdates?: Record<string, number[]>
-): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/sessions/complete`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ sessionId, exercises, completedAt, totalDuration, repsBySetUpdates })
-  });
+  return fetchApiJson<CompetitiveLeaderboardResponse>(`/v1/data/leaderboard?limit=${safeLimit}`);
 };
 
 export const upsertExerciseLog = async (
@@ -362,24 +159,14 @@ export const upsertExerciseLog = async (
   sets: ExerciseLog['sets'],
   userId?: string
 ): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/exercise-logs`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/exercise-logs', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ exerciseId, date, sets, userId })
   });
 };
 
 export const fetchExerciseLogsForDate = async (date: string): Promise<ExerciseLog[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ logs: unknown[] }>(`${origin}/v1/data/exercise-logs?date=${encodeURIComponent(date)}`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
+  const data = await fetchApiJson<{ logs: unknown[] }>(`/v1/data/exercise-logs?date=${encodeURIComponent(date)}`);
 
   const logs = Array.isArray(data.logs) ? data.logs : [];
   return logs.filter((value): value is ExerciseLog => {
@@ -394,127 +181,13 @@ export const fetchExerciseLogsForDate = async (date: string): Promise<ExerciseLo
 };
 
 export const fetchWorkouts = async (): Promise<Workout[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ workouts: Workout[] }>(`${origin}/v1/data/workouts`, {
-    headers: { authorization: `Bearer ${token}` }
-  });
+  const data = await fetchApiJson<{ workouts: Workout[] }>('/v1/data/workouts');
   return data.workouts ?? [];
 };
 
 export const upsertWorkout = async (workout: Workout): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/workouts`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/data/workouts', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({ workout })
-  });
-};
-
-// ===== PROFILE MEASUREMENTS API =====
-
-export type BodyMeasurementResponse = {
-  id: string;
-  uid: string;
-  measuredAtMs: number;
-  weightKg: number | null;
-  heightCm: number | null;
-  bodyFatPercentage: number | null;
-  waistCm: number | null;
-  hipsCm: number | null;
-  chestCm: number | null;
-  armsCm: number | null;
-  thighsCm: number | null;
-  calvesCm: number | null;
-  notes: string | null;
-  createdAtMs: number;
-  updatedAtMs: number;
-};
-
-const toDateFromMs = (value: unknown): Date | undefined => {
-  if (!value) return undefined;
-  if (value instanceof Date) return value;
-  if (typeof value === 'number') {
-    const ms = value < 1e12 ? value * 1000 : value;
-    return new Date(ms);
-  }
-  if (typeof value === 'string') {
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return new Date(parsed);
-  }
-  return undefined;
-};
-
-const mapMeasurementResponse = (response: BodyMeasurementResponse): UserBodyMeasurement => {
-  return {
-    id: response.id,
-    uid: response.uid,
-    measuredAt: toDateFromMs(response.measuredAtMs) ?? new Date(),
-    weightKg: response.weightKg,
-    heightCm: response.heightCm,
-    bodyFatPercentage: response.bodyFatPercentage,
-    waistCm: response.waistCm,
-    hipsCm: response.hipsCm,
-    chestCm: response.chestCm,
-    armsCm: response.armsCm,
-    thighsCm: response.thighsCm,
-    calvesCm: response.calvesCm,
-    notes: response.notes,
-    createdAt: toDateFromMs(response.createdAtMs) ?? new Date(),
-    updatedAt: toDateFromMs(response.updatedAtMs) ?? new Date()
-  };
-};
-
-export const fetchBodyMeasurements = async (limit = 50): Promise<UserBodyMeasurement[]> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const data = await fetchJson<{ measurements: BodyMeasurementResponse[] }>(
-    `${origin}/v1/data/profile/measurements?limit=${limit}`,
-    {
-      headers: { authorization: `Bearer ${token}` }
-    }
-  );
-  return (data.measurements ?? []).map(mapMeasurementResponse);
-};
-
-export const upsertBodyMeasurement = async (payload: {
-  id?: string;
-  measuredAt: number;
-  weightKg?: number | null;
-  heightCm?: number | null;
-  bodyFatPercentage?: number | null;
-  waistCm?: number | null;
-  hipsCm?: number | null;
-  chestCm?: number | null;
-  armsCm?: number | null;
-  thighsCm?: number | null;
-  calvesCm?: number | null;
-  notes?: string | null;
-}): Promise<{ ok: boolean; id?: string; updated?: boolean }> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  return fetchJson<{ ok: boolean; id?: string; updated?: boolean }>(
-    `${origin}/v1/data/profile/measurements`,
-    {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    }
-  );
-};
-
-export const deleteBodyMeasurement = async (id: string): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/data/profile/measurements/${id}`, {
-    method: 'DELETE',
-    headers: { authorization: `Bearer ${token}` }
   });
 };

@@ -9,40 +9,27 @@ import {
   createRoutine,
   updateRoutine,
   deleteRoutine,
-  incrementRoutineUsage,
   fetchHiddenPublicRoutineIds,
   updateRoutineVisibility,
-  fetchSessions,
   fetchAdminOverview,
-  fetchDashboardData,
   fetchCompetitiveLeaderboard,
-  startSession,
-  updateSessionProgress,
-  completeSession,
   upsertExerciseLog,
   fetchExerciseLogsForDate,
   fetchWorkouts,
   upsertWorkout
 } from './dataApi';
-import * as apiClient from './apiClient';
+import * as transport from './transport';
 import type { Workout } from '../types';
 
-vi.mock('./apiClient', () => ({
-  getIdToken: vi.fn(),
-  fetchJson: vi.fn()
-}));
-
-vi.mock('../../features/workouts/api/pushApi', () => ({
-  getPushApiOrigin: () => 'https://api.test.com'
+vi.mock('./transport', () => ({
+  fetchApiJson: vi.fn()
 }));
 
 describe('dataApi', () => {
-  const mockFetchJson = vi.mocked(apiClient.fetchJson);
-  const mockGetIdToken = vi.mocked(apiClient.getIdToken);
+  const mockFetchJson = vi.mocked(transport.fetchApiJson);
 
   beforeEach(() => {
     vi.resetAllMocks();
-    mockGetIdToken.mockResolvedValue('test-token');
   });
 
   afterEach(() => {
@@ -56,13 +43,9 @@ describe('dataApi', () => {
       await syncUserProfile({ displayName: 'Test User', email: 'test@example.com' });
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/profile',
+        '/v1/data/profile',
         expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'content-type': 'application/json',
-            authorization: 'Bearer test-token'
-          })
+          method: 'POST'
         })
       );
     });
@@ -76,10 +59,7 @@ describe('dataApi', () => {
       const result = await fetchExercises();
 
       expect(result).toEqual(exercises);
-      expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/exercises',
-        expect.objectContaining({ headers: { authorization: 'Bearer test-token' } })
-      );
+      expect(mockFetchJson).toHaveBeenCalledWith('/v1/data/exercises');
     });
 
     it('returns empty array when exercises is undefined', async () => {
@@ -110,7 +90,7 @@ describe('dataApi', () => {
       await updateExerciseTemplate('ex1', { name: 'Updated' });
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/exercises/update',
+        '/v1/data/exercises/update',
         expect.objectContaining({ method: 'POST' })
       );
     });
@@ -123,7 +103,7 @@ describe('dataApi', () => {
       await incrementExerciseUsage('ex1');
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/exercises/use',
+        '/v1/data/exercises/use',
         expect.objectContaining({ method: 'POST', body: JSON.stringify({ id: 'ex1' }) })
       );
     });
@@ -145,12 +125,10 @@ describe('dataApi', () => {
       await fetchRoutines({ includeVideos: true, limit: 10 });
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        expect.stringContaining('includeVideos=1'),
-        expect.any(Object)
+        expect.stringContaining('includeVideos=1')
       );
       expect(mockFetchJson).toHaveBeenCalledWith(
-        expect.stringContaining('limit=10'),
-        expect.any(Object)
+        expect.stringContaining('limit=10')
       );
     });
   });
@@ -174,7 +152,7 @@ describe('dataApi', () => {
       await updateRoutine('r1', { name: 'Updated' });
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/routines/update',
+        '/v1/data/routines/update',
         expect.objectContaining({ method: 'POST' })
       );
     });
@@ -187,20 +165,7 @@ describe('dataApi', () => {
       await deleteRoutine('r1');
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/routines/delete',
-        expect.objectContaining({ method: 'POST' })
-      );
-    });
-  });
-
-  describe('incrementRoutineUsage', () => {
-    it('increments usage count', async () => {
-      mockFetchJson.mockResolvedValueOnce({ ok: true });
-
-      await incrementRoutineUsage('r1');
-
-      expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/routines/use',
+        '/v1/data/routines/delete',
         expect.objectContaining({ method: 'POST' })
       );
     });
@@ -239,33 +204,11 @@ describe('dataApi', () => {
       await updateRoutineVisibility('r1', false);
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/routines/visibility',
+        '/v1/data/routines/visibility',
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ routineId: 'r1', visible: false })
         })
-      );
-    });
-  });
-
-  describe('fetchSessions', () => {
-    it('returns sessions array', async () => {
-      const sessions = [{ id: 's1', startedAt: Date.now() }];
-      mockFetchJson.mockResolvedValueOnce({ sessions });
-
-      const result = await fetchSessions();
-
-      expect(result).toEqual(sessions);
-    });
-
-    it('includes query params for options', async () => {
-      mockFetchJson.mockResolvedValueOnce({ sessions: [] });
-
-      await fetchSessions({ limit: 5, includeExercises: true, completedOnly: true });
-
-      expect(mockFetchJson).toHaveBeenCalledWith(
-        expect.stringContaining('limit=5'),
-        expect.any(Object)
       );
     });
   });
@@ -278,17 +221,6 @@ describe('dataApi', () => {
       const result = await fetchAdminOverview();
 
       expect(result).toEqual(overview);
-    });
-  });
-
-  describe('fetchDashboardData', () => {
-    it('returns dashboard data', async () => {
-      const data = { summary: { totalWorkouts: 5 } };
-      mockFetchJson.mockResolvedValueOnce(data);
-
-      const result = await fetchDashboardData();
-
-      expect(result).toEqual(data);
     });
   });
 
@@ -308,79 +240,7 @@ describe('dataApi', () => {
       await fetchCompetitiveLeaderboard(100);
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        expect.stringContaining('limit=50'),
-        expect.any(Object)
-      );
-    });
-  });
-
-  describe('startSession', () => {
-    it('starts session and returns it', async () => {
-      const payload = { routineId: 'r1', routineName: 'Pecho' };
-      const session = { id: 's1', ...payload, startedAt: Date.now() };
-      mockFetchJson.mockResolvedValueOnce({ session });
-
-      const result = await startSession(payload);
-
-      expect(result).toEqual(session);
-    });
-  });
-
-  describe('updateSessionProgress', () => {
-    it('updates session progress', async () => {
-      mockFetchJson.mockResolvedValueOnce({ ok: true });
-
-      await updateSessionProgress('s1', []);
-
-      expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/sessions/progress',
-        expect.objectContaining({ method: 'POST' })
-      );
-    });
-  });
-
-  describe('completeSession', () => {
-    it('completes session', async () => {
-      mockFetchJson.mockResolvedValueOnce({ ok: true });
-
-      await completeSession('s1', [], Date.now(), 3600);
-
-      expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/sessions/complete',
-        expect.objectContaining({ method: 'POST' })
-      );
-    });
-
-    it('serializes final exercise weights, reps and reps-by-set updates', async () => {
-      mockFetchJson.mockResolvedValueOnce({ ok: true });
-      const exercises = [
-        {
-          exerciseId: 'bench',
-          userId: 'user-1',
-          date: '2026-06-17',
-          sets: [
-            { setNumber: 1, weight: 50, reps: 10, completed: true },
-            { setNumber: 2, weight: 55, reps: 7, completed: true }
-          ]
-        }
-      ];
-      const completedAt = 1781690400000;
-      const repsBySetUpdates = { bench: [10, 7] };
-
-      await completeSession('s1', exercises, completedAt, 45, repsBySetUpdates);
-
-      expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/sessions/complete',
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({
-            sessionId: 's1',
-            exercises,
-            completedAt,
-            totalDuration: 45,
-            repsBySetUpdates
-          })
-        })
+        expect.stringContaining('limit=50')
       );
     });
   });
@@ -392,7 +252,7 @@ describe('dataApi', () => {
       await upsertExerciseLog('ex1', '2026-01-15', []);
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/exercise-logs',
+        '/v1/data/exercise-logs',
         expect.objectContaining({ method: 'POST' })
       );
     });
@@ -457,7 +317,7 @@ describe('dataApi', () => {
       await upsertWorkout(workout as unknown as Workout);
 
       expect(mockFetchJson).toHaveBeenCalledWith(
-        'https://api.test.com/v1/data/workouts',
+        '/v1/data/workouts',
         expect.objectContaining({ method: 'POST' })
       );
     });

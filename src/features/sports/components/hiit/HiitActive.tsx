@@ -8,13 +8,15 @@ import { useUI } from '../../../../app/providers/ui-context';
 
 interface HiitActiveProps {
   config: HiitConfig;
+  userId: string;
+  sessionId: string;
   onAbandon: () => void;
   onComplete: () => void;
 }
 
-export const HiitActive: React.FC<HiitActiveProps> = ({ config, onAbandon, onComplete }) => {
+export const HiitActive: React.FC<HiitActiveProps> = ({ config, userId, sessionId, onAbandon, onComplete }) => {
   const { confirm } = useUI();
-  const timer = useHiitTimer();
+  const timer = useHiitTimer(userId, sessionId);
 
   const handleStart = useCallback(() => {
     timer.start(config);

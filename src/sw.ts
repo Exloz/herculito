@@ -1,4 +1,5 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { isPushExpired } from './shared/lib/pushExpiration';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
@@ -37,6 +38,7 @@ type PushPayload = {
   body?: unknown;
   url?: unknown;
   tag?: unknown;
+  expiresAtMs?: unknown;
 };
 
 const getString = (value: unknown): string | undefined =>
@@ -44,8 +46,7 @@ const getString = (value: unknown): string | undefined =>
 
 const DEFAULT_NOTIFICATION_URL = self.location.origin;
 const ALLOWED_NOTIFICATION_ORIGINS = new Set<string>([
-  self.location.origin,
-  'https://herculito.exloz.co'
+  self.location.origin
 ]);
 
 const getSafeNotificationUrl = (value: unknown): string => {
@@ -79,6 +80,11 @@ self.addEventListener('push', (event: PushEvent) => {
   const body = getString(data.body) ?? 'Continúa con tu entrenamiento.';
   const url = getSafeNotificationUrl(data.url);
   const tag = getString(data.tag) ?? 'rest-timer';
+
+  if (isPushExpired(data.expiresAtMs, Date.now())) {
+    event.waitUntil(Promise.resolve());
+    return;
+  }
 
   event.waitUntil(
     self.registration.showNotification(title, {

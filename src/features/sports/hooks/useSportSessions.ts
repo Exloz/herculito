@@ -1,84 +1,17 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { User, SportSession, SportStats, SportType } from '../../../shared/types';
-import {
-  fetchSportSessions,
-  fetchSportStats,
-  startSportSession as apiStartSession,
-  completeSportSession as apiCompleteSession,
-  deleteSportSession as apiDeleteSession,
-  type SportSessionResponse
-} from '../../../shared/api/sportsApi';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { User, SportSession, SportStats } from '../../../shared/types';
+import { fetchSportSessions, fetchSportStats, deleteSportSession as apiDeleteSession, decodeSportSessions } from '../api/sportsRemote';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
+import { SPORTS_CACHE_INVALIDATED_EVENT } from '../../activity-sync/browserActivitySync';
 
 const SPORTS_CACHE_KEY = 'sports-data-cache';
 const SPORTS_CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 
 type CachedSportsEntry = {
   savedAt: number;
-  sessions: SportSessionResponse[];
+  sessions: SportSession[];
   stats: SportStats;
-};
-
-const toDate = (value: unknown): Date | undefined => {
-  if (!value) return undefined;
-  if (value instanceof Date) return value;
-  if (typeof value === 'number') {
-    const ms = value < 1e12 ? value * 1000 : value;
-    return new Date(ms);
-  }
-  if (typeof value === 'string') {
-    const parsed = Date.parse(value);
-    if (Number.isFinite(parsed)) return new Date(parsed);
-  }
-  return undefined;
-};
-
-const mapSession = (session: SportSessionResponse): SportSession => {
-  return {
-    ...session,
-    startedAt: toDate(session.startedAt) ?? new Date(),
-    completedAt: toDate(session.completedAt),
-    archeryData: session.archeryData ? {
-      bowType: session.archeryData.bowType as 'recurve' | 'compound' | 'barebow' | 'longbow',
-      arrowsUsed: session.archeryData.arrowsUsed,
-      totalScore: session.archeryData.totalScore,
-      maxPossibleScore: session.archeryData.maxPossibleScore,
-      averageArrow: session.archeryData.averageArrow,
-      goldCount: session.archeryData.goldCount,
-      rounds: (session.archeryData.rounds || []).map(round => ({
-        id: round.id,
-        sessionId: round.sessionId,
-        distance: round.distance,
-        targetSize: round.targetSize,
-        arrowsPerEnd: round.arrowsPerEnd,
-        order: round.order,
-        totalScore: round.totalScore,
-        createdAt: toDate(round.createdAt) ?? new Date(),
-        ends: (round.ends || []).map(end => ({
-          id: end.id,
-          roundId: end.roundId,
-          endNumber: end.endNumber,
-          subtotal: end.subtotal,
-          goldCount: end.goldCount,
-          createdAt: toDate(end.createdAt) ?? new Date(),
-          arrows: (end.arrows || []).map(arrow => ({
-            id: arrow.id,
-            score: arrow.score,
-            isGold: arrow.isGold,
-            timestamp: toDate(arrow.timestamp) ?? new Date()
-          }))
-        }))
-      }))
-    } : undefined,
-    hiitData: session.hiitData ? {
-      intervals: session.hiitData.intervals,
-      workDuration: session.hiitData.workDuration,
-      restEnabled: session.hiitData.restEnabled,
-      restDuration: session.hiitData.restDuration,
-      totalWorkTime: session.hiitData.totalWorkTime,
-      totalRestTime: session.hiitData.totalRestTime,
-    } : undefined,
-  };
+  stale?: boolean;
 };
 
 const readSportsCache = (userId: string): CachedSportsEntry | null => {
@@ -92,19 +25,24 @@ const readSportsCache = (userId: string): CachedSportsEntry | null => {
     const cacheEntry = parsedCache[userId];
     if (!cacheEntry) return null;
 
-    if (Date.now() - cacheEntry.savedAt > SPORTS_CACHE_MAX_AGE_MS) {
-      delete parsedCache[userId];
+    const stale = cacheEntry.stale === true
+      || Date.now() - cacheEntry.savedAt > SPORTS_CACHE_MAX_AGE_MS;
+    if (stale !== cacheEntry.stale) {
+      parsedCache[userId] = { ...cacheEntry, stale };
       window.localStorage.setItem(SPORTS_CACHE_KEY, JSON.stringify(parsedCache));
-      return null;
     }
 
-    return cacheEntry;
+    return {
+      ...cacheEntry,
+      stale,
+      sessions: decodeSportSessions(cacheEntry.sessions)
+    };
   } catch {
     return null;
   }
 };
 
-const writeSportsCache = (userId: string, sessions: SportSessionResponse[], stats: SportStats): void => {
+const writeSportsCache = (userId: string, sessions: SportSession[], stats: SportStats): void => {
   if (!userId || typeof window === 'undefined') return;
 
   try {
@@ -114,6 +52,7 @@ const writeSportsCache = (userId: string, sessions: SportSessionResponse[], stat
       savedAt: Date.now(),
       sessions,
       stats,
+      stale: false,
     };
     window.localStorage.setItem(SPORTS_CACHE_KEY, JSON.stringify(parsedCache));
   } catch {
@@ -122,34 +61,43 @@ const writeSportsCache = (userId: string, sessions: SportSessionResponse[], stat
 };
 
 export const useSportSessions = (user: User) => {
+  const generationRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
   const [sessions, setSessions] = useState<SportSession[]>(() => {
     const cachedEntry = readSportsCache(user.id);
-    return cachedEntry ? cachedEntry.sessions.map(mapSession) : [];
+    return cachedEntry?.sessions ?? [];
   });
   const [stats, setStats] = useState<SportStats | null>(() => readSportsCache(user.id)?.stats ?? null);
   const [loading, setLoading] = useState(() => !readSportsCache(user.id));
   const [error, setError] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
+    const generation = generationRef.current + 1;
+    generationRef.current = generation;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
     setError(null);
     try {
       const [sessionsData, statsData] = await Promise.all([
-        fetchSportSessions({ limit: 100 }),
-        fetchSportStats()
+        fetchSportSessions({ limit: 100, signal: controller.signal }),
+        fetchSportStats(undefined, controller.signal)
       ]);
+      if (generation !== generationRef.current) return;
       writeSportsCache(user.id, sessionsData, statsData);
-      setSessions(sessionsData.map(mapSession));
+      setSessions(sessionsData);
       setStats(statsData);
     } catch (err) {
+      if (controller.signal.aborted || generation !== generationRef.current) return;
       const cachedEntry = readSportsCache(user.id);
       if (cachedEntry) {
-        setSessions(cachedEntry.sessions.map(mapSession));
+        setSessions(cachedEntry.sessions);
         setStats(cachedEntry.stats);
       }
       setError(toUserMessage(err, 'Error cargando sesiones'));
     } finally {
-      setLoading(false);
+      if (generation === generationRef.current) setLoading(false);
     }
   }, [user.id]);
 
@@ -157,47 +105,8 @@ export const useSportSessions = (user: User) => {
     if (user?.id) {
       void loadSessions();
     }
+    return () => abortRef.current?.abort();
   }, [user?.id, loadSessions]);
-
-  const startSession = useCallback(async (
-    sportType: SportType,
-    config: {
-      location?: string;
-      notes?: string;
-      archeryConfig?: {
-        bowType: 'recurve' | 'compound' | 'barebow' | 'longbow';
-        arrowsUsed: number;
-      };
-      hiitConfig?: {
-        intervals: number;
-        workDuration: number;
-        restEnabled: boolean;
-        restDuration: number;
-      };
-    }
-  ): Promise<SportSession> => {
-    const session = await apiStartSession({
-      sportType,
-      ...config
-    });
-    const mapped = mapSession(session);
-    setSessions(prev => [mapped, ...prev]);
-    return mapped;
-  }, []);
-
-  const completeSession = useCallback(async (sessionId: string, notes?: string) => {
-    await apiCompleteSession(sessionId, notes);
-    setSessions(prev =>
-      prev.map(s =>
-        s.id === sessionId
-          ? { ...s, status: 'completed' as const, completedAt: new Date(), notes }
-          : s
-      )
-    );
-    // Refresh stats after completing
-    const newStats = await fetchSportStats();
-    setStats(newStats);
-  }, []);
 
   const deleteSession = useCallback(async (sessionId: string) => {
     await apiDeleteSession(sessionId);
@@ -208,13 +117,20 @@ export const useSportSessions = (user: User) => {
     void loadSessions();
   }, [loadSessions]);
 
+  useEffect(() => {
+    const handleInvalidated = (event: Event) => {
+      const eventUserId = (event as CustomEvent<{ userId?: string }>).detail?.userId;
+      if (eventUserId === user.id) void loadSessions();
+    };
+    window.addEventListener(SPORTS_CACHE_INVALIDATED_EVENT, handleInvalidated);
+    return () => window.removeEventListener(SPORTS_CACHE_INVALIDATED_EVENT, handleInvalidated);
+  }, [loadSessions, user.id]);
+
   return {
     sessions,
     stats,
     loading,
     error,
-    startSession,
-    completeSession,
     deleteSession,
     refresh
   };

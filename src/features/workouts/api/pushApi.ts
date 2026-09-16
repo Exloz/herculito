@@ -1,4 +1,4 @@
-import { fetchJson, getIdToken } from '../../../shared/api/apiClient';
+import { fetchApiJson, fetchPublicApiJson } from '../../../shared/api/transport';
 
 const DEVICE_ID_KEY = 'pushDeviceId';
 
@@ -6,11 +6,6 @@ const DEBUG_PUSH = import.meta.env.DEV;
 
 const logPushEvent = (event: string, details?: Record<string, unknown>): void => {
   if (DEBUG_PUSH) console.info('[push]', event, details ?? {});
-};
-
-export const getPushApiOrigin = (): string => {
-  const value = import.meta.env.VITE_PUSH_API_ORIGIN;
-  return typeof value === 'string' && value.trim() ? value.trim() : 'https://api-herculito.exloz.co';
 };
 
 const generateDeviceId = (): string => {
@@ -127,8 +122,7 @@ export const getVapidPublicKey = async (): Promise<string> => {
   if (vapidPublicKeyPromise) return vapidPublicKeyPromise;
 
   vapidPublicKeyPromise = (async () => {
-    const origin = getPushApiOrigin();
-    const data = await fetchJson<{ vapidPublicKey: unknown }>(`${origin}/v1/push/vapidPublicKey`);
+    const data = await fetchPublicApiJson<{ vapidPublicKey: unknown }>('/v1/push/vapidPublicKey');
     if (typeof data.vapidPublicKey !== 'string' || !data.vapidPublicKey.trim()) {
       throw new Error('Invalid VAPID key');
     }
@@ -175,15 +169,8 @@ export const ensurePushSubscription = async (): Promise<PushSubscription> => {
 };
 
 export const registerSubscriptionInApi = async (deviceId: string, subscription: PushSubscription): Promise<void> => {
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/push/subscribe`, {
+  await fetchApiJson<{ ok: boolean }>('/v1/push/subscribe', {
     method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
     body: JSON.stringify({
       deviceId,
       subscription: subscription.toJSON()
@@ -220,68 +207,4 @@ export const ensureBackgroundRestPushReady = async (): Promise<{ deviceId: strin
 export const ensureIosBackgroundPushReady = async (): Promise<{ deviceId: string } | null> => {
   if (!isIosPushCapable()) return null;
   return ensureBackgroundRestPushReady();
-};
-
-export const scheduleRestPush = async (
-  seconds: number,
-  overrides?: { title?: string; body?: string; url?: string },
-  options?: { commandAtMs?: number }
-): Promise<void> => {
-  if (!shouldUseBackgroundRestPush()) return;
-  if (Notification.permission !== 'granted') return;
-
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const deviceId = getOrCreateDeviceId();
-
-  const subscription = await getExistingPushSubscription();
-  if (!subscription) {
-    return;
-  }
-
-  const commandAtMs = options?.commandAtMs ?? Date.now();
-  const notificationTag = isIosDevice() ? 'rest-timer' : `rest-timer:${commandAtMs}`;
-
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/rest/schedule`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      deviceId,
-      seconds,
-      commandAtMs,
-      title: overrides?.title,
-      body: overrides?.body,
-      url: overrides?.url,
-      tag: notificationTag
-    })
-  });
-
-  logPushEvent('rest_schedule_sent', { deviceId, seconds, commandAtMs, notificationTag });
-};
-
-export const cancelRestPush = async (options?: { commandAtMs?: number }): Promise<void> => {
-  if (!shouldUseBackgroundRestPush()) return;
-
-  const origin = getPushApiOrigin();
-  const token = await getIdToken();
-  const deviceId = getOrCreateDeviceId();
-
-  const commandAtMs = options?.commandAtMs ?? Date.now();
-
-  await fetchJson<{ ok: boolean }>(`${origin}/v1/rest/cancel`, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      deviceId,
-      commandAtMs
-    })
-  });
-
-  logPushEvent('rest_cancel_sent', { deviceId, commandAtMs });
 };

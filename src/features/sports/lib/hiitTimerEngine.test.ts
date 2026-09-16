@@ -7,6 +7,8 @@ import {
   resetHiit,
   restartCurrentPhase,
   tickHiit,
+  advanceHiit,
+  restoreHiitEngine,
   getEffectiveElapsed,
   getHiitProgress,
   getPhaseDuration,
@@ -241,6 +243,74 @@ describe('hiitTimerEngine', () => {
       const engine = startHiit(createHiitEngine(defaultConfig));
       const resumed = resumeHiit(engine);
       expect(resumed).toBe(engine); // No change
+    });
+
+    it('does not consume suspended wall time while paused', () => {
+      const paused = pauseHiit(startHiit(createHiitEngine(defaultConfig)));
+
+      const result = advanceHiit(paused, 30);
+
+      expect(result.engine).toBe(paused);
+      expect(result.alerts).toEqual([]);
+    });
+  });
+
+  describe('wall-clock reconciliation', () => {
+    it('advances across phase boundaries after background suspension', () => {
+      const config: HiitConfig = {
+        intervals: 1,
+        workDuration: 10,
+        restEnabled: false,
+        restDuration: 0,
+      };
+      const started = startHiit(createHiitEngine(config));
+
+      const result = advanceHiit(started, 8);
+
+      expect(result.engine.state).toEqual({
+        phase: 'work',
+        currentInterval: 1,
+        secondsRemaining: 7,
+        totalElapsed: 8,
+      });
+      expect(result.alerts).toContain('phase-start');
+    });
+
+    it('restores a running timer by consuming elapsed wall time', () => {
+      const config: HiitConfig = {
+        intervals: 1,
+        workDuration: 10,
+        restEnabled: false,
+        restDuration: 0,
+      };
+
+      const restored = restoreHiitEngine({
+        config,
+        state: startHiit(createHiitEngine(config)).state,
+        startedAtMs: 1_000,
+        lastTickAtMs: 1_000,
+        pausedAtMs: null,
+      }, 9_000);
+
+      expect(restored.engine.state.phase).toBe('work');
+      expect(restored.engine.state.secondsRemaining).toBe(7);
+      expect(restored.lastTickAtMs).toBe(9_000);
+    });
+
+    it('restores a paused timer without consuming background time', () => {
+      const state = startHiit(createHiitEngine(defaultConfig)).state;
+
+      const restored = restoreHiitEngine({
+        config: defaultConfig,
+        state,
+        startedAtMs: 1_000,
+        lastTickAtMs: 2_000,
+        pausedAtMs: 2_000,
+      }, 20_000);
+
+      expect(restored.engine.state).toEqual(state);
+      expect(restored.engine.isPaused).toBe(true);
+      expect(restored.lastTickAtMs).toBe(20_000);
     });
   });
 

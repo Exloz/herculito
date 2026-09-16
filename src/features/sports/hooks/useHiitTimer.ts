@@ -7,17 +7,16 @@ import {
   resumeHiit,
   resetHiit,
   restartCurrentPhase as restartCurrentHiitPhase,
-  tickHiit,
+  advanceHiit,
   getHiitProgress,
   getEffectiveElapsed,
   getPhaseLabel,
-  saveHiitTimerState,
-  loadHiitTimerState,
-  clearHiitTimerState,
+  restoreHiitEngine,
   type HiitAlertType,
   type HiitEngine,
 } from '../lib/hiitTimerEngine';
-import { shouldUseBackgroundRestPush, scheduleRestPush, cancelRestPush, ensureBackgroundRestPushReady } from '../../workouts/api/pushApi';
+import { remoteTimerScheduler } from '../../workouts/lib/remoteTimerScheduler';
+import { useActivitySync } from '../../activity-sync/useActivitySync';
 
 const TICK_INTERVAL_MS = 1000;
 
@@ -71,29 +70,40 @@ const showNotification = async (title: string, body: string): Promise<void> => {
   }
 };
 
-export const useHiitTimer = (): UseHiitTimerReturn => {
-  const [engine, setEngine] = useState<HiitEngine>(() => createHiitEngine({
+const getNextPhaseNotification = (current: HiitEngine): string => {
+  if (current.state.phase === 'prep') return 'Comienza trabajo';
+  if (current.state.phase === 'rest') return 'Comienza trabajo';
+  if (current.state.phase === 'work'
+    && current.config.restEnabled
+    && current.state.currentInterval < current.config.intervals) {
+    return 'Comienza descanso';
+  }
+  return 'HIIT completado';
+};
+
+export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerReturn => {
+  const { activitySync } = useActivitySync(userId);
+  const [initialRestore] = useState(() => {
+    const saved = activitySync.getHiitTimerState(sessionId);
+    if (!saved || saved.state.phase === 'idle' || saved.state.phase === 'done') return null;
+    return { saved, restored: restoreHiitEngine(saved, Date.now()) };
+  });
+  const [engine, setEngine] = useState<HiitEngine>(() => initialRestore?.restored.engine ?? createHiitEngine({
     intervals: 8,
     workDuration: 30,
     restEnabled: true,
     restDuration: 15,
   }));
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState(() => getHiitProgress(engine.state, engine.config));
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-  const startedAtRef = useRef<number | null>(null);
-  const pushCommandSeqRef = useRef(0);
-  const pushCommandAtRef = useRef(0);
-
-  const nextPushCommand = useCallback(() => {
-    const now = Date.now();
-    const commandAtMs = Math.max(now, pushCommandAtRef.current + 1);
-    pushCommandAtRef.current = commandAtMs;
-    pushCommandSeqRef.current += 1;
-    return { sequence: pushCommandSeqRef.current, commandAtMs };
-  }, []);
+  const startedAtRef = useRef<number | null>(initialRestore?.saved.startedAtMs ?? null);
+  const lastTickAtRef = useRef<number | null>(initialRestore?.restored.lastTickAtMs ?? null);
+  const pausedAtRef = useRef<number | null>(
+    initialRestore?.saved.pausedAtMs === null ? null : initialRestore?.saved.pausedAtMs ?? null
+  );
 
   const acquireWakeLock = useCallback(async () => {
     if ('wakeLock' in navigator) {
@@ -168,43 +178,79 @@ export const useHiitTimer = (): UseHiitTimerReturn => {
     }
   }, [playBeep]);
 
-  const scheduleBackgroundAlert = useCallback(async (secondsUntilNextPhase: number, phaseLabel: string) => {
-    if (!shouldUseBackgroundRestPush()) return;
+  const schedulePhaseEnd = useCallback((
+    current: HiitEngine,
+    fromMs: number,
+    requestPermission = false
+  ) => {
+    if (!current.isRunning || current.isPaused || current.state.secondsRemaining <= 0) return;
 
-    try {
-      const ready = await ensureBackgroundRestPushReady();
-      if (!ready) return;
-
-      await scheduleRestPush(secondsUntilNextPhase, {
-        title: 'HIIT Timer',
-        body: phaseLabel,
-      });
-    } catch {
+    void remoteTimerScheduler.schedule(userId, {
+      executeAtMs: fromMs + current.state.secondsRemaining * 1000,
+      title: 'HIIT Timer',
+      body: getNextPhaseNotification(current),
+      ...(requestPermission ? { requestPermission: true } : {})
+    }).catch(() => {
       // Background push failed — non-critical
+    });
+  }, [userId]);
+
+  const advanceTo = useCallback((current: HiitEngine, nowMs: number) => {
+    const lastTickAtMs = lastTickAtRef.current ?? nowMs;
+    const elapsedSeconds = Math.max(0, Math.floor((nowMs - lastTickAtMs) / 1000));
+    if (elapsedSeconds === 0) {
+      return { engine: current, alerts: [] as HiitAlertType[], phaseChanged: false };
     }
+
+    const advanced = advanceHiit(current, elapsedSeconds);
+    lastTickAtRef.current = lastTickAtMs + elapsedSeconds * 1000;
+    return {
+      ...advanced,
+      phaseChanged: advanced.engine.state.phase !== current.state.phase
+        || advanced.engine.state.currentInterval !== current.state.currentInterval
+    };
   }, []);
 
-  // Restore state from localStorage on mount
-  useEffect(() => {
-    const saved = loadHiitTimerState();
-    if (saved && saved.state.phase !== 'idle' && saved.state.phase !== 'done') {
-      const restoredEngine: HiitEngine = {
-        config: saved.config,
-        state: saved.state,
-        isRunning: true,
-        isPaused: saved.pausedAtMs !== null,
-      };
-      setEngine(restoredEngine);
-      setProgress(getHiitProgress(saved.state, saved.config));
+  const applyAdvancedEngine = useCallback((current: HiitEngine, nowMs: number) => {
+    const advanced = advanceTo(current, nowMs);
+    if (advanced.engine === current) return;
+
+    const alert = advanced.alerts[advanced.alerts.length - 1];
+    if (alert) playAlert(alert);
+    setProgress(getHiitProgress(advanced.engine.state, advanced.engine.config));
+    setEngine(advanced.engine);
+
+    if (!advanced.engine.isRunning && advanced.engine.state.phase === 'done') {
+      void remoteTimerScheduler.cancel(userId).catch(() => {});
+      releaseWakeLock();
+      activitySync.clearHiitTimerState(sessionId);
+      void showNotification(
+        '¡HIIT completado!',
+        `Has completado ${advanced.engine.config.intervals} intervalos.`
+      );
+    } else if (advanced.phaseChanged) {
+      schedulePhaseEnd(advanced.engine, lastTickAtRef.current ?? nowMs);
     }
-  }, []);
+  }, [activitySync, advanceTo, playAlert, releaseWakeLock, schedulePhaseEnd, sessionId, userId]);
+
+  useEffect(() => {
+    if (initialRestore?.restored.engine.isRunning && !initialRestore.restored.engine.isPaused) {
+      schedulePhaseEnd(initialRestore.restored.engine, initialRestore.restored.lastTickAtMs);
+    }
+  }, [initialRestore, schedulePhaseEnd]);
 
   // Persist state changes
   useEffect(() => {
-    if (engine.state.phase !== 'idle') {
-      saveHiitTimerState(engine.config, engine.state, startedAtRef.current ?? Date.now(), engine.isPaused ? Date.now() : null);
+    if (engine.state.phase !== 'idle' && engine.state.phase !== 'done') {
+      activitySync.saveHiitTimerState(sessionId, {
+        config: engine.config,
+        state: engine.state,
+        startedAtMs: startedAtRef.current ?? Date.now(),
+        pausedAtMs: pausedAtRef.current,
+        lastTickAtMs: lastTickAtRef.current ?? Date.now()
+      });
     }
-  }, [engine.state, engine.config, engine.isPaused]);
+  }, [activitySync, engine.state, engine.config, engine.isPaused, sessionId]);
 
   // Main tick loop
   useEffect(() => {
@@ -221,46 +267,7 @@ export const useHiitTimer = (): UseHiitTimerReturn => {
     acquireWakeLock();
 
     intervalRef.current = setInterval(() => {
-      setEngine((prev) => {
-        const result = tickHiit(prev);
-        const newProgress = getHiitProgress(result.state, prev.config);
-
-        setProgress(newProgress);
-
-        // Play audio alert
-        if (result.alert) {
-          playAlert(result.alert);
-        }
-
-        // Schedule background notification for phase transitions
-        if (result.alert === 'phase-start') {
-          const { commandAtMs } = nextPushCommand();
-          void cancelRestPush({ commandAtMs }).catch(() => {});
-          const phaseDuration = result.state.phase === 'work' ? prev.config.workDuration
-            : result.state.phase === 'rest' ? prev.config.restDuration : 0;
-          if (phaseDuration > 0) {
-            void scheduleBackgroundAlert(phaseDuration, getPhaseLabel(result.state.phase));
-          }
-        }
-
-        // Handle done
-        if (result.state.phase === 'done') {
-          const { commandAtMs } = nextPushCommand();
-          void cancelRestPush({ commandAtMs }).catch(() => {});
-          releaseWakeLock();
-          clearHiitTimerState();
-          void showNotification(
-            '¡HIIT completado!',
-            `Has completado ${prev.config.intervals} intervalos.`
-          );
-        }
-
-        return {
-          ...prev,
-          state: result.state,
-          isRunning: result.isRunning,
-        } as HiitEngine;
-      });
+      applyAdvancedEngine(engine, Date.now());
     }, TICK_INTERVAL_MS);
 
     return () => {
@@ -269,7 +276,7 @@ export const useHiitTimer = (): UseHiitTimerReturn => {
         intervalRef.current = null;
       }
     };
-  }, [engine.isRunning, engine.isPaused, acquireWakeLock, releaseWakeLock, startAudioContext, playAlert, nextPushCommand, scheduleBackgroundAlert]);
+  }, [engine, acquireWakeLock, releaseWakeLock, startAudioContext, applyAdvancedEngine]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -277,64 +284,75 @@ export const useHiitTimer = (): UseHiitTimerReturn => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (audioContextRef.current) audioContextRef.current.close();
       releaseWakeLock();
-      const { commandAtMs } = nextPushCommand();
-      void cancelRestPush({ commandAtMs }).catch(() => {});
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [releaseWakeLock]);
 
   // Handle visibility change — restore state and check if timer expired
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        // App came back to foreground — cancel pending background pushes
-        const { commandAtMs } = nextPushCommand();
-        void cancelRestPush({ commandAtMs }).catch(() => {});
+        applyAdvancedEngine(engine, Date.now());
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [nextPushCommand]);
+  }, [engine, applyAdvancedEngine]);
 
   const handleStart = useCallback((config: HiitConfig) => {
     const newEngine = createHiitEngine(config);
     const started = startHiit(newEngine);
-    startedAtRef.current = Date.now();
+    const nowMs = Date.now();
+    startedAtRef.current = nowMs;
+    lastTickAtRef.current = nowMs;
+    pausedAtRef.current = null;
     setEngine(started);
     setProgress(0);
 
-    // Request notification permission
-    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
-      void Notification.requestPermission();
-    }
-  }, []);
+    schedulePhaseEnd(started, nowMs, true);
+  }, [schedulePhaseEnd]);
 
   const handlePause = useCallback(() => {
-    setEngine((prev) => pauseHiit(prev));
-  }, []);
+    const nowMs = Date.now();
+    const reconciled = advanceTo(engine, nowMs).engine;
+    const paused = pauseHiit(reconciled);
+    lastTickAtRef.current = nowMs;
+    pausedAtRef.current = nowMs;
+    setEngine(paused);
+    setProgress(getHiitProgress(paused.state, paused.config));
+    void remoteTimerScheduler.cancel(userId).catch(() => {});
+  }, [advanceTo, engine, userId]);
 
   const handleResume = useCallback(() => {
-    setEngine((prev) => resumeHiit(prev));
-  }, []);
+    const resumed = resumeHiit(engine);
+    if (resumed === engine) return;
+
+    const nowMs = Date.now();
+    lastTickAtRef.current = nowMs;
+    pausedAtRef.current = null;
+    setEngine(resumed);
+    schedulePhaseEnd(resumed, nowMs);
+  }, [engine, schedulePhaseEnd]);
 
   const handleReset = useCallback(() => {
-    const { commandAtMs } = nextPushCommand();
-    void cancelRestPush({ commandAtMs }).catch(() => {});
+    void remoteTimerScheduler.cancel(userId).catch(() => {});
     releaseWakeLock();
-    clearHiitTimerState();
-    setEngine((prev) => resetHiit(prev));
+    activitySync.clearHiitTimerState(sessionId);
+    setEngine(resetHiit(engine));
     setProgress(0);
     startedAtRef.current = null;
-  }, [nextPushCommand, releaseWakeLock]);
+    lastTickAtRef.current = null;
+    pausedAtRef.current = null;
+  }, [activitySync, engine, releaseWakeLock, sessionId, userId]);
 
   const handleRestartCurrentPhase = useCallback(() => {
-    setEngine((prev) => {
-      const restarted = restartCurrentHiitPhase(prev);
-      setProgress(getHiitProgress(restarted.state, restarted.config));
-      return restarted;
-    });
-  }, []);
+    const restarted = restartCurrentHiitPhase(engine);
+    const nowMs = Date.now();
+    lastTickAtRef.current = nowMs;
+    setEngine(restarted);
+    setProgress(getHiitProgress(restarted.state, restarted.config));
+    schedulePhaseEnd(restarted, nowMs);
+  }, [engine, schedulePhaseEnd]);
 
   const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);

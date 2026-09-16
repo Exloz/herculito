@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { ClerkProvider } from '@clerk/react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { getApiOrigin } from '../shared/api/transport';
 import '../index.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -69,6 +70,8 @@ const registerSW = async (swUrl: string) => {
 if (!PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk Publishable Key');
 }
+
+getApiOrigin();
 
 if (import.meta.env.PROD) {
   let refreshing = false;

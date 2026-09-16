@@ -15,7 +15,6 @@ import { HiitSessionSummary } from '../components/hiit/HiitSessionSummary';
 import { SportSessionCard } from '../components/SportSessionCard';
 import { useUI } from '../../../app/providers/ui-context';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
-import { useActivitySync } from '../../activity-sync/useActivitySync';
 
 interface SportsProps {
   user: User;
@@ -42,7 +41,6 @@ const formatMinutes = (mins: number | undefined): string => {
 
 const Sports: React.FC<SportsProps> = ({ user }) => {
   const { showToast, confirm } = useUI();
-  const { activitySync, projection } = useActivitySync(user.id);
   const {
     sessions,
     stats,
@@ -53,6 +51,8 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   } = useSportSessions(user);
 
   const {
+    activitySync,
+    projection,
     activeSession,
     hasActiveSession,
     startSession: startActiveSession,
@@ -200,8 +200,10 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
     );
   }
 
-  if (loading && showSkeleton) {
-    return <PageSkeleton page="sports" />;
+  if (loading) {
+    return showSkeleton
+      ? <PageSkeleton page="sports" />
+      : <div className="app-shell" aria-hidden="true" />;
   }
 
   const completedSessions = sessions.filter(s => s.status === 'completed');

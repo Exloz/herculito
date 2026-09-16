@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { APP_LOCALE, formatNumber, formatDateValue, formatCountLabel } from './intl';
 
 describe('intl', () => {
@@ -31,6 +31,24 @@ describe('intl', () => {
       const result = formatNumber(1234, undefined, 'en-US');
       expect(typeof result).toBe('string');
     });
+
+    it('reuses number formatters with equivalent options', () => {
+      const OriginalNumberFormat = Intl.NumberFormat;
+      const constructorSpy = vi.spyOn(Intl, 'NumberFormat').mockImplementation(
+        function NumberFormat(locales, options) {
+          return new OriginalNumberFormat(locales, options);
+        }
+      );
+
+      try {
+        formatNumber(1, { minimumFractionDigits: 3 }, 'fr-CA');
+        formatNumber(2, { minimumFractionDigits: 3 }, 'fr-CA');
+
+        expect(constructorSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        constructorSpy.mockRestore();
+      }
+    });
   });
 
   describe('formatDateValue', () => {
@@ -52,6 +70,24 @@ describe('intl', () => {
       const date = new Date('2026-01-15T12:00:00Z');
       const result = formatDateValue(date, undefined, 'en-US');
       expect(typeof result).toBe('string');
+    });
+
+    it('reuses date formatters with equivalent options', () => {
+      const OriginalDateTimeFormat = Intl.DateTimeFormat;
+      const constructorSpy = vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(
+        function DateTimeFormat(locales, options) {
+          return new OriginalDateTimeFormat(locales, options);
+        }
+      );
+
+      try {
+        formatDateValue(new Date('2026-01-15T12:00:00Z'), { year: '2-digit' }, 'en-GB');
+        formatDateValue(new Date('2026-01-16T12:00:00Z'), { year: '2-digit' }, 'en-GB');
+
+        expect(constructorSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        constructorSpy.mockRestore();
+      }
     });
   });
 
@@ -85,6 +121,24 @@ describe('intl', () => {
     it('formats with no decimals', () => {
       const result = formatCountLabel(1.5, 'item', 'items');
       expect(result).not.toContain('.');
+    });
+
+    it('reuses plural rules for the same locale', () => {
+      const OriginalPluralRules = Intl.PluralRules;
+      const constructorSpy = vi.spyOn(Intl, 'PluralRules').mockImplementation(
+        function PluralRules(locales, options) {
+          return new OriginalPluralRules(locales, options);
+        }
+      );
+
+      try {
+        formatCountLabel(1, 'élément', 'éléments', 'fr-FR');
+        formatCountLabel(2, 'élément', 'éléments', 'fr-FR');
+
+        expect(constructorSpy).toHaveBeenCalledTimes(1);
+      } finally {
+        constructorSpy.mockRestore();
+      }
     });
   });
 });

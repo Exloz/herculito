@@ -9,6 +9,8 @@ interface ClerkLike {
 type TokenGetter = () => Promise<string | null>;
 
 const DEFAULT_TIMEOUT_MS = 15000;
+const DEFAULT_RETRY_DELAY_MS = 250;
+const MAX_RETRY_DELAY_MS = 5000;
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 
 export class ApiError extends Error {
@@ -97,13 +99,49 @@ const parseErrorResponse = async (res: Response): Promise<{ message?: string; co
   return {};
 };
 
+const getRetryDelayMs = (response?: Response): number => {
+  const retryAfter = response?.headers.get('retry-after');
+  if (!retryAfter) return DEFAULT_RETRY_DELAY_MS;
+
+  const seconds = Number(retryAfter);
+  const delay = Number.isFinite(seconds)
+    ? seconds * 1000
+    : Date.parse(retryAfter) - Date.now();
+
+  if (!Number.isFinite(delay)) return DEFAULT_RETRY_DELAY_MS;
+  return Math.max(0, Math.min(delay, MAX_RETRY_DELAY_MS));
+};
+
+const waitForRetry = (delayMs: number, signal?: AbortSignal | null): Promise<void> => {
+  if (signal?.aborted) {
+    return Promise.reject(signal.reason ?? new DOMException('Aborted', 'AbortError'));
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeoutId = globalThis.setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, delayMs);
+    const onAbort = () => {
+      globalThis.clearTimeout(timeoutId);
+      reject(signal?.reason ?? new DOMException('Aborted', 'AbortError'));
+    };
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+};
+
 export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> => {
   const method = (init?.method ?? 'GET').toUpperCase();
   const retries = method === 'GET' || method === 'HEAD' ? 1 : 0;
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     const controller = new AbortController();
-    const timeoutId = globalThis.setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+    let didTimeout = false;
+    let receivedResponse = false;
+    const timeoutId = globalThis.setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+    }, DEFAULT_TIMEOUT_MS);
     const externalSignal = init?.signal;
 
     const onAbort = () => {
@@ -123,11 +161,13 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> 
         ...init,
         signal: controller.signal
       });
+      receivedResponse = true;
 
       const contentType = res.headers.get('content-type') ?? '';
       if (!res.ok) {
         const shouldRetry = RETRYABLE_STATUS_CODES.has(res.status) && attempt < retries;
         if (shouldRetry) {
+          await waitForRetry(getRetryDelayMs(res), externalSignal);
           continue;
         }
 
@@ -153,10 +193,14 @@ export const fetchJson = async <T>(url: string, init?: RequestInit): Promise<T> 
 
       return (await res.json()) as T;
     } catch (error) {
-      if (attempt < retries) {
+      if (externalSignal?.aborted) {
+        throw error;
+      }
+      if (attempt < retries && !receivedResponse && (error instanceof TypeError || didTimeout)) {
+        await waitForRetry(DEFAULT_RETRY_DELAY_MS, externalSignal);
         continue;
       }
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (didTimeout) {
         throw new ApiError('Request timed out', { status: 408 });
       }
       throw error;

@@ -418,7 +418,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
               {measurements.map((measurement, index) => (
                 <div
                   key={measurement.id}
-                  className="motion-interactive app-card app-card-hover rounded-[1.2rem] p-4 sm:p-5"
+                  className="deferred-list-item motion-interactive app-card app-card-hover rounded-[1.2rem] p-4 sm:p-5"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">

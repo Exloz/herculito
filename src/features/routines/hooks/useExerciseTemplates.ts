@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Fuse from 'fuse.js';
 import { ExerciseTemplate, ExerciseVideo } from '../../../shared/types';
 import {
@@ -9,6 +9,16 @@ import {
   type ExerciseTemplateResponse
 } from '../../../shared/api/dataApi';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
+
+const EXERCISE_TEMPLATE_CACHE_STALE_MS = 60_000;
+
+interface ExerciseTemplateCacheEntry {
+  exercises: ExerciseTemplate[];
+  updatedAt: number;
+}
+
+const exerciseTemplateCache = new Map<string, ExerciseTemplateCacheEntry>();
+const exerciseTemplateRequests = new Map<string, Promise<ExerciseTemplate[]>>();
 
 const toDate = (value: unknown): Date => {
   if (value instanceof Date) return value;
@@ -32,10 +42,32 @@ const mapExercise = (exercise: ExerciseTemplateResponse): ExerciseTemplate => {
   };
 };
 
+const fetchMappedExercises = (userId: string): Promise<ExerciseTemplate[]> => {
+  const pendingRequest = exerciseTemplateRequests.get(userId);
+  if (pendingRequest) return pendingRequest;
+
+  const request = fetchExercises()
+    .then((data) => data.map(mapExercise))
+    .finally(() => {
+      exerciseTemplateRequests.delete(userId);
+    });
+
+  exerciseTemplateRequests.set(userId, request);
+  return request;
+};
+
+export const clearExerciseTemplateCache = (): void => {
+  exerciseTemplateCache.clear();
+  exerciseTemplateRequests.clear();
+};
+
 export const useExerciseTemplates = (userId: string) => {
-  const [exercises, setExercises] = useState<ExerciseTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedEntry = exerciseTemplateCache.get(userId);
+  const [exercises, setExercises] = useState<ExerciseTemplate[]>(cachedEntry?.exercises ?? []);
+  const [loading, setLoading] = useState(!cachedEntry);
   const [error, setError] = useState<string | null>(null);
+  const exercisesRef = useRef(exercises);
+  exercisesRef.current = exercises;
 
   const sortExercises = useCallback((items: ExerciseTemplate[]) => {
     return [...items].sort((a, b) => {
@@ -72,30 +104,61 @@ export const useExerciseTemplates = (userId: string) => {
     return indexByCategory;
   }, [exercises, fuseOptions]);
 
-  const loadExercises = useCallback(async () => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await fetchExercises();
-      const mapped = data.map(mapExercise);
-      const sorted = sortExercises(mapped);
-      setExercises(sorted);
-    } catch (error) {
-      setError(toUserMessage(error, 'Error al cargar ejercicios'));
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, sortExercises]);
-
   useEffect(() => {
-    void loadExercises();
-  }, [loadExercises]);
+    let active = true;
+
+    if (!userId) {
+      setExercises([]);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    const cached = exerciseTemplateCache.get(userId);
+    if (cached) {
+      setExercises(cached.exercises);
+      setLoading(false);
+    } else {
+      setExercises([]);
+    }
+
+    if (!cached || Date.now() - cached.updatedAt >= EXERCISE_TEMPLATE_CACHE_STALE_MS) {
+      if (!cached) setLoading(true);
+      setError(null);
+
+      void fetchMappedExercises(userId)
+        .then((mapped) => {
+          const sorted = sortExercises(mapped);
+          exerciseTemplateCache.set(userId, {
+            exercises: sorted,
+            updatedAt: Date.now()
+          });
+          if (active) setExercises(sorted);
+        })
+        .catch((loadError: unknown) => {
+          if (active) setError(toUserMessage(loadError, 'Error al cargar ejercicios'));
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }
+
+    return () => {
+      active = false;
+    };
+  }, [sortExercises, userId]);
+
+  const updateCachedExercises = useCallback((update: (current: ExerciseTemplate[]) => ExerciseTemplate[]) => {
+    const current = exerciseTemplateCache.get(userId)?.exercises ?? exercisesRef.current;
+    const next = update(current);
+    exerciseTemplateCache.set(userId, {
+      exercises: next,
+      updatedAt: Date.now()
+    });
+    exercisesRef.current = next;
+    setExercises(next);
+  }, [userId]);
 
   const createExerciseTemplate = async (
     name: string,
@@ -124,7 +187,7 @@ export const useExerciseTemplates = (userId: string) => {
       });
 
       const mapped = mapExercise(created);
-      setExercises((prev) => sortExercises([mapped, ...prev]));
+      updateCachedExercises((previous) => sortExercises([mapped, ...previous]));
       return created.id;
     } catch (error) {
       setError(toUserMessage(error, 'Error al crear ejercicio'));
@@ -132,19 +195,16 @@ export const useExerciseTemplates = (userId: string) => {
     }
   };
 
-  const incrementUsage = async (exerciseId: string) => {
-    try {
-      await apiIncrementExerciseUsage(exerciseId);
-      setExercises((prev) =>
-        prev.map((exercise) =>
-          exercise.id === exerciseId
-            ? { ...exercise, timesUsed: (exercise.timesUsed || 0) + 1 }
-            : exercise
-        )
-      );
-    } catch {
-      // Error silenciado para incremento de uso
-    }
+  const incrementUsage = (exerciseId: string): void => {
+    updateCachedExercises((previous) => previous.map((exercise) =>
+      exercise.id === exerciseId
+        ? { ...exercise, timesUsed: (exercise.timesUsed || 0) + 1 }
+        : exercise
+    ));
+
+    void apiIncrementExerciseUsage(exerciseId).catch(() => {
+      // Usage telemetry must not block adding an exercise.
+    });
   };
 
   const updateExerciseTemplate = async (exerciseId: string, updates: Partial<ExerciseTemplate>) => {
@@ -160,8 +220,8 @@ export const useExerciseTemplates = (userId: string) => {
         video: updates.video
       });
 
-      setExercises((prev) =>
-        prev.map((exercise) =>
+      updateCachedExercises((previous) =>
+        previous.map((exercise) =>
           exercise.id === exerciseId ? { ...exercise, ...updates } : exercise
         )
       );

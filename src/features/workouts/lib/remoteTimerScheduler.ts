@@ -22,7 +22,7 @@ interface ReadyRemoteTimer {
 export interface RemoteTimerSchedulerDependencies {
   now: () => number;
   canUseRemoteTimer: () => boolean;
-  ensureReady: (requestPermission: boolean) => Promise<ReadyRemoteTimer | null>;
+  ensureReady: (requestPermission: boolean, ownerUserId: string) => Promise<ReadyRemoteTimer | null>;
   getDeviceId: () => string;
   isIos: () => boolean;
   scheduleRemote: (input: ScheduleRemoteRestTimerInput) => Promise<ScheduleRemoteTimerResult>;
@@ -221,7 +221,7 @@ export const createRemoteTimerScheduler = (
         return { status: 'skipped', commandAtMs: command.commandAtMs };
       }
 
-      const ready = await dependencies.ensureReady(requestPermission);
+      const ready = await dependencies.ensureReady(requestPermission, command.ownerUserId);
       if (!isCurrent(sequence, command)) {
         return { status: 'superseded', commandAtMs: command.commandAtMs };
       }
@@ -352,7 +352,7 @@ export const createRemoteTimerScheduler = (
 export const remoteTimerScheduler = createRemoteTimerScheduler({
   now: Date.now,
   canUseRemoteTimer: shouldUseBackgroundRestPush,
-  ensureReady: async (requestPermission) => {
+  ensureReady: async (requestPermission, ownerUserId) => {
     if (requestPermission && typeof Notification !== 'undefined' && Notification.permission === 'default') {
       try {
         const permission = await Notification.requestPermission();
@@ -361,7 +361,7 @@ export const remoteTimerScheduler = createRemoteTimerScheduler({
         return null;
       }
     }
-    return ensureBackgroundRestPushReady();
+    return ensureBackgroundRestPushReady(ownerUserId);
   },
   getDeviceId: getOrCreateDeviceId,
   isIos: isIosDevice,

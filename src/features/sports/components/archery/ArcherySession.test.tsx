@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { ArcherySession } from './ArcherySession';
 import type { SportSession } from '../../../../shared/types';
@@ -64,6 +64,123 @@ describe('ArcherySession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('debounces note persistence and keeps the latest local value', () => {
+    vi.useFakeTimers();
+    const onNotesChange = vi.fn();
+    render(
+      <ArcherySession
+        session={buildSession()}
+        onAddRound={vi.fn().mockResolvedValue(undefined)}
+        onAddEnd={vi.fn().mockResolvedValue(undefined)}
+        onComplete={vi.fn().mockResolvedValue(undefined)}
+        onNotesChange={onNotesChange}
+        onAbandon={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+
+    const notesInput = screen.getByRole('textbox', { name: '' });
+    fireEvent.change(notesInput, { target: { value: 'Club' } });
+    act(() => vi.advanceTimersByTime(300));
+    fireEvent.change(notesInput, { target: { value: 'Club, viento fuerte' } });
+    act(() => vi.advanceTimersByTime(499));
+
+    expect(notesInput).toHaveValue('Club, viento fuerte');
+    expect(onNotesChange).not.toHaveBeenCalled();
+    expect(localStorageMock.getItem('archery-notes-draft:session-1')).toBe('Club, viento fuerte');
+
+    act(() => vi.advanceTimersByTime(1));
+
+    expect(onNotesChange).toHaveBeenCalledTimes(1);
+    expect(onNotesChange).toHaveBeenCalledWith('Club, viento fuerte');
+    expect(localStorageMock.getItem('archery-notes-draft:session-1')).toBeNull();
+  });
+
+  it('flushes pending notes on blur', () => {
+    vi.useFakeTimers();
+    const onNotesChange = vi.fn();
+    render(
+      <ArcherySession
+        session={buildSession()}
+        onAddRound={vi.fn().mockResolvedValue(undefined)}
+        onAddEnd={vi.fn().mockResolvedValue(undefined)}
+        onComplete={vi.fn().mockResolvedValue(undefined)}
+        onNotesChange={onNotesChange}
+        onAbandon={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+
+    const notesInput = screen.getByRole('textbox', { name: '' });
+    fireEvent.change(notesInput, { target: { value: 'Club' } });
+    fireEvent.blur(notesInput);
+
+    expect(onNotesChange).toHaveBeenCalledTimes(1);
+    expect(onNotesChange).toHaveBeenCalledWith('Club');
+    act(() => vi.runAllTimers());
+    expect(onNotesChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('flushes pending notes before completing', async () => {
+    vi.useFakeTimers();
+    const onNotesChange = vi.fn();
+    const onComplete = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ArcherySession
+        session={buildSession()}
+        onAddRound={vi.fn().mockResolvedValue(undefined)}
+        onAddEnd={vi.fn().mockResolvedValue(undefined)}
+        onComplete={onComplete}
+        onNotesChange={onNotesChange}
+        onAbandon={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+
+    fireEvent.change(screen.getByRole('textbox', { name: '' }), {
+      target: { value: 'Última nota' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /completar sesión/i }));
+    const confirmOptions = uiMocks.confirm.mock.calls[0][0] as {
+      onConfirm: () => Promise<void>;
+    };
+    await act(() => confirmOptions.onConfirm());
+
+    expect(onNotesChange).toHaveBeenCalledWith('Última nota');
+    expect(onComplete).toHaveBeenCalledWith('Última nota');
+    expect(onNotesChange.mock.invocationCallOrder[0]).toBeLessThan(
+      onComplete.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('flushes pending notes on unmount', () => {
+    vi.useFakeTimers();
+    const onNotesChange = vi.fn();
+    const { unmount } = render(
+      <ArcherySession
+        session={buildSession()}
+        onAddRound={vi.fn().mockResolvedValue(undefined)}
+        onAddEnd={vi.fn().mockResolvedValue(undefined)}
+        onComplete={vi.fn().mockResolvedValue(undefined)}
+        onNotesChange={onNotesChange}
+        onAbandon={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+
+    fireEvent.change(screen.getByRole('textbox', { name: '' }), {
+      target: { value: 'Pendiente' },
+    });
+    unmount();
+
+    expect(onNotesChange).toHaveBeenCalledTimes(1);
+    expect(onNotesChange).toHaveBeenCalledWith('Pendiente');
   });
 
   it('keeps the end input open when add end fails', async () => {

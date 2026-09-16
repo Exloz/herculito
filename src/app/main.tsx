@@ -6,6 +6,9 @@ import { getApiOrigin } from '../shared/api/transport';
 import '../index.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+const APP_UPDATE_AVAILABLE_EVENT = 'app-update-available';
+const APP_ACTIVATE_UPDATE_EVENT = 'app-activate-update';
+const APP_UPDATE_READY_KEY = 'app-update-ready';
 
 const scheduleNonCriticalWork = (callback: () => void, timeoutMs: number) => {
   if (typeof window === 'undefined') {
@@ -53,15 +56,30 @@ const registerSW = async (swUrl: string) => {
     updateViaCache: 'none'
   });
 
-  registration.addEventListener('updatefound', () => {
-    const newWorker = registration.installing;
-    if (!newWorker) return;
+  const announceUpdate = () => {
+    try {
+      window.sessionStorage.setItem(APP_UPDATE_READY_KEY, 'true');
+    } catch {
+      // The live event still exposes the update when storage is unavailable.
+    }
+    window.dispatchEvent(new Event(APP_UPDATE_AVAILABLE_EVENT));
+  };
 
-    newWorker.addEventListener('statechange', () => {
-      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-        newWorker.postMessage({ type: 'SKIP_WAITING' });
+  if (registration.waiting && navigator.serviceWorker.controller) {
+    announceUpdate();
+  }
+
+  registration.addEventListener('updatefound', () => {
+    const worker = registration.installing;
+    worker?.addEventListener('statechange', () => {
+      if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+        announceUpdate();
       }
     });
+  });
+
+  window.addEventListener(APP_ACTIVATE_UPDATE_EVENT, () => {
+    registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
   });
 
   return registration;
@@ -74,8 +92,13 @@ if (!PUBLISHABLE_KEY) {
 getApiOrigin();
 
 if (import.meta.env.PROD) {
-  let refreshing = false;
-  let hasSeenController = 'serviceWorker' in navigator && navigator.serviceWorker.controller != null;
+  let activationRequested = false;
+  window.addEventListener(APP_ACTIVATE_UPDATE_EVENT, () => {
+    activationRequested = true;
+  });
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    if (activationRequested) window.location.reload();
+  });
 
   scheduleNonCriticalWork(async () => {
     await cleanLegacyCaches();
@@ -99,22 +122,6 @@ if (import.meta.env.PROD) {
       }
     }
   }, 3000);
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) {
-        return;
-      }
-
-      if (!hasSeenController) {
-        hasSeenController = true;
-        return;
-      }
-
-      refreshing = true;
-      window.location.reload();
-    });
-  }
 } else if ('serviceWorker' in navigator) {
   void navigator.serviceWorker.getRegistrations().then((registrations) => {
     registrations.forEach((registration) => {

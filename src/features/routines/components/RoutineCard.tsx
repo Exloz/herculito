@@ -34,7 +34,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
   const previewExercises = routine.exercises.slice(0, 2);
 
   return (
-    <div className="motion-enter overflow-hidden rounded-[1.5rem] bg-graphite shadow-lift content-fade-in">
+    <div className="deferred-list-item motion-enter overflow-hidden rounded-[1.5rem] bg-graphite shadow-lift content-fade-in">
       <div className="h-1" style={{ backgroundColor: accentColor }} />
 
       <div className="p-4 sm:p-5">

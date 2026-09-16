@@ -1,25 +1,26 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import type { ActivityProjection, ActivitySync } from './activitySync';
-import { ACTIVITY_SYNC_CHANGED_EVENT, getBrowserActivitySync } from './browserActivitySync';
+import {
+  getBrowserActivityProjection,
+  getBrowserActivitySync,
+  subscribeBrowserActivitySync
+} from './browserActivitySync';
 
 export const useActivitySync = (userId: string): {
   activitySync: ActivitySync;
   projection: ActivityProjection;
 } => {
   const activitySync = getBrowserActivitySync(userId);
-  const [storedProjection, setStoredProjection] = useState(() => ({
-    userId,
-    value: activitySync.getProjection()
-  }));
-  const projection = storedProjection.userId === userId
-    ? storedProjection.value
-    : activitySync.getProjection();
-
-  const refreshProjection = useCallback((event?: Event) => {
-    const eventUserId = (event as CustomEvent<{ userId?: string }> | undefined)?.detail?.userId;
-    if (eventUserId && eventUserId !== userId) return;
-    setStoredProjection({ userId, value: activitySync.getProjection() });
-  }, [activitySync, userId]);
+  const subscribe = useCallback(
+    (listener: () => void) => subscribeBrowserActivitySync(userId, listener),
+    [userId]
+  );
+  const getSnapshot = useCallback(() => getBrowserActivityProjection(userId), [userId]);
+  const projection = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getSnapshot
+  );
 
   useEffect(() => {
     let disposed = false;
@@ -40,28 +41,19 @@ export const useActivitySync = (userId: string): {
       retryTimeout = null;
       await activitySync.syncPending();
       if (disposed) return;
-      refreshProjection();
       scheduleSync();
     };
-    const handleChanged = (event: Event) => {
-      if (event.type === 'storage') activitySync.reload();
-      refreshProjection(event);
-      const eventUserId = (event as CustomEvent<{ userId?: string }>).detail?.userId;
-      if (!eventUserId || eventUserId === userId) scheduleSync();
-    };
     const handleOnline = () => { scheduleSync(); };
-    window.addEventListener(ACTIVITY_SYNC_CHANGED_EVENT, handleChanged);
-    window.addEventListener('storage', handleChanged);
     window.addEventListener('online', handleOnline);
+    const unsubscribe = subscribeBrowserActivitySync(userId, scheduleSync);
     scheduleSync();
     return () => {
       disposed = true;
       if (retryTimeout !== null) window.clearTimeout(retryTimeout);
-      window.removeEventListener(ACTIVITY_SYNC_CHANGED_EVENT, handleChanged);
-      window.removeEventListener('storage', handleChanged);
       window.removeEventListener('online', handleOnline);
+      unsubscribe();
     };
-  }, [activitySync, refreshProjection, userId]);
+  }, [activitySync, userId]);
 
   return { activitySync, projection };
 };

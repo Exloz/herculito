@@ -30,7 +30,6 @@
       radial-gradient(1200px circle at 12% -20%, rgba(72, 229, 163, 0.18), transparent 55%),
       radial-gradient(900px circle at 100% 0%, rgba(245, 158, 11, 0.12), transparent 45%),
       #0b0f14;
-    background-attachment: fixed;
   }
 
   html.dashboard-scrollbar-hidden,
@@ -90,12 +89,22 @@
     @apply hover:border-mint/40 hover:shadow-soft transition-colors;
     transition-duration: var(--motion-fast);
     transition-timing-function: var(--ease-standard);
-    transition-property: transform, border-color, box-shadow, background-color, color;
-    transform: translate3d(0, 0, 0);
+    transition-property: border-color, background-color, color;
   }
 
-  .app-card-hover:hover {
-    transform: translate3d(0, -2px, 0);
+  @media (hover: hover) and (pointer: fine) {
+    .app-card-hover {
+      transition-property: transform, border-color, background-color, color;
+    }
+
+    .app-card-hover:hover {
+      transform: translateY(-2px);
+    }
+  }
+
+  .deferred-list-item {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 140px;
   }
 
   .app-divider {
@@ -259,7 +268,6 @@
 
 .motion-enter {
   animation: motion-fade-up var(--motion-slow) var(--ease-standard) both;
-  will-change: transform, opacity;
 }
 
 .motion-enter-delay-1 {
@@ -288,7 +296,6 @@
 
 .motion-dialog-panel {
   animation: motion-fade-up var(--motion-base) var(--ease-emphasis) both;
-  will-change: transform, opacity;
 }
 
 .dialog-height-full {
@@ -584,6 +591,7 @@ body.dialog-open .app-bottom-nav {
   .tab-pane-enter-forward,
   .tab-pane-enter-backward {
     animation-duration: 1ms;
+    animation-iteration-count: 1 !important;
   }
 
   .motion-interactive,
@@ -599,7 +607,9 @@ body.dialog-open .app-bottom-nav {
    .btn-miss-premium,
    .target-x-shortcut,
    .input-toggle-option,
-   .input-toggle-slider {
+   .input-toggle-slider,
+   .animate-spin {
+    animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
     transform: none !important;
   }

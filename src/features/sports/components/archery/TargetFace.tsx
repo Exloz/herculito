@@ -120,6 +120,12 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
   const [selectedZone, setSelectedZone] = useState<ZoneInfo | null>(null);
   const [hitPulse, setHitPulse] = useState(false);
   const isAimingRef = useRef(false);
+  const hoverFrameRef = useRef<number | null>(null);
+  const pendingHoverRef = useRef<{
+    clientX: number;
+    clientY: number;
+    svg: SVGSVGElement;
+  } | null>(null);
   const hitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -131,6 +137,14 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
 
       if (selectedTimeoutRef.current) {
         clearTimeout(selectedTimeoutRef.current);
+      }
+
+      if (hoverFrameRef.current !== null) {
+        if (typeof cancelAnimationFrame === 'function') {
+          cancelAnimationFrame(hoverFrameRef.current);
+        } else {
+          clearTimeout(hoverFrameRef.current);
+        }
       }
     };
   }, []);
@@ -189,12 +203,30 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
     }, 1100);
   }, [disabled, onMiss, onScore]);
 
+  const setAimingPreview = useCallback((zone: ZoneInfo | null) => {
+    setHoveredZone((currentZone) => currentZone?.key === zone?.key ? currentZone : zone);
+  }, []);
+
   const updateAimingPreview = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     const distance = getPointFromEvent(event, event.currentTarget);
     const zone = getZoneFromDistance(distance);
-    setHoveredZone(zone);
+    setAimingPreview(zone);
     return zone;
-  }, [getPointFromEvent]);
+  }, [getPointFromEvent, setAimingPreview]);
+
+  const cancelPendingHover = useCallback(() => {
+    if (hoverFrameRef.current === null) {
+      return;
+    }
+
+    if (typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(hoverFrameRef.current);
+    } else {
+      clearTimeout(hoverFrameRef.current);
+    }
+    hoverFrameRef.current = null;
+    pendingHoverRef.current = null;
+  }, []);
 
   const handlePointerDown = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     if (disabled) {
@@ -212,8 +244,32 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
       return;
     }
 
-    updateAimingPreview(event);
-  }, [disabled, updateAimingPreview]);
+    pendingHoverRef.current = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+      svg: event.currentTarget,
+    };
+
+    if (hoverFrameRef.current !== null) {
+      return;
+    }
+
+    const updateHover = () => {
+      hoverFrameRef.current = null;
+      const pendingHover = pendingHoverRef.current;
+      pendingHoverRef.current = null;
+      if (!pendingHover) {
+        return;
+      }
+
+      const distance = getPointFromEvent(pendingHover, pendingHover.svg);
+      setAimingPreview(getZoneFromDistance(distance));
+    };
+
+    hoverFrameRef.current = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame(updateHover)
+      : window.setTimeout(updateHover, 16);
+  }, [disabled, getPointFromEvent, setAimingPreview]);
 
   const handlePointerUp = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     if (disabled || !isAimingRef.current) {
@@ -223,21 +279,24 @@ export const TargetFace: React.FC<TargetFaceProps> = ({
     event.preventDefault();
     isAimingRef.current = false;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
+    cancelPendingHover();
     const zone = updateAimingPreview(event);
     registerSelection(zone);
-  }, [disabled, registerSelection, updateAimingPreview]);
+  }, [cancelPendingHover, disabled, registerSelection, updateAimingPreview]);
 
   const handlePointerCancel = useCallback((event: React.PointerEvent<SVGSVGElement>) => {
     isAimingRef.current = false;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
+    cancelPendingHover();
     setHoveredZone(null);
-  }, []);
+  }, [cancelPendingHover]);
 
   const handlePointerLeave = useCallback(() => {
     if (!isAimingRef.current) {
+      cancelPendingHover();
       setHoveredZone(null);
     }
-  }, []);
+  }, [cancelPendingHover]);
 
   const handleQuickKey = useCallback((score: number, isGold: boolean) => {
     registerSelection({

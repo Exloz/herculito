@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => ({
     activeSession: null as SportSession | null,
     hasActiveSession: false,
   },
+  sportsState: {
+    loading: false
+  },
   activityProjection: {
     active: null as null | {
       kind: 'hiit';
@@ -56,7 +59,7 @@ vi.mock('../hooks/useSportSessions', () => ({
   useSportSessions: () => ({
     sessions: [],
     stats: null,
-    loading: false,
+    loading: mocks.sportsState.loading,
     error: null,
     deleteSession: vi.fn(),
     refresh: mocks.refresh,
@@ -83,6 +86,13 @@ const activeSession: SportSession = {
 
 vi.mock('../hooks/useActiveArcherySession', () => ({
   useActiveArcherySession: () => ({
+    activitySync: {
+      startHiit: mocks.startHiit,
+      completeHiit: mocks.completeHiit,
+      abandon: vi.fn(),
+      syncPending: mocks.syncPending
+    },
+    projection: mocks.activityProjection,
     activeSession: mocks.archeryState.activeSession,
     hasActiveSession: mocks.archeryState.hasActiveSession,
     startSession: vi.fn(),
@@ -135,6 +145,7 @@ describe('SportsPage', () => {
     vi.clearAllMocks();
     mocks.archeryState.activeSession = activeSession;
     mocks.archeryState.hasActiveSession = true;
+    mocks.sportsState.loading = false;
     mocks.activityProjection.active = null;
     mocks.completeActiveSession.mockResolvedValue(undefined);
     mocks.startHiit.mockImplementation((config: HiitConfig) => {
@@ -155,6 +166,17 @@ describe('SportsPage', () => {
 
     expect(mocks.completeHiit).not.toHaveBeenCalled();
     expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+
+  it('does not flash loaded content before delayed loading appears', () => {
+    mocks.archeryState.activeSession = null;
+    mocks.archeryState.hasActiveSession = false;
+    mocks.sportsState.loading = true;
+
+    render(<Sports user={user} />);
+
+    expect(screen.queryByRole('heading', { name: 'Deportes' })).not.toBeInTheDocument();
+    expect(screen.queryByText('No hay sesiones aún')).not.toBeInTheDocument();
   });
 
   it('clears the completed in-memory session when leaving the summary', () => {

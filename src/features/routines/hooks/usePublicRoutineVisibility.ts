@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchHiddenPublicRoutineIds, updateRoutineVisibility } from '../../../shared/api/dataApi';
 
 const VISIBILITY_CHANGE_EVENT = 'dashboard-public-routines-visibility-changed';
@@ -16,6 +16,7 @@ const applyVisibilityToHidden = (hiddenIds: string[], routineId: string, isVisib
 };
 
 export const usePublicRoutineVisibility = (userId: string) => {
+  const eventSourceRef = useRef(Symbol('public-routine-visibility'));
   const [hiddenRoutineIds, setHiddenRoutineIds] = useState<string[]>([]);
   const [isRoutineVisibilityLoading, setIsRoutineVisibilityLoading] = useState(false);
   const [updatingRoutineIds, setUpdatingRoutineIds] = useState<string[]>([]);
@@ -45,7 +46,9 @@ export const usePublicRoutineVisibility = (userId: string) => {
   useEffect(() => {
     if (!userId || typeof window === 'undefined') return;
 
-    const onVisibilityChange = () => {
+    const onVisibilityChange = (event: Event) => {
+      const eventSource = (event as CustomEvent<{ source?: symbol }>).detail?.source;
+      if (eventSource === eventSourceRef.current) return;
       void loadVisibility();
     };
 
@@ -76,7 +79,9 @@ export const usePublicRoutineVisibility = (userId: string) => {
     try {
       await updateRoutineVisibility(routineId, isVisible);
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent(VISIBILITY_CHANGE_EVENT));
+        window.dispatchEvent(new CustomEvent(VISIBILITY_CHANGE_EVENT, {
+          detail: { source: eventSourceRef.current }
+        }));
       }
     } catch (error) {
       setHiddenRoutineIds((previousHiddenIds) => applyVisibilityToHidden(previousHiddenIds, routineId, !isVisible));

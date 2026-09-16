@@ -6,12 +6,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
       injectRegister: false,
-      includeAssets: ['favicon-196.png', 'apple-icon-180.png', 'app-logo.png'],
+      includeAssets: ['favicon.svg', 'favicon-196.png', 'apple-icon-180.png'],
       manifest: {
         name: 'Herculito - Workout Tracker',
         short_name: 'Herculito',
@@ -42,7 +41,16 @@ export default defineConfig({
         ]
       },
       injectManifest: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
+        globPatterns: [
+          'index.html',
+          'bootstrap.css',
+          'assets/**/*.{js,css}',
+          'fonts/*.woff2',
+          '*.{svg,webmanifest}',
+          'favicon-196.png',
+          'apple-icon-180.png',
+          'manifest-icon-*.png'
+        ]
       },
       devOptions: {
         enabled: false

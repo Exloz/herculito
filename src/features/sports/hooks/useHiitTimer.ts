@@ -19,6 +19,7 @@ import { remoteTimerScheduler } from '../../workouts/lib/remoteTimerScheduler';
 import { useActivitySync } from '../../activity-sync/useActivitySync';
 
 const TICK_INTERVAL_MS = 1000;
+const PERSIST_CHECKPOINT_MS = 15_000;
 
 interface BeepOptions {
   frequency: number;
@@ -52,13 +53,13 @@ const showNotification = async (title: string, body: string): Promise<void> => {
       const registration = await navigator.serviceWorker.ready;
       await registration.showNotification(title, {
         body,
-        icon: '/app-logo.png',
-        badge: '/app-logo.png',
+        icon: '/favicon-196.png',
+        badge: '/favicon-196.png',
         tag: 'hiit-timer',
         silent: false,
       });
     } else {
-      const notification = new Notification(title, { body, icon: '/app-logo.png' });
+      const notification = new Notification(title, { body, icon: '/favicon-196.png' });
       notification.onclick = () => { window.focus(); notification.close(); };
     }
   } catch {
@@ -96,9 +97,15 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
   }));
   const [progress, setProgress] = useState(() => getHiitProgress(engine.state, engine.config));
 
+  const engineRef = useRef(engine);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const wakeLockRequestRef = useRef<Promise<WakeLockSentinel> | null>(null);
+  const shouldHoldWakeLockRef = useRef(false);
+  const mountedRef = useRef(true);
+  const lastPersistedAtRef = useRef(0);
+  const lastPersistedLifecycleRef = useRef<string | null>(null);
   const startedAtRef = useRef<number | null>(initialRestore?.saved.startedAtMs ?? null);
   const lastTickAtRef = useRef<number | null>(initialRestore?.restored.lastTickAtMs ?? null);
   const pausedAtRef = useRef<number | null>(
@@ -106,20 +113,37 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
   );
 
   const acquireWakeLock = useCallback(async () => {
-    if ('wakeLock' in navigator) {
-      try {
-        wakeLockRef.current = await navigator.wakeLock.request('screen');
-      } catch {
-        // Wake lock failed — non-critical
+    shouldHoldWakeLockRef.current = true;
+    if (typeof navigator === 'undefined' || wakeLockRef.current || wakeLockRequestRef.current) return;
+    const wakeLockManager = navigator.wakeLock;
+    if (!wakeLockManager) return;
+
+    try {
+      const request = wakeLockManager.request('screen');
+      wakeLockRequestRef.current = request;
+      const wakeLock = await request;
+      if (wakeLockRequestRef.current === request) wakeLockRequestRef.current = null;
+      if (!mountedRef.current || !shouldHoldWakeLockRef.current) {
+        void wakeLock.release().catch(() => {});
+        return;
       }
+      wakeLockRef.current = wakeLock;
+      wakeLock.addEventListener('release', () => {
+        if (wakeLockRef.current === wakeLock) {
+          wakeLockRef.current = null;
+        }
+      }, { once: true });
+    } catch {
+      wakeLockRequestRef.current = null;
+      // Wake lock failed — non-critical
     }
   }, []);
 
   const releaseWakeLock = useCallback(() => {
-    if (wakeLockRef.current) {
-      wakeLockRef.current.release();
-      wakeLockRef.current = null;
-    }
+    shouldHoldWakeLockRef.current = false;
+    const wakeLock = wakeLockRef.current;
+    wakeLockRef.current = null;
+    if (wakeLock) void wakeLock.release().catch(() => {});
   }, []);
 
   const startAudioContext = useCallback(() => {
@@ -211,13 +235,15 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
     };
   }, []);
 
-  const applyAdvancedEngine = useCallback((current: HiitEngine, nowMs: number) => {
+  const applyAdvancedEngine = useCallback((nowMs: number) => {
+    const current = engineRef.current;
     const advanced = advanceTo(current, nowMs);
     if (advanced.engine === current) return;
 
     const alert = advanced.alerts[advanced.alerts.length - 1];
     if (alert) playAlert(alert);
     setProgress(getHiitProgress(advanced.engine.state, advanced.engine.config));
+    engineRef.current = advanced.engine;
     setEngine(advanced.engine);
 
     if (!advanced.engine.isRunning && advanced.engine.state.phase === 'done') {
@@ -239,18 +265,28 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
     }
   }, [initialRestore, schedulePhaseEnd]);
 
-  // Persist state changes
+  const persistTimerState = useCallback((current: HiitEngine, nowMs: number) => {
+    activitySync.saveHiitTimerState(sessionId, {
+      config: current.config,
+      state: current.state,
+      startedAtMs: startedAtRef.current ?? nowMs,
+      pausedAtMs: pausedAtRef.current,
+      lastTickAtMs: lastTickAtRef.current ?? nowMs
+    });
+    lastPersistedLifecycleRef.current = `${current.state.phase}:${current.state.currentInterval}:${current.isRunning}:${current.isPaused}`;
+    lastPersistedAtRef.current = nowMs;
+  }, [activitySync, sessionId]);
+
+  // Persist lifecycle transitions immediately and enough wall-clock checkpoints for crash recovery.
   useEffect(() => {
-    if (engine.state.phase !== 'idle' && engine.state.phase !== 'done') {
-      activitySync.saveHiitTimerState(sessionId, {
-        config: engine.config,
-        state: engine.state,
-        startedAtMs: startedAtRef.current ?? Date.now(),
-        pausedAtMs: pausedAtRef.current,
-        lastTickAtMs: lastTickAtRef.current ?? Date.now()
-      });
+    const lifecycle = `${engine.state.phase}:${engine.state.currentInterval}:${engine.isRunning}:${engine.isPaused}`;
+    const nowMs = Date.now();
+    const shouldPersist = lifecycle !== lastPersistedLifecycleRef.current
+      || nowMs - lastPersistedAtRef.current >= PERSIST_CHECKPOINT_MS;
+    if (shouldPersist && engine.state.phase !== 'idle' && engine.state.phase !== 'done') {
+      persistTimerState(engine, nowMs);
     }
-  }, [activitySync, engine.state, engine.config, engine.isPaused, sessionId]);
+  }, [engine, persistTimerState]);
 
   // Main tick loop
   useEffect(() => {
@@ -267,7 +303,7 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
     acquireWakeLock();
 
     intervalRef.current = setInterval(() => {
-      applyAdvancedEngine(engine, Date.now());
+      applyAdvancedEngine(Date.now());
     }, TICK_INTERVAL_MS);
 
     return () => {
@@ -276,11 +312,13 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
         intervalRef.current = null;
       }
     };
-  }, [engine, acquireWakeLock, releaseWakeLock, startAudioContext, applyAdvancedEngine]);
+  }, [engine.isRunning, engine.isPaused, acquireWakeLock, releaseWakeLock, startAudioContext, applyAdvancedEngine]);
 
   // Cleanup on unmount
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (audioContextRef.current) audioContextRef.current.close();
       releaseWakeLock();
@@ -291,13 +329,17 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        applyAdvancedEngine(engine, Date.now());
+        applyAdvancedEngine(Date.now());
+        const current = engineRef.current;
+        if (current.isRunning && !current.isPaused) {
+          void acquireWakeLock();
+        }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [engine, applyAdvancedEngine]);
+  }, [acquireWakeLock, applyAdvancedEngine]);
 
   const handleStart = useCallback((config: HiitConfig) => {
     const newEngine = createHiitEngine(config);
@@ -306,6 +348,7 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
     startedAtRef.current = nowMs;
     lastTickAtRef.current = nowMs;
     pausedAtRef.current = null;
+    engineRef.current = started;
     setEngine(started);
     setProgress(0);
 
@@ -314,45 +357,52 @@ export const useHiitTimer = (userId: string, sessionId: string): UseHiitTimerRet
 
   const handlePause = useCallback(() => {
     const nowMs = Date.now();
-    const reconciled = advanceTo(engine, nowMs).engine;
+    const reconciled = advanceTo(engineRef.current, nowMs).engine;
     const paused = pauseHiit(reconciled);
     lastTickAtRef.current = nowMs;
     pausedAtRef.current = nowMs;
+    engineRef.current = paused;
     setEngine(paused);
     setProgress(getHiitProgress(paused.state, paused.config));
     void remoteTimerScheduler.cancel(userId).catch(() => {});
-  }, [advanceTo, engine, userId]);
+  }, [advanceTo, userId]);
 
   const handleResume = useCallback(() => {
-    const resumed = resumeHiit(engine);
-    if (resumed === engine) return;
+    const current = engineRef.current;
+    const resumed = resumeHiit(current);
+    if (resumed === current) return;
 
     const nowMs = Date.now();
     lastTickAtRef.current = nowMs;
     pausedAtRef.current = null;
+    engineRef.current = resumed;
     setEngine(resumed);
     schedulePhaseEnd(resumed, nowMs);
-  }, [engine, schedulePhaseEnd]);
+  }, [schedulePhaseEnd]);
 
   const handleReset = useCallback(() => {
     void remoteTimerScheduler.cancel(userId).catch(() => {});
     releaseWakeLock();
     activitySync.clearHiitTimerState(sessionId);
-    setEngine(resetHiit(engine));
+    const reset = resetHiit(engineRef.current);
+    engineRef.current = reset;
+    setEngine(reset);
     setProgress(0);
     startedAtRef.current = null;
     lastTickAtRef.current = null;
     pausedAtRef.current = null;
-  }, [activitySync, engine, releaseWakeLock, sessionId, userId]);
+  }, [activitySync, releaseWakeLock, sessionId, userId]);
 
   const handleRestartCurrentPhase = useCallback(() => {
-    const restarted = restartCurrentHiitPhase(engine);
+    const restarted = restartCurrentHiitPhase(engineRef.current);
     const nowMs = Date.now();
     lastTickAtRef.current = nowMs;
+    engineRef.current = restarted;
     setEngine(restarted);
     setProgress(getHiitProgress(restarted.state, restarted.config));
+    persistTimerState(restarted, nowMs);
     schedulePhaseEnd(restarted, nowMs);
-  }, [engine, schedulePhaseEnd]);
+  }, [persistTimerState, schedulePhaseEnd]);
 
   const formatTime = useCallback((seconds: number): string => {
     const mins = Math.floor(seconds / 60);

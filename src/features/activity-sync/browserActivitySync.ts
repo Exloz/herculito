@@ -14,6 +14,7 @@ import {
 } from '../workouts/api/workoutSessionsRemote';
 import {
   createActivitySync,
+  type ActivityProjection,
   type ActivitySync,
   type ActivitySyncCommand,
   type ActivitySyncRemote,
@@ -26,13 +27,29 @@ export const SPORTS_CACHE_INVALIDATED_EVENT = 'sports-cache-invalidated';
 
 const DASHBOARD_CACHE_KEY = 'dashboard-data-cache';
 const SPORTS_CACHE_KEY = 'sports-data-cache';
-const instances = new Map<string, ActivitySync>();
+const ACTIVITY_STORAGE_PREFIX = 'activity-sync:v1:';
+const processLockTails = new Map<string, Promise<void>>();
 
-const syncExerciseLogs = async (command: Extract<
+interface BrowserActivitySyncEntry {
+  sync: ActivitySync;
+  snapshot: ActivityProjection;
+  listeners: Set<() => void>;
+}
+
+const instances = new Map<string, BrowserActivitySyncEntry>();
+let storageListenerInstalled = false;
+
+export const syncExerciseLogs = async (command: Extract<
   ActivitySyncCommand,
   { kind: 'workout.progress' | 'workout.complete' }
 >): Promise<void> => {
-  await Promise.all(command.exercises.map((log) => (
+  const changedIds = command.kind === 'workout.progress'
+    ? command.changedExerciseIds
+    : undefined;
+  const logs = changedIds
+    ? command.exercises.filter((log) => changedIds.includes(log.exerciseId))
+    : command.exercises;
+  await Promise.all(logs.map((log) => (
     upsertExerciseLog(log.exerciseId, log.date, log.sets, command.userId)
   )));
 };
@@ -111,6 +128,56 @@ const browserRemote: ActivitySyncRemote = {
   }
 };
 
+const runProcessExclusive = async <T>(name: string, task: () => Promise<T>): Promise<T> => {
+  const previous = processLockTails.get(name) ?? Promise.resolve();
+  let release = (): void => {};
+  const current = new Promise<void>((resolve) => { release = resolve; });
+  const tail = previous.catch(() => {}).then(() => current);
+  processLockTails.set(name, tail);
+  await previous.catch(() => {});
+  try {
+    return await task();
+  } finally {
+    release();
+    if (processLockTails.get(name) === tail) processLockTails.delete(name);
+  }
+};
+
+const runBrowserExclusive = <T>(name: string, task: () => Promise<T>): Promise<T> => {
+  if (typeof navigator !== 'undefined' && navigator.locks) {
+    return navigator.locks.request<Promise<T>>(name, () => task()).then((result) => result);
+  }
+  return runProcessExclusive(name, task);
+};
+
+const notifyEntry = (entry: BrowserActivitySyncEntry): void => {
+  entry.snapshot = entry.sync.getProjection();
+  entry.listeners.forEach((listener) => listener());
+};
+
+const userIdFromStorageKey = (key: string | null): string | null => {
+  if (!key?.startsWith(ACTIVITY_STORAGE_PREFIX)) return null;
+  const encodedUserId = key.slice(ACTIVITY_STORAGE_PREFIX.length).split(':writer:')[0];
+  try {
+    return decodeURIComponent(encodedUserId);
+  } catch {
+    return null;
+  }
+};
+
+const ensureStorageListener = (): void => {
+  if (storageListenerInstalled || typeof window === 'undefined') return;
+  window.addEventListener('storage', (event) => {
+    const userId = userIdFromStorageKey(event.key);
+    if (!userId) return;
+    const entry = instances.get(userId);
+    if (!entry) return;
+    entry.sync.reload();
+    notifyEntry(entry);
+  });
+  storageListenerInstalled = true;
+};
+
 const markUserCacheEntryStale = (key: string, userId: string): void => {
   try {
     const raw = window.localStorage.getItem(key);
@@ -135,7 +202,7 @@ export const invalidateBrowserProjections = (userId: string): void => {
 
 export const getBrowserActivitySync = (userId: string): ActivitySync => {
   const existing = instances.get(userId);
-  if (existing) return existing;
+  if (existing) return existing.sync;
   if (typeof window === 'undefined') {
     throw new Error('Activity synchronization requires a browser');
   }
@@ -145,10 +212,27 @@ export const getBrowserActivitySync = (userId: string): ActivitySync => {
     storage: window.localStorage,
     remote: browserRemote,
     invalidate: invalidateBrowserProjections,
+    runExclusive: runBrowserExclusive,
     onChange: () => {
+      const current = instances.get(userId);
+      if (current) notifyEntry(current);
       window.dispatchEvent(new CustomEvent(ACTIVITY_SYNC_CHANGED_EVENT, { detail: { userId } }));
     }
   });
-  instances.set(userId, created);
+  const entry = { sync: created, snapshot: created.getProjection(), listeners: new Set<() => void>() };
+  instances.set(userId, entry);
+  ensureStorageListener();
   return created;
+};
+
+export const getBrowserActivityProjection = (userId: string): ActivityProjection => {
+  getBrowserActivitySync(userId);
+  return instances.get(userId)!.snapshot;
+};
+
+export const subscribeBrowserActivitySync = (userId: string, listener: () => void): (() => void) => {
+  getBrowserActivitySync(userId);
+  const entry = instances.get(userId)!;
+  entry.listeners.add(listener);
+  return () => { entry.listeners.delete(listener); };
 };

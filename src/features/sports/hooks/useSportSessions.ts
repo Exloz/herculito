@@ -61,14 +61,19 @@ const writeSportsCache = (userId: string, sessions: SportSession[], stats: Sport
 };
 
 export const useSportSessions = (user: User) => {
+  const initialCacheRef = useRef<{ userId: string; entry: CachedSportsEntry | null } | null>(null);
+  if (initialCacheRef.current?.userId !== user.id) {
+    initialCacheRef.current = { userId: user.id, entry: readSportsCache(user.id) };
+  }
+  const initialCache = initialCacheRef.current.entry;
   const generationRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
-  const [sessions, setSessions] = useState<SportSession[]>(() => {
-    const cachedEntry = readSportsCache(user.id);
-    return cachedEntry?.sessions ?? [];
-  });
-  const [stats, setStats] = useState<SportStats | null>(() => readSportsCache(user.id)?.stats ?? null);
-  const [loading, setLoading] = useState(() => !readSportsCache(user.id));
+  const activeUserIdRef = useRef(user.id);
+  const hasVisibleDataRef = useRef(Boolean(initialCache));
+  const [sessions, setSessions] = useState<SportSession[]>(() => initialCache?.sessions ?? []);
+  const [stats, setStats] = useState<SportStats | null>(() => initialCache?.stats ?? null);
+  const [loading, setLoading] = useState(() => !initialCache);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
@@ -77,7 +82,11 @@ export const useSportSessions = (user: User) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    setLoading(true);
+    if (hasVisibleDataRef.current) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     setError(null);
     try {
       const [sessionsData, statsData] = await Promise.all([
@@ -86,27 +95,37 @@ export const useSportSessions = (user: User) => {
       ]);
       if (generation !== generationRef.current) return;
       writeSportsCache(user.id, sessionsData, statsData);
+      hasVisibleDataRef.current = true;
       setSessions(sessionsData);
       setStats(statsData);
     } catch (err) {
       if (controller.signal.aborted || generation !== generationRef.current) return;
-      const cachedEntry = readSportsCache(user.id);
-      if (cachedEntry) {
-        setSessions(cachedEntry.sessions);
-        setStats(cachedEntry.stats);
-      }
       setError(toUserMessage(err, 'Error cargando sesiones'));
     } finally {
-      if (generation === generationRef.current) setLoading(false);
+      if (generation === generationRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, [user.id]);
 
   useEffect(() => {
-    if (user?.id) {
-      void loadSessions();
+    if (!user.id) return;
+
+    if (activeUserIdRef.current !== user.id) {
+      activeUserIdRef.current = user.id;
+      const cachedEntry = readSportsCache(user.id);
+      hasVisibleDataRef.current = Boolean(cachedEntry);
+      setSessions(cachedEntry?.sessions ?? []);
+      setStats(cachedEntry?.stats ?? null);
+      setLoading(!cachedEntry);
+      setRefreshing(false);
+      setError(null);
     }
+
+    void loadSessions();
     return () => abortRef.current?.abort();
-  }, [user?.id, loadSessions]);
+  }, [user.id, loadSessions]);
 
   const deleteSession = useCallback(async (sessionId: string) => {
     await apiDeleteSession(sessionId);
@@ -130,6 +149,7 @@ export const useSportSessions = (user: User) => {
     sessions,
     stats,
     loading,
+    refreshing,
     error,
     deleteSession,
     refresh

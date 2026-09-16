@@ -116,6 +116,7 @@ const urlBase64ToArrayBuffer = (base64String: string): ArrayBuffer => {
 let cachedVapidPublicKey: string | null = null;
 let vapidPublicKeyPromise: Promise<string> | null = null;
 let pushSubscriptionPromise: Promise<PushSubscription> | null = null;
+const registeredSubscriptions = new Map<string, Promise<void>>();
 
 export const getVapidPublicKey = async (): Promise<string> => {
   if (cachedVapidPublicKey) return cachedVapidPublicKey;
@@ -168,17 +169,30 @@ export const ensurePushSubscription = async (): Promise<PushSubscription> => {
   }
 };
 
-export const registerSubscriptionInApi = async (deviceId: string, subscription: PushSubscription): Promise<void> => {
-  await fetchApiJson<{ ok: boolean }>('/v1/push/subscribe', {
+export const registerSubscriptionInApi = async (
+  ownerUserId: string,
+  deviceId: string,
+  subscription: PushSubscription
+): Promise<void> => {
+  const subscriptionJson = subscription.toJSON();
+  const cacheKey = JSON.stringify([ownerUserId, deviceId, subscriptionJson]);
+  const existing = registeredSubscriptions.get(cacheKey);
+  if (existing) return existing;
+
+  const registration = fetchApiJson<{ ok: boolean }>('/v1/push/subscribe', {
     method: 'POST',
-    body: JSON.stringify({
-      deviceId,
-      subscription: subscription.toJSON()
-    })
-  });
+    body: JSON.stringify({ deviceId, subscription: subscriptionJson })
+  }).then(() => undefined);
+  registeredSubscriptions.set(cacheKey, registration);
+  try {
+    await registration;
+  } catch (error) {
+    registeredSubscriptions.delete(cacheKey);
+    throw error;
+  }
 };
 
-export const ensureBackgroundRestPushReady = async (): Promise<{ deviceId: string } | null> => {
+export const ensureBackgroundRestPushReady = async (ownerUserId: string): Promise<{ deviceId: string } | null> => {
   if (!shouldUseBackgroundRestPush()) {
     return null;
   }
@@ -196,7 +210,7 @@ export const ensureBackgroundRestPushReady = async (): Promise<{ deviceId: strin
 
   const deviceId = getOrCreateDeviceId();
   const subscription = await ensurePushSubscription();
-  await registerSubscriptionInApi(deviceId, subscription);
+  await registerSubscriptionInApi(ownerUserId, deviceId, subscription);
   logPushEvent('background_push_ready', {
     deviceId,
     platform: isIosDevice() ? 'ios' : isAndroidDevice() ? 'android' : 'other'
@@ -204,7 +218,7 @@ export const ensureBackgroundRestPushReady = async (): Promise<{ deviceId: strin
   return { deviceId };
 };
 
-export const ensureIosBackgroundPushReady = async (): Promise<{ deviceId: string } | null> => {
+export const ensureIosBackgroundPushReady = async (ownerUserId: string): Promise<{ deviceId: string } | null> => {
   if (!isIosPushCapable()) return null;
-  return ensureBackgroundRestPushReady();
+  return ensureBackgroundRestPushReady(ownerUserId);
 };

@@ -1,11 +1,21 @@
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import {
+  cleanupOutdatedCaches,
+  createHandlerBoundToURL,
+  precacheAndRoute
+} from 'workbox-precaching';
+import { NavigationRoute, registerRoute } from 'workbox-routing';
 import { isPushExpired } from './shared/lib/pushExpiration';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<unknown>;
 };
 
-self.skipWaiting();
+// Let updates activate after existing tabs close instead of reloading an active workout.
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
@@ -24,14 +34,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
-
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
+registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+  denylist: [/^\/(?:api|\.well-known)(?:\/|$)/, /^\/security\.txt$/]
+}));
 
 type PushPayload = {
   title?: unknown;
@@ -90,8 +97,8 @@ self.addEventListener('push', (event: PushEvent) => {
     self.registration.showNotification(title, {
       body,
       tag,
-      icon: '/app-logo.png',
-      badge: '/app-logo.png',
+      icon: '/favicon-196.png',
+      badge: '/favicon-196.png',
       data: { url }
     })
   );

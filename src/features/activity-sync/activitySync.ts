@@ -19,6 +19,7 @@ const LEGACY_ACTIVE_WORKOUT_KEY = 'activeWorkout';
 const LEGACY_ACTIVE_ARCHERY_KEY = 'activeArcherySession';
 const LEGACY_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const ACTIVE_ACTIVITY_EXISTS_CODE = 'active_activity_exists';
+const STALE_WRITER_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 export interface ActivitySyncStorage {
   readonly length?: number;
@@ -47,6 +48,7 @@ export type ActivitySyncCommand =
   | (ActivityCommandBase & {
       kind: 'workout.progress';
       exercises: ExerciseLog[];
+      changedExerciseIds?: string[];
     })
   | (ActivityCommandBase & {
       kind: 'workout.complete';
@@ -172,6 +174,7 @@ interface PersistedUserState {
   userId: string;
   revision: number;
   writerId: string;
+  updatedAtMs?: number;
   active: ActiveActivitySnapshot | null;
   candidateProjection: boolean;
   activeCandidates: Record<string, ActiveActivityCandidateState>;
@@ -192,6 +195,7 @@ interface ActivitySyncOptions {
   now?: () => number;
   invalidate?: (userId: string, projections: Array<'dashboard' | 'sports'>) => void;
   onChange?: () => void;
+  runExclusive?: <T>(name: string, task: () => Promise<T>) => Promise<T>;
 }
 
 export interface WorkoutCompletionInput {
@@ -205,7 +209,7 @@ export interface ActivitySync {
   getProjection(): ActivityProjection;
   getPendingCommands(): ActivitySyncCommand[];
   startWorkout(routine: Routine): WorkoutActivitySnapshot;
-  updateWorkoutProgress(activityId: string, exercises: ExerciseLog[]): void;
+  updateWorkoutProgress(activityId: string, exercises: ExerciseLog[], changedExerciseIds?: string[]): void;
   completeWorkout(activityId: string, input: WorkoutCompletionInput): void;
   startArchery(config: { bowType: ArcheryBowType; arrowsUsed: number; location?: string; notes?: string }): ArcheryActivitySnapshot;
   addArcheryRound(activityId: string, distance: number, targetSize: number, arrowsPerEnd?: number): ArcheryRound;
@@ -227,6 +231,7 @@ export interface ActivitySync {
 const MAX_AUTO_RETRIES = 5;
 const BASE_RETRY_DELAY_MS = 5_000;
 const MAX_RETRY_DELAY_MS = 5 * 60_000;
+const WORKOUT_PROGRESS_DEBOUNCE_MS = 500;
 
 const defaultCreateId = (): string => (
   globalThis.crypto?.randomUUID?.()
@@ -393,6 +398,7 @@ const parseStoredState = (raw: string | null, userId: string): PersistedUserStat
         };
       }
     });
+
     const failureStates = Object.fromEntries(Object.entries(parsedFailureStates).filter(([, value]) => (
       value.failure === null
       || (value.failure?.command?.userId === userId
@@ -421,6 +427,33 @@ const parseStoredState = (raw: string | null, userId: string): PersistedUserStat
   } catch {
     return null;
   }
+};
+
+type WorkoutProgressCommand = Extract<ActivitySyncCommand, { kind: 'workout.progress' }>;
+
+const mergeWorkoutProgressCommands = (
+  commands: WorkoutProgressCommand[]
+): WorkoutProgressCommand => {
+  const first = commands[0];
+  const exercises = new Map(first.exercises.map((log) => [log.exerciseId, log]));
+  const changedExerciseIds = new Set<string>();
+
+  commands.forEach((command) => {
+    const changedIds = command.changedExerciseIds
+      ?? command.exercises.map((log) => log.exerciseId);
+    changedIds.forEach((exerciseId) => {
+      changedExerciseIds.add(exerciseId);
+      const log = command.exercises.find((candidate) => candidate.exerciseId === exerciseId);
+      if (log) exercises.set(exerciseId, log);
+      else exercises.delete(exerciseId);
+    });
+  });
+
+  return {
+    ...first,
+    exercises: [...exercises.values()],
+    changedExerciseIds: [...changedExerciseIds]
+  };
 };
 
 const createEmptyState = (userId: string, writerId: string): PersistedUserState => ({
@@ -500,6 +533,9 @@ const mergeStates = (
     if (!existing || compareFailureVersion(failureState, existing) >= 0) {
       failureStates[commandId] = failureState;
     }
+  });
+  removedCommandIds.forEach((commandId) => {
+    delete failureStates[commandId];
   });
   const mergedCommands = [...commands.values()]
     .filter((command) => !removedCommandIds.has(command.commandId))
@@ -704,7 +740,8 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
     writerId = PROCESS_WRITER_ID,
     now = Date.now,
     invalidate = () => {},
-    onChange = () => {}
+    onChange = () => {},
+    runExclusive = (_name, task) => task()
   } = options;
   const storageKey = `${STORAGE_KEY_PREFIX}${encodeURIComponent(userId)}`;
   const writerStoragePrefix = `${storageKey}:writer:`;
@@ -738,6 +775,7 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
 
   let state = loadState();
   let syncPromise: Promise<void> | null = null;
+  let didCleanupStaleWriters = false;
 
   const reload = (): void => {
     state = mergeStates(state, loadState());
@@ -746,7 +784,29 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
   const persist = (): void => {
     state.revision += 1;
     state.writerId = writerId;
+    state.updatedAtMs = now();
+    state.failureStates = Object.fromEntries(Object.entries(state.failureStates).filter(([commandId]) => (
+      !state.removedCommandIds.includes(commandId)
+    )));
+    state.failedCommands = Object.values(state.failureStates)
+      .map((failureState) => failureState.failure)
+      .filter((failure): failure is FailedActivityCommand => failure !== null);
     storage.setItem(writerStorageKey, JSON.stringify(state));
+    if (!didCleanupStaleWriters && typeof storage.length === 'number' && storage.key) {
+      didCleanupStaleWriters = true;
+      const staleWriterKeys: string[] = [];
+      for (let index = 0; index < storage.length; index += 1) {
+        const key = storage.key(index);
+        if (key?.startsWith(writerStoragePrefix) && key !== writerStorageKey) {
+          const stored = parseStoredState(storage.getItem(key), userId);
+          if (stored?.updatedAtMs !== undefined
+            && now() - stored.updatedAtMs > STALE_WRITER_MAX_AGE_MS) {
+            staleWriterKeys.push(key);
+          }
+        }
+      }
+      staleWriterKeys.forEach((key) => storage.removeItem(key));
+    }
     onChange();
   };
 
@@ -1007,13 +1067,34 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
 
   const syncPending = (): Promise<void> => {
     if (syncPromise) return syncPromise;
-    syncPromise = (async () => {
-      let drainedAny = false;
+    syncPromise = runExclusive(`activity-sync:${encodeURIComponent(userId)}`, async () => {
+      let shouldInvalidate = false;
       reload();
       if (state.retry && now() < state.retry.nextRetryAtMs) return;
       while (state.commands.length > 0) {
-        const command = state.commands[0];
+        const queuedCommand = state.commands[0];
+        const progressBatch = queuedCommand.kind === 'workout.progress'
+          ? state.commands.filter((candidate): candidate is WorkoutProgressCommand => (
+              candidate.kind === 'workout.progress'
+              && candidate.activityId === queuedCommand.activityId
+            ))
+          : [];
+        const command = progressBatch.length > 1
+          ? mergeWorkoutProgressCommands(progressBatch)
+          : queuedCommand;
+        const processedCommandIds = progressBatch.length > 1
+          ? progressBatch.map((candidate) => candidate.commandId)
+          : [command.commandId];
         if (state.failureStates[command.commandId]?.failure) break;
+        const hasTerminalCommand = state.commands.some((candidate) => (
+          candidate.activityId === command.activityId
+          && (candidate.kind === 'workout.complete' || candidate.kind === 'workout.abandon')
+        ));
+        if (command.kind === 'workout.progress'
+          && !hasTerminalCommand
+          && now() < command.createdAtMs + WORKOUT_PROGRESS_DEBOUNCE_MS) {
+          break;
+        }
         try {
           const result = await remote.execute(command);
           reload();
@@ -1021,12 +1102,18 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
             continue;
           }
           applyRemoteResult(command, result);
-          state.commands = state.commands.filter((candidate) => candidate.commandId !== command.commandId);
-          state.removedCommandIds = [...new Set([...state.removedCommandIds, command.commandId])];
-          setCommandFailure(command.commandId, null);
+          state.commands = state.commands.filter(
+            (candidate) => !processedCommandIds.includes(candidate.commandId)
+          );
+          state.removedCommandIds = [
+            ...new Set([...state.removedCommandIds, ...processedCommandIds])
+          ];
+          processedCommandIds.forEach((commandId) => setCommandFailure(commandId, null));
           state.retry = null;
           persist();
-          drainedAny = true;
+          if (command.kind !== 'workout.start' && command.kind !== 'workout.progress') {
+            shouldInvalidate = true;
+          }
         } catch (error) {
           reload();
           if (!state.commands.some((candidate) => candidate.commandId === command.commandId)) {
@@ -1046,8 +1133,9 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
             continue;
           }
           const message = getErrorMessage(error);
-          const previousAttempts = state.retry?.commandId === command.commandId
-            ? state.retry.attemptCount
+          const retry = state.retry;
+          const previousAttempts = retry?.commandId === command.commandId
+            ? retry.attemptCount
             : 0;
           const attemptCount = previousAttempts + 1;
           if (!isRetryableSyncError(error) || attemptCount >= MAX_AUTO_RETRIES) {
@@ -1077,8 +1165,8 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
           break;
         }
       }
-      if (drainedAny) invalidate(userId, ['dashboard', 'sports']);
-    })().finally(() => {
+      if (shouldInvalidate) invalidate(userId, ['dashboard', 'sports']);
+    }).finally(() => {
       syncPromise = null;
     });
     return syncPromise;
@@ -1098,29 +1186,51 @@ export const createActivitySync = (options: ActivitySyncOptions): ActivitySync =
         syncFailureAction: displayedFailure
           ? actionableFailure ? 'retry' : 'dismiss'
           : null,
-        nextRetryAtMs: state.retry?.nextRetryAtMs ?? null
+        nextRetryAtMs: state.retry?.nextRetryAtMs
+          ?? (state.commands[0]?.kind === 'workout.progress'
+            ? state.commands[0].createdAtMs + WORKOUT_PROGRESS_DEBOUNCE_MS
+            : null)
       };
     },
     getPendingCommands: () => [...state.commands],
     startWorkout,
-    updateWorkoutProgress: (activityId, exercises) => {
+    updateWorkoutProgress: (activityId, exercises, changedExerciseIds) => {
       reload();
       const active = requireActive(activityId);
       if (active.kind !== 'workout') throw new Error('Active activity is not a workout');
+      const superseded = state.commands.filter((command): command is WorkoutProgressCommand => (
+        command.kind === 'workout.progress' && command.activityId === activityId
+      ));
+      const incoming: WorkoutProgressCommand = {
+        commandId: '',
+        activityId,
+        userId,
+        createdAtMs: now(),
+        activityRevision: active.revision + 1,
+        kind: 'workout.progress',
+        exercises,
+        changedExerciseIds: changedExerciseIds ?? exercises.map((log) => log.exerciseId)
+      };
+      const merged = superseded.length > 0
+        ? mergeWorkoutProgressCommands([...superseded, incoming])
+        : incoming;
       const next: WorkoutActivitySnapshot = {
         ...active,
         revision: active.revision + 1,
-        session: { ...active.session, exercises }
+        session: { ...active.session, exercises: merged.exercises }
       };
       setActiveCandidate(next);
-      const superseded = state.commands.filter((command) => (
-        command.kind === 'workout.progress' && command.activityId === activityId
-      ));
       state.removedCommandIds = [
         ...new Set([...state.removedCommandIds, ...superseded.map((command) => command.commandId)])
       ];
-      state.commands = state.commands.filter((command) => !superseded.includes(command));
-      enqueue({ ...commandBase(next), kind: 'workout.progress', exercises });
+      const supersededIds = new Set(superseded.map((command) => command.commandId));
+      state.commands = state.commands.filter((command) => !supersededIds.has(command.commandId));
+      enqueue({
+        ...commandBase(next),
+        kind: 'workout.progress',
+        exercises: merged.exercises,
+        changedExerciseIds: merged.changedExerciseIds
+      });
       persist();
     },
     completeWorkout: (activityId, input) => {

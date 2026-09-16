@@ -13,6 +13,14 @@ vi.mock('../lib/remoteTimerScheduler', () => ({
   remoteTimerScheduler: schedulerMocks
 }));
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+}
+
 describe('useTimer', () => {
   beforeEach(() => {
     const values = new Map<string, string>();
@@ -27,6 +35,8 @@ describe('useTimer', () => {
     localStorage.clear();
     schedulerMocks.schedule.mockClear();
     schedulerMocks.cancel.mockClear();
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: undefined });
   });
 
   afterEach(() => {
@@ -94,5 +104,59 @@ describe('useTimer', () => {
 
     expect(schedulerMocks.cancel).not.toHaveBeenCalled();
     expect(localStorage.getItem('workoutTimerState')).not.toBeNull();
+  });
+
+  it('uses one one-second interval for visible updates', async () => {
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+
+    await act(async () => result.current.startTimer(10));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000);
+    });
+
+    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 1000);
+    expect(result.current.timeLeft).toBe(7);
+    unmount();
+    setIntervalSpy.mockRestore();
+  });
+
+  it('stops visual wakeups while hidden and reconciles the absolute deadline on return', async () => {
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+    await act(async () => result.current.startTimer(10));
+
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(result.current.timeLeft).toBe(10);
+
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    expect(result.current.timeLeft).toBe(5);
+    unmount();
+  });
+
+  it('releases a wake lock that resolves after unmount', async () => {
+    const pendingWakeLock = deferred<WakeLockSentinel>();
+    const release = vi.fn().mockResolvedValue(undefined);
+    const request = vi.fn(() => pendingWakeLock.promise);
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request }
+    });
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+
+    await act(async () => result.current.startTimer(10));
+    expect(request).toHaveBeenCalledTimes(1);
+    unmount();
+    await act(async () => {
+      pendingWakeLock.resolve({ release } as unknown as WakeLockSentinel);
+      await Promise.resolve();
+    });
+
+    expect(release).toHaveBeenCalledTimes(1);
   });
 });

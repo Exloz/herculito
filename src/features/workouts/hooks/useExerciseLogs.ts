@@ -25,8 +25,7 @@ export const useExerciseLogs = (
     const nextLogs = current.session.exercises.some((entry) => entry.exerciseId === normalized.exerciseId)
       ? current.session.exercises.map((entry) => entry.exerciseId === normalized.exerciseId ? normalized : entry)
       : [...current.session.exercises, normalized];
-    activitySync.updateWorkoutProgress(options.activityId, nextLogs);
-    void activitySync.syncPending();
+    activitySync.updateWorkoutProgress(options.activityId, nextLogs, [normalized.exerciseId]);
   }, [activitySync, date, options.activityId, userId]);
 
   const getLogForExercise = useCallback((exerciseId: string, logUserId: string): ExerciseLog => (

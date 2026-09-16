@@ -432,9 +432,10 @@ describe('activity synchronization', () => {
     seed.startWorkout(routine);
     const firstLogs = [{ ...logs[0], sets: [{ ...logs[0].sets[0], weight: 70 }] }];
     const secondLogs = [{ ...logs[0], sets: [{ ...logs[0].sets[0], weight: 90 }] }];
+    let nowMs = 20;
     const first = createActivitySync({
       userId: 'user-1', storage, remote,
-      writerId: 'first', createId: createIds('progress-z'), now: () => 20
+      writerId: 'first', createId: createIds('progress-z'), now: () => nowMs
     });
     const second = createActivitySync({
       userId: 'user-1', storage, remote,
@@ -443,9 +444,14 @@ describe('activity synchronization', () => {
 
     overlap = () => second.updateWorkoutProgress('workout-1', secondLogs);
     first.updateWorkoutProgress('workout-1', firstLogs);
+    nowMs = 1_000;
     await first.syncPending();
 
-    expect(calls.map((command) => command.commandId)).toEqual(['start', 'progress-z', 'progress-a']);
+    expect(calls.map((command) => command.commandId)).toEqual(['start', 'progress-z']);
+    expect(calls[1]).toMatchObject({
+      kind: 'workout.progress',
+      exercises: secondLogs
+    });
     const reloaded = createActivitySync({
       userId: 'user-1', storage, remote,
       writerId: 'reloaded', createId: createIds('unused'), now: () => 40
@@ -730,6 +736,94 @@ describe('activity synchronization', () => {
     ]);
   });
 
+  it('coalesces rapid workout progress while preserving every changed exercise id', async () => {
+    const storage = createMemoryActivitySyncStorage();
+    const { remote } = createRemote();
+    let nowMs = 10;
+    const sync = createActivitySync({
+      userId: 'user-1',
+      storage,
+      remote,
+      createId: createIds('workout-1', 'start', 'progress-1', 'progress-2'),
+      now: () => nowMs
+    });
+    const workout = sync.startWorkout(routine);
+    const squatLog: ExerciseLog = {
+      exerciseId: 'squat',
+      userId: 'user-1',
+      date: '2026-09-15',
+      sets: [{ setNumber: 1, weight: 100, reps: 5, completed: true }]
+    };
+
+    nowMs = 20;
+    sync.updateWorkoutProgress(workout.id, logs, ['bench']);
+    nowMs = 30;
+    sync.updateWorkoutProgress(workout.id, [...logs, squatLog], ['squat']);
+
+    expect(sync.getPendingCommands()).toEqual([
+      expect.objectContaining({ kind: 'workout.start' }),
+      expect.objectContaining({
+        kind: 'workout.progress',
+        exercises: [...logs, squatLog],
+        changedExerciseIds: ['bench', 'squat']
+      })
+    ]);
+    await sync.syncPending();
+    expect(remote.execute).toHaveBeenCalledTimes(1);
+    expect(sync.getProjection().nextRetryAtMs).toBe(530);
+  });
+
+  it('merges progress from multiple writers before sending a full session snapshot', async () => {
+    const storage = createMemoryActivitySyncStorage();
+    const { commands, remote } = createRemote();
+    const first = createActivitySync({
+      userId: 'user-1',
+      storage,
+      remote,
+      writerId: 'writer-a',
+      createId: createIds('workout-1', 'start', 'progress-a'),
+      now: () => 1_000
+    });
+    const workout = first.startWorkout(routine);
+    const second = createActivitySync({
+      userId: 'user-1',
+      storage,
+      remote,
+      writerId: 'writer-b',
+      createId: createIds('progress-b'),
+      now: () => 1_000
+    });
+    const bench = { ...logs[0], sets: [{ ...logs[0].sets[0], weight: 90 }] };
+    const squat: ExerciseLog = {
+      exerciseId: 'squat',
+      userId: 'user-1',
+      date: '2026-09-15',
+      sets: [{ setNumber: 1, weight: 120, reps: 5, completed: true }]
+    };
+
+    first.updateWorkoutProgress(workout.id, [bench], ['bench']);
+    second.updateWorkoutProgress(workout.id, [logs[0], squat], ['squat']);
+
+    const processor = createActivitySync({
+      userId: 'user-1',
+      storage,
+      remote,
+      writerId: 'writer-c',
+      createId: createIds('unused'),
+      now: () => 2_000
+    });
+    await processor.syncPending();
+
+    const progress = commands.find((command) => command.kind === 'workout.progress');
+    expect(progress).toMatchObject({
+      kind: 'workout.progress',
+      changedExerciseIds: ['bench', 'squat']
+    });
+    if (progress?.kind !== 'workout.progress') throw new Error('Expected workout progress');
+    expect(progress.exercises).toEqual([bench, squat]);
+    expect(processor.getProjection().pendingSyncCount).toBe(0);
+  });
+
   it('keeps offline archery rounds and ends ordered ahead of completion across reload', async () => {
     const storage = createMemoryActivitySyncStorage();
     const offline: ActivitySyncRemote = { execute: vi.fn().mockRejectedValue(new Error('offline')) };
@@ -845,18 +939,91 @@ describe('activity synchronization', () => {
     expect(reload.getHiitTimerState(hiit.id)).toBeNull();
   });
 
-  it('invalidates dashboard and sports projections after successful synchronization', async () => {
+  it('does not invalidate projections for workout start or progress, but does after completion', async () => {
     const storage = createMemoryActivitySyncStorage();
     const { remote } = createRemote();
     const invalidate = vi.fn();
     const sync = createActivitySync({
-      userId: 'user-1', storage, remote, invalidate, createId: createIds('hiit-1', 'start'), now: () => 10
+      userId: 'user-1', storage, remote, invalidate,
+      createId: createIds('workout-1', 'start', 'progress', 'complete'), now: () => 10
     });
-    sync.startHiit(hiitConfig);
+    const workout = sync.startWorkout(routine);
 
+    await sync.syncPending();
+    expect(invalidate).not.toHaveBeenCalled();
+
+    sync.updateWorkoutProgress(workout.id, logs, ['bench']);
+    await sync.syncPending();
+    expect(invalidate).not.toHaveBeenCalled();
+
+    sync.completeWorkout(workout.id, {
+      exercises: logs,
+      completedAtMs: 20,
+      totalDuration: 1
+    });
     await sync.syncPending();
 
     expect(invalidate).toHaveBeenCalledWith('user-1', ['dashboard', 'sports']);
+  });
+
+  it('serializes queue drains across instances through the configured user lock', async () => {
+    const storage = createMemoryActivitySyncStorage();
+    const { remote } = createRemote();
+    let releaseLock: (() => void) | undefined;
+    const entered: string[] = [];
+    let lockCalls = 0;
+    const runExclusive = async <T,>(_name: string, task: () => Promise<T>): Promise<T> => {
+      lockCalls += 1;
+      entered.push('waiting');
+      if (entered.length === 1) {
+        await new Promise<void>((resolve) => { releaseLock = resolve; });
+      }
+      return task();
+    };
+    const first = createActivitySync({
+      userId: 'user-1', storage, remote, writerId: 'first', runExclusive,
+      createId: createIds('workout-1', 'start'), now: () => 10
+    });
+    const second = createActivitySync({
+      userId: 'user-1', storage, remote, writerId: 'second', runExclusive,
+      createId: createIds('unused'), now: () => 10
+    });
+    first.startWorkout(routine);
+
+    const firstDrain = first.syncPending();
+    const secondDrain = second.syncPending();
+    expect(lockCalls).toBe(2);
+    releaseLock?.();
+    await Promise.all([firstDrain, secondDrain]);
+
+    expect(remote.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('compacts expired writer records and resolved failure metadata without losing tombstones', async () => {
+    const storage = createMemoryActivitySyncStorage();
+    const { remote } = createRemote();
+    const old = createActivitySync({
+      userId: 'user-1', storage, remote, writerId: 'old-tab',
+      createId: createIds('workout-1', 'start'), now: () => 10
+    });
+    old.startWorkout(routine);
+    await old.syncPending();
+    const monthLater = 31 * 24 * 60 * 60 * 1000;
+    const current = createActivitySync({
+      userId: 'user-1', storage, remote, writerId: 'current-tab',
+      createId: createIds('progress'), now: () => monthLater
+    });
+    current.updateWorkoutProgress('workout-1', logs, ['bench']);
+
+    const writerKeys = Array.from({ length: storage.length ?? 0 }, (_, index) => storage.key?.(index))
+      .filter((key): key is string => Boolean(key?.includes(':writer:')));
+    expect(writerKeys).toEqual([expect.stringContaining(':writer:current-tab')]);
+    const persisted = JSON.parse(storage.getItem(writerKeys[0]) ?? '{}') as {
+      removedCommandIds: string[];
+      failureStates: Record<string, unknown>;
+    };
+    expect(persisted.removedCommandIds).toContain('start');
+    expect(persisted.failureStates).not.toHaveProperty('start');
   });
 
   it('migrates an owned legacy workout but never restores or deletes another user legacy snapshot', () => {

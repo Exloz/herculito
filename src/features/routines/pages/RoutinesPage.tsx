@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Bookmark, Globe2, Plus, Target } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
-import { RoutineEditor } from '../components/RoutineEditor';
 import { RoutineCard } from '../components/RoutineCard';
 import { useRoutineVideoBackfill } from '../hooks/useRoutineVideoBackfill';
 import { User, Routine, Exercise, MuscleGroup } from '../../../shared/types';
@@ -14,6 +13,19 @@ import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 interface RoutinesProps {
   user: User;
 }
+
+const RoutineEditor = React.lazy(async () => {
+  const module = await import('../components/RoutineEditor');
+  return { default: module.RoutineEditor };
+});
+
+const EditorLoadingFallback = () => (
+  <div className="fixed inset-0 z-50 flex h-screen items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="app-card px-6 py-5 text-sm text-slate-200" role="status">
+      Cargando editor...
+    </div>
+  </div>
+);
 
 export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const { showToast, confirm } = useUI();
@@ -294,15 +306,17 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
 
         {/* Editor Modal */}
         {showEditor && (
-          <RoutineEditor
-            routine={editingRoutine}
-            onSave={handleSaveRoutine}
-            onCancel={() => {
-              setShowEditor(false);
-              setEditingRoutine(undefined);
-            }}
-            loading={saving}
-          />
+          <React.Suspense fallback={<EditorLoadingFallback />}>
+            <RoutineEditor
+              routine={editingRoutine}
+              onSave={handleSaveRoutine}
+              onCancel={() => {
+                setShowEditor(false);
+                setEditingRoutine(undefined);
+              }}
+              loading={saving}
+            />
+          </React.Suspense>
         )}
       </div>
     </div>

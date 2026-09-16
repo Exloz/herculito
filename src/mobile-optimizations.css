@@ -31,16 +31,6 @@
   }
 }
 
-/* Mejoras de performance */
-.transition-colors,
-.transition-all,
-.transition-transform {
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
-}
-
 /* Dark mode optimizations */
 @media (prefers-color-scheme: dark) {
   /* Los colores ya están optimizados en Tailwind,

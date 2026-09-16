@@ -62,7 +62,7 @@ export const SportSessionCard: React.FC<SportSessionCardProps> = ({
     <button
       type="button"
       onClick={() => onClick(session)}
-      className="app-card p-4 flex w-full items-center justify-between text-left"
+      className="deferred-list-item app-card p-4 flex w-full items-center justify-between text-left"
     >
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center`}>

@@ -1,4 +1,12 @@
-import { useEffect, Suspense, lazy, useState, Component, type ReactNode } from 'react';
+import {
+  useEffect,
+  Suspense,
+  lazy,
+  useState,
+  Component,
+  type ComponentType,
+  type ReactNode
+} from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/react';
 import { Navigation } from './navigation/Navigation';
 import { useAuth } from '../features/auth/hooks/useAuth';
@@ -7,10 +15,6 @@ import { UIProvider } from './providers/UIProvider';
 import { useUI } from './providers/ui-context';
 import { PageSkeleton } from '../shared/ui/PageSkeleton';
 import { usePageNavigation, type AppPage } from './hooks/usePageNavigation';
-
-const AgentationComponent = lazy(() =>
-  import('agentation').then(mod => ({ default: mod.Agentation }))
-);
 
 class AgentationErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -29,6 +33,75 @@ class AgentationErrorBoundary extends Component<{ children: ReactNode }, { hasEr
     return this.props.children;
   }
 }
+
+class LazyLoadErrorBoundary extends Component<
+  { children: ReactNode; resetKey: string },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidUpdate(previousProps: { resetKey: string }) {
+    if (this.state.hasError && previousProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <main className="mx-auto flex min-h-[70vh] max-w-lg items-center px-4">
+          <div className="app-card w-full p-5 text-center">
+            <h1 className="font-display text-2xl text-white">No pudimos cargar esta vista</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              Puede haber una actualización pendiente o un problema temporal de conexión.
+            </p>
+            <button type="button" className="btn-primary mt-4" onClick={() => window.location.reload()}>
+              Reintentar
+            </button>
+          </div>
+        </main>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+type AgentationProps = {
+  endpoint: string;
+};
+
+const DevAgentation = ({ enabled }: { enabled: boolean }) => {
+  const [AgentationComponent, setAgentationComponent] = useState<ComponentType<AgentationProps> | null>(null);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || !enabled) return;
+
+    let cancelled = false;
+    const devModuleUrl = '/@id/agentation';
+
+    void import(/* @vite-ignore */ devModuleUrl)
+      .then((module: unknown) => {
+        if (cancelled || !module || typeof module !== 'object' || !('Agentation' in module)) return;
+        const { Agentation } = module as { Agentation: ComponentType<AgentationProps> };
+        setAgentationComponent(() => Agentation);
+      })
+      .catch(() => {
+        // Agentation is optional development tooling.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled]);
+
+  if (!AgentationComponent) return null;
+  return <AgentationComponent endpoint="http://localhost:4747" />;
+};
 
 // Lazy load pages for better performance
 const loadLoginPage = () => import('../features/auth/pages/LoginPage');
@@ -156,29 +229,27 @@ function AppContent() {
     <>
       <AuthErrorToast message={error} />
       <div className="app-shell">
-        <Suspense
-          fallback={<PageSkeleton page={currentPage} compact className="content-fade-in" />}
-        >
-          <ScrollToTop trigger={currentPage} />
+        <LazyLoadErrorBoundary resetKey={currentPage}>
+          <Suspense
+            fallback={<PageSkeleton page={currentPage} compact className="content-fade-in" />}
+          >
+            <ScrollToTop trigger={currentPage} />
 
-          <div className="relative overflow-x-clip isolation-isolate">
-            <div
-              key={`${currentPage}-${transitionVersion}`}
-              className={transitionDirection === 'forward' ? 'page-anim-enter-forward' : 'page-anim-enter-backward'}
-            >
-              {renderPage(currentPage)}
+            <div className="relative overflow-x-clip isolation-isolate">
+              <div
+                key={`${currentPage}-${transitionVersion}`}
+                className={transitionDirection === 'forward' ? 'page-anim-enter-forward' : 'page-anim-enter-backward'}
+              >
+                {renderPage(currentPage)}
+              </div>
             </div>
-          </div>
-        </Suspense>
+          </Suspense>
+        </LazyLoadErrorBoundary>
         <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} userId={user.id} />
       </div>
       {import.meta.env.DEV && isAdmin && typeof window !== 'undefined' && (
         <AgentationErrorBoundary>
-          <Suspense fallback={null}>
-            <AgentationComponent
-              endpoint="http://localhost:4747"
-            />
-          </Suspense>
+          <DevAgentation enabled={isAdmin} />
         </AgentationErrorBoundary>
       )}
     </>

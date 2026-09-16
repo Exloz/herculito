@@ -7,12 +7,18 @@ import { useActivitySync } from './useActivitySync';
 const syncMocks = vi.hoisted(() => ({
   getProjection: vi.fn(),
   reload: vi.fn(),
-  syncPending: vi.fn().mockResolvedValue(undefined)
+  syncPending: vi.fn().mockResolvedValue(undefined),
+  subscribe: vi.fn((listener: () => void) => {
+    void listener;
+    return () => {};
+  })
 }));
 
 vi.mock('./browserActivitySync', () => ({
   ACTIVITY_SYNC_CHANGED_EVENT: 'activity-sync-changed',
-  getBrowserActivitySync: () => syncMocks
+  getBrowserActivitySync: () => syncMocks,
+  getBrowserActivityProjection: () => syncMocks.getProjection(),
+  subscribeBrowserActivitySync: (_userId: string, listener: () => void) => syncMocks.subscribe(listener)
 }));
 
 describe('useActivitySync', () => {

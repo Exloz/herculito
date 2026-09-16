@@ -72,6 +72,7 @@ describe('remote timer scheduler', () => {
       commandAtMs: 1_000,
       tag: 'rest-timer:1000'
     });
+    expect(dependencies.ensureReady).toHaveBeenCalledWith(false, 'user-1');
   });
 
   it('does not schedule when readiness completes after a newer cancel command', async () => {

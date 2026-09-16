@@ -1,4 +1,5 @@
-import React, { useState, useCallback, ReactNode } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { Toast, ToastType } from '../../shared/ui/Toast';
 import { ConfirmModal } from '../../shared/ui/ConfirmModal';
 import { UIContext, type ConfirmOptions } from './ui-context';
@@ -45,8 +46,10 @@ export const UIProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     setModalConfig(null);
   }, [modalConfig]);
 
+  const contextValue = useMemo(() => ({ showToast, confirm }), [confirm, showToast]);
+
   return (
-    <UIContext.Provider value={{ showToast, confirm }}>
+    <UIContext.Provider value={contextValue}>
       {children}
       
       <div

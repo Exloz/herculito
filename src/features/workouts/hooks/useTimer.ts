@@ -83,8 +83,8 @@ const showTimerNotification = async (
   const notificationTag = 'rest-timer';
   const nativeOptions: NotificationOptions = {
     body,
-    icon: '/app-logo.png',
-    badge: '/app-logo.png',
+    icon: '/favicon-196.png',
+    badge: '/favicon-196.png',
     tag: notificationTag,
     requireInteraction: false,
     silent: false
@@ -180,27 +180,44 @@ export const useTimer = (userId: string) => {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [endsAtMs, setEndsAtMs] = useState<number | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
+  const [isVisible, setIsVisible] = useState(() => typeof document === 'undefined' || !document.hidden);
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const wakeLockRequestRef = useRef<Promise<WakeLockSentinel> | null>(null);
+  const shouldHoldWakeLockRef = useRef(false);
+  const mountedRef = useRef(true);
+  const hasNotifiedRef = useRef(false);
   const endTimeRef = useRef<number | null>(null);
 
   const acquireWakeLock = useCallback(async () => {
-    if ('wakeLock' in navigator) {
-      try {
-        wakeLockRef.current = await navigator.wakeLock.request('screen');
-      } catch {
-        console.warn('Wake lock failed');
+    shouldHoldWakeLockRef.current = true;
+    if (typeof navigator === 'undefined' || wakeLockRef.current || wakeLockRequestRef.current) return;
+    const wakeLockManager = navigator.wakeLock;
+    if (!wakeLockManager) return;
+
+    try {
+      const request = wakeLockManager.request('screen');
+      wakeLockRequestRef.current = request;
+      const wakeLock = await request;
+      if (wakeLockRequestRef.current === request) wakeLockRequestRef.current = null;
+      if (!mountedRef.current || !shouldHoldWakeLockRef.current) {
+        void wakeLock.release().catch(() => {});
+        return;
       }
+      wakeLockRef.current = wakeLock;
+    } catch {
+      wakeLockRequestRef.current = null;
+      console.warn('Wake lock failed');
     }
   }, []);
 
   const releaseWakeLock = useCallback(() => {
-    if (wakeLockRef.current) {
-      wakeLockRef.current.release();
-      wakeLockRef.current = null;
-    }
+    shouldHoldWakeLockRef.current = false;
+    const wakeLock = wakeLockRef.current;
+    wakeLockRef.current = null;
+    if (wakeLock) void wakeLock.release().catch(() => {});
   }, []);
 
   const startAudioContext = useCallback(() => {
@@ -229,6 +246,7 @@ export const useTimer = (userId: string) => {
       setStartTime(savedState.isActive && savedState.timeLeft > 0 ? savedState.startTime : null);
       setEndsAtMs(savedState.isActive && savedState.timeLeft > 0 ? savedState.endsAtMs ?? null : null);
       setHasNotified(savedState.hasNotified);
+      hasNotifiedRef.current = savedState.hasNotified;
       return savedState;
     } else {
       setTimeLeft(0);
@@ -237,6 +255,7 @@ export const useTimer = (userId: string) => {
       setStartTime(null);
       setEndsAtMs(null);
       setHasNotified(false);
+      hasNotifiedRef.current = false;
       return null;
     }
   }, []);
@@ -252,13 +271,16 @@ export const useTimer = (userId: string) => {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
+      const visible = !document.hidden;
+      setIsVisible(visible);
+      if (visible) {
         const restored = loadState();
 
         if (restored && !restored.isActive && restored.timeLeft === 0 && restored.initialTime > 0 && !restored.hasNotified) {
           const nextState = { ...restored, hasNotified: true };
           saveTimerState(nextState);
           setHasNotified(true);
+          hasNotifiedRef.current = true;
 
           void remoteTimerScheduler.cancel(userId).catch(() => {
             console.warn('Failed to cancel background push on resume');
@@ -280,7 +302,9 @@ export const useTimer = (userId: string) => {
   }, [loadState, userId]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
+      mountedRef.current = false;
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (audioContextRef.current) audioContextRef.current.close();
 
@@ -290,7 +314,7 @@ export const useTimer = (userId: string) => {
   }, [releaseWakeLock]);
 
   useEffect(() => {
-    if (!isActive) {
+    if (!isActive || !isVisible) {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -318,7 +342,8 @@ export const useTimer = (userId: string) => {
         setEndsAtMs(null);
         endTimeRef.current = null;
 
-        if (!hasNotified) {
+        if (!hasNotifiedRef.current) {
+          hasNotifiedRef.current = true;
           setHasNotified(true);
 
           void remoteTimerScheduler.cancel(userId).catch(() => {
@@ -334,7 +359,7 @@ export const useTimer = (userId: string) => {
 
         releaseWakeLock();
       }
-    }, 250);
+    }, 1000);
 
     return () => {
       if (intervalRef.current) {
@@ -342,7 +367,7 @@ export const useTimer = (userId: string) => {
         intervalRef.current = null;
       }
     };
-  }, [isActive, hasNotified, endsAtMs, acquireWakeLock, startAudioContext, releaseWakeLock, userId]);
+  }, [isActive, isVisible, endsAtMs, acquireWakeLock, startAudioContext, releaseWakeLock, userId]);
 
   const requestPermission = useCallback(async () => {
     return requestNotificationPermission();
@@ -362,6 +387,7 @@ export const useTimer = (userId: string) => {
     setStartTime(startedAtMs);
     setEndsAtMs(executeAtMs);
     setHasNotified(false);
+    hasNotifiedRef.current = false;
 
     const canRequestPermission = typeof navigator !== 'undefined'
       && 'userActivation' in navigator
@@ -399,6 +425,7 @@ export const useTimer = (userId: string) => {
     setStartTime(null);
     setEndsAtMs(null);
     setHasNotified(false);
+    hasNotifiedRef.current = false;
     endTimeRef.current = null;
 
     if (intervalRef.current) {

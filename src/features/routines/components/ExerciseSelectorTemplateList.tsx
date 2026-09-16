@@ -12,7 +12,6 @@ interface ExerciseSelectorTemplateListProps {
   ownVideoCandidates: number;
   backfillRunning: boolean;
   backfillMessage: string;
-  pendingTemplateId: string | null;
   onSearchTermChange: (value: string) => void;
   onSelectedCategoryChange: (value: string) => void;
   onBackfillVideos: () => void;
@@ -29,7 +28,6 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
   ownVideoCandidates,
   backfillRunning,
   backfillMessage,
-  pendingTemplateId,
   onSearchTermChange,
   onSelectedCategoryChange,
   onBackfillVideos,
@@ -77,7 +75,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
           <button
             type="button"
             onClick={onBackfillVideos}
-            disabled={backfillRunning || ownVideoCandidates === 0 || Boolean(pendingTemplateId)}
+            disabled={backfillRunning || ownVideoCandidates === 0}
             className="btn-ghost text-xs disabled:opacity-60"
           >
               {backfillRunning ? 'Actualizando...' : 'Buscar videos automáticamente'}
@@ -96,8 +94,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
             key={exercise.id}
             type="button"
             onClick={() => void onSelectTemplate(exercise)}
-            disabled={Boolean(pendingTemplateId)}
-            className="motion-list-item w-full rounded-[1.1rem] border border-white/8 bg-slateDeep/85 p-3 text-left transition-colors hover:border-mint/30 hover:bg-charcoal disabled:cursor-wait disabled:opacity-60 sm:rounded-[1.35rem] sm:p-3.5"
+            className="deferred-list-item motion-list-item w-full rounded-[1.1rem] border border-white/8 bg-slateDeep/85 p-3 text-left transition-colors hover:border-mint/30 hover:bg-charcoal sm:rounded-[1.35rem] sm:p-3.5"
             >
             <div className="flex items-center justify-between">
               <div className="min-w-0 pr-3">

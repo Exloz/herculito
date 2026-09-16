@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { TargetFace } from './TargetFace';
 
@@ -27,6 +27,10 @@ describe('TargetFace', () => {
   beforeEach(() => {
     mockOnScore = vi.fn();
     mockOnMiss = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   describe('rendering', () => {
@@ -65,6 +69,30 @@ describe('TargetFace', () => {
   });
 
   describe('score selection via target aiming', () => {
+    it('coalesces pointer previews to the latest position in an animation frame', () => {
+      let frameCallback: FrameRequestCallback | undefined;
+      const requestAnimationFrame = vi.fn((callback: FrameRequestCallback) => {
+        frameCallback = callback;
+        return 1;
+      });
+      vi.stubGlobal('requestAnimationFrame', requestAnimationFrame);
+      vi.stubGlobal('cancelAnimationFrame', vi.fn());
+      render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
+
+      const svg = screen.getByRole('img', { name: /diana de tiro con arco/i });
+      mockSvgBounds(svg);
+      fireEvent.pointerMove(svg, { pointerId: 1, clientX: 230, clientY: 200 });
+      fireEvent.pointerMove(svg, { pointerId: 1, clientX: 270, clientY: 200 });
+
+      expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
+      expect(screen.getByText('-')).toBeInTheDocument();
+
+      act(() => frameCallback?.(0));
+
+      expect(screen.getByText('7')).toBeInTheDocument();
+      expect(screen.getByText('7 puntos')).toBeInTheDocument();
+    });
+
     it('does not register a score until the pointer is released', () => {
       render(<TargetFace onScore={mockOnScore} onMiss={mockOnMiss} />);
 

@@ -1,5 +1,16 @@
-import { describe, expect, it } from 'vitest';
-import { parseBooleanEnvFlag, shouldUseBackgroundRestPushForPlatform } from './pushApi';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  parseBooleanEnvFlag,
+  registerSubscriptionInApi,
+  shouldUseBackgroundRestPushForPlatform
+} from './pushApi';
+
+const transportMocks = vi.hoisted(() => ({
+  fetchApiJson: vi.fn(),
+  fetchPublicApiJson: vi.fn()
+}));
+
+vi.mock('../../../shared/api/transport', () => transportMocks);
 
 describe('pushApi background push gating', () => {
   it('keeps iOS path enabled regardless of Android flag', () => {
@@ -69,5 +80,49 @@ describe('parseBooleanEnvFlag', () => {
     expect(parseBooleanEnvFlag('0')).toBe(false);
     expect(parseBooleanEnvFlag('')).toBe(false);
     expect(parseBooleanEnvFlag(undefined)).toBe(false);
+  });
+});
+
+describe('push subscription registration', () => {
+  beforeEach(() => {
+    transportMocks.fetchApiJson.mockReset();
+  });
+
+  it('reuses a successful registration for the same owner, device, and subscription', async () => {
+    transportMocks.fetchApiJson.mockResolvedValue({ ok: true });
+    const subscription = {
+      toJSON: () => ({ endpoint: 'https://push.example/subscription-1' })
+    } as PushSubscription;
+
+    await registerSubscriptionInApi('user-cache', 'device-cache', subscription);
+    await registerSubscriptionInApi('user-cache', 'device-cache', subscription);
+
+    expect(transportMocks.fetchApiJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('registers again when the authenticated owner changes', async () => {
+    transportMocks.fetchApiJson.mockResolvedValue({ ok: true });
+    const subscription = {
+      toJSON: () => ({ endpoint: 'https://push.example/subscription-2' })
+    } as PushSubscription;
+
+    await registerSubscriptionInApi('user-a', 'device-owner', subscription);
+    await registerSubscriptionInApi('user-b', 'device-owner', subscription);
+
+    expect(transportMocks.fetchApiJson).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries a registration that previously failed', async () => {
+    transportMocks.fetchApiJson
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({ ok: true });
+    const subscription = {
+      toJSON: () => ({ endpoint: 'https://push.example/subscription-retry' })
+    } as PushSubscription;
+
+    await expect(registerSubscriptionInApi('user-retry', 'device-retry', subscription)).rejects.toThrow('offline');
+    await expect(registerSubscriptionInApi('user-retry', 'device-retry', subscription)).resolves.toBeUndefined();
+
+    expect(transportMocks.fetchApiJson).toHaveBeenCalledTimes(2);
   });
 });

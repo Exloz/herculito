@@ -1,3 +1,35 @@
+@font-face {
+  font-family: 'Hind';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/hind-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Hind';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/hind-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Khand';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/khand-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Khand';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/khand-700.woff2') format('woff2');
+}
+
 html,
 body,
 #root {

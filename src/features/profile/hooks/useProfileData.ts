@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { UserBodyMeasurement } from '../../../shared/types';
 import {
   decodeBodyMeasurements,
@@ -9,8 +9,6 @@ import {
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
 const PROFILE_MEASUREMENTS_CACHE_KEY = 'profile-measurements-cache';
-const CACHE_MAX_AGE_MS = 12 * 60 * 60 * 1000; // 12 hours
-
 type CachedMeasurementsEntry = {
   savedAt: number;
   measurements: UserBodyMeasurement[];
@@ -26,12 +24,6 @@ const readMeasurementsCache = (userId: string): UserBodyMeasurement[] | null => 
     const cache = JSON.parse(raw) as Record<string, CachedMeasurementsEntry>;
     const entry = cache[userId];
     if (!entry) return null;
-
-    if (Date.now() - entry.savedAt > CACHE_MAX_AGE_MS) {
-      delete cache[userId];
-      window.localStorage.setItem(PROFILE_MEASUREMENTS_CACHE_KEY, JSON.stringify(cache));
-      return null;
-    }
 
     return decodeBodyMeasurements(entry.measurements);
   } catch {
@@ -55,18 +47,58 @@ const writeMeasurementsCache = (userId: string, measurements: UserBodyMeasuremen
   }
 };
 
+const applyMeasurementMutation = (
+  measurements: UserBodyMeasurement[],
+  payload: Parameters<typeof upsertBodyMeasurement>[0],
+  measurementId: string,
+  userId: string,
+  now: Date
+): UserBodyMeasurement[] | null => {
+  const existing = measurements.find((measurement) => measurement.id === measurementId);
+  if (!existing && payload.measuredAt === undefined) return null;
+
+  const measurement: UserBodyMeasurement = existing
+    ? {
+        ...existing,
+        ...payload,
+        id: measurementId,
+        measuredAt: payload.measuredAt === undefined ? existing.measuredAt : new Date(payload.measuredAt),
+        updatedAt: now
+      }
+    : {
+        ...payload,
+        id: measurementId,
+        uid: userId,
+        measuredAt: new Date(payload.measuredAt as number),
+        createdAt: now,
+        updatedAt: now
+      };
+
+  return [
+    measurement,
+    ...measurements.filter((item) => item.id !== measurementId)
+  ].sort((left, right) => right.measuredAt.getTime() - left.measuredAt.getTime());
+};
+
 export const useProfileData = (userId: string) => {
-  const [measurements, setMeasurements] = useState<UserBodyMeasurement[]>(() => {
-    return readMeasurementsCache(userId) ?? [];
-  });
-  const [loading, setLoading] = useState(() => !readMeasurementsCache(userId));
+  const [initialCache] = useState(() => ({
+    userId,
+    measurements: readMeasurementsCache(userId)
+  }));
+  const [measurements, setMeasurements] = useState<UserBodyMeasurement[]>(initialCache.measurements ?? []);
+  const measurementsRef = useRef(measurements);
+  const generationRef = useRef(0);
+  const [loading, setLoading] = useState(!initialCache.measurements);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const loadMeasurements = useCallback(
-    async (preserveData: boolean) => {
+    async (preserveData: boolean, cached: UserBodyMeasurement[] | null = null) => {
+      const generation = generationRef.current + 1;
+      generationRef.current = generation;
       if (!userId) {
+        measurementsRef.current = [];
         setMeasurements([]);
         setLoading(false);
         setRefreshing(false);
@@ -74,14 +106,15 @@ export const useProfileData = (userId: string) => {
         return;
       }
 
-      const cached = readMeasurementsCache(userId);
-
       if (!preserveData) {
         if (cached) {
+          measurementsRef.current = cached;
           setMeasurements(cached);
           setLoading(false);
+          setRefreshing(true);
         } else {
           setLoading(true);
+          setRefreshing(false);
         }
       } else {
         setRefreshing(true);
@@ -91,24 +124,32 @@ export const useProfileData = (userId: string) => {
 
       try {
         const data = await fetchBodyMeasurements(100);
+        if (generation !== generationRef.current) return;
         writeMeasurementsCache(userId, data);
+        measurementsRef.current = data;
         setMeasurements(data);
       } catch (loadError) {
+        if (generation !== generationRef.current) return;
         if (!preserveData && !cached) {
           setMeasurements([]);
         }
         setError(toUserMessage(loadError, 'No se pudieron cargar las mediciones'));
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (generation === generationRef.current) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     },
     [userId]
   );
 
   useEffect(() => {
-    void loadMeasurements(false);
-  }, [loadMeasurements]);
+    const cached = initialCache.userId === userId
+      ? initialCache.measurements
+      : readMeasurementsCache(userId);
+    void loadMeasurements(false, cached);
+  }, [initialCache, loadMeasurements, userId]);
 
   const refresh = useCallback(async () => {
     await loadMeasurements(true);
@@ -134,7 +175,28 @@ export const useProfileData = (userId: string) => {
 
       try {
         const result = await upsertBodyMeasurement(payload);
-        await refresh();
+        if (!result.ok) return false;
+        generationRef.current += 1;
+
+        const measurementId = result.id ?? payload.id;
+        const nextMeasurements = measurementId
+          ? applyMeasurementMutation(
+              measurementsRef.current,
+              payload,
+              measurementId,
+              userId,
+              new Date()
+            )
+          : null;
+
+        if (nextMeasurements) {
+          measurementsRef.current = nextMeasurements;
+          setMeasurements(nextMeasurements);
+          writeMeasurementsCache(userId, nextMeasurements);
+          setRefreshing(false);
+        } else {
+          void refresh();
+        }
         return result.ok;
       } catch (saveError) {
         setError(toUserMessage(saveError, 'Error guardando la medición'));
@@ -143,7 +205,7 @@ export const useProfileData = (userId: string) => {
         setSaving(false);
       }
     },
-    [refresh]
+    [refresh, userId]
   );
 
   const removeMeasurement = useCallback(
@@ -153,7 +215,12 @@ export const useProfileData = (userId: string) => {
 
       try {
         await deleteBodyMeasurement(id);
-        await refresh();
+        generationRef.current += 1;
+        const nextMeasurements = measurementsRef.current.filter((measurement) => measurement.id !== id);
+        measurementsRef.current = nextMeasurements;
+        setMeasurements(nextMeasurements);
+        writeMeasurementsCache(userId, nextMeasurements);
+        setRefreshing(false);
         return true;
       } catch (removeError) {
         setError(toUserMessage(removeError, 'Error eliminando la medición'));
@@ -162,7 +229,7 @@ export const useProfileData = (userId: string) => {
         setSaving(false);
       }
     },
-    [refresh]
+    [userId]
   );
 
   return {

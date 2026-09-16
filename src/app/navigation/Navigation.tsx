@@ -3,6 +3,10 @@ import { Dumbbell, Home, PlayCircle, Shield, Target } from 'lucide-react';
 import { useActivitySync } from '../../features/activity-sync/useActivitySync';
 import { remoteTimerScheduler } from '../../features/workouts/lib/remoteTimerScheduler';
 
+const APP_UPDATE_AVAILABLE_EVENT = 'app-update-available';
+const APP_ACTIVATE_UPDATE_EVENT = 'app-activate-update';
+const APP_UPDATE_READY_KEY = 'app-update-ready';
+
 interface NavigationProps {
   currentPage: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile';
   onPageChange: (page: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile') => void;
@@ -19,6 +23,13 @@ export const Navigation: React.FC<NavigationProps> = ({
   const { activitySync, projection } = useActivitySync(userId);
   const hasActiveWorkout = projection.active?.kind === 'workout';
   const [isHidden, setIsHidden] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(() => {
+    try {
+      return window.sessionStorage.getItem(APP_UPDATE_READY_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     const handleVisibilityChange = (event: Event) => {
@@ -28,6 +39,12 @@ export const Navigation: React.FC<NavigationProps> = ({
 
     window.addEventListener('app-navigation-visibility', handleVisibilityChange);
     return () => window.removeEventListener('app-navigation-visibility', handleVisibilityChange);
+  }, []);
+
+  useEffect(() => {
+    const handleUpdateAvailable = () => setUpdateAvailable(true);
+    window.addEventListener(APP_UPDATE_AVAILABLE_EVENT, handleUpdateAvailable);
+    return () => window.removeEventListener(APP_UPDATE_AVAILABLE_EVENT, handleUpdateAvailable);
   }, []);
 
   useLayoutEffect(() => {
@@ -54,8 +71,27 @@ export const Navigation: React.FC<NavigationProps> = ({
     void activitySync.syncPending();
   };
 
+  const handleActivateUpdate = () => {
+    try {
+      window.sessionStorage.removeItem(APP_UPDATE_READY_KEY);
+    } catch {
+      // The update can still activate without session storage.
+    }
+    setUpdateAvailable(false);
+    window.dispatchEvent(new Event(APP_ACTIVATE_UPDATE_EVENT));
+  };
+
   return (
     <div className={`app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full flex-col items-center justify-center gap-2 pb-[env(safe-area-inset-bottom)] pointer-events-none transition-all duration-300 ease-out ${isHidden ? 'opacity-0 translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+      {updateAvailable && (
+        <button
+          type="button"
+          onClick={handleActivateUpdate}
+          className="pointer-events-auto w-[calc(100%-2rem)] max-w-md rounded-xl border border-mint/45 bg-charcoal px-4 py-2 text-sm font-semibold text-mint shadow-soft"
+        >
+          Nueva versión disponible. Actualizar
+        </button>
+      )}
       {projection.failedSyncCount > 0 && (
         <button
           type="button"

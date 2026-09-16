@@ -70,6 +70,8 @@ export const useActiveArcherySession = (userId: string) => {
   }, [activeActivity, activitySync, completedSession]);
 
   return {
+    activitySync,
+    projection,
     activeSession,
     isLoading: false,
     hasActiveSession: Boolean(activeSession),

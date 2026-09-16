@@ -31,6 +31,14 @@ const config: HiitConfig = {
   restDuration: 0
 };
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((promiseResolve) => {
+    resolve = promiseResolve;
+  });
+  return { promise, resolve };
+}
+
 describe('useHiitTimer', () => {
   beforeEach(() => {
     const values = new Map<string, string>();
@@ -47,6 +55,7 @@ describe('useHiitTimer', () => {
     activitySyncMocks.getHiitTimerState.mockReset().mockReturnValue(null);
     activitySyncMocks.saveHiitTimerState.mockClear();
     activitySyncMocks.clearHiitTimerState.mockClear();
+    Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: undefined });
   });
 
   afterEach(() => {
@@ -138,5 +147,88 @@ describe('useHiitTimer', () => {
     unmount();
 
     expect(schedulerMocks.cancel).not.toHaveBeenCalled();
+  });
+
+  it('keeps one interval and checkpoints instead of persisting every tick', async () => {
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    const { result, unmount } = renderHook(() => useHiitTimer('user-1', 'hiit-1'));
+
+    act(() => result.current.start(config));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000);
+    });
+
+    expect(setIntervalSpy).toHaveBeenCalledTimes(1);
+    expect(activitySyncMocks.saveHiitTimerState).toHaveBeenCalledTimes(1);
+    expect(result.current.state.secondsRemaining).toBe(1);
+    unmount();
+    setIntervalSpy.mockRestore();
+  });
+
+  it('requests one wake lock and releases an acquisition that resolves after unmount', async () => {
+    const pendingWakeLock = deferred<WakeLockSentinel>();
+    const release = vi.fn().mockResolvedValue(undefined);
+    const request = vi.fn(() => pendingWakeLock.promise);
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request }
+    });
+    const { result, unmount } = renderHook(() => useHiitTimer('user-1', 'hiit-1'));
+
+    act(() => result.current.start(config));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3_000);
+    });
+    expect(request).toHaveBeenCalledTimes(1);
+
+    unmount();
+    await act(async () => {
+      pendingWakeLock.resolve({ release } as unknown as WakeLockSentinel);
+      await Promise.resolve();
+    });
+
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
+  it('persists immediately when restarting the current phase', () => {
+    const { result, unmount } = renderHook(() => useHiitTimer('user-1', 'hiit-1'));
+    act(() => result.current.start(config));
+    activitySyncMocks.saveHiitTimerState.mockClear();
+
+    act(() => result.current.restartCurrentPhase());
+
+    expect(activitySyncMocks.saveHiitTimerState).toHaveBeenCalledTimes(1);
+    expect(activitySyncMocks.saveHiitTimerState).toHaveBeenCalledWith(
+      'hiit-1',
+      expect.objectContaining({ state: expect.objectContaining({ secondsRemaining: 5 }) })
+    );
+    unmount();
+  });
+
+  it('reacquires the wake lock after the browser releases it', async () => {
+    let onRelease: (() => void) | undefined;
+    const wakeLock = {
+      release: vi.fn().mockResolvedValue(undefined),
+      addEventListener: vi.fn((_type: string, listener: () => void) => {
+        onRelease = listener;
+      })
+    };
+    const request = vi.fn().mockResolvedValue(wakeLock);
+    Object.defineProperty(navigator, 'wakeLock', {
+      configurable: true,
+      value: { request }
+    });
+    const { result, unmount } = renderHook(() => useHiitTimer('user-1', 'hiit-1'));
+
+    act(() => result.current.start(config));
+    await act(async () => Promise.resolve());
+    expect(request).toHaveBeenCalledTimes(1);
+
+    act(() => onRelease?.());
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    await act(async () => Promise.resolve());
+
+    expect(request).toHaveBeenCalledTimes(2);
+    unmount();
   });
 });

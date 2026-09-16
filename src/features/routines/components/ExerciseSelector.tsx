@@ -111,7 +111,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [customExercise, setCustomExercise] = useState<CustomExerciseForm>(EMPTY_CUSTOM_EXERCISE);
-  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null);
 
   const {
     videoSuggestions,
@@ -181,28 +180,18 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     }));
   };
 
-  const handleSelectTemplate = async (template: ExerciseTemplate) => {
-    if (pendingTemplateId) {
-      return;
-    }
+  const handleSelectTemplate = (template: ExerciseTemplate) => {
+    const exercise: Exercise = {
+      id: template.id,
+      name: template.name,
+      sets: template.sets,
+      reps: template.reps,
+      restTime: template.restTime,
+      ...(template.video ? { video: template.video } : {})
+    };
 
-    setPendingTemplateId(template.id);
-
-    try {
-      const exercise: Exercise = {
-        id: template.id,
-        name: template.name,
-        sets: template.sets,
-        reps: template.reps,
-        restTime: template.restTime,
-        ...(template.video ? { video: template.video } : {})
-      };
-
-      await incrementUsage(template.id);
-      onSelectExercise(exercise);
-    } finally {
-      setPendingTemplateId(null);
-    }
+    onSelectExercise(exercise);
+    incrementUsage(template.id);
   };
 
   const handleCustomExercise = async () => {
@@ -394,7 +383,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
               ownVideoCandidates={ownVideoCandidates}
               backfillRunning={backfillRunning}
               backfillMessage={backfillMessage}
-              pendingTemplateId={pendingTemplateId}
               onSearchTermChange={setSearchTerm}
               onSelectedCategoryChange={setSelectedCategory}
               onBackfillVideos={() => {

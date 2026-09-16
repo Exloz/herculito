@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft, Plus, CheckCircle, MapPin } from 'lucide-react';
 import type { SportSession } from '../../../../shared/types';
 import { RoundCard } from './RoundCard';
@@ -28,6 +28,8 @@ const DEFAULT_ARROWS_PER_END = 6;
 const MAX_ARROWS_PER_END = 12;
 const MAX_DISTANCE = 200;
 const MAX_TARGET_SIZE = 200;
+const NOTES_DEBOUNCE_MS = 500;
+const NOTES_DRAFT_KEY_PREFIX = 'archery-notes-draft:';
 
 export const ArcherySession: React.FC<ArcherySessionProps> = ({
   session,
@@ -46,11 +48,59 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
   const [arrowsPerEnd, setArrowsPerEnd] = useState(DEFAULT_ARROWS_PER_END);
   const [isCompleting, setIsCompleting] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
-  const [notes, setNotes] = useState(session.notes ?? '');
+  const notesDraftKey = `${NOTES_DRAFT_KEY_PREFIX}${session.id}`;
+  const [notes, setNotes] = useState(() => {
+    try {
+      return window.localStorage.getItem(notesDraftKey) ?? session.notes ?? '';
+    } catch {
+      return session.notes ?? '';
+    }
+  });
+  const notesRef = useRef(notes);
+  const pendingNotesRef = useRef<string | null>(null);
+  const notesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onNotesChangeRef = useRef(onNotesChange);
 
   useEffect(() => {
-    onNotesChange?.(notes);
-  }, [notes, onNotesChange]);
+    onNotesChangeRef.current = onNotesChange;
+  }, [onNotesChange]);
+
+  const flushNotes = useCallback(() => {
+    if (notesTimeoutRef.current) {
+      clearTimeout(notesTimeoutRef.current);
+      notesTimeoutRef.current = null;
+    }
+
+    if (pendingNotesRef.current === null) {
+      return;
+    }
+
+    onNotesChangeRef.current?.(pendingNotesRef.current);
+    pendingNotesRef.current = null;
+    try {
+      window.localStorage.removeItem(notesDraftKey);
+    } catch {
+      // The activity snapshot still receives the flushed value.
+    }
+  }, [notesDraftKey]);
+
+  useEffect(() => () => flushNotes(), [flushNotes]);
+
+  const handleNotesChange = useCallback((value: string) => {
+    setNotes(value);
+    notesRef.current = value;
+    pendingNotesRef.current = value;
+    try {
+      window.localStorage.setItem(notesDraftKey, value);
+    } catch {
+      // Draft persistence is best effort; the debounced activity snapshot remains available.
+    }
+
+    if (notesTimeoutRef.current) {
+      clearTimeout(notesTimeoutRef.current);
+    }
+    notesTimeoutRef.current = setTimeout(flushNotes, NOTES_DEBOUNCE_MS);
+  }, [flushNotes, notesDraftKey]);
 
   const handleAddRound = useCallback(async () => {
     try {
@@ -79,9 +129,10 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
       confirmText: 'Completar',
       cancelText: 'Continuar',
       onConfirm: async () => {
+        flushNotes();
         setIsCompleting(true);
         try {
-          await onComplete(notes);
+          await onComplete(notesRef.current);
           setShowSummary(true);
           showToast('Sesión completada', 'success');
         } catch (error) {
@@ -91,7 +142,7 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
         }
       }
     });
-  }, [confirm, onComplete, notes, showToast]);
+  }, [confirm, flushNotes, onComplete, showToast]);
 
   const handleAbandon = useCallback(() => {
     confirm({
@@ -100,9 +151,16 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
       confirmText: 'Abandonar',
       cancelText: 'Cancelar',
       isDanger: true,
-      onConfirm: onAbandon
+      onConfirm: () => {
+        try {
+          window.localStorage.removeItem(notesDraftKey);
+        } catch {
+          // Ignore draft cleanup failures while abandoning the activity.
+        }
+        onAbandon();
+      }
     });
-  }, [confirm, onAbandon]);
+  }, [confirm, notesDraftKey, onAbandon]);
 
   if (showSummary) {
     return (
@@ -176,7 +234,8 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
           <input
             type="text"
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={(event) => handleNotesChange(event.target.value)}
+            onBlur={flushNotes}
             placeholder="Ej: Arco Club, viento fuerte..."
             className="input"
           />

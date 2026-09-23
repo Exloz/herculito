@@ -76,4 +76,25 @@ describe('Navigation synchronization failure action', () => {
     expect(mocks.retryFailed).toHaveBeenCalledTimes(1);
     expect(mocks.syncPending).toHaveBeenCalledTimes(1);
   });
+
+  it('does not keep the fixed bar transformed while visible', () => {
+    render(
+      <Navigation
+        currentPage="dashboard"
+        onPageChange={vi.fn()}
+        isAdmin={false}
+        userId="user-1"
+      />
+    );
+
+    const container = screen.getByRole('navigation').closest('.app-bottom-nav');
+    expect(container?.classList.contains('translate-y-0')).toBe(false);
+    expect(container?.classList.contains('translate-y-6')).toBe(false);
+
+    fireEvent(window, new CustomEvent('app-navigation-visibility', {
+      detail: { hidden: true }
+    }));
+    expect(container?.classList.contains('translate-y-6')).toBe(false);
+    expect(container?.classList.contains('opacity-0')).toBe(true);
+  });
 });

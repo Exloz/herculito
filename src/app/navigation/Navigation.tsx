@@ -82,7 +82,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <div className={`app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full flex-col items-center justify-center gap-2 pb-[env(safe-area-inset-bottom)] pointer-events-none transition-all duration-300 ease-out ${isHidden ? 'opacity-0 translate-y-6 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+    <div className={`app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full flex-col items-center justify-center gap-2 pb-[env(safe-area-inset-bottom)] pointer-events-none transition-opacity duration-300 ease-out ${isHidden ? 'opacity-0' : 'opacity-100'}`}>
       {updateAvailable && (
         <button
           type="button"

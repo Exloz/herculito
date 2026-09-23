@@ -22,7 +22,6 @@ const createDependencies = (overrides: Partial<RemoteTimerSchedulerDependencies>
     canUseRemoteTimer: () => true,
     ensureReady: vi.fn().mockResolvedValue({ deviceId: 'device-1' }),
     getDeviceId: () => 'device-1',
-    isIos: () => false,
     scheduleRemote: vi.fn().mockResolvedValue({
       accepted: true,
       jobId: 'user-1:device-1:rest',
@@ -70,9 +69,9 @@ describe('remote timer scheduler', () => {
       deviceId: 'device-1',
       executeAtMs: 11_000,
       commandAtMs: 1_000,
-      tag: 'rest-timer:1000'
+      tag: 'rest-timer'
     });
-    expect(dependencies.ensureReady).toHaveBeenCalledWith(false, 'user-1');
+    expect(dependencies.ensureReady).toHaveBeenCalledWith(false);
   });
 
   it('does not schedule when readiness completes after a newer cancel command', async () => {

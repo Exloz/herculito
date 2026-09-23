@@ -41,6 +41,8 @@ describe('useTimer', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    Reflect.deleteProperty(window, 'Notification');
+    Reflect.deleteProperty(navigator, 'serviceWorker');
   });
 
   it('replaces the remote deadline when a paused timer resumes', async () => {
@@ -136,6 +138,34 @@ describe('useTimer', () => {
     Object.defineProperty(document, 'hidden', { configurable: true, value: false });
     act(() => document.dispatchEvent(new Event('visibilitychange')));
     expect(result.current.timeLeft).toBe(5);
+    unmount();
+  });
+
+  it('does not alert again on resume when the remote notification is already visible', async () => {
+    const getNotifications = vi.fn().mockResolvedValue([{}]);
+    const showNotification = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      value: { permission: 'granted' }
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { ready: Promise.resolve({ getNotifications, showNotification }) }
+    });
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+
+    await act(async () => result.current.startTimer(1));
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    vi.setSystemTime(3_000);
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      await Promise.resolve();
+    });
+
+    expect(getNotifications).toHaveBeenCalledWith({ tag: 'rest-timer' });
+    expect(showNotification).not.toHaveBeenCalled();
     unmount();
   });
 

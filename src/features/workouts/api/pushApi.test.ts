@@ -88,26 +88,14 @@ describe('push subscription registration', () => {
     transportMocks.fetchApiJson.mockReset();
   });
 
-  it('reuses a successful registration for the same owner, device, and subscription', async () => {
+  it('renews a successful registration before scheduling another timer', async () => {
     transportMocks.fetchApiJson.mockResolvedValue({ ok: true });
     const subscription = {
       toJSON: () => ({ endpoint: 'https://push.example/subscription-1' })
     } as PushSubscription;
 
-    await registerSubscriptionInApi('user-cache', 'device-cache', subscription);
-    await registerSubscriptionInApi('user-cache', 'device-cache', subscription);
-
-    expect(transportMocks.fetchApiJson).toHaveBeenCalledTimes(1);
-  });
-
-  it('registers again when the authenticated owner changes', async () => {
-    transportMocks.fetchApiJson.mockResolvedValue({ ok: true });
-    const subscription = {
-      toJSON: () => ({ endpoint: 'https://push.example/subscription-2' })
-    } as PushSubscription;
-
-    await registerSubscriptionInApi('user-a', 'device-owner', subscription);
-    await registerSubscriptionInApi('user-b', 'device-owner', subscription);
+    await registerSubscriptionInApi('device-cache', subscription);
+    await registerSubscriptionInApi('device-cache', subscription);
 
     expect(transportMocks.fetchApiJson).toHaveBeenCalledTimes(2);
   });
@@ -120,8 +108,8 @@ describe('push subscription registration', () => {
       toJSON: () => ({ endpoint: 'https://push.example/subscription-retry' })
     } as PushSubscription;
 
-    await expect(registerSubscriptionInApi('user-retry', 'device-retry', subscription)).rejects.toThrow('offline');
-    await expect(registerSubscriptionInApi('user-retry', 'device-retry', subscription)).resolves.toBeUndefined();
+    await expect(registerSubscriptionInApi('device-retry', subscription)).rejects.toThrow('offline');
+    await expect(registerSubscriptionInApi('device-retry', subscription)).resolves.toBeUndefined();
 
     expect(transportMocks.fetchApiJson).toHaveBeenCalledTimes(2);
   });

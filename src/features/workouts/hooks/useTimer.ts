@@ -93,6 +93,10 @@ const showTimerNotification = async (
   if ('serviceWorker' in navigator) {
     try {
       const registration = await waitForServiceWorkerReady(SW_READY_TIMEOUT_MS);
+      if (notificationOptions?.source === 'resume') {
+        const visibleNotifications = await registration.getNotifications({ tag: notificationTag });
+        if (visibleNotifications.length > 0) return;
+      }
       await registration.showNotification(title, nativeOptions);
       logTimerEvent('notification_shown', { source: notificationOptions?.source ?? 'interval', channel: 'service_worker' });
 

@@ -8,7 +8,6 @@ import {
 import {
   ensureBackgroundRestPushReady,
   getOrCreateDeviceId,
-  isIosDevice,
   shouldUseBackgroundRestPush
 } from '../api/pushApi';
 
@@ -22,9 +21,8 @@ interface ReadyRemoteTimer {
 export interface RemoteTimerSchedulerDependencies {
   now: () => number;
   canUseRemoteTimer: () => boolean;
-  ensureReady: (requestPermission: boolean, ownerUserId: string) => Promise<ReadyRemoteTimer | null>;
+  ensureReady: (requestPermission: boolean) => Promise<ReadyRemoteTimer | null>;
   getDeviceId: () => string;
-  isIos: () => boolean;
   scheduleRemote: (input: ScheduleRemoteRestTimerInput) => Promise<ScheduleRemoteTimerResult>;
   cancelRemote: (input: { deviceId: string; commandAtMs: number }) => Promise<CancelRemoteTimerResult>;
   storage: {
@@ -221,7 +219,7 @@ export const createRemoteTimerScheduler = (
         return { status: 'skipped', commandAtMs: command.commandAtMs };
       }
 
-      const ready = await dependencies.ensureReady(requestPermission, command.ownerUserId);
+      const ready = await dependencies.ensureReady(requestPermission);
       if (!isCurrent(sequence, command)) {
         return { status: 'superseded', commandAtMs: command.commandAtMs };
       }
@@ -236,7 +234,7 @@ export const createRemoteTimerScheduler = (
         title: command.input.title,
         body: command.input.body,
         url: command.input.url,
-        tag: dependencies.isIos() ? 'rest-timer' : `rest-timer:${command.commandAtMs}`
+        tag: 'rest-timer'
       });
 
       if (!isCurrent(sequence, command)) {
@@ -352,7 +350,7 @@ export const createRemoteTimerScheduler = (
 export const remoteTimerScheduler = createRemoteTimerScheduler({
   now: Date.now,
   canUseRemoteTimer: shouldUseBackgroundRestPush,
-  ensureReady: async (requestPermission, ownerUserId) => {
+  ensureReady: async (requestPermission) => {
     if (requestPermission && typeof Notification !== 'undefined' && Notification.permission === 'default') {
       try {
         const permission = await Notification.requestPermission();
@@ -361,10 +359,9 @@ export const remoteTimerScheduler = createRemoteTimerScheduler({
         return null;
       }
     }
-    return ensureBackgroundRestPushReady(ownerUserId);
+    return ensureBackgroundRestPushReady();
   },
   getDeviceId: getOrCreateDeviceId,
-  isIos: isIosDevice,
   scheduleRemote: scheduleRemoteRestTimer,
   cancelRemote: cancelRemoteRestTimer,
   storage: {

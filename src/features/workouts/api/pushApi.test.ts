@@ -1,6 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   parseBooleanEnvFlag,
+  isAndroidBackgroundPushEnabled,
   registerSubscriptionInApi,
   shouldUseBackgroundRestPushForPlatform
 } from './pushApi';
@@ -13,6 +14,18 @@ const transportMocks = vi.hoisted(() => ({
 vi.mock('../../../shared/api/transport', () => transportMocks);
 
 describe('pushApi background push gating', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('enables Android background delivery when the build omits the rollout flag', () => {
+    vi.stubEnv('VITE_ANDROID_BACKGROUND_PUSH_ENABLED', undefined);
+    expect(isAndroidBackgroundPushEnabled()).toBe(true);
+  });
+
+  it('honors an explicit Android background push opt-out', () => {
+    vi.stubEnv('VITE_ANDROID_BACKGROUND_PUSH_ENABLED', 'false');
+    expect(isAndroidBackgroundPushEnabled()).toBe(false);
+  });
+
   it('keeps iOS path enabled regardless of Android flag', () => {
     const result = shouldUseBackgroundRestPushForPlatform({
       iosPushCapable: true,

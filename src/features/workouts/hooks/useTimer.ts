@@ -34,6 +34,7 @@ const waitForServiceWorkerReady = async (timeoutMs: number): Promise<ServiceWork
 };
 
 type ShowTimerNotificationOptions = {
+  executeAtMs: number;
   suppressAlertFallback?: boolean;
   source?: 'interval' | 'resume';
 };
@@ -62,7 +63,7 @@ const requestNotificationPermission = async (): Promise<boolean> => {
 const showTimerNotification = async (
   title: string,
   body: string,
-  notificationOptions?: ShowTimerNotificationOptions
+  notificationOptions: ShowTimerNotificationOptions
 ): Promise<void> => {
   if (typeof window === 'undefined') return;
 
@@ -80,12 +81,13 @@ const showTimerNotification = async (
     return;
   }
 
-  const notificationTag = 'rest-timer';
+  const notificationTag = `rest-timer-${notificationOptions.executeAtMs}`;
   const nativeOptions: NotificationOptions = {
     body,
     icon: '/favicon-196.png',
     badge: '/favicon-196.png',
     tag: notificationTag,
+    renotify: true,
     requireInteraction: false,
     silent: false
   };
@@ -153,10 +155,8 @@ const loadTimerState = (): TimerState | null => {
         state.timeLeft = Math.max(0, Math.ceil((endsAtMs - now) / 1000));
       }
 
-      if (state.timeLeft === 0) {
-        state.isActive = false;
-        state.endsAtMs = null;
-      }
+      // Keep the deadline so resume can identify this rest's remote notification.
+      if (state.timeLeft === 0) state.isActive = false;
     }
 
     return state;
@@ -293,7 +293,11 @@ export const useTimer = (userId: string) => {
           void showTimerNotification(
             '¡Descanso terminado!',
             'Continúa con tu entrenamiento.',
-            { suppressAlertFallback: true, source: 'resume' }
+            {
+              executeAtMs: restored.endsAtMs ?? 0,
+              suppressAlertFallback: true,
+              source: 'resume'
+            }
           );
 
           logTimerEvent('resume_expired_timer_notified');
@@ -333,9 +337,10 @@ export const useTimer = (userId: string) => {
     endTimeRef.current = endsAtMs;
 
     intervalRef.current = setInterval(() => {
-      if (!endTimeRef.current) return;
+      const deadline = endTimeRef.current;
+      if (!deadline) return;
 
-      const remaining = Math.max(0, Math.ceil((endTimeRef.current - Date.now()) / 1000));
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setTimeLeft(remaining);
 
       if (remaining === 0) {
@@ -357,7 +362,7 @@ export const useTimer = (userId: string) => {
           void showTimerNotification(
             '¡Descanso terminado!',
             'Continúa con tu entrenamiento.',
-            { source: 'interval' }
+            { executeAtMs: deadline, source: 'interval' }
           );
         }
 
@@ -374,8 +379,15 @@ export const useTimer = (userId: string) => {
   }, [isActive, isVisible, endsAtMs, acquireWakeLock, startAudioContext, releaseWakeLock, userId]);
 
   const requestPermission = useCallback(async () => {
-    return requestNotificationPermission();
-  }, []);
+    const granted = await requestNotificationPermission();
+    const deadline = endTimeRef.current;
+    if (granted && deadline && deadline > Date.now()) {
+      void remoteTimerScheduler.schedule(userId, { executeAtMs: deadline }).catch(() => {
+        console.warn('Failed to schedule background push after permission');
+      });
+    }
+    return granted;
+  }, [userId]);
 
   const startTimer = useCallback(async (seconds: number) => {
     if (seconds <= 0) return;
@@ -392,14 +404,16 @@ export const useTimer = (userId: string) => {
     setEndsAtMs(executeAtMs);
     setHasNotified(false);
     hasNotifiedRef.current = false;
+    endTimeRef.current = executeAtMs;
 
     const canRequestPermission = typeof navigator !== 'undefined'
       && 'userActivation' in navigator
       && (navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive === true;
-    void remoteTimerScheduler.schedule(userId, {
-      executeAtMs,
-      ...(canRequestPermission ? { requestPermission: true } : {})
-    }).catch(() => {
+    // Request before the scheduler's Web Lock can consume the user gesture.
+    if (canRequestPermission) await requestNotificationPermission();
+    if (endTimeRef.current !== executeAtMs || executeAtMs <= Date.now()) return;
+
+    void remoteTimerScheduler.schedule(userId, { executeAtMs }).catch(() => {
       console.warn('Failed to schedule background push');
     });
   }, [userId]);

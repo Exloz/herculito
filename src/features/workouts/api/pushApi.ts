@@ -79,7 +79,7 @@ export const parseBooleanEnvFlag = (value: unknown): boolean => {
 };
 
 export const isAndroidBackgroundPushEnabled = (): boolean => {
-  return parseBooleanEnvFlag(import.meta.env.VITE_ANDROID_BACKGROUND_PUSH_ENABLED);
+  return parseBooleanEnvFlag(import.meta.env.VITE_ANDROID_BACKGROUND_PUSH_ENABLED ?? 'true');
 };
 
 export const shouldUseBackgroundRestPushForPlatform = (args: {

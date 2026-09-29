@@ -234,7 +234,7 @@ export const createRemoteTimerScheduler = (
         title: command.input.title,
         body: command.input.body,
         url: command.input.url,
-        tag: 'rest-timer'
+        tag: `rest-timer-${command.input.executeAtMs}`
       });
 
       if (!isCurrent(sequence, command)) {

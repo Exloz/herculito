@@ -97,6 +97,8 @@ self.addEventListener('push', (event: PushEvent) => {
     self.registration.showNotification(title, {
       body,
       tag,
+      renotify: true,
+      silent: false,
       icon: '/favicon-196.png',
       badge: '/favicon-196.png',
       data: { url }

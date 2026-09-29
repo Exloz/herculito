@@ -52,6 +52,26 @@ const createDependencies = (overrides: Partial<RemoteTimerSchedulerDependencies>
 };
 
 describe('remote timer scheduler', () => {
+  it('gives consecutive rests distinct tags and orders cancel then restart in the same millisecond', async () => {
+    const { dependencies } = createDependencies();
+    const scheduler = createRemoteTimerScheduler(dependencies);
+    scheduler.setOwner('user-1');
+
+    await scheduler.schedule('user-1', { executeAtMs: 11_000 });
+    await scheduler.cancel('user-1');
+    await scheduler.schedule('user-1', { executeAtMs: 21_000 });
+
+    expect(dependencies.scheduleRemote).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      tag: 'rest-timer-11000', commandAtMs: 1_000
+    }));
+    expect(dependencies.cancelRemote).toHaveBeenCalledWith({
+      deviceId: 'device-1', commandAtMs: 1_001
+    });
+    expect(dependencies.scheduleRemote).toHaveBeenNthCalledWith(2, expect.objectContaining({
+      tag: 'rest-timer-21000', commandAtMs: 1_002
+    }));
+  });
+
   it('keeps the original absolute deadline while subscription readiness is delayed', async () => {
     const readiness = deferred<{ deviceId: string } | null>();
     const { dependencies, setNow } = createDependencies({
@@ -69,7 +89,7 @@ describe('remote timer scheduler', () => {
       deviceId: 'device-1',
       executeAtMs: 11_000,
       commandAtMs: 1_000,
-      tag: 'rest-timer'
+      tag: 'rest-timer-11000'
     });
     expect(dependencies.ensureReady).toHaveBeenCalledWith(false);
   });

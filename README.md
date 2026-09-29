@@ -53,7 +53,9 @@ cp .env.example .env
 - `VITE_CLERK_PUBLISHABLE_KEY`
 - `VITE_CLERK_JWT_TEMPLATE` (ejemplo: `herculito_api`)
 - `VITE_PUSH_API_ORIGIN` (URL base de la API)
-- `VITE_ANDROID_BACKGROUND_PUSH_ENABLED` (`true` para habilitar push de descanso en segundo plano en Android; por defecto `false`)
+- `VITE_ANDROID_BACKGROUND_PUSH_ENABLED` (push de descanso en segundo plano en Android; por defecto `true`, `false` para deshabilitarlo)
+
+Las variables `VITE_*` se incorporan durante el build, no al arrancar nginx. Docker y Compose pasan la opcion de push Android al build; los avisos siguen requiriendo permiso del usuario.
 
 5. Inicia en desarrollo:
 

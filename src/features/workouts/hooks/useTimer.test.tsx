@@ -43,6 +43,7 @@ describe('useTimer', () => {
     vi.useRealTimers();
     Reflect.deleteProperty(window, 'Notification');
     Reflect.deleteProperty(navigator, 'serviceWorker');
+    Reflect.deleteProperty(navigator, 'userActivation');
   });
 
   it('replaces the remote deadline when a paused timer resumes', async () => {
@@ -164,8 +165,126 @@ describe('useTimer', () => {
       await Promise.resolve();
     });
 
-    expect(getNotifications).toHaveBeenCalledWith({ tag: 'rest-timer' });
+    expect(getNotifications).toHaveBeenCalledWith({ tag: 'rest-timer-2000' });
     expect(showNotification).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('alerts for each visible rest even if the preceding notification is still displayed', async () => {
+    const showNotification = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      value: { permission: 'granted' }
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { ready: Promise.resolve({ showNotification }) }
+    });
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+
+    for (let rest = 0; rest < 2; rest += 1) {
+      await act(async () => result.current.startTimer(1));
+      await act(async () => vi.advanceTimersByTimeAsync(1_000));
+    }
+
+    expect(showNotification).toHaveBeenCalledTimes(2);
+    for (const [index, [, options]] of showNotification.mock.calls.entries()) {
+      expect(options).toMatchObject({
+        tag: `rest-timer-${2_000 + index * 1_000}`, renotify: true, silent: false
+      });
+    }
+    unmount();
+  });
+
+  it('does not mistake a previous rest notification for delivery of the current rest on resume', async () => {
+    const getNotifications = vi.fn(async ({ tag }: { tag: string }) => (
+      tag === 'rest-timer' || tag === 'rest-timer-500' ? [{}] : []
+    ));
+    const showNotification = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      value: { permission: 'granted' }
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
+      configurable: true,
+      value: { ready: Promise.resolve({ getNotifications, showNotification }) }
+    });
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+
+    await act(async () => result.current.startTimer(1));
+    Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+    act(() => document.dispatchEvent(new Event('visibilitychange')));
+    vi.setSystemTime(3_000);
+    Object.defineProperty(document, 'hidden', { configurable: true, value: false });
+    await act(async () => document.dispatchEvent(new Event('visibilitychange')));
+
+    expect(showNotification).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it('arms the active background rest when notifications are enabled after it starts', async () => {
+    const notificationApi = {
+      permission: 'default',
+      requestPermission: vi.fn(async () => {
+        notificationApi.permission = 'granted';
+        return 'granted';
+      })
+    };
+    Object.defineProperty(window, 'Notification', { configurable: true, value: notificationApi });
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+    await act(async () => result.current.startTimer(10));
+    schedulerMocks.schedule.mockClear();
+
+    await act(async () => {
+      expect(await result.current.requestPermission()).toBe(true);
+    });
+
+    expect(schedulerMocks.schedule).toHaveBeenCalledWith('user-1', { executeAtMs: 11_000 });
+    unmount();
+  });
+
+  it('requests permission during the start gesture before entering the asynchronous scheduler', async () => {
+    const requestPermission = vi.fn().mockResolvedValue('granted');
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      value: { permission: 'default', requestPermission }
+    });
+    Object.defineProperty(navigator, 'userActivation', {
+      configurable: true,
+      value: { isActive: true }
+    });
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+    await act(async () => {
+      const start = result.current.startTimer(10);
+      expect(requestPermission).toHaveBeenCalledTimes(1);
+      expect(schedulerMocks.schedule).not.toHaveBeenCalled();
+      await start;
+    });
+    expect(schedulerMocks.schedule).toHaveBeenCalledWith('user-1', { executeAtMs: 11_000 });
+    unmount();
+  });
+
+  it('does not rearm a timer paused while the start permission prompt is open', async () => {
+    const permission = deferred<NotificationPermission>();
+    Object.defineProperty(window, 'Notification', {
+      configurable: true,
+      value: { permission: 'default', requestPermission: () => permission.promise }
+    });
+    Object.defineProperty(navigator, 'userActivation', {
+      configurable: true,
+      value: { isActive: true }
+    });
+    const { result, unmount } = renderHook(() => useTimer('user-1'));
+    let start: Promise<void>;
+    act(() => {
+      start = result.current.startTimer(10);
+    });
+    act(() => result.current.pauseTimer());
+    await act(async () => {
+      permission.resolve('granted');
+      await start;
+    });
+    expect(schedulerMocks.schedule).not.toHaveBeenCalled();
     unmount();
   });
 

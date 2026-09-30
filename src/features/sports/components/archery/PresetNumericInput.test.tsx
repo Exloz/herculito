@@ -34,7 +34,7 @@ describe('PresetNumericInput', () => {
     expect(onChange).toHaveBeenCalledWith(45);
   });
 
-  it('clamps the typed value to the configured minimum', () => {
+  it('clamps the typed value to the configured minimum on blur', () => {
     const onChange = vi.fn();
     render(
       <PresetNumericInput
@@ -47,11 +47,15 @@ describe('PresetNumericInput', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('Flechas por tanda'), { target: { value: '0' } });
+    const input = screen.getByLabelText('Flechas por tanda');
+    fireEvent.change(input, { target: { value: '0' } });
+    expect(input).toHaveValue(0);
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith(1);
   });
 
-  it('clamps the typed value to the configured maximum', () => {
+  it('clamps the typed value to the configured maximum on blur', () => {
     const onChange = vi.fn();
     render(
       <PresetNumericInput
@@ -64,11 +68,15 @@ describe('PresetNumericInput', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('Flechas por tanda'), { target: { value: '99' } });
+    const input = screen.getByLabelText('Flechas por tanda');
+    fireEvent.change(input, { target: { value: '99' } });
+    expect(input).toHaveValue(99);
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith(12);
   });
 
-  it('rounds fractional input to the nearest integer', () => {
+  it('rounds fractional input to the nearest integer on blur', () => {
     const onChange = vi.fn();
     render(
       <PresetNumericInput
@@ -81,11 +89,15 @@ describe('PresetNumericInput', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('Distancia'), { target: { value: '70.7' } });
+    const input = screen.getByLabelText('Distancia');
+    fireEvent.change(input, { target: { value: '70.7' } });
+    expect(input).toHaveValue(70.7);
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledWith(71);
   });
 
-  it('ignores empty input without firing onChange', () => {
+  it('allows empty input while editing and restores the current value on blur', () => {
     const onChange = vi.fn();
     render(
       <PresetNumericInput
@@ -96,7 +108,12 @@ describe('PresetNumericInput', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('Distancia'), { target: { value: '' } });
+    const input = screen.getByLabelText('Distancia');
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input).toHaveValue(null);
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.blur(input);
+    expect(input).toHaveValue(70);
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -148,6 +165,31 @@ describe('PresetNumericInput', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '70' }));
     expect(onChange).toHaveBeenCalledWith(70);
+  });
+
+  it('discards an unfinished edit when choosing a preset', () => {
+    const onChange = vi.fn();
+    const { rerender } = render(
+      <PresetNumericInput label="Distancia" value={25} onChange={onChange} presets={[18, 70]} />
+    );
+    const input = screen.getByLabelText('Distancia');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: '70' }));
+    expect(onChange).toHaveBeenCalledWith(70);
+    rerender(
+      <PresetNumericInput label="Distancia" value={70} onChange={onChange} presets={[18, 70]} />
+    );
+    expect(input).toHaveValue(70);
+  });
+
+  it('reflects external value changes when not editing', () => {
+    const { rerender } = render(
+      <PresetNumericInput label="Distancia" value={25} onChange={vi.fn()} presets={[]} />
+    );
+    rerender(
+      <PresetNumericInput label="Distancia" value={70} onChange={vi.fn()} presets={[]} />
+    );
+    expect(screen.getByLabelText('Distancia')).toHaveValue(70);
   });
 
   it('exposes the presets through a datalist for browser autocompletion', () => {

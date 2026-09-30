@@ -70,6 +70,75 @@ describe('ArcherySession', () => {
     vi.useRealTimers();
   });
 
+  it('allows clearing and retyping single-digit arrow counts before adding a round', async () => {
+    const onAddRound = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ArcherySession
+        session={buildSession()}
+        onAddRound={onAddRound}
+        onAddEnd={vi.fn().mockResolvedValue(undefined)}
+        onComplete={vi.fn().mockResolvedValue(undefined)}
+        onAbandon={vi.fn()}
+        onBack={vi.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /agregar ronda/i }));
+    const input = screen.getByLabelText('Flechas por tanda');
+    expect(input).toHaveValue(6);
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input).toHaveValue(null);
+    fireEvent.change(input, { target: { value: '1' } });
+    expect(input).toHaveValue(1);
+    fireEvent.change(input, { target: { value: '' } });
+    expect(input).toHaveValue(null);
+    fireEvent.change(input, { target: { value: '3' } });
+    expect(input).toHaveValue(3);
+    fireEvent.blur(input);
+    const distance = screen.getByLabelText('Distancia (m)');
+    fireEvent.change(distance, { target: { value: '' } });
+    expect(distance).toHaveValue(null);
+    fireEvent.change(distance, { target: { value: '2' } });
+    fireEvent.change(distance, { target: { value: '25' } });
+    fireEvent.blur(distance);
+    const targetSize = screen.getByLabelText('Tamaño del blanco (cm)');
+    fireEvent.change(targetSize, { target: { value: '' } });
+    expect(targetSize).toHaveValue(null);
+    fireEvent.change(targetSize, { target: { value: '8' } });
+    fireEvent.change(targetSize, { target: { value: '80' } });
+    fireEvent.blur(targetSize);
+    fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+
+    await waitFor(() => expect(onAddRound).toHaveBeenCalledWith(25, 80, 3));
+  });
+
+  it.each([['0', 1], ['99', 12]] as const)(
+    'normalizes arrow count %s to %i on blur before adding a round',
+    async (raw, expected) => {
+      const onAddRound = vi.fn().mockResolvedValue(undefined);
+      render(
+        <ArcherySession
+          session={buildSession()}
+          onAddRound={onAddRound}
+          onAddEnd={vi.fn().mockResolvedValue(undefined)}
+          onComplete={vi.fn().mockResolvedValue(undefined)}
+          onAbandon={vi.fn()}
+          onBack={vi.fn()}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /agregar ronda/i }));
+      const input = screen.getByLabelText('Flechas por tanda');
+      fireEvent.change(input, { target: { value: raw } });
+      expect(input).toHaveValue(Number(raw));
+      fireEvent.blur(input);
+      expect(input).toHaveValue(expected);
+      fireEvent.click(screen.getByRole('button', { name: 'Agregar' }));
+
+      await waitFor(() => expect(onAddRound).toHaveBeenCalledWith(70, 122, expected));
+    }
+  );
+
   it('debounces note persistence and keeps the latest local value', () => {
     vi.useFakeTimers();
     const onNotesChange = vi.fn();

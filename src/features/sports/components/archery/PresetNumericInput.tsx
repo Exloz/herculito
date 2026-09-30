@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useId, useState } from 'react';
 
 export interface PresetNumericInputProps {
   label: string;
@@ -33,13 +33,23 @@ export const PresetNumericInput: React.FC<PresetNumericInputProps> = ({
 }) => {
   const generatedId = useId();
   const listId = id ?? `preset-list-${generatedId}`;
+  const [draft, setDraft] = useState<string | null>(null);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const raw = event.target.value;
+    setDraft(raw);
     if (raw === '') return;
     const parsed = Number(raw);
-    if (!Number.isFinite(parsed)) return;
-    onChange(clamp(parsed, min, max));
+    if (!Number.isInteger(parsed) || parsed < min || parsed > max) return;
+    onChange(parsed);
+  };
+
+  const handleInputBlur = (): void => {
+    if (draft !== null && draft !== '') {
+      const next = clamp(Number(draft), min, max);
+      if (next !== value) onChange(next);
+    }
+    setDraft(null);
   };
 
   return (
@@ -58,8 +68,9 @@ export const PresetNumericInput: React.FC<PresetNumericInputProps> = ({
         max={max}
         step={1}
         inputMode="numeric"
-        value={value}
+        value={draft ?? value}
         onChange={handleInputChange}
+        onBlur={handleInputBlur}
         className={inputClassName}
       />
       <datalist id={`${listId}-options`}>
@@ -75,7 +86,10 @@ export const PresetNumericInput: React.FC<PresetNumericInputProps> = ({
               <button
                 key={preset}
                 type="button"
-                onClick={() => onChange(preset)}
+                onClick={() => {
+                  setDraft(null);
+                  onChange(preset);
+                }}
                 aria-pressed={isActive}
                 className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                   isActive

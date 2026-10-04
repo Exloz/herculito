@@ -9,6 +9,7 @@ import { useUI } from '../../../app/providers/ui-context';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
+import { DialogPortal } from '../../../shared/ui/DialogPortal';
 
 interface RoutinesProps {
   user: User;
@@ -20,11 +21,13 @@ const RoutineEditor = React.lazy(async () => {
 });
 
 const EditorLoadingFallback = () => (
-  <div className="fixed inset-0 z-50 flex h-screen items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-    <div className="app-card px-6 py-5 text-sm text-slate-200" role="status">
-      Cargando editor...
+  <DialogPortal>
+    <div className="fixed inset-0 z-50 flex h-screen items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="app-card px-6 py-5 text-sm text-slate-200" role="status">
+        Cargando editor...
+      </div>
     </div>
-  </div>
+  </DialogPortal>
 );
 
 export const Routines: React.FC<RoutinesProps> = ({ user }) => {

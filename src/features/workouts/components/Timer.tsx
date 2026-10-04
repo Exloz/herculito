@@ -63,7 +63,7 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
   };
 
   const timerUi = (
-    <div className="motion-pop-in fixed left-4 right-4 z-50 mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)] sm:bottom-4">
+    <div className="motion-pop-in fixed left-4 right-4 z-[45] mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)] sm:bottom-4">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <TimerIcon className="text-mint" size={18} />

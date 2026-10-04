@@ -416,6 +416,11 @@ body.dialog-open {
 
 body.dialog-open .app-bottom-nav {
   opacity: 0;
+  visibility: hidden;
+}
+
+body.dialog-open .app-bottom-nav,
+body.dialog-open .app-bottom-nav * {
   pointer-events: none;
 }
 

@@ -6,6 +6,7 @@ import { useDialogA11y } from '../../../shared/hooks/useDialogA11y';
 import { useDialogViewport } from '../../../shared/hooks/useDialogViewport';
 import { clampInteger, normalizeMultiline, normalizeSingleLine } from '../../../shared/lib/inputSanitizers';
 import { AppCombobox } from '../../../shared/ui/AppCombobox';
+import { DialogPortal } from '../../../shared/ui/DialogPortal';
 import { RoutineExerciseRow } from './RoutineExerciseRow';
 
 const MAX_ROUTINE_NAME_LENGTH = 120;
@@ -20,11 +21,13 @@ const ExerciseSelector = React.lazy(async () => {
 });
 
 const ExerciseSelectorLoadingFallback = () => (
-  <div className="fixed inset-0 z-50 flex h-screen items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-    <div className="app-card px-6 py-5 text-sm text-slate-200" role="status">
-      Cargando ejercicios...
+  <DialogPortal>
+    <div className="fixed inset-0 z-50 flex h-screen items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="app-card px-6 py-5 text-sm text-slate-200" role="status">
+        Cargando ejercicios...
+      </div>
     </div>
-  </div>
+  </DialogPortal>
 );
 
 export interface ExerciseDraftValues {
@@ -396,7 +399,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
     onSave(normalizedName, normalizedDescription, exercises, isPublic, primaryMuscleGroup);
   };
 
-  return (
+  const dialog = (
     <div
       className="motion-dialog-backdrop fixed inset-x-0 top-0 h-screen z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4"
       style={backdropStyle}
@@ -618,4 +621,6 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
       )}
     </div>
   );
+
+  return <DialogPortal>{dialog}</DialogPortal>;
 };

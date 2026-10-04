@@ -1,16 +1,18 @@
 import { useRef } from 'react';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDialogA11y } from './useDialogA11y';
 
-const DialogHarness = ({ label }: { label: string }) => {
+const DialogHarness = ({ label, onClose }: { label: string; onClose?: () => void }) => {
   const ref = useRef<HTMLDivElement>(null);
-  useDialogA11y(ref);
+  useDialogA11y(ref, { onClose });
 
   return (
     <div ref={ref} role="dialog" aria-label={label} tabIndex={-1}>
-      <button type="button">{label}</button>
+      <button type="button" onKeyDown={(event) => {
+        if (event.key === 'Escape') event.preventDefault();
+      }}>{label}</button>
     </div>
   );
 };
@@ -80,5 +82,14 @@ describe('useDialogA11y', () => {
     unmount();
 
     expect(document.body.classList.contains('dialog-open')).toBe(false);
+  });
+
+  it('does not close the parent dialog when a child control consumes Escape', () => {
+    const onClose = vi.fn();
+    const { getByRole } = render(<DialogHarness label="Dialog padre" onClose={onClose} />);
+    fireEvent.keyDown(getByRole('button'), { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

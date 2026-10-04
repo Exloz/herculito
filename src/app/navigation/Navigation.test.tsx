@@ -2,7 +2,9 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { parse } from 'postcss';
 import { Navigation } from './Navigation';
+import appStyles from '../../index.css?raw';
 
 const mocks = vi.hoisted(() => ({
   dismissFailed: vi.fn(),
@@ -96,5 +98,39 @@ describe('Navigation synchronization failure action', () => {
     }));
     expect(container?.classList.contains('translate-y-6')).toBe(false);
     expect(container?.classList.contains('opacity-0')).toBe(true);
+    expect(container?.classList.contains('invisible')).toBe(true);
+
+    fireEvent(window, new CustomEvent('app-navigation-visibility', {
+      detail: { hidden: false }
+    }));
+    expect(container?.classList.contains('invisible')).toBe(false);
+    expect(container?.classList.contains('opacity-100')).toBe(true);
+  });
+
+  it('disables hidden navigation descendants while a dialog is open', () => {
+    const style = document.createElement('style');
+    style.textContent = '.pointer-events-auto { pointer-events: auto; }';
+    const stylesheet = parse(appStyles);
+    stylesheet.walkRules((rule) => {
+      if (rule.selector.includes('body.dialog-open .app-bottom-nav')) {
+        style.textContent += rule.toString();
+      }
+    });
+    render(
+      <Navigation currentPage="routines" onPageChange={vi.fn()} isAdmin={false} userId="user-1" />
+    );
+    const nav = screen.getByRole('navigation');
+    const container = nav.closest('.app-bottom-nav')!;
+    const home = screen.getByRole('button', { name: 'Ir a Inicio' });
+    try {
+      document.body.classList.add('dialog-open');
+      document.head.appendChild(style);
+      expect(getComputedStyle(container).visibility).toBe('hidden');
+      expect(getComputedStyle(nav).pointerEvents).toBe('none');
+      expect(getComputedStyle(home).pointerEvents).toBe('none');
+    } finally {
+      document.body.classList.remove('dialog-open');
+      style.remove();
+    }
   });
 });

@@ -76,7 +76,7 @@ export const useDialogA11y = (
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (activeDialogStack[activeDialogStack.length - 1] !== container) {
+      if (event.defaultPrevented || activeDialogStack[activeDialogStack.length - 1] !== container) {
         return;
       }
 

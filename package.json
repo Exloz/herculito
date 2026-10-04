@@ -1,6 +1,6 @@
 {
   "name": "herculito",
-  "version": "2.70.4",
+  "version": "2.70.5",
   "type": "module",
   "scripts": {
     "dev": "vite",

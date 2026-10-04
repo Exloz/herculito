@@ -11,6 +11,7 @@ import { ExerciseSelectorTemplateList } from './ExerciseSelectorTemplateList';
 import { ExerciseSelectorForm } from './ExerciseSelectorForm';
 import { useExerciseVideoManager } from '../hooks/useExerciseVideoManager';
 import { clampInteger, normalizeMultiline, normalizeSingleLine } from '../../../shared/lib/inputSanitizers';
+import { DialogPortal } from '../../../shared/ui/DialogPortal';
 
 const MAX_EXERCISE_NAME_LENGTH = 120;
 const MAX_EXERCISE_CATEGORY_LENGTH = 80;
@@ -67,7 +68,7 @@ const LoadingOverlay = ({
   label: string;
   message: string;
 }) => {
-  return (
+  const dialog = (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div
         ref={dialogRef}
@@ -82,6 +83,8 @@ const LoadingOverlay = ({
       </div>
     </div>
   );
+
+  return <DialogPortal>{dialog}</DialogPortal>;
 };
 
 export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
@@ -298,9 +301,9 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     return <LoadingOverlay dialogRef={dialogRef} label="Cargando ejercicios" message="Cargando ejercicios guardados..." />;
   }
 
-  return (
+  const dialog = (
     <div
-      className="motion-dialog-backdrop fixed inset-x-0 top-0 h-screen z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4 touch-none overscroll-contain"
+      className="motion-dialog-backdrop fixed inset-x-0 top-0 h-screen z-50 flex items-stretch justify-center bg-black/70 px-0 py-0 backdrop-blur-sm sm:items-center sm:p-4 overscroll-contain"
       style={backdropStyle}
     >
       <div
@@ -458,4 +461,6 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
       </div>
     </div>
   );
+
+  return <DialogPortal>{dialog}</DialogPortal>;
 };

@@ -1,13 +1,20 @@
-import { ArrowRight, Clock3, Dumbbell, Flame, Play } from 'lucide-react';
+import { useState } from 'react';
+import { CalendarDays, ChevronDown, Clock3, Dumbbell, Flame, Play } from 'lucide-react';
 import type { DashboardCompetition, DashboardSummary, Routine } from '../../../shared/types';
 import { formatDateValue } from '../../../shared/lib/intl';
 import { APP_TIME_ZONE } from '../../../shared/lib/dateUtils';
 import { CompetitionPanel } from './CompetitionPanel';
+import { WeeklyPlanEditor } from './WeeklyPlanEditor';
+import type { WeekDay, WeeklyPlan } from '../lib/weeklyPlan';
 
 interface DashboardOverviewProps {
   userName: string;
   summary: DashboardSummary;
-  recommendedRoutine?: Routine;
+  plannedRoutine?: Routine;
+  routines: Routine[];
+  weeklyPlan: WeeklyPlan;
+  today: WeekDay;
+  onAssignDay: (day: WeekDay, routineId: string | null | undefined) => void;
   activeRoutineName?: string;
   competition?: DashboardCompetition;
   onStart: (routineId: string) => void;
@@ -16,11 +23,14 @@ interface DashboardOverviewProps {
   onNavigateToRoutines: () => void;
 }
 
-export function DashboardOverview({ userName, summary, recommendedRoutine, activeRoutineName,
-  competition, onStart, onContinue, onCancel, onNavigateToRoutines }: DashboardOverviewProps) {
+export function DashboardOverview({ userName, summary, plannedRoutine, routines, weeklyPlan, today,
+  onAssignDay, activeRoutineName, competition, onStart, onContinue, onCancel, onNavigateToRoutines }: DashboardOverviewProps) {
+  const [editingWeek, setEditingWeek] = useState(false);
   const firstName = userName.trim().split(/\s+/)[0] || 'atleta';
   const isActive = Boolean(activeRoutineName);
-  const totalSets = recommendedRoutine?.exercises.reduce((total, exercise) => total + exercise.sets, 0) ?? 0;
+  const isRestDay = weeklyPlan[today] === null;
+  const isUnavailable = typeof weeklyPlan[today] === 'string' && !plannedRoutine;
+  const totalSets = plannedRoutine?.exercises.reduce((total, exercise) => total + exercise.sets, 0) ?? 0;
 
   return (
     <section className="mb-7 space-y-5" aria-label="Tu entrenamiento de hoy">
@@ -41,38 +51,47 @@ export function DashboardOverview({ userName, summary, recommendedRoutine, activ
         <div className="min-w-0">
           <span className="inline-flex items-center gap-2 text-sm font-semibold text-mint">
             <span className="h-2 w-2 rounded-full bg-mint" />
-            {isActive ? 'Tu sesión sigue aquí' : recommendedRoutine ? 'Listo para entrenar' : 'Tu primer paso'}
+            {isActive ? 'Tu sesión sigue aquí' : 'Mi semana · hoy'}
           </span>
           <h3 className="mt-3 break-words font-display text-3xl leading-tight text-white sm:text-4xl">
-            {activeRoutineName ?? recommendedRoutine?.name ?? 'Construye tu próxima rutina'}
+            {activeRoutineName ?? plannedRoutine?.name ?? (isRestDay ? 'Día de descanso' : isUnavailable ? 'Rutina no disponible' : 'Hoy sin plan')}
           </h3>
-          <p className="mt-2 max-w-xl text-base leading-relaxed text-slate-300">
-            {isActive ? 'Retoma donde lo dejaste. Tus series registradas siguen guardadas.'
-              : recommendedRoutine?.description || (recommendedRoutine
-                ? 'Abre tu sesión y concentra tu energía en entrenar.'
-                : 'Crea una rutina o descubre las compartidas para empezar a registrar tu progreso.')}
-          </p>
-          {!isActive && recommendedRoutine && (
+          {(isActive || plannedRoutine?.description || isUnavailable) && (
+            <p className="mt-2 max-w-xl text-base leading-relaxed text-slate-300">
+              {isActive ? 'Retoma donde lo dejaste. Tus series registradas siguen guardadas.'
+                : isUnavailable ? 'Elige otra rutina para hoy o vuelve a activarla en la biblioteca.'
+                : plannedRoutine?.description}
+            </p>
+          )}
+          {!isActive && plannedRoutine && (
             <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
-              <span className="flex items-center gap-2"><Dumbbell size={16} />{recommendedRoutine.exercises.length} ejercicios</span>
+              <span className="flex items-center gap-2"><Dumbbell size={16} />{plannedRoutine.exercises.length} ejercicios</span>
               <span className="flex items-center gap-2"><Clock3 size={16} />{totalSets} series</span>
             </div>
           )}
         </div>
         <div className="flex flex-col gap-2 lg:min-w-[220px]">
           <button type="button"
-            onClick={() => isActive ? onContinue() : recommendedRoutine ? onStart(recommendedRoutine.id) : onNavigateToRoutines()}
+            onClick={() => isActive ? onContinue() : plannedRoutine ? onStart(plannedRoutine.id) : setEditingWeek(true)}
             className="btn-primary flex min-h-12 w-full items-center justify-center gap-2 text-base">
-            {isActive || recommendedRoutine ? <Play size={18} /> : <ArrowRight size={18} />}
-            {isActive ? 'Continuar entrenamiento' : recommendedRoutine ? 'Empezar entrenamiento' : 'Explorar rutinas'}
+            {isActive || plannedRoutine ? <Play size={18} /> : <CalendarDays size={18} />}
+            {isActive ? 'Continuar entrenamiento' : plannedRoutine ? 'Empezar entrenamiento' : 'Planificar semana'}
           </button>
-          {(isActive || recommendedRoutine) && (
+          {isActive && (
             <button type="button" onClick={isActive ? onCancel : onNavigateToRoutines}
               className="btn-ghost min-h-11 text-sm">
-              {isActive ? 'Cancelar esta sesión' : 'Elegir otra rutina'}
+              Cancelar esta sesión
             </button>
           )}
+          {(isActive || plannedRoutine || editingWeek) && <button type="button" onClick={() => setEditingWeek((open) => !open)}
+            aria-expanded={editingWeek} aria-controls="weekly-plan-editor"
+            className="btn-ghost flex min-h-11 items-center justify-center gap-2 text-sm">
+            <CalendarDays size={16} aria-hidden="true" />Mi semana
+            <ChevronDown size={16} aria-hidden="true" className={`transition-transform ${editingWeek ? 'rotate-180' : ''}`} />
+          </button>}
         </div>
+        {editingWeek && <WeeklyPlanEditor routines={routines} plan={weeklyPlan} today={today}
+          onAssign={onAssignDay} onManageRoutines={onNavigateToRoutines} />}
       </div>
 
       <dl className="grid grid-cols-3 divide-x divide-mist/50 rounded-2xl border border-mist/50 bg-charcoal/50 py-4">

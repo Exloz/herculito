@@ -5,6 +5,7 @@ import { updateRoutine as apiUpdateRoutine } from '../../../shared/api/dataApi';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
 import { DashboardOverview } from '../components/DashboardOverview';
+import { useWeeklyPlan } from '../hooks/useWeeklyPlan';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { MUSCLE_GROUPS, getRecommendedMuscleGroup } from '../lib/muscleGroups';
@@ -220,8 +221,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     return null;
   }, [dashboardData, dashboardError, isOffline]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
-  const recommendedRoutine = dashboardRoutines.find((routine) => routine.primaryMuscleGroup === recommendedGroup)
-    ?? dashboardRoutines[0];
+  const { plan: weeklyPlan, today: plannedDay, assignDay } = useWeeklyPlan(user.id);
+  const plannedRoutine = dashboardRoutines.find((routine) => routine.id === weeklyPlan[plannedDay]);
   const activeTabIndex = HOME_TABS.findIndex((tab) => tab.id === activeHomeTab);
   const previousTabIndex = HOME_TABS.findIndex((tab) => tab.id === previousHomeTab);
   const homeTabAnimationClass = activeTabIndex >= previousTabIndex ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward';
@@ -573,7 +574,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         <DashboardOverview
           userName={user.name}
           summary={stats}
-          recommendedRoutine={recommendedRoutine}
+          plannedRoutine={plannedRoutine}
+          routines={dashboardRoutines}
+          weeklyPlan={weeklyPlan}
+          today={plannedDay}
+          onAssignDay={(day, routineId) => {
+            if (!assignDay(day, routineId)) {
+              showToast('No se pudo guardar tu semana. El cambio solo durará esta sesión.', 'error');
+            }
+          }}
           activeRoutineName={activeWorkout?.routine.name}
           competition={dashboardData.competition}
           onStart={handleStartWorkout}

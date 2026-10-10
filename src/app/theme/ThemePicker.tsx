@@ -1,23 +1,23 @@
+import { ChevronDown, Moon, Palette, Sun } from 'lucide-react';
 import { useTheme } from './theme-context';
-import { THEMES } from './themes';
+import { isThemeId, THEMES } from './themes';
 
 export function ThemePicker() {
   const { theme, setTheme } = useTheme();
+  const ThemeIcon = theme === 'light' ? Sun : theme === 'dark' ? Moon : Palette;
+  const currentLabel = THEMES.find((option) => option.id === theme)?.label;
   return (
-    <fieldset className="app-card mb-5 p-4">
-      <legend className="sr-only">Apariencia</legend>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-sm font-semibold text-content">Apariencia</span>
-        <div className="flex flex-wrap gap-1 rounded-xl bg-raised p-1">
-          {THEMES.map((option) => (
-            <button key={option.id} type="button" onClick={() => setTheme(option.id)}
-              aria-pressed={theme === option.id}
-              className={`touch-target rounded-lg px-4 text-sm font-semibold ${theme === option.id ? 'bg-accent text-onAccent' : 'text-muted hover:text-content'}`}>
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </fieldset>
+    <label className="relative flex h-11 w-14 shrink-0 items-center justify-center gap-1 rounded-xl bg-white/[0.03] text-muted ring-1 ring-inset ring-mist/40 hover:text-content focus-within:ring-2 focus-within:ring-accent/60">
+      <span className="sr-only">Apariencia</span>
+      <ThemeIcon size={18} aria-hidden="true" />
+      <ChevronDown size={12} aria-hidden="true" />
+      <select value={theme} title={`Apariencia: ${currentLabel}`}
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        onChange={(event) => {
+          if (isThemeId(event.target.value)) setTheme(event.target.value);
+        }}>
+        {THEMES.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+      </select>
+    </label>
   );
 }

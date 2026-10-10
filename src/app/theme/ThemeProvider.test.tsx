@@ -32,8 +32,8 @@ describe('theme selection', () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light');
     render(<ThemeProvider><ThemePicker /></ThemeProvider>);
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(screen.getByRole('button', { name: 'Claro' })).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByRole('button', { name: 'Oscuro' }));
+    expect(screen.getByRole('combobox', { name: 'Apariencia' })).toHaveValue('light');
+    fireEvent.change(screen.getByRole('combobox', { name: 'Apariencia' }), { target: { value: 'dark' } });
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(document.documentElement.style.colorScheme).toBe('dark');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
@@ -43,7 +43,7 @@ describe('theme selection', () => {
     vi.mocked(window.localStorage.getItem).mockImplementation(() => { throw new Error('blocked'); });
     vi.mocked(window.localStorage.setItem).mockImplementation(() => { throw new Error('blocked'); });
     render(<ThemeProvider><ThemePicker /></ThemeProvider>);
-    fireEvent.click(screen.getByRole('button', { name: 'Claro' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Apariencia' }), { target: { value: 'light' } });
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 

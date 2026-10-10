@@ -150,12 +150,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
               <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-mint/80">Perfil</div>
               <h1 className="font-display text-[1.75rem] leading-none text-white sm:text-[2rem]">Mis Medidas</h1>
             </div>
+            <ThemePicker />
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
-        <ThemePicker />
         {error && (
           <div className="motion-enter mb-4 rounded-[1.2rem] border border-crimson/45 bg-crimson/10 px-4 py-3 text-sm text-red-200">
             {error}

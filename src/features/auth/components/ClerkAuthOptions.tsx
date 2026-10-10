@@ -11,7 +11,7 @@ export default function ClerkAuthOptions() {
         signUpFallbackRedirectUrl="/"
       >
         <button type="button" className="btn-secondary w-full text-sm">
-          Iniciar con Clerk
+        Usar otro método de acceso
         </button>
       </SignInButton>
       <SignUpButton

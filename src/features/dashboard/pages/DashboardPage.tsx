@@ -1,9 +1,10 @@
 import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
-import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell, Trophy } from 'lucide-react';
+import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell } from 'lucide-react';
 import { User, MuscleGroup, ExerciseLog } from '../../../shared/types';
 import { updateRoutine as apiUpdateRoutine } from '../../../shared/api/dataApi';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
 import { MuscleGroupDashboard } from '../components/MuscleGroupDashboard';
+import { DashboardOverview } from '../components/DashboardOverview';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { MUSCLE_GROUPS, getRecommendedMuscleGroup } from '../lib/muscleGroups';
@@ -22,6 +23,7 @@ interface DashboardProps {
   onLogout: () => void;
   onReadyForBackgroundPreload?: () => void;
   onNavigateToProfile?: () => void;
+  onNavigateToRoutines: () => void;
 }
 
 const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
@@ -94,12 +96,12 @@ const HOME_TABS: Array<{
   icon: typeof Dumbbell;
   tone: string;
 }> = [
-    { id: 'routines', label: 'Rutinas', icon: Dumbbell, tone: 'text-mint' },
+    { id: 'routines', label: 'Entrenar', icon: Dumbbell, tone: 'text-mint' },
     { id: 'progress', label: 'Progreso', icon: BarChart3, tone: 'text-amberGlow' },
     { id: 'calendar', label: 'Calendario', icon: CalendarRange, tone: 'text-mint' }
   ];
 
-export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload, onNavigateToProfile }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload, onNavigateToProfile, onNavigateToRoutines }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { activitySync, projection } = useActivitySync(user.id);
   const activeWorkout = projection.active?.kind === 'workout' ? projection.active : null;
@@ -218,16 +220,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     return null;
   }, [dashboardData, dashboardError, isOffline]);
   const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
-  const heroStats = [
-    { label: 'Semana', value: stats.thisWeekWorkouts },
-    { label: 'Racha', value: stats.currentStreak },
-    { label: 'Total', value: stats.totalWorkouts },
-    { label: 'Racha larga', value: stats.longestStreak }
-  ];
-  const averageDurationLabel = stats.averageDurationMin > 0
-    ? `${stats.averageDurationMin} min por sesion`
-    : 'Suma una sesion hoy';
-  const competition = dashboardData?.competition;
+  const recommendedRoutine = dashboardRoutines.find((routine) => routine.primaryMuscleGroup === recommendedGroup)
+    ?? dashboardRoutines[0];
   const activeTabIndex = HOME_TABS.findIndex((tab) => tab.id === activeHomeTab);
   const previousTabIndex = HOME_TABS.findIndex((tab) => tab.id === previousHomeTab);
   const homeTabAnimationClass = activeTabIndex >= previousTabIndex ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward';
@@ -576,65 +570,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       )}
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        <section className="motion-enter mb-4 overflow-hidden rounded-[1.45rem] border border-white/[0.05] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.1),transparent_30%),linear-gradient(180deg,rgba(18,24,35,0.98),rgba(8,12,18,0.98))] px-4 py-3.5 shadow-lift sm:px-5 sm:py-4">
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300/80">Resumen</div>
-                <div className="rounded-full border border-white/[0.06] bg-white/[0.05] px-3 py-1 text-[11px] font-medium text-slate-200">
-                  {dashboardRoutines.length} rutinas activas
-                </div>
-              </div>
-
-              <div className="mt-3 grid gap-2.5 sm:grid-cols-[minmax(0,200px)_minmax(0,1fr)]">
-                <div className="rounded-[1.15rem] border border-mint/16 bg-[linear-gradient(180deg,rgba(72,229,163,0.12),rgba(255,255,255,0.03))] px-3.5 py-3 shadow-[0_14px_30px_rgba(0,0,0,0.16)] sm:px-4 sm:py-3.5">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-mint/80">Este mes</div>
-                  <div className="mt-1.5 flex items-end gap-2.5">
-                    <div className="font-display text-[2.25rem] leading-none text-white sm:text-[2.45rem]">{stats.thisMonthWorkouts}</div>
-                    <div className="pb-1 text-xs text-slate-200/80">sesiones</div>
-                  </div>
-                  <div className="mt-2 text-xs text-slate-300">{averageDurationLabel}</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {heroStats.map((item) => (
-                    <div key={item.label} className="rounded-[0.95rem] border border-white/[0.05] bg-black/10 px-3 py-2.5 backdrop-blur-sm">
-                      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-300/70">{item.label}</div>
-                      <div className="mt-1 text-[1.2rem] font-semibold leading-none text-white sm:text-[1.3rem]">{item.value}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {(competition?.weekLeader || competition?.userWeekRank || competition?.monthLeader || competition?.userMonthRank) && (
-                <div className="rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
-                  <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                    <Trophy size={13} className="text-amberGlow" />
-                    <span>Ranking</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Semana</div>
-                      <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.weekLeader?.name ?? 'Sin líder'}</div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        Tu puesto {competition?.userWeekRank?.position ? `#${competition.userWeekRank.position}` : 'sin posición'}
-                      </div>
-                    </div>
-                    <div className="rounded-[0.95rem] bg-black/10 px-3 py-2.5">
-                      <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Mes</div>
-                      <div className="mt-1 truncate text-sm font-semibold text-white">{competition?.monthLeader?.name ?? 'Sin líder'}</div>
-                      <div className="mt-1 text-xs text-slate-400">
-                        Tu puesto {competition?.userMonthRank?.position ? `#${competition.userMonthRank.position}` : 'sin posición'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
+        <DashboardOverview
+          userName={user.name}
+          summary={stats}
+          recommendedRoutine={recommendedRoutine}
+          activeRoutineName={activeWorkout?.routine.name}
+          competition={dashboardData.competition}
+          onStart={handleStartWorkout}
+          onContinue={() => setShowActiveWorkout(true)}
+          onCancel={handleCancelActiveWorkout}
+          onNavigateToRoutines={onNavigateToRoutines}
+        />
 
         <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
           <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
@@ -662,32 +608,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
             </div>
           </div>
         </section>
-
-        {activeWorkout && (
-          <section className="motion-enter motion-enter-delay-2 mb-6">
-            <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(17,24,39,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="chip mb-2">Entrenamiento activo</div>
-                  <div className="font-display text-[1.55rem] leading-none text-white sm:text-[1.9rem]">{activeWorkout.routine.name}</div>
-                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-300">Sigue donde lo dejaste y termina la sesión sin perder el ritmo.</p>
-                </div>
-
-                <div className="grid w-full gap-2 sm:w-auto sm:min-w-[15rem]">
-                  <button onClick={() => setShowActiveWorkout(true)} className="btn-primary w-full touch-target">
-                    Continuar
-                  </button>
-                  <button
-                    onClick={handleCancelActiveWorkout}
-                    className="btn-secondary w-full touch-target"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
 
         {showIosNotificationGuide && (
           <section className="motion-enter motion-enter-delay-2 mb-6">

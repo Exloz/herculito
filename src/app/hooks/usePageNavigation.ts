@@ -30,7 +30,7 @@ const getPathnameFromPage = (page: AppPage): string => {
 
 const getTransitionDirection = (from: AppPage, to: AppPage): PageTransitionDirection => {
   if (from === to) return 'forward';
-  const pageOrder: AppPage[] = ['dashboard', 'routines', 'admin'];
+  const pageOrder: AppPage[] = ['dashboard', 'routines', 'sports', 'profile', 'admin'];
   return pageOrder.indexOf(to) >= pageOrder.indexOf(from) ? 'forward' : 'backward';
 };
 

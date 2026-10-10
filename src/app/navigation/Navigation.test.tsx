@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parse } from 'postcss';
 import { Navigation } from './Navigation';
 import appStyles from '../../index.css?raw';
@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   setOwner: vi.fn(),
   replayPending: vi.fn().mockResolvedValue(undefined),
   projection: {
-    active: null,
+    active: null as { kind: 'workout' } | null,
     pendingSyncCount: 0,
     failedSyncCount: 1,
     syncError: 'Ya existe otra actividad activa en el servidor.',
@@ -41,9 +41,30 @@ vi.mock('../../features/workouts/lib/remoteTimerScheduler', () => ({
 }));
 
 describe('Navigation synchronization failure action', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   beforeEach(() => {
+    vi.stubGlobal('localStorage', { setItem: vi.fn() });
     vi.clearAllMocks();
     mocks.projection.syncFailureAction = 'dismiss';
+    mocks.projection.active = null;
+  });
+
+  it('keeps the same navigation destinations when a workout becomes active', () => {
+    const onPageChange = vi.fn();
+    const { rerender } = render(
+      <Navigation currentPage="routines" onPageChange={onPageChange} isAdmin={false} userId="user-1" />
+    );
+    const destinations = () => Array.from(screen.getByRole('navigation').querySelectorAll('button'))
+      .map((button) => button.getAttribute('aria-label'));
+    const before = destinations();
+    mocks.projection.active = { kind: 'workout' };
+    rerender(<Navigation currentPage="routines" onPageChange={onPageChange} isAdmin={false} userId="user-1" />);
+    expect(destinations()).toEqual(before);
+    fireEvent.click(screen.getByRole('button', { name: 'Reanudar entrenamiento activo' }));
+    expect(onPageChange).toHaveBeenCalledWith('dashboard');
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a Mis medidas' }));
+    expect(onPageChange).toHaveBeenCalledWith('profile');
   });
 
   it('acknowledges an active-activity conflict instead of retrying it', () => {

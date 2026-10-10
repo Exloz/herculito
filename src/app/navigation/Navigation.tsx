@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { Dumbbell, Home, PlayCircle, Shield, Target } from 'lucide-react';
+import { Dumbbell, Home, PlayCircle, Ruler, Shield, Target } from 'lucide-react';
 import { useActivitySync } from '../../features/activity-sync/useActivitySync';
 import { remoteTimerScheduler } from '../../features/workouts/lib/remoteTimerScheduler';
 
@@ -103,11 +103,18 @@ export const Navigation: React.FC<NavigationProps> = ({
           {projection.syncFailureAction === 'dismiss' ? 'Entendido' : 'Reintentar'}
         </button>
       )}
+      {hasActiveWorkout && currentPage !== 'dashboard' && (
+        <button type="button" onClick={handleResumeClick}
+          className="pointer-events-auto flex min-h-11 w-[calc(100%-2rem)] max-w-md items-center justify-center gap-2 rounded-xl border border-mint/30 bg-charcoal px-4 py-2 text-sm font-semibold text-mint shadow-soft"
+          aria-label="Reanudar entrenamiento activo">
+          <PlayCircle size={18} />Continuar entrenamiento
+        </button>
+      )}
       <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal px-2 py-2 shadow-soft">
-        <div className={`grid ${isAdmin ? (hasActiveWorkout ? 'grid-cols-5' : 'grid-cols-4') : (hasActiveWorkout ? 'grid-cols-4' : 'grid-cols-3')} gap-2`}>
+        <div className={`grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'} gap-1`}>
           <button
             onClick={() => onPageChange('dashboard')}
-            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
+            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
               currentPage === 'dashboard'
                 ? 'bg-mint/15 text-mint'
                 : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
@@ -119,20 +126,9 @@ export const Navigation: React.FC<NavigationProps> = ({
             <span className="text-xs font-semibold">Inicio</span>
           </button>
 
-          {hasActiveWorkout && (
-            <button
-              onClick={handleResumeClick}
-              className="flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-amberGlow transition-colors hover:bg-amberGlow/10 hover:text-amberGlow/80 touch-target"
-              aria-label="Reanudar entrenamiento activo"
-            >
-              <PlayCircle size={22} />
-              <span className="text-xs font-semibold">Entrenando</span>
-            </button>
-          )}
-
           <button
             onClick={() => onPageChange('routines')}
-            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
+            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
               currentPage === 'routines'
                 ? 'bg-mint/15 text-mint'
                 : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
@@ -146,7 +142,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
           <button
             onClick={() => onPageChange('sports')}
-            className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
+            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
               currentPage === 'sports'
                 ? 'bg-mint/15 text-mint'
                 : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
@@ -158,10 +154,19 @@ export const Navigation: React.FC<NavigationProps> = ({
             <span className="text-xs font-semibold">Deportes</span>
           </button>
 
+          <button type="button" onClick={() => onPageChange('profile')}
+            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
+              currentPage === 'profile' ? 'bg-mint/15 text-mint' : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
+            }`}
+            aria-label="Ir a Mis medidas" aria-current={currentPage === 'profile' ? 'page' : undefined}>
+            <Ruler size={22} />
+            <span className="text-xs font-semibold">Medidas</span>
+          </button>
+
           {isAdmin && (
             <button
               onClick={() => onPageChange('admin')}
-              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors touch-target ${
+              className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
                 currentPage === 'admin'
                   ? 'bg-mint/15 text-mint'
                   : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'

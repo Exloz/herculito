@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import type { HiitConfig, User, SportSession } from '../../../shared/types';
 import Sports from './SportsPage';
@@ -177,6 +177,29 @@ describe('SportsPage', () => {
 
     expect(screen.queryByRole('heading', { name: 'Deportes' })).not.toBeInTheDocument();
     expect(screen.queryByText('No hay sesiones aún')).not.toBeInTheDocument();
+  });
+
+  it('asks for an activity before opening the generic new-session action', () => {
+    mocks.archeryState.activeSession = null;
+    mocks.archeryState.hasActiveSession = false;
+    render(<Sports user={user} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar nueva sesión' }));
+    expect(screen.getByRole('dialog', { name: '¿Cómo quieres moverte?' })).toBeInTheDocument();
+    expect(screen.queryByText('Nueva sesión de tiro con arco')).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'HIIT' }));
+    expect(screen.getByRole('button', { name: 'Iniciar HIIT mock' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: '¿Cómo quieres moverte?' })).not.toBeInTheDocument();
+  });
+
+  it('opens the archery setup with an accessible dialog after choosing archery', () => {
+    mocks.archeryState.activeSession = null;
+    mocks.archeryState.hasActiveSession = false;
+    render(<Sports user={user} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar nueva sesión' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Tiro con arco' }));
+    expect(screen.getByRole('dialog', { name: 'Nueva sesión de tiro con arco' })).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('clears the completed in-memory session when leaving the summary', () => {

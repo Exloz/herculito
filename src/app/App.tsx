@@ -207,6 +207,7 @@ function AppContent({ auth }: { auth: AuthState }) {
           onLogout={logout}
           onReadyForBackgroundPreload={() => setCanPreloadRoutines(true)}
           onNavigateToProfile={() => handlePageChange('profile')}
+          onNavigateToRoutines={() => handlePageChange('routines')}
         />
       );
     }

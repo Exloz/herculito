@@ -237,11 +237,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
 
             <div className="space-y-4">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-300">
+                <label htmlFor="measurement-measuredAt" className="mb-1.5 block text-xs font-medium text-slate-300">
                   Fecha de medición <span className="text-crimson">*</span>
                 </label>
                 <input
                   type="date"
+                  id="measurement-measuredAt"
                   value={formData.measuredAt}
                   onChange={(e) => handleFormChange('measuredAt', e.target.value)}
                   className="input"
@@ -251,12 +252,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Peso (kg)</label>
+                  <label htmlFor="measurement-weightKg" className="mb-1.5 block text-xs font-medium text-slate-300">Peso (kg)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="500"
+                    id="measurement-weightKg"
                     value={formData.weightKg}
                     onChange={(e) => handleFormChange('weightKg', e.target.value)}
                     className="input"
@@ -264,12 +266,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Altura (cm)</label>
+                  <label htmlFor="measurement-heightCm" className="mb-1.5 block text-xs font-medium text-slate-300">Altura (cm)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="300"
+                    id="measurement-heightCm"
                     value={formData.heightCm}
                     onChange={(e) => handleFormChange('heightCm', e.target.value)}
                     className="input"
@@ -277,12 +280,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">% Grasa corporal</label>
+                  <label htmlFor="measurement-bodyFatPercentage" className="mb-1.5 block text-xs font-medium text-slate-300">% Grasa corporal</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="100"
+                    id="measurement-bodyFatPercentage"
                     value={formData.bodyFatPercentage}
                     onChange={(e) => handleFormChange('bodyFatPercentage', e.target.value)}
                     className="input"
@@ -290,12 +294,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Cintura (cm)</label>
+                  <label htmlFor="measurement-waistCm" className="mb-1.5 block text-xs font-medium text-slate-300">Cintura (cm)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="500"
+                    id="measurement-waistCm"
                     value={formData.waistCm}
                     onChange={(e) => handleFormChange('waistCm', e.target.value)}
                     className="input"
@@ -303,12 +308,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Cadera (cm)</label>
+                  <label htmlFor="measurement-hipsCm" className="mb-1.5 block text-xs font-medium text-slate-300">Cadera (cm)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="500"
+                    id="measurement-hipsCm"
                     value={formData.hipsCm}
                     onChange={(e) => handleFormChange('hipsCm', e.target.value)}
                     className="input"
@@ -316,12 +322,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Pecho (cm)</label>
+                  <label htmlFor="measurement-chestCm" className="mb-1.5 block text-xs font-medium text-slate-300">Pecho (cm)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="500"
+                    id="measurement-chestCm"
                     value={formData.chestCm}
                     onChange={(e) => handleFormChange('chestCm', e.target.value)}
                     className="input"
@@ -329,12 +336,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Brazos (cm)</label>
+                  <label htmlFor="measurement-armsCm" className="mb-1.5 block text-xs font-medium text-slate-300">Brazos (cm)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="500"
+                    id="measurement-armsCm"
                     value={formData.armsCm}
                     onChange={(e) => handleFormChange('armsCm', e.target.value)}
                     className="input"
@@ -342,12 +350,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Muslos (cm)</label>
+                  <label htmlFor="measurement-thighsCm" className="mb-1.5 block text-xs font-medium text-slate-300">Muslos (cm)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="500"
+                    id="measurement-thighsCm"
                     value={formData.thighsCm}
                     onChange={(e) => handleFormChange('thighsCm', e.target.value)}
                     className="input"
@@ -355,12 +364,13 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-300">Pantorrillas (cm)</label>
+                  <label htmlFor="measurement-calvesCm" className="mb-1.5 block text-xs font-medium text-slate-300">Pantorrillas (cm)</label>
                   <input
                     type="number"
                     step="0.1"
                     min="0"
                     max="500"
+                    id="measurement-calvesCm"
                     value={formData.calvesCm}
                     onChange={(e) => handleFormChange('calvesCm', e.target.value)}
                     className="input"
@@ -370,8 +380,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
               </div>
 
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-300">Notas</label>
+                <label htmlFor="measurement-notes" className="mb-1.5 block text-xs font-medium text-slate-300">Notas</label>
                 <textarea
+                  id="measurement-notes"
                   value={formData.notes}
                   onChange={(e) => handleFormChange('notes', e.target.value)}
                   className="input min-h-[80px] resize-none"

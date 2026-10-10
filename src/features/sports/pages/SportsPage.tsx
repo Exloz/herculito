@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Target, Plus, Calendar, Timer, TrendingUp, Flame } from 'lucide-react';
 import type { User, ArcheryBowType, HiitConfig, SportSession } from '../../../shared/types';
@@ -13,6 +13,8 @@ import { HiitConfig as HiitConfigPanel } from '../components/hiit/HiitConfig';
 import { HiitActive } from '../components/hiit/HiitActive';
 import { HiitSessionSummary } from '../components/hiit/HiitSessionSummary';
 import { SportSessionCard } from '../components/SportSessionCard';
+import { SportSessionPicker } from '../components/SportSessionPicker';
+import { useDialogA11y } from '../../../shared/hooks/useDialogA11y';
 import { useUI } from '../../../app/providers/ui-context';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 
@@ -67,12 +69,17 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
   const showSkeleton = useDelayedLoading(loading, 180);
   const [activeTab, setActiveTab] = useState<'sessions' | 'stats'>('sessions');
   const [showSetup, setShowSetup] = useState(false);
+  const [showSportPicker, setShowSportPicker] = useState(false);
   const [bowType, setBowType] = useState<ArcheryBowType>('recurve');
   const [arrowsUsed, setArrowsUsed] = useState(DEFAULT_ARROWS_AVAILABLE);
   const [isStarting, setIsStarting] = useState(false);
   const activeHiitSession = projection.active?.kind === 'hiit' ? projection.active : null;
   const [showHiitConfig, setShowHiitConfig] = useState(false);
   const [selectedSession, setSelectedSession] = useState<SportSession | null>(null);
+  const setupDialogRef = useRef<HTMLDivElement>(null);
+  const detailsDialogRef = useRef<HTMLDivElement>(null);
+  useDialogA11y(setupDialogRef, { enabled: showSetup, onClose: () => setShowSetup(false) });
+  useDialogA11y(detailsDialogRef, { enabled: Boolean(selectedSession), onClose: () => setSelectedSession(null) });
 
   const handleStartSession = useCallback(() => {
     setIsStarting(true);
@@ -232,7 +239,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
           </div>
 
           <button
-            onClick={() => setShowSetup(true)}
+            onClick={() => setShowSportPicker(true)}
             className="btn-primary inline-flex items-center justify-center gap-2 self-start sm:self-auto"
             aria-label="Iniciar nueva sesión"
           >
@@ -241,23 +248,33 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
           </button>
         </section>
 
+        {showSportPicker && (
+          <SportSessionPicker onClose={() => setShowSportPicker(false)} onSelect={(sport) => {
+            setShowSportPicker(false);
+            if (sport === 'archery') setShowSetup(true);
+            else setShowHiitConfig(true);
+          }} />
+        )}
+
         {/* Setup Modal */}
         {showSetup && hasDom && createPortal(
           <div className="fixed inset-0 z-[120] grid place-items-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="motion-dialog-panel w-full max-w-lg rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
-              <h2 className="text-xl font-display font-bold text-white mb-4">
+            <div ref={setupDialogRef} role="dialog" aria-modal="true" aria-labelledby="archery-setup-title" tabIndex={-1}
+              className="motion-dialog-panel w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
+              <h2 id="archery-setup-title" className="text-xl font-display font-bold text-white mb-4">
                 Nueva sesión de tiro con arco
               </h2>
               
               <div className="space-y-4">
                 <div>
                   <label className="text-sm text-slate-400 block mb-2">Tipo de arco</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-2" role="group" aria-label="Tipo de arco">
                     {BOW_TYPE_OPTIONS.map(opt => (
                       <button
                         key={opt.value}
                         type="button"
                         onClick={() => setBowType(opt.value)}
+                        aria-pressed={bowType === opt.value}
                         className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
                           bowType === opt.value
                             ? 'bg-mint text-ink'
@@ -316,7 +333,9 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
         {/* Session Detail Modal */}
         {selectedSession && hasDom && createPortal(
           <div className="fixed inset-0 z-[120] grid place-items-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="motion-dialog-panel w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
+            <div ref={detailsDialogRef} role="dialog" aria-modal="true" aria-labelledby="sport-session-details-title" tabIndex={-1}
+              className="motion-dialog-panel w-full max-w-lg max-h-[90dvh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl p-6">
+              <h2 id="sport-session-details-title" className="sr-only">Detalle de la sesión deportiva</h2>
               <button
                 type="button"
                 onClick={() => setSelectedSession(null)}
@@ -522,7 +541,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
                     Comienza registrando tu primera sesión deportiva. Lleva control de tu progreso y rendimiento.
                   </p>
                   <button
-                    onClick={() => setShowSetup(true)}
+                    onClick={() => setShowSportPicker(true)}
                     className="btn-primary inline-flex items-center gap-2"
                   >
                     <Plus size={18} />

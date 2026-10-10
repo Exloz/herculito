@@ -65,6 +65,11 @@
 }
 
 @layer components {
+  .dashboard-priority-card {
+    @apply rounded-2xl border border-mint/25 bg-graphite;
+    background-image: radial-gradient(ellipse at top right, rgba(72, 229, 163, 0.1), transparent 65%);
+  }
+
   .app-shell {
     @apply min-h-screen text-slate-100;
   }

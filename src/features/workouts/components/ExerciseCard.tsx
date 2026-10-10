@@ -423,7 +423,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
               <div className="flex-1 min-w-0">
                  <div className="flex flex-col gap-2">
-                   <span className="text-[11px] text-slate-400">Peso · kg</span>
                    <div className="flex w-full items-center overflow-hidden rounded-lg border border-mist/60 bg-slateDeep">
                     <button
                       type="button"
@@ -433,22 +432,24 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     >
                       <Minus size={14} />
                     </button>
-                    <div className="relative min-w-0 flex-1">
+                    <div className="relative flex min-w-0 flex-1 items-center justify-center gap-1 px-1">
                       <input
                         type="number"
                         value={draftWeight !== undefined ? draftWeight : (Number.isFinite(weight) ? String(weight) : '')}
                         onChange={(e) => handleWeightChange(setNumber, e.target.value)}
                         onBlur={() => handleWeightBlur(setNumber)}
-                        className="h-11 w-full min-w-0 rounded-md bg-transparent text-center text-base font-medium text-white placeholder:text-slate-500 focus:outline-none focus-visible:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-mint/40"
+                         className="number-input-centered h-11 min-w-0 rounded-md bg-transparent p-0 text-center text-base font-medium tabular-nums text-white placeholder:text-slate-500 focus:outline-none focus-visible:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-mint/40"
+                         style={{ width: `${Math.max(3, (draftWeight ?? String(weight)).length)}ch` }}
                         placeholder="0"
                         inputMode="decimal"
                         step="0.5"
                         min="0"
                         max={MAX_WEIGHT_KG}
                         aria-label={`Peso para serie ${setNumber}`}
-                      />
+                       />
+                       <span className="shrink-0 text-[10px] text-slate-400" aria-hidden="true">kg</span>
                       {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (
-                        <div className="absolute top-0 right-0 w-2 h-2 bg-mint rounded-full translate-x-1/2 -translate-y-1/2" title="Peso anterior" />
+                         <div className="pointer-events-none absolute right-1 top-1 h-2 w-2 rounded-full bg-mint" title="Peso anterior" />
                       )}
                     </div>
                     <button
@@ -470,14 +471,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                         value={draftReps[setNumber] ?? String(getRepsForSet(setNumber))}
                         onChange={(e) => handleRepsChange(setNumber, e.target.value)}
                         onBlur={() => handleRepsBlur(setNumber)}
-                        className="h-11 w-16 rounded-md border border-mist/40 bg-slateDeep text-center text-base font-medium text-mint focus:border-mint/60 focus:outline-none focus:ring-1 focus:ring-mint/40"
+                         className="number-input-centered h-11 w-16 rounded-md border border-mist/40 bg-slateDeep p-0 text-center text-base font-medium tabular-nums text-mint focus:border-mint/60 focus:outline-none focus:ring-1 focus:ring-mint/40"
                         min="1"
                         max={MAX_REPS}
                         aria-label={`Reps para serie ${setNumber}`}
                       />
                     </div>
                   ) : (
-                    <span className="text-xs text-slate-400">Objetivo: {exercise.reps} repeticiones</span>
+                    <span className="text-xs text-slate-400">{exercise.reps} repeticiones</span>
                   )}
                  </div>
                 </div>

@@ -315,7 +315,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         aria-labelledby="exercise-selector-title"
         tabIndex={-1}
       >
-        <div className="shrink-0 border-b border-white/8 px-4 pb-2 pt-[calc(0.3rem+env(safe-area-inset-top))] sm:p-4">
+        <div className="shrink-0 border-b border-mist/40 px-4 pb-2 pt-[calc(0.3rem+env(safe-area-inset-top))] sm:p-4">
           <div className="mb-2 flex items-start justify-between gap-3 sm:mb-2.5 sm:gap-4">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-amberGlow/85">
@@ -331,7 +331,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="btn-ghost border border-white/8 bg-white/[0.03]"
+              className="btn-ghost border border-mist/40 bg-white/[0.03]"
               aria-label="Cerrar selector de ejercicios"
             >
               <X size={20} />
@@ -422,7 +422,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         </div>
 
         {showCustomForm && (
-          <div className="shrink-0 border-t border-white/8 bg-[linear-gradient(180deg,rgb(var(--color-canvas)/0.72),rgb(var(--color-canvas)/0.98))] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
+          <div className="shrink-0 border-t border-mist/40 bg-[linear-gradient(180deg,rgb(var(--color-canvas)/0.72),rgb(var(--color-canvas)/0.98))] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
             <p className="mb-2 text-xs text-slate-400" role="status">
               {!customExercise.name.trim() ? 'Escribe un nombre para continuar.' : restTimeOutOfRange ? 'Corrige el descanso antes de continuar.' : isEditing ? 'Los cambios se aplicarán a este ejercicio de la rutina.' : 'Se guardará en tus ejercicios y se añadirá a esta rutina.'}
             </p>

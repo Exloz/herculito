@@ -40,9 +40,9 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
 }: RoutineExerciseRowProps) {
   return (
     <div className="motion-list-item app-surface-muted p-2.5">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0 flex items-center gap-2">
-          <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+      <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-1.5">
+        <div className="flex min-h-11 min-w-0 items-center gap-2">
+          <span className="shrink-0 rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
             {index + 1}
           </span>
           <h4 dir="auto" className="min-w-0 break-words font-display text-lg text-white" style={{ overflowWrap: 'anywhere' }}>
@@ -54,7 +54,7 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
             <VideoOff size={14} className="shrink-0 text-slate-500" />
           )}
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
             onClick={() => onEdit(exercise)}

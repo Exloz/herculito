@@ -21,6 +21,13 @@ const renderCard = (onStartTimer = vi.fn(), repsBySet?: number[]) => {
 };
 
 describe('ExerciseCard set entry', () => {
+  it('integrates the weight unit without a separate label row', () => {
+    renderCard();
+    expect(screen.queryByText('Peso · kg')).not.toBeInTheDocument();
+    expect(screen.getAllByText('kg')).toHaveLength(exercise.sets);
+    expect(screen.getByRole('spinbutton', { name: 'Peso para serie 1' })).toHaveValue(40);
+  });
+
   it('retains previous weights and only starts rest when completing a set', () => {
     const onStartTimer = vi.fn();
     renderCard(onStartTimer);

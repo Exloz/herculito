@@ -75,7 +75,7 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
           <div className="text-2xl font-bold text-white font-mono leading-none tabular-nums">{formatTime()}</div>
           <button
             onClick={handleClose}
-            className="btn-ghost h-11 w-11 p-0"
+            className="btn-ghost flex h-11 w-11 shrink-0 items-center justify-center p-0"
             aria-label="Cerrar temporizador"
           >
             <X size={18} />

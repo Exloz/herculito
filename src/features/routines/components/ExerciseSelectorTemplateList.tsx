@@ -38,7 +38,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
 
   return (
     <div className="p-3.5 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
-      <div className="mb-3 rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-3.5 sm:mb-4 sm:rounded-[1.5rem] sm:p-4">
+      <div className="mb-3 rounded-[1.2rem] border border-mist/40 bg-white/[0.03] p-3.5 sm:mb-4 sm:rounded-[1.5rem] sm:p-4">
         <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Busca un ejercicio</div>
         <div className="space-y-3">
         <div className="relative">
@@ -99,7 +99,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
             key={exercise.id}
             type="button"
             onClick={() => void onSelectTemplate(exercise)}
-            className="deferred-list-item motion-list-item w-full rounded-[1.1rem] border border-white/8 bg-slateDeep/85 p-3 text-left transition-colors hover:border-mint/30 hover:bg-charcoal sm:rounded-[1.35rem] sm:p-3.5"
+            className="deferred-list-item motion-list-item w-full rounded-[1.1rem] border border-mist/40 bg-slateDeep/85 p-3 text-left transition-colors hover:border-mint/30 hover:bg-charcoal sm:rounded-[1.35rem] sm:p-3.5"
             >
             <div className="flex items-center justify-between">
               <div className="min-w-0 pr-3">
@@ -114,7 +114,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
                   )}
                 </div>
               </div>
-              <div className="shrink-0 rounded-full border border-white/8 px-2.5 py-1 text-xs text-slate-300">{exercise.sets} x {exercise.reps}</div>
+              <div className="shrink-0 rounded-full bg-white/[0.04] px-2.5 py-1 text-xs text-slate-300">{exercise.sets} x {exercise.reps}</div>
             </div>
           </button>
         ))}

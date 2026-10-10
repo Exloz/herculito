@@ -227,11 +227,12 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
 
         {/* Notes Input */}
         <div className="mb-5">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
+          <label htmlFor="archery-session-notes" className="flex items-center gap-2 text-slate-400 text-sm mb-2">
             <MapPin size={14} />
             <span>Ubicación / Notas</span>
-          </div>
+          </label>
           <input
+            id="archery-session-notes"
             type="text"
             value={notes}
             onChange={(event) => handleNotesChange(event.target.value)}
@@ -248,6 +249,12 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
         )}
 
         {/* Rounds */}
+        {!hasRounds && (
+          <div className="app-surface-muted mb-4 p-4">
+            <h2 className="font-display text-xl text-white">Empieza con una ronda</h2>
+            <p className="mt-2 text-sm text-slate-300">Define la distancia, el blanco y las flechas por tanda. Después podrás registrar cada disparo.</p>
+          </div>
+        )}
         <div className="space-y-3 mb-5">
           {rounds.map((round) => (
             <RoundCard
@@ -273,9 +280,10 @@ export const ArcherySession: React.FC<ArcherySessionProps> = ({
           </button>
         ) : (
           <div className="app-card p-4 mb-5">
-            <div className="text-sm font-medium text-white mb-3">
-              Nueva ronda
-            </div>
+             <div className="text-sm font-medium text-white mb-3">
+               Nueva ronda
+             </div>
+             <p className="mb-3 text-xs text-slate-400">Puedes añadir otra ronda si cambias de distancia o de blanco.</p>
             <div className="space-y-3">
               <PresetNumericInput
                 label="Distancia (m)"

@@ -155,6 +155,16 @@ describe('SportsPage', () => {
     });
   });
 
+  it('provides a useful empty statistics state and a way to start', () => {
+    mocks.archeryState.activeSession = null;
+    mocks.archeryState.hasActiveSession = false;
+    render(<Sports user={user} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Estadísticas' }));
+    expect(screen.getByText('Tu progreso empieza con una sesión')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Iniciar sesión deportiva' }));
+    expect(screen.getByRole('dialog', { name: '¿Cómo quieres moverte?' })).toBeInTheDocument();
+  });
+
   it('completes the active session only through the active session hook', async () => {
     render(<Sports user={user} />);
 

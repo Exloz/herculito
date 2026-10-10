@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Timer, Minus, Plus, X } from 'lucide-react';
 import type { HiitConfig as HiitConfigType } from '../../../../shared/types';
+import { useDialogA11y } from '../../../../shared/hooks/useDialogA11y';
 
 interface HiitConfigProps {
   onStart: (config: HiitConfigType) => void;
@@ -60,6 +61,8 @@ const NumberStepper: React.FC<{
 };
 
 export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStarting }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogA11y(dialogRef, { onClose });
   const [intervals, setIntervals] = useState(8);
   const [workDuration, setWorkDuration] = useState(30);
   const [restEnabled, setRestEnabled] = useState(true);
@@ -83,14 +86,14 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
 
   const modal = (
     <div className="fixed inset-0 z-[120] flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur-sm sm:items-center">
-      <div className="motion-dialog-panel w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl sm:max-h-[85vh]">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="hiit-config-title" tabIndex={-1} className="motion-dialog-panel w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl border border-mist/60 bg-charcoal shadow-2xl sm:max-h-[85vh]">
         <div className="flex items-center justify-between p-5 pb-3">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-mint/15">
               <Timer size={20} className="text-mint" />
             </div>
             <div>
-              <h2 className="text-lg font-display font-bold text-white">Temporizador HIIT</h2>
+              <h2 id="hiit-config-title" className="text-lg font-display font-bold text-white">Temporizador HIIT</h2>
               <p className="text-xs text-slate-400">Configura tu sesión</p>
             </div>
           </div>
@@ -107,7 +110,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
         <div className="px-5 pb-3">
           {/* Presets */}
           <div className="mb-5">
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 mb-2">Presets</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">Configuraciones rápidas</div>
             <div className="grid grid-cols-3 gap-2">
               {CONFIG_PRESETS.map((preset) => (
                 <button
@@ -120,8 +123,10 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
                     setRestDuration(preset.config.restDuration);
                   }}
                   className="rounded-xl bg-slateDeep px-2 py-2.5 text-center transition-colors hover:bg-mint/10 hover:text-mint"
+                  aria-pressed={intervals === preset.config.intervals && workDuration === preset.config.workDuration && restEnabled === preset.config.restEnabled && restDuration === preset.config.restDuration}
                 >
-                  <div className="text-sm font-semibold text-white">{preset.label}</div>
+                   <div className="text-sm font-semibold text-white">{preset.label}</div>
+                   <div className="mt-1 text-xs text-slate-400">{preset.config.intervals} × {preset.config.workDuration}s</div>
                 </button>
               ))}
             </div>
@@ -152,6 +157,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
                 <button
                   type="button"
                   role="switch"
+                  aria-label="Descanso entre intervalos"
                   aria-checked={restEnabled}
                   onClick={() => setRestEnabled(!restEnabled)}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${restEnabled ? 'bg-mint' : 'bg-slate-600'
@@ -177,7 +183,8 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
         </div>
 
         {/* Summary */}
-        <div className="mx-5 mb-4 rounded-xl bg-[linear-gradient(180deg,rgba(72,229,163,0.08),transparent)] border border-mint/20 p-4">
+         <div className="mx-5 mb-4 rounded-xl bg-[linear-gradient(180deg,rgba(72,229,163,0.08),transparent)] border border-mint/20 p-4">
+           <p className="mb-3 text-xs text-slate-300">{intervals} intervalos de {workDuration} segundos{restEnabled ? `, con ${restDuration} segundos de descanso entre ellos. No hay descanso al finalizar.` : ', sin descanso entre ellos.'}</p>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
               <div className="text-2xl font-display font-bold text-mint">{intervals}</div>
@@ -197,7 +204,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 px-5 pb-5">
+        <div className="sticky bottom-0 flex gap-3 border-t border-white/10 bg-charcoal px-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] pt-3">
           <button
             type="button"
             onClick={onClose}

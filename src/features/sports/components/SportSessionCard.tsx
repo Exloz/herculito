@@ -40,7 +40,7 @@ export const SportSessionCard: React.FC<SportSessionCardProps> = ({
 
   if (isArchery && session.archeryData) {
     primaryStat = String(session.archeryData.totalScore);
-    secondaryStat = `${session.archeryData.averageArrow} avg`;
+    secondaryStat = `${session.archeryData.averageArrow} por flecha`;
   } else if (isHiit && session.hiitData) {
     primaryStat = formatDuration(session.hiitData.totalWorkTime);
     secondaryStat = `${session.hiitData.intervals} intervalos`;
@@ -59,20 +59,22 @@ export const SportSessionCard: React.FC<SportSessionCardProps> = ({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => onClick(session)}
-      className="deferred-list-item app-card p-4 flex w-full items-center justify-between text-left"
-    >
-      <div className="flex items-center gap-3">
-        <div className={`w-10 h-10 rounded-xl ${iconBg} flex items-center justify-center`}>
+    <div className="deferred-list-item app-card flex items-center gap-2 p-3">
+      <button
+        type="button"
+        onClick={() => onClick(session)}
+        className="min-w-0 flex flex-1 flex-wrap items-center justify-between gap-3 rounded-xl p-1 text-left"
+        aria-label={`Ver sesión de ${sportLabel}, ${dateLabel(session.startedAt)}`}
+      >
+      <div className="flex min-w-0 items-center gap-3">
+        <div className={`h-10 w-10 shrink-0 rounded-xl ${iconBg} flex items-center justify-center`}>
           <Icon size={18} className={iconColor} />
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="font-semibold text-white">
             {dateLabel(session.startedAt)}
           </div>
-          <div className="text-xs text-slate-400 flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 break-words text-xs text-slate-400">
             <span>{subtitle}</span>
             {session.location && (
               <>
@@ -96,18 +98,16 @@ export const SportSessionCard: React.FC<SportSessionCardProps> = ({
             <div className="text-xs text-slate-400">{secondaryStat}</div>
           )}
         </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(session.id);
-          }}
-          className="p-2 text-slate-400 hover:text-crimson transition-colors"
-          aria-label="Eliminar sesión"
-        >
-          <Trash2 size={18} />
-        </button>
       </div>
-    </button>
+      </button>
+      <button
+        type="button"
+        onClick={() => onDelete(session.id)}
+        className="touch-target shrink-0 rounded-xl p-2 text-slate-400 hover:bg-crimson/10 hover:text-crimson transition-colors"
+        aria-label="Eliminar sesión"
+      >
+        <Trash2 size={18} />
+      </button>
+    </div>
   );
 };

@@ -102,7 +102,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, userId, sessionI
           <button
             type="button"
             onClick={handleAbandon}
-            className="btn-ghost h-9 w-9 p-0 text-slate-400 hover:text-crimson"
+            className="btn-ghost touch-target p-0 text-slate-400 hover:text-crimson"
             aria-label="Abandonar sesión"
           >
             <X size={20} />
@@ -156,7 +156,7 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, userId, sessionI
                 type="button"
                 onClick={handleRestartCurrentPhase}
                 className="flex h-11 w-11 items-center justify-center rounded-full bg-slateDeep text-slate-300 transition-colors hover:bg-slate-600 touch-target"
-                aria-label="Reiniciar"
+                aria-label="Reiniciar intervalo actual"
               >
                 <RotateCcw size={18} />
               </button>
@@ -174,6 +174,11 @@ export const HiitActive: React.FC<HiitActiveProps> = ({ config, userId, sessionI
             </button>
           )}
         </div>
+        {timer.state.phase !== 'done' && (
+          <p className="mt-3 text-center text-sm text-slate-400" role="status">
+            {timer.isPaused ? 'En pausa · reanuda cuando estés listo.' : 'Pausa si lo necesitas. Reiniciar repite el intervalo actual.'}
+          </p>
+        )}
       </footer>
     </div>
   );

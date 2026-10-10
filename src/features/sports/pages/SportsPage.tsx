@@ -240,7 +240,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
 
           <button
             onClick={() => setShowSportPicker(true)}
-            className="btn-primary inline-flex items-center justify-center gap-2 self-start sm:self-auto"
+             className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto sm:self-auto"
             aria-label="Iniciar nueva sesión"
           >
             <Plus size={18} />
@@ -369,7 +369,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               <div className="text-center">
                 <div className="font-semibold text-white">Tiro con Arco</div>
                 <div className="text-xs text-slate-400 mt-1">
-                  {stats?.totalSessions ?? 0} sesiones
+                   Rondas, flechas y puntuación
                 </div>
               </div>
             </button>
@@ -384,7 +384,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               <div className="text-center">
                 <div className="font-semibold text-white">HIIT</div>
                 <div className="text-xs text-slate-400 mt-1">
-                  Temporizador
+                   Intervalos de trabajo y descanso
                 </div>
               </div>
             </button>
@@ -407,7 +407,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
             <div className="app-card p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="section-title">Resumen</div>
-                <div className="text-xs text-slate-400">Últimos 30 días</div>
+                <div className="text-xs text-slate-400">Tu actividad registrada</div>
               </div>
 
               {/* Generic stats */}
@@ -491,11 +491,11 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
 
         {/* Error Message */}
         {error && (
-          <div className="motion-enter motion-enter-delay-2 mb-5 rounded-xl bg-crimson/10 border border-crimson/30 p-4">
+          <div role="alert" className="motion-enter motion-enter-delay-2 mb-5 rounded-xl bg-crimson/10 border border-crimson/30 p-4">
             <div className="text-crimson text-sm">{error}</div>
             <button
               onClick={refresh}
-              className="text-xs text-crimson/80 underline mt-2"
+              className="btn-secondary touch-target mt-2 text-sm"
             >
               Reintentar
             </button>
@@ -506,8 +506,9 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
         <section className="motion-enter motion-enter-delay-3">
           <div className="flex gap-2 mb-4">
             <button
-              onClick={() => setActiveTab('sessions')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+               onClick={() => setActiveTab('sessions')}
+              aria-pressed={activeTab === 'sessions'}
+              className={`touch-target px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                 activeTab === 'sessions'
                   ? 'bg-mint/15 text-mint'
                   : 'text-slate-400 hover:text-white'
@@ -516,8 +517,9 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               Sesiones recientes
             </button>
             <button
-              onClick={() => setActiveTab('stats')}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+               onClick={() => setActiveTab('stats')}
+              aria-pressed={activeTab === 'stats'}
+              className={`touch-target px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
                 activeTab === 'stats'
                   ? 'bg-mint/15 text-mint'
                   : 'text-slate-400 hover:text-white'
@@ -563,6 +565,13 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
             </>
           )}
 
+          {activeTab === 'stats' && !stats && (
+            <div className="app-card p-6 text-center">
+              <h3 className="font-display text-xl text-white">Tu progreso empieza con una sesión</h3>
+              <p className="mt-2 text-sm text-slate-400">Cuando registres actividad, verás aquí tus estadísticas.</p>
+              <button onClick={() => setShowSportPicker(true)} className="btn-primary mt-4">Iniciar sesión deportiva</button>
+            </div>
+          )}
           {activeTab === 'stats' && stats && (
             <div className="space-y-3">
               <div className="app-card p-4">

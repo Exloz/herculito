@@ -154,7 +154,7 @@ describe('ArcherySession', () => {
       />
     );
 
-    const notesInput = screen.getByRole('textbox', { name: '' });
+    const notesInput = screen.getByRole('textbox', { name: 'Ubicación / Notas' });
     fireEvent.change(notesInput, { target: { value: 'Club' } });
     act(() => vi.advanceTimersByTime(300));
     fireEvent.change(notesInput, { target: { value: 'Club, viento fuerte' } });
@@ -186,7 +186,7 @@ describe('ArcherySession', () => {
       />
     );
 
-    const notesInput = screen.getByRole('textbox', { name: '' });
+    const notesInput = screen.getByRole('textbox', { name: 'Ubicación / Notas' });
     fireEvent.change(notesInput, { target: { value: 'Club' } });
     fireEvent.blur(notesInput);
 
@@ -212,7 +212,7 @@ describe('ArcherySession', () => {
       />
     );
 
-    fireEvent.change(screen.getByRole('textbox', { name: '' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Ubicación / Notas' }), {
       target: { value: 'Última nota' },
     });
     fireEvent.click(screen.getByRole('button', { name: /completar sesión/i }));
@@ -243,7 +243,7 @@ describe('ArcherySession', () => {
       />
     );
 
-    fireEvent.change(screen.getByRole('textbox', { name: '' }), {
+    fireEvent.change(screen.getByRole('textbox', { name: 'Ubicación / Notas' }), {
       target: { value: 'Pendiente' },
     });
     unmount();

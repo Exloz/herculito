@@ -9,7 +9,8 @@ import {
 } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/react';
 import { Navigation } from './navigation/Navigation';
-import { useAuth } from '../features/auth/hooks/useAuth';
+import { useClerkAuthState } from '../features/auth/hooks/useAuth';
+import { AuthContext, type AuthState } from '../features/auth/hooks/auth-context';
 import { ScrollToTop } from './navigation/ScrollToTop';
 import { UIProvider } from './providers/UIProvider';
 import { useUI } from './providers/ui-context';
@@ -134,7 +135,7 @@ const AuthErrorToast = ({ message }: { message: string | null }) => {
   return null;
 };
 
-function AppContent() {
+function AppContent({ auth }: { auth: AuthState }) {
   const { currentPage, transitionDirection, transitionVersion, handlePageChange } = usePageNavigation();
   const [canPreloadRoutines, setCanPreloadRoutines] = useState(false);
   const {
@@ -144,7 +145,7 @@ function AppContent() {
     loading,
     error,
     logout
-  } = useAuth();
+  } = auth;
 
   useEffect(() => {
     if (!user) {
@@ -256,10 +257,23 @@ function AppContent() {
   );
 }
 
+function AuthenticatedApp() {
+  const auth = useClerkAuthState();
+  return <AuthContext.Provider value={auth}><AppContent auth={auth} /></AuthContext.Provider>;
+}
+
+export function PreviewApp({ auth }: { auth: AuthState }) {
+  return (
+    <UIProvider>
+      <AuthContext.Provider value={auth}><AppContent auth={auth} /></AuthContext.Provider>
+    </UIProvider>
+  );
+}
+
 function App() {
   return (
     <UIProvider>
-      <AppContent />
+      <AuthenticatedApp />
     </UIProvider>
   );
 }

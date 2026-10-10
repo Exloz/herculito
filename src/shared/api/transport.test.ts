@@ -61,4 +61,24 @@ describe('API transport', () => {
       'VITE_PUSH_API_ORIGIN is required. Configure it before starting Herculito.'
     );
   });
+
+  it('uses the local adapter before reading a token or API origin in preview mode', async () => {
+    vi.stubEnv('DEV', true);
+    vi.stubEnv('MODE', 'preview');
+    vi.stubEnv('VITE_PUSH_API_ORIGIN', '');
+    const dashboard = await fetchApiJson<{ dashboardRoutines: unknown[] }>('/v1/data/dashboard');
+    expect(dashboard.dashboardRoutines).toHaveLength(3);
+    await fetchPublicApiJson('/v1/rest/cancel', { method: 'POST', body: JSON.stringify({ commandAtMs: 123 }) });
+    expect(mockGetIdToken).not.toHaveBeenCalled();
+    expect(mockFetchJson).not.toHaveBeenCalled();
+  });
+
+  it('preserves real authentication in a production build using preview mode', async () => {
+    vi.stubEnv('DEV', false);
+    vi.stubEnv('MODE', 'preview');
+    mockFetchJson.mockResolvedValue({ ok: true });
+    await fetchApiJson('/v1/data/dashboard');
+    expect(mockGetIdToken).toHaveBeenCalledOnce();
+    expect(mockFetchJson).toHaveBeenCalledOnce();
+  });
 });

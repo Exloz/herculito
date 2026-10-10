@@ -1,4 +1,5 @@
 import { fetchApiJson, fetchPublicApiJson } from '../../../shared/api/transport';
+import { isLocalPreview } from '../../../app/preview/previewMode';
 
 const DEVICE_ID_KEY = 'pushDeviceId';
 
@@ -61,6 +62,7 @@ export const isStandalonePwa = (): boolean => {
 };
 
 export const isPushSupported = (): boolean => {
+  if (isLocalPreview()) return false;
   if (typeof window === 'undefined') return false;
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 };

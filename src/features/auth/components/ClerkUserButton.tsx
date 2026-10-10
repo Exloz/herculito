@@ -1,11 +1,20 @@
 import { UserButton } from '@clerk/react';
 import { Ruler } from 'lucide-react';
+import { isLocalPreview } from '../../../app/preview/previewMode';
 
 interface ClerkUserButtonProps {
   onNavigateToProfile?: () => void;
 }
 
 export default function ClerkUserButton({ onNavigateToProfile }: ClerkUserButtonProps) {
+  if (isLocalPreview()) {
+    return (
+      <button type="button" onClick={onNavigateToProfile} aria-label="Abrir mis medidas"
+        className="flex h-full w-full items-center justify-center bg-mint/15 font-semibold text-mint">
+        AL
+      </button>
+    );
+  }
   return (
     <UserButton
       appearance={{

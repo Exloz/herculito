@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth as useClerkAuth, useClerk, useUser } from '@clerk/react';
 import { User } from '../../../shared/types';
 import { setTokenGetter } from '../../../shared/api/apiClient';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { isAdminUser } from '../../../shared/lib/admin';
+import { AuthContext, type AuthState } from './auth-context';
 
 const AUTH_PROFILE_CACHE_KEY = 'auth-user-profile-cache';
 
@@ -69,7 +70,13 @@ const resolveUserPhotoUrl = (clerkUser: NonNullable<ReturnType<typeof useUser>['
   return firstAccountImage?.trim() || undefined;
 };
 
-export function useAuth() {
+export function useAuth(): AuthState {
+  const auth = useContext(AuthContext);
+  if (!auth) throw new Error('Authentication context is required');
+  return auth;
+}
+
+export function useClerkAuthState(): AuthState {
   const { isLoaded: isAuthLoaded, isSignedIn, userId, getToken } = useClerkAuth();
   const { user: clerkUser } = useUser();
   const { signOut } = useClerk();

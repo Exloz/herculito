@@ -3,6 +3,7 @@ import { ClerkProvider } from '@clerk/react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { getApiOrigin } from '../shared/api/transport';
+import { isLocalPreview } from './preview/previewMode';
 import '../index.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -85,11 +86,11 @@ const registerSW = async (swUrl: string) => {
   return registration;
 };
 
-if (!PUBLISHABLE_KEY) {
+if (!isLocalPreview() && !PUBLISHABLE_KEY) {
   throw new Error('Missing Clerk Publishable Key');
 }
 
-getApiOrigin();
+if (!isLocalPreview()) getApiOrigin();
 
 if (import.meta.env.PROD) {
   let activationRequested = false;
@@ -130,10 +131,24 @@ if (import.meta.env.PROD) {
   });
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-      <App />
-    </ClerkProvider>
-  </StrictMode>
-);
+if (import.meta.env.DEV && isLocalPreview()) {
+  void Promise.all([import('./preview/PreviewRoot'), import('./preview/previewStorage')])
+    .then(([{ PreviewRoot }, { resetPreviewStorage }]) => {
+      try {
+        resetPreviewStorage(window.localStorage);
+      } catch {
+        window.console.warn('No se pudo reiniciar el almacenamiento de la preview.');
+      }
+      createRoot(document.getElementById('root')!).render(
+        <StrictMode><PreviewRoot /></StrictMode>
+      );
+    });
+} else {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+        <App />
+      </ClerkProvider>
+    </StrictMode>
+  );
+}

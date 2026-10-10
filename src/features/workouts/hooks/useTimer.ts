@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { remoteTimerScheduler } from '../lib/remoteTimerScheduler';
+import { isLocalPreview } from '../../../app/preview/previewMode';
 
-const TIMER_STORAGE_KEY = 'workoutTimerState';
+const TIMER_STORAGE_KEY = isLocalPreview() ? 'preview-workoutTimerState' : 'workoutTimerState';
 const SW_READY_TIMEOUT_MS = 1200;
 
 interface TimerState {

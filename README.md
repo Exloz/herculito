@@ -65,9 +65,35 @@ pnpm dev
 
 La app corre por defecto en `http://localhost:5173`.
 
+## Preview de desarrollo sin iniciar sesión
+
+Para trabajar en la interfaz sin configurar Clerk ni una API:
+
+```bash
+pnpm dev:preview
+```
+
+Abre `http://localhost:5174`. Este servidor usa un puerto separado y una sesión
+ficticia de Alex. No requiere `.env`, tokens ni una cuenta. El acceso normal de
+`pnpm dev` sigue utilizando Clerk y la API configurada.
+
+- La preview muestra las pantallas reales con rutinas, historial, progreso y medidas de ejemplo.
+- Puedes crear y editar rutinas, registrar series, usar el descanso, completar sesiones y probar tiro con arco o HIIT.
+- La barra superior permite alternar entre datos de ejemplo y un estado vacío (`/?scenario=empty`).
+- Cerrar sesión muestra un acceso local para volver a entrar sin credenciales.
+- Los cambios son temporales: recargar o pulsar **Reiniciar** restaura los datos de ejemplo y descarta la actividad local de la sesión ficticia.
+- Todas las llamadas de la capa de API se resuelven localmente. Una ruta no implementada falla explícitamente, sin intentar contactar la API real.
+- Videos externos, push en segundo plano y administración no se simulan. Para comprobar integración, autenticación o notificaciones usa el modo normal.
+- Solo se habilita con el servidor de desarrollo y `--mode preview`; un build de producción, incluso con ese modo, no habilita la sesión ficticia.
+
+Los fixtures están en `src/app/preview/previewFixtures.ts` y el adaptador local
+en `src/app/preview/previewApi.ts`. No uses esta preview para validar seguridad
+del backend ni comportamiento real sin conexión.
+
 ## Scripts utiles
 
 - `pnpm dev`: servidor de desarrollo.
+- `pnpm dev:preview`: desarrollo con sesión y API de ejemplo, sin credenciales.
 - `pnpm build`: build de produccion.
 - `pnpm preview`: preview local del build.
 - `pnpm lint`: lint del proyecto.

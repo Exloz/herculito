@@ -67,7 +67,8 @@ export interface RemoteTimerScheduler {
   replayPending: () => Promise<void>;
 }
 
-const TIMER_COMMAND_STORAGE_KEY = 'remote-timer-command:v1';
+const TIMER_COMMAND_STORAGE_KEY = import.meta.env.DEV && import.meta.env.MODE === 'preview'
+  ? 'preview-remote-timer-command:v1' : 'remote-timer-command:v1';
 const TIMER_COMMAND_LOCK_NAME = 'herculito:remote-timer-command';
 const processLocks = new Set<string>();
 const processLockQueues = new Map<string, Array<() => void>>();

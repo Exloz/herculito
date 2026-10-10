@@ -1,4 +1,5 @@
 import { fetchJson, getIdToken } from './apiClient';
+import { isLocalPreview } from '../../app/preview/previewMode';
 
 export const getApiOrigin = (): string => {
   const configuredOrigin = import.meta.env.VITE_PUSH_API_ORIGIN;
@@ -22,6 +23,10 @@ const withJsonContentType = (init?: RequestInit): Headers => {
 };
 
 export const fetchPublicApiJson = async <T = unknown>(path: string, init?: RequestInit): Promise<T> => {
+  if (import.meta.env.DEV && isLocalPreview()) {
+    const { fetchPreviewJson } = await import('../../app/preview/previewApi');
+    return fetchPreviewJson<T>(path, init);
+  }
   return fetchJson<T>(getApiUrl(path), {
     ...init,
     headers: withJsonContentType(init)
@@ -29,6 +34,10 @@ export const fetchPublicApiJson = async <T = unknown>(path: string, init?: Reque
 };
 
 export const fetchApiJson = async <T = unknown>(path: string, init?: RequestInit): Promise<T> => {
+  if (import.meta.env.DEV && isLocalPreview()) {
+    const { fetchPreviewJson } = await import('../../app/preview/previewApi');
+    return fetchPreviewJson<T>(path, init);
+  }
   const token = await getIdToken();
   const headers = withJsonContentType(init);
   headers.set('authorization', `Bearer ${token}`);

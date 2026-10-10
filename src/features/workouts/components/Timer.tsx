@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Timer as TimerIcon, X, Pause, Play } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { useTimer } from '../hooks/useTimer';
+import { isLocalPreview } from '../../../app/preview/previewMode';
 
 interface TimerProps {
   userId: string;
@@ -102,7 +103,11 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
         </button>
       </div>
 
-      {notificationPermission === 'default' && (
+      {isLocalPreview() && (
+        <p className="mt-2 text-center text-xs text-slate-400">Descanso local · push no disponible en la preview</p>
+      )}
+
+      {!isLocalPreview() && notificationPermission === 'default' && (
         <div className="mt-2 text-center">
           <button
             onClick={handleEnableNotifications}
@@ -113,7 +118,7 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
         </div>
       )}
 
-      {notificationPermission === 'denied' && (
+      {!isLocalPreview() && notificationPermission === 'denied' && (
         <div className="mt-2 text-center text-xs text-slate-400">
           Notificaciones bloqueadas. Habilitalas en el navegador.
         </div>

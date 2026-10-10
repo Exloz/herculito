@@ -6,6 +6,7 @@ import { ExerciseSelector } from './ExerciseSelector';
 
 const mocks = vi.hoisted(() => ({
   incrementUsage: vi.fn(),
+  setSelectedVideo: vi.fn(),
   onSelectExercise: vi.fn()
 }));
 
@@ -53,7 +54,7 @@ vi.mock('../hooks/useExerciseVideoManager', () => ({
     videoLoading: false,
     videoError: '',
     selectedVideo: null,
-    setSelectedVideo: vi.fn(),
+    setSelectedVideo: mocks.setSelectedVideo,
     backfillRunning: false,
     backfillMessage: '',
     ownVideoCandidates: 0,
@@ -96,5 +97,14 @@ describe('ExerciseSelector', () => {
       restTime: 90
     });
     expect(mocks.incrementUsage).toHaveBeenCalledWith('exercise-1');
+  });
+
+  it('closes editing on cancel rather than switching to the template list', () => {
+    const onCancel = vi.fn();
+    render(<ExerciseSelector onSelectExercise={vi.fn()} onCancel={onCancel} editingExercise={{
+      id: 'exercise-1', name: 'Press de banca', sets: 3, reps: 10
+    }} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(onCancel).toHaveBeenCalledOnce();
   });
 });

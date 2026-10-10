@@ -7,6 +7,8 @@ interface ActiveWorkoutHeaderProps {
   completedExercises: number;
   totalExercises: number;
   workoutProgress: number;
+  completedSets: number;
+  totalSets: number;
   hasLastWeights: boolean;
   onBackToDashboard: () => void;
 }
@@ -32,6 +34,8 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
   completedExercises,
   totalExercises,
   workoutProgress,
+  completedSets,
+  totalSets,
   hasLastWeights,
   onBackToDashboard
 }) => {
@@ -145,7 +149,7 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
 
             <div className="chip chip-warm">
               <Target size={14} />
-              <span className="text-xs">{completedExercises}/{totalExercises}</span>
+              <span className="text-xs" aria-label={`${completedExercises} de ${totalExercises} ejercicios completados`}>{completedExercises}/{totalExercises}</span>
             </div>
           </div>
         </div>
@@ -160,10 +164,10 @@ export const ActiveWorkoutHeader: React.FC<ActiveWorkoutHeaderProps> = React.mem
 
           <div className="mt-3">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-slate-300">Progreso del entrenamiento</span>
+              <span className="text-sm text-slate-300">{completedSets} de {totalSets} series</span>
               <span className="text-sm font-semibold text-mint">{Math.round(workoutProgress)}%</span>
             </div>
-            <div className="w-full bg-slateDeep rounded-full h-2">
+            <div className="w-full bg-slateDeep rounded-full h-2" role="progressbar" aria-label="Series completadas" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(workoutProgress)}>
               <div
                 className="bg-gradient-to-r from-mint to-amberGlow h-2 rounded-full transition-all duration-300"
                 style={{ width: `${workoutProgress}%` }}

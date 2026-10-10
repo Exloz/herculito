@@ -64,7 +64,7 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
   };
 
   const timerUi = (
-    <div className="motion-pop-in fixed left-4 right-4 z-[45] mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)] sm:bottom-4">
+    <div className="motion-pop-in fixed left-4 right-4 z-[45] mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)]">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <TimerIcon className="text-mint" size={18} />
@@ -75,7 +75,7 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
           <div className="text-2xl font-bold text-white font-mono leading-none tabular-nums">{formatTime()}</div>
           <button
             onClick={handleClose}
-            className="btn-ghost min-h-0 min-w-0 h-8 w-8 p-0"
+            className="btn-ghost h-11 w-11 p-0"
             aria-label="Cerrar temporizador"
           >
             <X size={18} />
@@ -95,7 +95,7 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
 
           <button
             onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
-            className="motion-interactive flex min-w-[112px] touch-manipulation items-center justify-center gap-1.5 rounded-lg bg-mint px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-mintDeep"
+            className="motion-interactive flex min-h-11 min-w-[112px] touch-manipulation items-center justify-center gap-1.5 rounded-lg bg-mint px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-mintDeep"
             aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
           >
           {isActive ? <Pause size={16} /> : <Play size={16} />}

@@ -300,15 +300,15 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
     <div className={`app-card mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(10,18,24,0.98))]' : ''}`}>
       {/* Header del ejercicio */}
       <div className="mb-3">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-1 flex-wrap items-center gap-3 min-w-0">
             {exerciseNumber ? (
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold ${isCompleted ? 'border-mint/50 bg-mint/12 text-mint' : 'border-mist/60 bg-white/[0.03] text-slate-200'}`}>
                 {isCompleted ? <Check size={18} /> : exerciseNumber}
               </div>
             ) : null}
-            <div className="min-w-0">
-              <h3 className="truncate text-lg font-semibold leading-tight text-white sm:text-[1.35rem]">{exercise.name}</h3>
+            <div className="min-w-0 flex-1 basis-36">
+              <h3 className="break-words text-lg font-semibold leading-tight text-white sm:text-[1.35rem]">{exercise.name}</h3>
               {isCompleted && (
                 <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint">Ejercicio completado</div>
               )}
@@ -410,7 +410,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           return (
             <div
               key={setNumber}
-               className={`motion-list-item flex items-center gap-2.5 rounded-xl border p-2.5 transition-all duration-200 ${isCompleted ? 'motion-complete ' : ''}${isCompleted
+               className={`motion-list-item grid grid-cols-[2rem_minmax(0,1fr)_2.75rem] items-center gap-2 rounded-xl border p-2 transition-all duration-200 ${isCompleted ? 'motion-complete ' : ''}${isCompleted
                   ? 'bg-mint/10 border-mint/50'
                   : 'bg-slateDeep border-mist/60 hover:border-mint/40'
                   }`}
@@ -422,23 +422,24 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
               </div>
 
               <div className="flex-1 min-w-0">
-                 <div className="flex items-center gap-2">
-                   <div className="flex items-center overflow-hidden rounded-lg border border-mist/60 bg-slateDeep">
+                 <div className="flex flex-col gap-2">
+                   <span className="text-[11px] text-slate-400">Peso · kg</span>
+                   <div className="flex w-full items-center overflow-hidden rounded-lg border border-mist/60 bg-slateDeep">
                     <button
                       type="button"
                       onClick={() => adjustWeight(setNumber, -2.5)}
-                      className="motion-interactive flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60 touch-target-sm"
-                      aria-label="Reducir peso 2.5kg"
+                      className="motion-interactive flex h-11 w-11 shrink-0 items-center justify-center hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
+                      aria-label={`Reducir peso 2.5kg en serie ${setNumber}`}
                     >
                       <Minus size={14} />
                     </button>
-                    <div className="relative">
+                    <div className="relative min-w-0 flex-1">
                       <input
                         type="number"
                         value={draftWeight !== undefined ? draftWeight : (Number.isFinite(weight) ? String(weight) : '')}
                         onChange={(e) => handleWeightChange(setNumber, e.target.value)}
                         onBlur={() => handleWeightBlur(setNumber)}
-                        className="w-16 rounded-md bg-transparent py-1 text-center text-sm font-medium text-white placeholder:text-slate-500 focus:outline-none focus-visible:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-mint/40"
+                        className="h-11 w-full min-w-0 rounded-md bg-transparent text-center text-base font-medium text-white placeholder:text-slate-500 focus:outline-none focus-visible:bg-white/[0.04] focus-visible:ring-2 focus-visible:ring-mint/40"
                         placeholder="0"
                         inputMode="decimal"
                         step="0.5"
@@ -453,8 +454,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     <button
                       type="button"
                       onClick={() => adjustWeight(setNumber, 2.5)}
-                      className="motion-interactive flex items-center justify-center px-2 py-1.5 hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60 touch-target-sm"
-                      aria-label="Aumentar peso 2.5kg"
+                      className="motion-interactive flex h-11 w-11 shrink-0 items-center justify-center hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
+                      aria-label={`Aumentar peso 2.5kg en serie ${setNumber}`}
                     >
                       <Plus size={14} />
                     </button>
@@ -463,20 +464,20 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                   {/* Reps display/input */}
                   {hasRepsBySet ? (
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-slate-500">×</span>
+                      <span className="text-xs text-slate-400">Reps</span>
                       <input
                         type="number"
                         value={draftReps[setNumber] ?? String(getRepsForSet(setNumber))}
                         onChange={(e) => handleRepsChange(setNumber, e.target.value)}
                         onBlur={() => handleRepsBlur(setNumber)}
-                        className="w-12 rounded-md border border-mist/40 bg-slateDeep py-1 pl-1.5 text-center text-xs font-medium text-mint focus:border-mint/60 focus:outline-none focus:ring-1 focus:ring-mint/40"
+                        className="h-11 w-16 rounded-md border border-mist/40 bg-slateDeep text-center text-base font-medium text-mint focus:border-mint/60 focus:outline-none focus:ring-1 focus:ring-mint/40"
                         min="1"
                         max={MAX_REPS}
                         aria-label={`Reps para serie ${setNumber}`}
                       />
                     </div>
                   ) : (
-                    <span className="whitespace-nowrap text-xs text-slate-400 sm:text-sm">kg × {exercise.reps}</span>
+                    <span className="text-xs text-slate-400">Objetivo: {exercise.reps} repeticiones</span>
                   )}
                  </div>
                 </div>
@@ -488,7 +489,8 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                     ? 'bg-mint text-ink hover:bg-mintDeep'
                     : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
                     }`}
-                aria-label={isCompleted ? 'Marcar serie como incompleta' : 'Marcar serie como completada'}
+                aria-label={isCompleted ? `Marcar serie ${setNumber} como incompleta` : `Completar serie ${setNumber}`}
+                aria-pressed={isCompleted}
               >
                 <Check size={20} />
               </button>

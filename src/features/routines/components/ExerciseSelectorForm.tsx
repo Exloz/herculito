@@ -122,7 +122,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             type="text"
             value={customExercise.name}
             onChange={(event) => onCustomExerciseChange({ name: event.target.value.slice(0, MAX_EXERCISE_NAME_LENGTH) })}
-            className="input input-sm text-sm"
+            className="input min-h-11 text-base"
             placeholder="Ej: Press de banca"
             maxLength={MAX_EXERCISE_NAME_LENGTH}
             dir="auto"
@@ -162,7 +162,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               <button
                 type="button"
                 onClick={() => setIsManualCategoryMode((current) => !current)}
-                className={`touch-target-sm rounded-full px-3 py-1.5 font-semibold transition-colors ${isManualCategoryMode ? 'bg-mint/15 text-mint' : 'bg-white/[0.06] text-slate-200 hover:text-white'}`}
+                 className={`touch-target shrink-0 rounded-full px-3 py-1.5 font-semibold transition-colors ${isManualCategoryMode ? 'bg-mint/15 text-mint' : 'bg-white/[0.06] text-slate-200 hover:text-white'}`}
               >
                 {isManualCategoryMode ? 'Usar lista' : 'Escribir manual'}
               </button>
@@ -173,7 +173,8 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
                 type="text"
                 value={customExercise.category}
                 onChange={(event) => onCustomExerciseChange({ category: event.target.value.slice(0, MAX_EXERCISE_CATEGORY_LENGTH) })}
-                className="input input-sm border-white/[0.08] bg-white/[0.04] text-sm"
+                className="input min-h-11 border-white/[0.08] bg-white/[0.04] text-base"
+                aria-label="Nueva categoría"
                 placeholder="Ej: Pecho, espalda o piernas"
                 maxLength={MAX_EXERCISE_CATEGORY_LENGTH}
                 dir="auto"
@@ -189,7 +190,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
             id="custom-exercise-description"
             value={customExercise.description}
             onChange={(event) => onCustomExerciseChange({ description: event.target.value.slice(0, MAX_EXERCISE_DESCRIPTION_LENGTH) })}
-            className="input text-sm"
+            className="input text-base"
             placeholder="Explica como se hace o cuando usarlo"
             rows={2}
             maxLength={MAX_EXERCISE_DESCRIPTION_LENGTH}
@@ -217,7 +218,8 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               type="number"
               value={customExercise.sets}
               onChange={(event) => handleNumberChange('sets', event.target.value)}
-              className="input input-sm text-sm"
+              className="input min-h-11 text-base"
+              inputMode="numeric"
               min="1"
               max={MAX_SETS}
             />
@@ -229,7 +231,8 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               type="number"
               value={customExercise.reps}
               onChange={(event) => handleNumberChange('reps', event.target.value)}
-              className="input input-sm text-sm"
+              className="input min-h-11 text-base"
+              inputMode="numeric"
               min="1"
               max={MAX_REPS}
             />
@@ -241,7 +244,8 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
               type="number"
               value={customExercise.restTime}
               onChange={(event) => handleNumberChange('restTime', event.target.value)}
-              className={`input input-sm text-sm ${restTimeError ? 'border-crimson/55 focus:border-crimson/60 focus:ring-crimson/30' : ''}`}
+              className={`input min-h-11 text-base ${restTimeError ? 'border-crimson/55 focus:border-crimson/60 focus:ring-crimson/30' : ''}`}
+              inputMode="numeric"
               min="0"
               step="1"
               max={MAX_REST_TIME_SECONDS}

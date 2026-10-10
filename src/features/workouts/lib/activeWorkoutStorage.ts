@@ -58,6 +58,25 @@ export const normalizeWorkoutSets = (sets: WorkoutSet[], expectedSets: number): 
   return normalizedSets;
 };
 
+export const getWorkoutSetProgress = (
+  exercises: Pick<Exercise, 'id' | 'sets'>[],
+  logs: ExerciseLog[]
+) => {
+  let totalSets = 0;
+  let completedSets = 0;
+  for (const exercise of exercises) {
+    totalSets += Math.max(0, exercise.sets);
+    const log = logs.find((entry) => entry.exerciseId === exercise.id);
+    completedSets += normalizeWorkoutSets(log?.sets ?? [], exercise.sets)
+      .filter((set) => set.completed).length;
+  }
+  return {
+    totalSets,
+    completedSets,
+    percentage: totalSets > 0 ? (completedSets / totalSets) * 100 : 0
+  };
+};
+
 export const buildWorkoutCompletionLogs = (
   exercises: Exercise[],
   exerciseLogs: ExerciseLog[],

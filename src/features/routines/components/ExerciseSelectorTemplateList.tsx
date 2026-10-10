@@ -46,11 +46,11 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             id="exercise-template-search"
-            type="text"
+            type="search"
             placeholder="Buscar ejercicios..."
             value={searchTerm}
             onChange={(event) => onSearchTermChange(event.target.value)}
-            className="input pl-10 text-sm"
+            className="input min-h-11 pl-10 text-base"
             aria-label="Buscar ejercicios"
           />
         </div>
@@ -70,7 +70,8 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
           />
         </div>
 
-        <div className="flex items-center justify-between text-xs text-slate-400">
+        <details className="text-xs text-slate-400">
+          <summary className="touch-target cursor-pointer py-2">Videos de ejercicios · {ownVideoCandidates} pendientes</summary>
           <span>{ownVideoCandidates} ejercicios sin video</span>
           <button
             type="button"
@@ -80,7 +81,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
           >
               {backfillRunning ? 'Actualizando...' : 'Buscar videos automáticamente'}
             </button>
-          </div>
+           </details>
 
         {backfillMessage && (
           <div className="rounded-xl bg-white/[0.03] px-3 py-2 text-xs text-slate-300">{backfillMessage}</div>
@@ -88,7 +89,11 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
       </div>
       </div>
 
-      <div className="space-y-2 pb-1">
+       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+         <span role="status">{filteredExercises.length} ejercicios disponibles · toca uno para añadirlo</span>
+         {hasActiveFilters && <button type="button" onClick={onResetFilters} className="btn-ghost touch-target">Limpiar filtros</button>}
+       </div>
+       <div className="space-y-2 pb-1">
         {filteredExercises.map((exercise) => (
           <button
             key={exercise.id}
@@ -99,7 +104,7 @@ export const ExerciseSelectorTemplateList: React.FC<ExerciseSelectorTemplateList
             <div className="flex items-center justify-between">
               <div className="min-w-0 pr-3">
                 <h4 dir="auto" className="break-words font-semibold text-white text-sm" style={{ overflowWrap: 'anywhere' }}>{exercise.name}</h4>
-                <div className="mt-1 flex items-center space-x-2 text-xs text-slate-400">
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                   <span>{exercise.category}</span>
                   {exercise.timesUsed > 0 && (
                     <>

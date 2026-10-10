@@ -4,6 +4,7 @@ import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
 import { RoutineCard } from '../components/RoutineCard';
 import { useRoutineVideoBackfill } from '../hooks/useRoutineVideoBackfill';
+import { filterRoutines } from '../lib/filterRoutines';
 import { User, Routine, Exercise, MuscleGroup } from '../../../shared/types';
 import { useUI } from '../../../app/providers/ui-context';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
@@ -51,6 +52,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
   const [editingRoutine, setEditingRoutine] = useState<Routine | undefined>();
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'my' | 'public'>('my');
+  const [searchQuery, setSearchQuery] = useState('');
   const [tabTransitionDirection, setTabTransitionDirection] = useState<'forward' | 'backward'>('forward');
   const [tabTransitionVersion, setTabTransitionVersion] = useState(0);
   const showRoutinesSkeleton = useDelayedLoading(loading, 180);
@@ -139,7 +141,9 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
     updateRoutine
   });
   const visiblePublicRoutinesCount = publicRoutines.filter((routine) => isRoutineVisibleOnDashboard(routine.id)).length;
-  const displayedRoutines = activeTab === 'my' ? myRoutines : publicRoutines;
+  const tabRoutines = activeTab === 'my' ? myRoutines : publicRoutines;
+  const displayedRoutines = filterRoutines(tabRoutines, searchQuery);
+  const isSearching = searchQuery.trim().length > 0;
 
   if (loading) {
     if (showRoutinesSkeleton) {
@@ -172,13 +176,6 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             <span>Nueva rutina</span>
           </button>
         </section>
-
-        <div className="motion-enter motion-enter-delay-1 mb-4 flex flex-wrap gap-2 text-xs text-slate-300">
-          <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{myRoutines.length} propias</span>
-          <span className="rounded-full bg-mint/12 px-2.5 py-1 text-mint/85">{publicRoutines.length} públicas</span>
-          <span className="rounded-full bg-white/[0.04] px-2.5 py-1">{routinesMissingVideos} sin video</span>
-          <span className="rounded-full bg-amberGlow/12 px-2.5 py-1 text-amberGlow">{visiblePublicRoutinesCount} en Inicio</span>
-        </div>
 
         <div className="motion-enter motion-enter-delay-2 mb-5 rounded-[1.2rem] bg-graphite/80 p-1.5 shadow-soft" role="tablist" aria-label="Tipos de rutinas">
           <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Vista</div>
@@ -222,9 +219,16 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
           </div>
         </div>
 
-        {activeTab === 'my' && (
-          <div className="motion-enter motion-enter-delay-3 mb-4 flex items-center justify-between rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
-            <span>{routinesMissingVideos} ejercicios sin video</span>
+        <div className="mb-4">
+          <label htmlFor="routine-search" className="mb-2 block text-sm text-slate-300">Buscar por rutina o ejercicio</label>
+          <input id="routine-search" type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="input w-full min-h-11" placeholder="Ej. piernas, press de banca…" />
+          <p className="mt-2 text-xs text-slate-400" role="status">{displayedRoutines.length} de {tabRoutines.length} rutinas</p>
+        </div>
+
+        {activeTab === 'my' && routinesMissingVideos > 0 && (
+          <details className="mb-4 rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
+            <summary className="min-h-11 cursor-pointer py-3">Videos de ejercicios · {routinesMissingVideos} pendientes</summary>
+            <p className="mb-2">Puedes completar los videos sin modificar tus series ni pesos.</p>
             <button
               type="button"
               onClick={handleBackfillRoutineVideos}
@@ -233,7 +237,7 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
             >
               {routineBackfillRunning ? 'Actualizando...' : 'Buscar videos automáticamente'}
             </button>
-          </div>
+          </details>
         )}
 
         {activeTab === 'public' && publicRoutines.length > 0 && (
@@ -261,15 +265,17 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
               <div className="text-center py-12 content-fade-in">
                 <Target className="mx-auto mb-4 text-slate-500" size={48} />
                 <h3 className="text-lg font-semibold text-slate-300 mb-2">
-                  {activeTab === 'my' ? 'Aún no tienes rutinas' : 'Aún no hay rutinas públicas'}
+                  {isSearching ? 'No encontramos rutinas' : activeTab === 'my' ? 'Aún no tienes rutinas' : 'Aún no hay rutinas públicas'}
                 </h3>
                 <p className="text-slate-400 text-sm mb-4">
-                  {activeTab === 'my'
+                  {isSearching ? 'Prueba otro nombre o busca un ejercicio de la rutina.' : activeTab === 'my'
                     ? 'Crea tu primera rutina para empezar más rápido.'
                     : 'Todavía no hay rutinas compartidas. Puedes publicar la primera.'
                   }
                 </p>
-                {activeTab === 'my' && (
+                {isSearching ? (
+                  <button onClick={() => setSearchQuery('')} className="btn-secondary touch-target">Limpiar búsqueda</button>
+                ) : activeTab === 'my' && (
                   <button
                     onClick={handleCreateRoutine}
                     className="btn-primary"

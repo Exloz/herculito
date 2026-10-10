@@ -40,7 +40,7 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
 }: RoutineExerciseRowProps) {
   return (
     <div className="motion-list-item app-surface-muted p-2.5">
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 flex items-center gap-2">
           <span className="rounded-full bg-white/[0.05] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
             {index + 1}
@@ -54,11 +54,11 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
             <VideoOff size={14} className="shrink-0 text-slate-500" />
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={() => onEdit(exercise)}
-            className="motion-interactive touch-target-sm rounded-lg p-1 text-slate-400 transition-colors hover:text-mint"
+            className="motion-interactive touch-target rounded-lg p-2 text-slate-400 transition-colors hover:text-mint"
             title="Editar ejercicio"
             aria-label={`Editar ejercicio ${exercise.name}`}
           >
@@ -67,7 +67,7 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
           <button
             type="button"
             onClick={() => onRemove(exercise.id)}
-            className="motion-interactive touch-target-sm rounded-lg p-1 text-red-400 transition-colors hover:text-red-300"
+            className="motion-interactive touch-target rounded-lg p-2 text-red-400 transition-colors hover:text-red-300"
             title="Eliminar ejercicio"
             aria-label={`Eliminar ejercicio ${exercise.name}`}
           >
@@ -122,7 +122,8 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
             value={draft?.sets ?? String(exercise.sets)}
             onChange={(event) => onNumberChange(exercise.id, 'sets', event.target.value)}
             onBlur={() => onNumberBlur(exercise.id, 'sets', exercise.sets)}
-            className="input input-sm"
+            className="input min-h-11 text-base"
+            inputMode="numeric"
             min="1"
             max={MAX_SETS}
           />
@@ -144,7 +145,8 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
               value={draft?.reps ?? String(exercise.reps)}
               onChange={(event) => onNumberChange(exercise.id, 'reps', event.target.value)}
               onBlur={() => onNumberBlur(exercise.id, 'reps', exercise.reps)}
-              className="input input-sm"
+              className="input min-h-11 text-base"
+              inputMode="numeric"
               min="1"
               max={MAX_REPS}
             />
@@ -152,14 +154,15 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
         )}
 
         <div>
-          <label htmlFor={`routine-exercise-${exercise.id}-rest`} className="mb-1 block text-slate-300">Desc. (s)</label>
+          <label htmlFor={`routine-exercise-${exercise.id}-rest`} className="mb-1 block text-slate-300">Descanso (s)</label>
           <input
             id={`routine-exercise-${exercise.id}-rest`}
             type="number"
             value={draft?.restTime ?? String(exercise.restTime ?? 90)}
             onChange={(event) => onNumberChange(exercise.id, 'restTime', event.target.value)}
             onBlur={() => onNumberBlur(exercise.id, 'restTime', exercise.restTime ?? 90)}
-            className={`input input-sm ${restTimeError ? 'border-crimson/55 focus:border-crimson/60 focus:ring-crimson/30' : ''}`}
+            className={`input min-h-11 text-base ${restTimeError ? 'border-crimson/55 focus:border-crimson/60 focus:ring-crimson/30' : ''}`}
+            inputMode="numeric"
             min="0"
             step="1"
             max={MAX_REST_TIME_SECONDS}
@@ -190,29 +193,26 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
               Volver a reps fijas
             </button>
           </div>
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${Math.min(exercise.sets, 6)}, 1fr)` }}>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {(repsBySetDraft ?? exercise.repsBySet?.map(String) ?? []).map((reps, setIndex) => (
               <div key={setIndex} className="text-center">
-                <label className="mb-1 block text-[10px] uppercase tracking-wider text-slate-400">
+                <label htmlFor={`routine-exercise-${exercise.id}-reps-${setIndex + 1}`} className="mb-1 block text-[10px] uppercase tracking-wider text-slate-400">
                   Serie {setIndex + 1}
                 </label>
                 <input
+                  id={`routine-exercise-${exercise.id}-reps-${setIndex + 1}`}
                   type="number"
                   value={reps}
                   onChange={(event) => onRepsBySetChange(exercise.id, setIndex, event.target.value)}
                   onBlur={() => onRepsBySetBlur(exercise.id, setIndex)}
-                  className="input input-sm w-full text-center"
+                  className="input min-h-11 w-full text-center text-base"
+                  inputMode="numeric"
                   min="1"
                   max={MAX_REPS}
                 />
               </div>
             ))}
           </div>
-          {exercise.sets > 6 && (
-            <p className="mt-2 text-center text-[10px] text-slate-400">
-              Mostrando {Math.min(exercise.sets, 6)} de {exercise.sets} series. Ajusta las series para ver más.
-            </p>
-          )}
         </div>
       )}
     </div>

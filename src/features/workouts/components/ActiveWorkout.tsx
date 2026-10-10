@@ -12,6 +12,7 @@ import { getLastWeightsForRoutineFromSessions } from '../lib/workoutSessions';
 import {
   areWorkoutSetsEqual,
   buildWorkoutCompletionLogs,
+  getWorkoutSetProgress,
   isExerciseLogCompleted,
   normalizeWorkoutSets
 } from '../lib/activeWorkoutStorage';
@@ -186,9 +187,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
     hasMigratedSessionLogsRef.current = true;
   }, [getLogForExerciseCustom, handleUpdateLog, logsLoading, routine.exercises, session.id]);
 
-  const workoutProgress = useMemo(() => {
-    return totalExercises > 0 ? (completedExercises / totalExercises) * 100 : 0;
-  }, [completedExercises, totalExercises]);
+  const setProgress = useMemo(() => getWorkoutSetProgress(routine.exercises, exerciseLogs), [routine.exercises, exerciseLogs]);
 
   const hasLastWeights = useMemo(() => Object.keys(lastWeights).length > 0, [lastWeights]);
 
@@ -199,7 +198,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
         workoutStartTime={session.startedAt.getTime()}
         completedExercises={completedExercises}
         totalExercises={totalExercises}
-        workoutProgress={workoutProgress}
+        workoutProgress={setProgress.percentage}
+        completedSets={setProgress.completedSets}
+        totalSets={setProgress.totalSets}
         hasLastWeights={hasLastWeights}
         onBackToDashboard={handleBackToDashboard}
       />
@@ -242,10 +243,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
             <button
               onClick={handleCompleteWorkout}
               className="btn-primary inline-flex w-full items-center justify-center gap-2 px-8 sm:w-auto"
-              aria-label={workoutProgress === 100 ? 'Completar entrenamiento' : 'Finalizar entrenamiento incompleto'}
+              aria-label={setProgress.percentage === 100 ? 'Completar entrenamiento' : 'Finalizar entrenamiento incompleto'}
             >
               <CheckCircle size={20} />
-              <span>{workoutProgress === 100 ? 'Completar Entrenamiento' : 'Finalizar Entrenamiento'}</span>
+              <span>{setProgress.percentage === 100 ? 'Completar Entrenamiento' : 'Finalizar Entrenamiento'}</span>
             </button>
           </div>
         )}

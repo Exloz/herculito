@@ -200,6 +200,15 @@
     @apply px-2 py-1.5 text-sm rounded-lg;
   }
 
+  /* Keep numeric/text entry readable and prevent mobile browser focus zoom. */
+  @media (max-width: 639px) {
+    input.input,
+    textarea.input {
+      font-size: 16px;
+      min-height: 44px;
+    }
+  }
+
   .section-title {
     @apply font-display text-lg sm:text-xl text-white;
   }

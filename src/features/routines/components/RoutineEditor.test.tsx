@@ -23,6 +23,22 @@ vi.mock('../hooks/useExerciseTemplates', () => {
 });
 
 describe('RoutineEditor modal isolation', () => {
+  it('explains save requirements and visibility before publishing', async () => {
+    render(<RoutineEditor onSave={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByText('Dale un nombre a tu rutina para guardar.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Guardar rutina' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Nombre de la rutina'), { target: { value: 'Pecho' } });
+    expect(screen.getByText('Añade al menos un ejercicio para guardar.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Añadir ejercicio' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Press de banca/ }));
+    expect(screen.getByText('1 ejercicio · 3 series en total')).toBeInTheDocument();
+    expect(screen.getByText('Se guardará como privada · 1 ejercicio')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox', { name: /Compartir con la comunidad/ }));
+    expect(screen.getByText('Se guardará como pública · 1 ejercicio')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Usar repeticiones por serie en Press de banca' }));
+    expect(screen.getByRole('spinbutton', { name: 'Serie 3' })).toHaveValue(10);
+  });
+
   it('keeps both dialogs outside page containment and saves after selecting an exercise', async () => {
     const onSave = vi.fn();
     const { container, unmount } = render(

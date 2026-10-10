@@ -444,7 +444,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4 pt-3 sm:px-5 sm:pb-6 sm:pt-4">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.05fr)_minmax(280px,0.95fr)]">
+            <div className="grid gap-4">
               <div className="space-y-3 rounded-[1.2rem] bg-white/[0.03] p-3.5">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Detalles</div>
@@ -463,7 +463,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                       setName(e.target.value.slice(0, MAX_ROUTINE_NAME_LENGTH));
                       if (formError) setFormError('');
                     }}
-                    className="input"
+                    className="input min-h-11 text-base"
                     placeholder="Ej: Pecho y Tríceps"
                     maxLength={MAX_ROUTINE_NAME_LENGTH}
                     required
@@ -480,7 +480,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                     id="routine-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value.slice(0, MAX_ROUTINE_DESCRIPTION_LENGTH))}
-                    className="input"
+                    className="input text-base"
                     placeholder="Describe tu rutina..."
                     rows={2}
                     maxLength={MAX_ROUTINE_DESCRIPTION_LENGTH}
@@ -515,7 +515,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   />
                   <span>
                     <span className="block text-sm font-semibold text-slate-100">Compartir con la comunidad</span>
-                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">Otros usuarios podrán guardarla y activarla desde Inicio.</span>
+                    <span className="mt-1 block text-xs leading-relaxed text-slate-400">
+                      {isPublic ? 'Pública: otros usuarios podrán guardarla y activarla desde Inicio.' : 'Privada: solo tú puedes verla. Activa esta opción para publicarla.'}
+                    </span>
                   </span>
                 </label>
               </div>
@@ -525,12 +527,12 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
                   <div>
                     <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/80">Ejercicios</div>
                     <h3 className="mt-1 font-display text-lg text-white">Lista de ejercicios</h3>
-                    <p className="mt-1.5 text-xs text-slate-300">Ajusta series, reps y descanso.</p>
+                    <p className="mt-1.5 text-xs text-slate-300">En el orden en que vas a entrenar. Ajusta series, repeticiones y descanso.</p>
                   </div>
                   <button
                     type="button"
                     onClick={openExerciseCreator}
-                    className="btn-primary inline-flex items-center justify-center gap-2 self-start sm:self-auto"
+                    className="btn-primary inline-flex w-full items-center justify-center gap-2 sm:w-auto sm:self-auto"
                   >
                     <Plus size={16} />
                     <span>Añadir ejercicio</span>
@@ -539,7 +541,7 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
 
                 <div className="mb-3 rounded-[0.95rem] bg-white/[0.04] px-3 py-2 text-sm text-slate-300">
                   {exercises.length > 0
-                    ? `Has agregado ${exercises.length} ejercicio${exercises.length === 1 ? '' : 's'}.`
+                    ? `${exercises.length} ejercicio${exercises.length === 1 ? '' : 's'} · ${exercises.reduce((total, exercise) => total + exercise.sets, 0)} series en total`
                     : 'Agrega el primer ejercicio para poder guardar la rutina.'}
                 </div>
 
@@ -581,6 +583,9 @@ export const RoutineEditor: React.FC<RoutineEditorProps> = ({
           </div>
 
           <div className="shrink-0 border-t border-white/8 bg-[linear-gradient(180deg,rgba(11,15,20,0.72),rgba(11,15,20,0.98))] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
+            <p className="mb-2 text-xs text-slate-400" role="status">
+              {loading ? 'Guardando tu rutina…' : !name.trim() ? 'Dale un nombre a tu rutina para guardar.' : exercises.length === 0 ? 'Añade al menos un ejercicio para guardar.' : `${isPublic ? 'Se guardará como pública' : 'Se guardará como privada'} · ${exercises.length} ejercicio${exercises.length === 1 ? '' : 's'}`}
+            </p>
             {formError && (
               <div className="mb-3 rounded-xl border border-crimson/40 bg-crimson/10 px-3 py-2 text-sm text-crimson" role="alert">
                 {formError}

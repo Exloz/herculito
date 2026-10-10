@@ -1,0 +1,45 @@
+/* Semantic RGB channels: Tailwind opacity modifiers remain supported. */
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-canvas: 11 15 20;
+  --color-surface: 18 25 34;
+  --color-card: 20 27 36;
+  --color-raised: 27 36 48;
+  --color-border: 37 50 69;
+  --color-text: 238 243 247;
+  --color-text-secondary: 203 213 225;
+  --color-text-muted: 148 163 184;
+  --color-text-subtle: 120 139 162;
+  --color-overlay: 255 255 255;
+  --color-accent: 72 229 163;
+  --color-accent-hover: 26 201 129;
+  --color-warning: 245 158 11;
+  --color-danger: 248 113 113;
+  --color-info: 125 211 252;
+  --color-on-accent: 11 15 20;
+  --shadow-soft: 0 18px 40px rgb(6 10 16 / 0.45);
+  --shadow-lift: 0 12px 24px rgb(11 15 20 / 0.35);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-canvas: 244 247 246;
+  --color-surface: 255 255 255;
+  --color-card: 255 255 255;
+  --color-raised: 234 240 237;
+  --color-border: 185 202 194;
+  --color-text: 20 38 31;
+  --color-text-secondary: 47 67 58;
+  --color-text-muted: 76 96 86;
+  --color-text-subtle: 90 108 99;
+  --color-overlay: 20 38 31;
+  --color-accent: 4 120 80;
+  --color-accent-hover: 3 101 67;
+  --color-warning: 161 88 4;
+  --color-danger: 185 28 47;
+  --color-info: 3 105 161;
+  --color-on-accent: 255 255 255;
+  --shadow-soft: 0 12px 32px rgb(31 63 47 / 0.08);
+  --shadow-lift: 0 6px 18px rgb(31 63 47 / 0.1);
+}

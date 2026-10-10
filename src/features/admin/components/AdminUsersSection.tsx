@@ -90,7 +90,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           return (
             <details
               key={user.userId}
-              className="group overflow-hidden rounded-[1.15rem] border border-[oklch(0.72_0.11_65/0.22)] bg-[radial-gradient(circle_at_100%_0%,oklch(0.78_0.14_72/0.12),transparent_46%),linear-gradient(180deg,rgba(20,26,39,0.94),rgba(9,14,25,0.94))] shadow-soft"
+              className="group overflow-hidden rounded-[1.15rem] border border-[oklch(0.72_0.11_65/0.22)] bg-[radial-gradient(circle_at_100%_0%,oklch(0.78_0.14_72/0.12),transparent_46%),linear-gradient(180deg,rgb(var(--color-card)/0.94),rgb(var(--color-canvas)/0.94))] shadow-soft"
               open={openUserIds.has(user.userId) || selectedUserId === user.userId}
               onToggle={(event) => onToggleUser(user.userId, event.currentTarget.open)}
             >
@@ -160,7 +160,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                             <div className="border-t border-mist/20 p-3">
                               <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                                 {routine.exercises.map((exercise) => (
-                                  <div key={`${user.userId}-${routine.routineName}-${exercise.exerciseId}`} className="rounded-xl border border-orange-200/10 bg-[radial-gradient(circle_at_100%_0%,oklch(0.77_0.12_70/0.08),transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3">
+                                  <div key={`${user.userId}-${routine.routineName}-${exercise.exerciseId}`} className="rounded-xl border border-orange-200/10 bg-[radial-gradient(circle_at_100%_0%,oklch(0.77_0.12_70/0.08),transparent_40%),linear-gradient(180deg,rgb(var(--color-overlay)/0.03),rgb(var(--color-overlay)/0.01))] p-3">
                                     <div className="text-sm font-semibold text-white">{exercise.exerciseName}</div>
                                     <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-500">Actividad agregada</div>
 

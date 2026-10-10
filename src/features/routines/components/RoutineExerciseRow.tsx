@@ -90,7 +90,7 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
               if (isRepsBySetMode) onToggleRepsBySetMode(exercise.id);
             }}
             className={`motion-interactive touch-target-sm rounded-[0.8rem] px-3 py-2 text-sm font-semibold transition-colors ${!isRepsBySetMode
-              ? 'bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.14)]'
+              ? 'bg-mint text-ink shadow-[0_10px_26px_rgb(var(--color-accent)/0.14)]'
               : 'bg-slateDeep/55 text-slate-300 hover:bg-white/[0.07] hover:text-white'}`}
             aria-pressed={!isRepsBySetMode}
             aria-label={`Usar repeticiones fijas en ${exercise.name}`}
@@ -103,7 +103,7 @@ export const RoutineExerciseRow = React.memo(function RoutineExerciseRow({
               if (!isRepsBySetMode) onToggleRepsBySetMode(exercise.id);
             }}
             className={`motion-interactive touch-target-sm rounded-[0.8rem] px-3 py-2 text-sm font-semibold transition-colors ${isRepsBySetMode
-              ? 'bg-mint text-ink shadow-[0_10px_26px_rgba(72,229,163,0.14)]'
+              ? 'bg-mint text-ink shadow-[0_10px_26px_rgb(var(--color-accent)/0.14)]'
               : 'bg-slateDeep/55 text-slate-300 hover:bg-white/[0.07] hover:text-white'}`}
             aria-pressed={isRepsBySetMode}
             aria-label={`Usar repeticiones por serie en ${exercise.name}`}

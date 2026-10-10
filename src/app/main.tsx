@@ -4,9 +4,12 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { getApiOrigin } from '../shared/api/transport';
 import { isLocalPreview } from './preview/previewMode';
+import { ThemeProvider } from './theme/ThemeProvider';
+import { applyTheme, readTheme } from './theme/themes';
 import '../index.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+applyTheme(readTheme());
 const APP_UPDATE_AVAILABLE_EVENT = 'app-update-available';
 const APP_ACTIVATE_UPDATE_EVENT = 'app-activate-update';
 const APP_UPDATE_READY_KEY = 'app-update-ready';
@@ -140,15 +143,26 @@ if (import.meta.env.DEV && isLocalPreview()) {
         window.console.warn('No se pudo reiniciar el almacenamiento de la preview.');
       }
       createRoot(document.getElementById('root')!).render(
-        <StrictMode><PreviewRoot /></StrictMode>
+        <StrictMode><ThemeProvider><PreviewRoot /></ThemeProvider></StrictMode>
       );
     });
 } else {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-        <App />
-      </ClerkProvider>
+      <ThemeProvider>
+        <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/" appearance={{
+          variables: {
+            colorPrimary: 'rgb(var(--color-accent))',
+            colorBackground: 'rgb(var(--color-surface))',
+            colorForeground: 'rgb(var(--color-text))',
+            colorMutedForeground: 'rgb(var(--color-text-muted))',
+            colorInput: 'rgb(var(--color-raised))',
+            colorInputForeground: 'rgb(var(--color-text))',
+          }
+        }}>
+          <App />
+        </ClerkProvider>
+      </ThemeProvider>
     </StrictMode>
   );
 }

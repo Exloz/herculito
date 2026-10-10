@@ -37,7 +37,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   onReset
 }) => {
   return (
-    <section className="relative overflow-hidden rounded-[1.2rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_100%_0%,oklch(0.76_0.15_72/0.16),transparent_42%),radial-gradient(circle_at_0%_100%,oklch(0.71_0.16_36/0.14),transparent_45%),linear-gradient(180deg,rgba(15,23,42,0.92),rgba(2,6,23,0.94))] p-3.5 shadow-soft sm:p-4">
+    <section className="relative overflow-hidden rounded-[1.2rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_100%_0%,oklch(0.76_0.15_72/0.16),transparent_42%),radial-gradient(circle_at_0%_100%,oklch(0.71_0.16_36/0.14),transparent_45%),linear-gradient(180deg,rgb(var(--color-raised)/0.92),rgb(var(--color-canvas)/0.94))] p-3.5 shadow-soft sm:p-4">
       <div className="relative">
         <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between">
           <div>

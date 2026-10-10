@@ -168,7 +168,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ enabled }) => {
   return (
     <div className="app-shell pb-28">
       <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 sm:py-8">
-        <section className="motion-enter rounded-[1.45rem] border border-amberGlow/25 bg-[radial-gradient(circle_at_95%_-15%,oklch(0.78_0.16_72/0.22),transparent_52%),radial-gradient(circle_at_0%_0%,oklch(0.73_0.16_38/0.2),transparent_42%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
+        <section className="motion-enter rounded-[1.45rem] border border-amberGlow/25 bg-[radial-gradient(circle_at_95%_-15%,oklch(0.78_0.16_72/0.22),transparent_52%),radial-gradient(circle_at_0%_0%,oklch(0.73_0.16_38/0.2),transparent_42%),linear-gradient(180deg,rgb(var(--color-surface)/0.99),rgb(var(--color-canvas)/0.99))] px-4 py-4 shadow-lift sm:px-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">

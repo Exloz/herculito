@@ -5,6 +5,7 @@ import { useProfileData } from '../hooks/useProfileData';
 import { useUI } from '../../../app/providers/ui-context';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { formatDateValue } from '../../../shared/lib/intl';
+import { ThemePicker } from '../../../app/theme/ThemePicker';
 import {
   buildMeasurementMutation,
   type MeasurementFormValues
@@ -154,6 +155,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
+        <ThemePicker />
         {error && (
           <div className="motion-enter mb-4 rounded-[1.2rem] border border-crimson/45 bg-crimson/10 px-4 py-3 text-sm text-red-200">
             {error}

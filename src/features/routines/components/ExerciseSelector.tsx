@@ -308,7 +308,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
     >
       <div
         ref={dialogRef}
-        className="motion-dialog-panel dialog-height-full flex w-full max-w-2xl flex-col overflow-hidden border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.16),transparent_26%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem]"
+        className="motion-dialog-panel dialog-height-full flex w-full max-w-2xl flex-col overflow-hidden border border-amberGlow/20 bg-[radial-gradient(circle_at_top_right,rgb(var(--color-warning)/0.16),transparent_26%),linear-gradient(180deg,rgb(var(--color-surface)/0.985),rgb(var(--color-canvas)/0.985))] shadow-lift sm:h-auto sm:max-h-[84vh] sm:rounded-[2rem]"
         style={panelStyle}
         role="dialog"
         aria-modal="true"
@@ -422,7 +422,7 @@ export const ExerciseSelector: React.FC<ExerciseSelectorProps> = ({
         </div>
 
         {showCustomForm && (
-          <div className="shrink-0 border-t border-white/8 bg-[linear-gradient(180deg,rgba(11,15,20,0.72),rgba(11,15,20,0.98))] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
+          <div className="shrink-0 border-t border-white/8 bg-[linear-gradient(180deg,rgb(var(--color-canvas)/0.72),rgb(var(--color-canvas)/0.98))] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:pb-4">
             <p className="mb-2 text-xs text-slate-400" role="status">
               {!customExercise.name.trim() ? 'Escribe un nombre para continuar.' : restTimeOutOfRange ? 'Corrige el descanso antes de continuar.' : isEditing ? 'Los cambios se aplicarán a este ejercicio de la rutina.' : 'Se guardará en tus ejercicios y se añadirá a esta rutina.'}
             </p>

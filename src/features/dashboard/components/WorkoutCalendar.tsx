@@ -115,7 +115,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   }, 0);
 
   return (
-    <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-3 shadow-lift sm:p-4">
+    <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgb(var(--color-card)/0.98),rgb(var(--color-canvas)/0.98))] p-3 shadow-lift sm:p-4">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-white/8 pb-3">
         <h3 className="min-w-0 text-[1.75rem] font-display leading-none text-white sm:text-2xl">
           {monthNames[month]} {year}
@@ -175,7 +175,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                 relative min-w-0 w-full rounded-[0.9rem] p-0.5 sm:aspect-square sm:p-1 cursor-pointer transition-colors touch-manipulation
                 min-h-[44px]
                 ${isCurrentDay
-                  ? 'bg-mint text-ink shadow-[0_8px_24px_rgba(72,229,163,0.28)]'
+                  ? 'bg-mint text-ink shadow-[0_8px_24px_rgb(var(--color-accent)/0.28)]'
                   : isInCurrentMonth
                     ? 'bg-slateDeep/55 text-slate-200 hover:bg-slateDeep'
                     : 'text-slate-600 hover:bg-charcoal'

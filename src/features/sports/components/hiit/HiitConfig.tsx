@@ -163,7 +163,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${restEnabled ? 'bg-mint' : 'bg-slate-600'
                     }`}
                 >
-                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${restEnabled ? 'translate-x-5' : 'translate-x-0'
+                  <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[#fff] shadow ring-0 transition duration-200 ease-in-out ${restEnabled ? 'translate-x-5' : 'translate-x-0'
                     }`} />
                 </button>
               </div>
@@ -183,7 +183,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
         </div>
 
         {/* Summary */}
-         <div className="mx-5 mb-4 rounded-xl bg-[linear-gradient(180deg,rgba(72,229,163,0.08),transparent)] border border-mint/20 p-4">
+         <div className="mx-5 mb-4 rounded-xl bg-[linear-gradient(180deg,rgb(var(--color-accent)/0.08),transparent)] border border-mint/20 p-4">
            <p className="mb-3 text-xs text-slate-300">{intervals} intervalos de {workDuration} segundos{restEnabled ? `, con ${restDuration} segundos de descanso entre ellos. No hay descanso al finalizar.` : ', sin descanso entre ellos.'}</p>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>

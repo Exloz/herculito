@@ -583,7 +583,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
         />
 
         <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
-          <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
+          <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.72),rgb(var(--color-surface)/0.76))] p-1 shadow-lift">
             <div className="grid grid-cols-3 gap-1">
               {HOME_TABS.map((tab) => {
                 const Icon = tab.icon;
@@ -596,7 +596,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
                     onClick={() => handleHomeTabChange(tab.id)}
                     aria-pressed={isActive}
                     className={`motion-interactive flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
-                      ? 'bg-[linear-gradient(180deg,rgba(24,33,46,0.98),rgba(14,20,30,0.98))] text-white shadow-[0_10px_24px_rgba(0,0,0,0.24)]'
+                      ? 'bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.98),rgb(var(--color-surface)/0.98))] text-white shadow-lift'
                       : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
                       }`}
                   >

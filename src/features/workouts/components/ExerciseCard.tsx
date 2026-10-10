@@ -297,7 +297,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   };
 
   return (
-    <div className={`app-card mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(10,18,24,0.98))]' : ''}`}>
+    <div className={`app-card mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.98),rgb(var(--color-canvas)/0.98))]' : ''}`}>
       {/* Header del ejercicio */}
       <div className="mb-3">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3">

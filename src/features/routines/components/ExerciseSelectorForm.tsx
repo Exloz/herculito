@@ -131,7 +131,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
         </div>
 
         {error && (
-          <div className="rounded-md border border-red-500 bg-red-900/50 p-3 text-sm text-red-200" role="alert">{error}</div>
+          <div className="rounded-md border border-crimson/40 bg-crimson/10 p-3 text-sm text-crimson" role="alert">{error}</div>
         )}
 
         {successMessage && (

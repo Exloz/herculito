@@ -42,7 +42,7 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
   if (groupRoutines.length === 0) return null;
 
   return (
-    <div className={`overflow-hidden rounded-[1.6rem] shadow-lift ${isRecommended ? 'bg-[linear-gradient(180deg,rgba(23,33,31,0.96),rgba(11,15,20,0.98))]' : 'bg-graphite'}`}>
+    <div className={`overflow-hidden rounded-[1.6rem] shadow-lift ${isRecommended ? 'bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.96),rgb(var(--color-canvas)/0.98))]' : 'bg-graphite'}`}>
       <div className="h-1" style={{ backgroundColor: groupInfo.color }} />
 
       <div className="px-4 py-4 sm:px-5">

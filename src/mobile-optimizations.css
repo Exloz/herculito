@@ -31,19 +31,14 @@
   }
 }
 
-/* Dark mode optimizations */
-@media (prefers-color-scheme: dark) {
-  /* Los colores ya están optimizados en Tailwind,
-     pero asegurar que no haya flash de contenido blanco */
-  html {
-    background-color: #0b0f14; /* bg-ink */
-  }
+html {
+  background-color: rgb(var(--color-canvas, 11 15 20));
 }
 
 /* Accesibilidad mejorada */
 .focus\:ring-2:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(72, 229, 163, 0.45);
+  box-shadow: 0 0 0 2px rgb(var(--color-accent)/0.45);
 }
 
 /* Estados de loading mejorados para móvil */
@@ -58,12 +53,12 @@
 
 /* Mejorar selección de texto en móvil */
 ::selection {
-  background-color: rgba(72, 229, 163, 0.25);
+  background-color: rgb(var(--color-accent)/0.25);
   color: inherit;
 }
 
 ::-moz-selection {
-  background-color: rgba(72, 229, 163, 0.25);
+  background-color: rgb(var(--color-accent)/0.25);
   color: inherit;
 }
 

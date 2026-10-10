@@ -40,7 +40,7 @@ export function Login({ errorMessage }: LoginProps) {
 
   return (
     <div className="app-shell flex min-h-screen items-center justify-center px-4 py-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
-      <main className="w-full max-w-4xl overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.14),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(245,158,11,0.12),transparent_28%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] shadow-lift">
+      <main className="w-full max-w-4xl overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgb(var(--color-accent)/0.14),transparent_24%),radial-gradient(circle_at_bottom_left,rgb(var(--color-warning)/0.12),transparent_28%),linear-gradient(180deg,rgb(var(--color-surface)/0.99),rgb(var(--color-canvas)/0.99))] shadow-lift">
         <div className="grid lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)]">
           <section className="motion-enter hidden lg:flex lg:flex-col lg:justify-between lg:p-8">
             <div>

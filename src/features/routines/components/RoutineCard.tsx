@@ -150,7 +150,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
                 : `Mostrar ${routine.name} en inicio`}
             >
               <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-all ${isVisibleOnDashboard ? 'translate-x-5' : 'translate-x-0'}`}
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[#fff] shadow-sm transition-all ${isVisibleOnDashboard ? 'translate-x-5' : 'translate-x-0'}`}
               />
             </button>
           </div>

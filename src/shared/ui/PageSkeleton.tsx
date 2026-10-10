@@ -33,7 +33,7 @@ const DashboardSkeleton = ({ compact = false }: { compact?: boolean }) => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        <section className="mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_28%),linear-gradient(180deg,rgba(18,24,35,0.96),rgba(11,15,20,0.96))] px-4 py-4 shadow-lift sm:px-5">
+        <section className="mb-5 overflow-hidden rounded-[1.5rem] bg-[radial-gradient(circle_at_top_right,rgb(var(--color-accent)/0.08),transparent_28%),linear-gradient(180deg,rgb(var(--color-surface)/0.96),rgb(var(--color-canvas)/0.96))] px-4 py-4 shadow-lift sm:px-5">
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -73,7 +73,7 @@ const DashboardSkeleton = ({ compact = false }: { compact?: boolean }) => {
           </div>
         </section>
 
-        <section className="mb-6 rounded-[1.35rem] bg-[linear-gradient(180deg,rgba(21,30,43,0.72),rgba(14,20,31,0.76))] p-1 shadow-lift">
+        <section className="mb-6 rounded-[1.35rem] bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.72),rgb(var(--color-surface)/0.76))] p-1 shadow-lift">
           <div className="grid grid-cols-3 gap-1">
             {Array.from({ length: 3 }).map((_, index) => (
               <SkeletonBlock key={index} className="h-12 rounded-[1rem]" />
@@ -146,7 +146,7 @@ const AdminSkeleton = ({ compact = false }: { compact?: boolean }) => {
   return (
     <div className={compact ? 'h-full pb-6' : 'app-shell pb-28'}>
       <main className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 sm:py-8">
-        <section className="rounded-[1.45rem] border border-amberGlow/25 bg-[radial-gradient(circle_at_95%_-15%,oklch(0.78_0.16_72/0.22),transparent_52%),radial-gradient(circle_at_0%_0%,oklch(0.73_0.16_38/0.2),transparent_42%),linear-gradient(180deg,rgba(17,24,39,0.99),rgba(11,15,20,0.99))] px-4 py-4 shadow-lift sm:px-5">
+        <section className="rounded-[1.45rem] border border-amberGlow/25 bg-[radial-gradient(circle_at_95%_-15%,oklch(0.78_0.16_72/0.22),transparent_52%),radial-gradient(circle_at_0%_0%,oklch(0.73_0.16_38/0.2),transparent_42%),linear-gradient(180deg,rgb(var(--color-surface)/0.99),rgb(var(--color-canvas)/0.99))] px-4 py-4 shadow-lift sm:px-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <SkeletonBlock className="h-3 w-36 rounded-lg" />

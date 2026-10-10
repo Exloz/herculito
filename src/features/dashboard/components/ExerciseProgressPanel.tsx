@@ -446,7 +446,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [pointsInRange]);
 
   return (
-    <div className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgba(245,158,11,0.12),transparent_24%),linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-4 shadow-lift sm:p-5">
+    <div className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgb(var(--color-warning)/0.12),transparent_24%),linear-gradient(180deg,rgb(var(--color-card)/0.98),rgb(var(--color-canvas)/0.98))] p-4 shadow-lift sm:p-5">
       {selectedSummary ? (
         <div className="space-y-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
@@ -686,12 +686,12 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   >
                     <defs>
                       <linearGradient id="exercise-progress-area" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgba(72, 229, 163, 0.34)" />
-                        <stop offset="100%" stopColor="rgba(72, 229, 163, 0.02)" />
+                        <stop offset="0%" stopColor="rgb(var(--color-accent)/0.34)" />
+                        <stop offset="100%" stopColor="rgb(var(--color-accent)/0.02)" />
                       </linearGradient>
                       <linearGradient id="exercise-progress-line" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="rgba(245, 158, 11, 0.9)" />
-                        <stop offset="100%" stopColor="rgba(72, 229, 163, 0.95)" />
+                        <stop offset="0%" stopColor="rgb(var(--color-warning)/0.9)" />
+                        <stop offset="100%" stopColor="rgb(var(--color-accent)/0.95)" />
                       </linearGradient>
                     </defs>
 
@@ -702,14 +702,14 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                           x2={chartData.width - CHART_PADDING.right}
                           y1={tick.y}
                           y2={tick.y}
-                          stroke="rgba(148, 163, 184, 0.14)"
+                          stroke="rgb(var(--color-text-muted)/0.14)"
                           strokeDasharray="3 4"
                         />
                         <text
                           x={CHART_PADDING.left - 8}
                           y={tick.y + 4}
                           textAnchor="end"
-                          fill="rgba(148, 163, 184, 0.82)"
+                          fill="rgb(var(--color-text-muted)/0.82)"
                           fontSize="10"
                         >
                           {formatWeightValue(tick.value)}
@@ -724,7 +724,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                         x2={point.x}
                         y1={point.y}
                         y2={chartData.bottomY}
-                        stroke="rgba(72, 229, 163, 0.12)"
+                        stroke="rgb(var(--color-accent)/0.12)"
                       />
                     ))}
 
@@ -750,8 +750,8 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                             cx={point.x}
                             cy={point.y}
                             r={isLatest ? 6 : 4.5}
-                            fill={isLatest ? '#f59e0b' : '#48e5a3'}
-                            stroke="rgba(11, 15, 20, 0.95)"
+                            fill={isLatest ? 'rgb(var(--color-warning))' : 'rgb(var(--color-accent))'}
+                            stroke="rgb(var(--color-canvas)/0.95)"
                             strokeWidth="2"
                           />
                           {(index % chartData.labelStep === 0 || isLatest) ? (
@@ -759,7 +759,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                               x={point.x}
                               y={CHART_HEIGHT - 12}
                               textAnchor="middle"
-                              fill="rgba(203, 213, 225, 0.82)"
+                              fill="rgb(var(--color-text-secondary)/0.82)"
                               fontSize="10"
                             >
                               {point.axisDate}

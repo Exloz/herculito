@@ -430,14 +430,14 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   ].join(' ').trim();
 
   const panelClasses = [
-    'overflow-hidden border border-white/[0.07] bg-[radial-gradient(circle_at_top_right,rgba(72,229,163,0.08),transparent_24%),linear-gradient(180deg,rgba(17,24,39,0.985),rgba(11,15,20,0.985))] shadow-[0_24px_70px_rgba(2,6,23,0.48)] backdrop-blur-xl',
+    'overflow-hidden border border-white/[0.07] bg-[radial-gradient(circle_at_top_right,rgb(var(--color-accent)/0.08),transparent_24%),linear-gradient(180deg,rgb(var(--color-surface)/0.985),rgb(var(--color-canvas)/0.985))] shadow-soft backdrop-blur-xl',
     panelClassName ?? ''
   ].join(' ').trim();
 
   const resultsCountLabel = `${flatOptions.length} ${flatOptions.length === 1 ? 'resultado visible' : 'resultados visibles'}`;
 
   const optionsContent = groupedOptions.length === 0 ? (
-    <div className="rounded-[1rem] bg-white/[0.045] px-3 py-6 text-center text-xs text-slate-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div className="rounded-[1rem] bg-white/[0.045] px-3 py-6 text-center text-xs text-slate-400 shadow-[inset_0_1px_0_rgb(var(--color-overlay)/0.04)]">
       {noResultsText}
     </div>
   ) : (
@@ -450,7 +450,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
       {groupedOptions.map((group) => (
         <div
           key={group.groupLabel || 'default'}
-          className="rounded-[1rem] bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+          className="rounded-[1rem] bg-white/[0.03] p-1.5 shadow-[inset_0_1px_0_rgb(var(--color-overlay)/0.04)]"
         >
           {group.groupLabel ? (
             <div className="mb-1 px-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -482,9 +482,9 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
                   className={[
                     'touch-target flex w-full items-center justify-between gap-3 rounded-[0.9rem] px-3 py-2.5 text-left text-sm transition-colors',
                     isSelected
-                      ? 'bg-mint/13 text-white shadow-[inset_0_0_0_1px_rgba(72,229,163,0.24),0_10px_22px_rgba(72,229,163,0.10)]'
+                      ? 'bg-mint/13 text-white shadow-[inset_0_0_0_1px_rgb(var(--color-accent)/0.24),0_10px_22px_rgb(var(--color-accent)/0.10)]'
                       : isActive
-                        ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgba(255,255,255,0.05)]'
+                        ? 'bg-white/[0.08] text-white shadow-[inset_0_0_0_1px_rgb(var(--color-overlay)/0.05)]'
                         : 'text-slate-300 hover:bg-white/[0.055] hover:text-white'
                   ].join(' ')}
                 >

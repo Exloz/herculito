@@ -1,7 +1,8 @@
-import { ArrowRight, Clock3, Dumbbell, Flame, Play, Trophy } from 'lucide-react';
+import { ArrowRight, Clock3, Dumbbell, Flame, Play } from 'lucide-react';
 import type { DashboardCompetition, DashboardSummary, Routine } from '../../../shared/types';
 import { formatDateValue } from '../../../shared/lib/intl';
 import { APP_TIME_ZONE } from '../../../shared/lib/dateUtils';
+import { CompetitionPanel } from './CompetitionPanel';
 
 interface DashboardOverviewProps {
   userName: string;
@@ -20,7 +21,6 @@ export function DashboardOverview({ userName, summary, recommendedRoutine, activ
   const firstName = userName.trim().split(/\s+/)[0] || 'atleta';
   const isActive = Boolean(activeRoutineName);
   const totalSets = recommendedRoutine?.exercises.reduce((total, exercise) => total + exercise.sets, 0) ?? 0;
-  const hasRanking = competition?.weekLeader || competition?.monthLeader;
 
   return (
     <section className="mb-7 space-y-5" aria-label="Tu entrenamiento de hoy">
@@ -88,20 +88,11 @@ export function DashboardOverview({ userName, summary, recommendedRoutine, activ
           </div>
         ))}
       </dl>
-      <details className="rounded-xl border border-mist/40 bg-charcoal/30 px-4 py-3 text-sm text-slate-300">
-        <summary className="min-h-6 cursor-pointer">Tu recorrido · {summary.totalWorkouts} sesiones registradas</summary>
-        <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 border-t border-mist/40 pt-3">
-          <span>Mejor racha: {summary.longestStreak} días</span>
-          {hasRanking && (
-            <span className="flex items-center gap-2"><Trophy size={16} className="text-amberGlow" />
-              Líder semanal: {competition?.weekLeader?.name ?? 'Sin líder'} · Tu puesto: {competition?.userWeekRank?.position ?? '—'}
-            </span>
-          )}
-          {competition?.monthLeader && (
-            <span>Líder mensual: {competition.monthLeader.name} · Tu puesto: {competition.userMonthRank?.position ?? '—'}</span>
-          )}
-        </div>
-      </details>
+      <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-xl border border-mist/40 bg-charcoal/30 px-4 py-3 text-sm text-slate-300">
+        <span>Total: <strong className="text-white">{summary.totalWorkouts}</strong> sesiones registradas</span>
+        <span>Mejor racha: <strong className="text-white">{summary.longestStreak}</strong> días</span>
+      </div>
+      <CompetitionPanel competition={competition} />
     </section>
   );
 }

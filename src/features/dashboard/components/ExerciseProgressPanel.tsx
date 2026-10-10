@@ -365,7 +365,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   const displayedLastWeight = latestPoint?.bestWeight ?? selectedSummary?.lastWeight ?? 0;
   const displayedComparisonWeight = previousPoint?.bestWeight ?? null;
   const visibleStartWeight = pointsInRange.length > 0 ? pointsInRange[0].bestWeight : null;
-  const rangeDelta = visibleStartWeight !== null && latestPoint
+  const rangeDelta = pointsInRange.length > 1 && visibleStartWeight !== null && latestPoint
     ? latestPoint.bestWeight - visibleStartWeight
     : null;
   const historyItems = useMemo(() => {
@@ -620,7 +620,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
 
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">
-              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Último</div>
+              <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{latestPoint ? 'Último del periodo' : 'Último total'}</div>
               <div className="mt-1.5 flex items-center gap-2">
                 <div className="font-display text-lg text-white sm:text-xl">{formatKg(displayedLastWeight)}</div>
                 {rangeTrend === 'up' && <TrendingUp size={14} className="text-mint" />}
@@ -643,8 +643,17 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               <div className={`mt-1.5 font-display text-lg sm:text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
                 {rangeDelta !== null ? formatDelta(rangeDelta) : 'Sin datos'}
               </div>
-              <div className="mt-1 text-[11px] leading-tight text-slate-400">Desde el inicio</div>
+              <div className="mt-1 text-[11px] leading-tight text-slate-400">Desde el primer registro del periodo</div>
             </div>
+          </div>
+
+          <div className="app-surface-muted p-3 text-sm text-slate-300" role="status">
+            {pointsInRange.length === 0
+              ? 'No hay sesiones en este periodo. Amplía el rango para ver tus registros.'
+              : pointsInRange.length === 1
+                ? 'Una sesión en este periodo. Necesitas otra para comparar la evolución del peso.'
+                : `${formatSessionCount(pointsInRange.length)} en este periodo. El peso máximo por sesión pasó de ${formatKg(pointsInRange[0].bestWeight)} a ${formatKg(displayedLastWeight)}.`}
+            <p className="mt-1 text-xs text-slate-400">Comparamos el mayor peso registrado en cada sesión, no el volumen total ni las repeticiones.</p>
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">

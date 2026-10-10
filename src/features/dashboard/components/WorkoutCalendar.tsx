@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { WorkoutSession, WorkoutCalendarDay } from '../../../shared/types';
 import { MUSCLE_GROUPS } from '../lib/muscleGroups';
@@ -19,13 +19,14 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   onMonthChange,
   onDayClick
 }) => {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const todayStr = getCurrentDateString();
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
 
   const firstDayOfMonth = new Date(year, month, 1);
   const lastDayOfMonth = new Date(year, month + 1, 0);
-  const firstDayWeekday = firstDayOfMonth.getDay();
+  const firstDayWeekday = (firstDayOfMonth.getDay() + 6) % 7;
   const daysInMonth = lastDayOfMonth.getDate();
 
   const workoutsByDate = useMemo(() => {
@@ -83,16 +84,17 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   const navigateMonth = (direction: 'prev' | 'next') => {
-    const newMonth = new Date(currentMonth);
+    const newMonth = new Date(year, month, 1);
     if (direction === 'prev') {
       newMonth.setMonth(newMonth.getMonth() - 1);
     } else {
       newMonth.setMonth(newMonth.getMonth() + 1);
     }
     onMonthChange(newMonth);
+    setSelectedDate(null);
   };
 
   const isToday = (dateStr: string) => {
@@ -114,7 +116,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
 
   return (
     <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgba(22,28,38,0.98),rgba(11,15,20,0.98))] p-3 shadow-lift sm:p-4">
-      <div className="mb-3 flex items-center justify-between gap-3 border-b border-white/8 pb-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-white/8 pb-3">
         <h3 className="min-w-0 text-[1.75rem] font-display leading-none text-white sm:text-2xl">
           {monthNames[month]} {year}
         </h3>
@@ -126,14 +128,14 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
           <div className="inline-flex shrink-0 items-center gap-1 rounded-[1rem] bg-white/[0.04] p-1">
             <button
               onClick={() => navigateMonth('prev')}
-              className="motion-interactive flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              className="motion-interactive flex h-11 w-11 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
               aria-label="Mes anterior"
             >
               <ChevronLeft size={16} />
             </button>
             <button
               onClick={() => navigateMonth('next')}
-              className="motion-interactive flex h-9 w-9 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+              className="motion-interactive flex h-11 w-11 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
               aria-label="Mes siguiente"
             >
               <ChevronRight size={16} />
@@ -160,12 +162,17 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
           return (
             <button
                 key={day.date}
-              onClick={() => onDayClick?.(day.date)}
+              onClick={() => {
+                setSelectedDate(day.date);
+                onDayClick?.(day.date);
+              }}
               type="button"
-              disabled={!onDayClick}
-              aria-label={`Día ${dayNumber}${hasWorkout ? `, ${day.workouts.length} entrenamiento(s)` : ''}`}
+              disabled={!isInCurrentMonth}
+              aria-pressed={selectedDate === day.date}
+               aria-label={`${dayNumber} de ${monthNames[new Date(day.date + 'T12:00:00').getMonth()]} de ${new Date(day.date + 'T12:00:00').getFullYear()}${hasWorkout ? `, ${day.workouts.length} ${day.workouts.length === 1 ? 'sesión' : 'sesiones'}` : ', sin sesiones'}${isCurrentDay ? ', hoy' : ''}`}
+               aria-current={isCurrentDay ? 'date' : undefined}
               className={`motion-interactive 
-                relative aspect-square rounded-[0.9rem] p-0.5 sm:p-1 cursor-pointer transition-colors touch-manipulation
+                relative min-w-0 w-full rounded-[0.9rem] p-0.5 sm:aspect-square sm:p-1 cursor-pointer transition-colors touch-manipulation
                 min-h-[44px]
                 ${isCurrentDay
                   ? 'bg-mint text-ink shadow-[0_8px_24px_rgba(72,229,163,0.28)]'
@@ -174,7 +181,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                     : 'text-slate-600 hover:bg-charcoal'
                 }
                 ${hasWorkout ? 'ring-1 sm:ring-2 ring-mint/45' : 'border border-transparent'}
-                ${!onDayClick ? 'cursor-default' : ''}
+                ${selectedDate === day.date ? 'outline outline-2 outline-offset-1 outline-amberGlow' : ''}
               `}
             >
               <div className="text-center text-xs font-semibold leading-tight sm:text-sm">
@@ -208,7 +215,24 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
         })}
       </div>
 
-      <div className="mt-4 border-t border-mist/60 pt-3">
+      {selectedDate && isCurrentMonth(selectedDate) && (
+        <section className="app-surface-muted mt-4 p-3" aria-label="Sesiones del día" aria-live="polite">
+          <h4 className="font-display text-lg text-white">{new Date(selectedDate + 'T12:00:00').getDate()} de {monthNames[month]}</h4>
+          {(workoutsByDate.get(selectedDate) ?? []).length > 0 ? (
+            <ul className="mt-2 space-y-2">
+              {(workoutsByDate.get(selectedDate) ?? []).map((workout) => (
+                <li key={workout.sessionId} className="rounded-xl bg-white/[0.04] p-3">
+                  <div className="break-words text-sm font-semibold text-white">{workout.routineName}</div>
+                  <div className="mt-1 text-xs text-slate-400">{workout.muscleGroup ? MUSCLE_GROUPS[workout.muscleGroup].name : workout.sportType === 'archery' ? 'Tiro con arco' : 'HIIT'}</div>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="mt-2 text-sm text-slate-400">No hay sesiones registradas este día.</p>}
+        </section>
+      )}
+      <p className="mt-3 text-xs text-slate-400">{workoutsThisMonth === 0 ? 'No hay sesiones registradas este mes. Usa las flechas para consultar otro mes.' : 'Toca un día para consultar sus sesiones. Los puntos indican actividad registrada.'}</p>
+      <details className="mt-4 border-t border-mist/60 pt-3">
+        <summary className="touch-target cursor-pointer text-xs text-slate-300">Leyenda de grupos musculares</summary>
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Grupos musculares</div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {Object.entries(MUSCLE_GROUPS).map(([key, group]) => (
@@ -221,7 +245,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
             </div>
           ))}
         </div>
-      </div>
+      </details>
     </div>
   );
 };

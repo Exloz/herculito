@@ -6,8 +6,8 @@ import { buildExerciseProgress } from '../../features/dashboard/lib/workoutProgr
 import { decodeWorkoutSession } from '../../features/workouts/api/workoutSessionsRemote';
 import { createPreviewFixtures, PREVIEW_USER } from './previewFixtures';
 
-export const createPreviewApi = (empty = false) => {
-  const state = createPreviewFixtures(empty);
+export const createPreviewApi = (empty = false, expandedRoutines = false) => {
+  const state = createPreviewFixtures(empty, new Date(), expandedRoutines);
   let sportSessions: SportSession[] = [];
   let hiddenRoutineIds: string[] = [];
   const exerciseLogs: ExerciseLog[] = [];
@@ -277,5 +277,6 @@ export const createPreviewApi = (empty = false) => {
 };
 
 export const fetchPreviewJson = createPreviewApi(
-  typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scenario') === 'empty'
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scenario') === 'empty',
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('scenario') === 'routine-library'
 );

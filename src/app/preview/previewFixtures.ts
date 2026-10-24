@@ -1,11 +1,11 @@
-import type { Exercise, Routine, User, UserBodyMeasurement, WorkoutSession } from '../../shared/types';
+import type { Exercise, MuscleGroup, Routine, User, UserBodyMeasurement, WorkoutSession } from '../../shared/types';
 import { getDateStringInAppTimeZone } from '../../shared/lib/dateUtils';
 
 export const PREVIEW_USER: User = {
   id: 'preview-user', name: 'Alex López', email: 'alex@example.test'
 };
 
-export const createPreviewFixtures = (empty = false, now = new Date()) => {
+export const createPreviewFixtures = (empty = false, now = new Date(), expandedRoutines = false) => {
   const daysAgo = (days: number) => new Date(now.getTime() - days * 86400000);
   const exercises: Exercise[] = [
     { id: 'press-banca', name: 'Press de banca', sets: 3, reps: 10, restTime: 90, muscleGroup: 'pecho' },
@@ -27,6 +27,17 @@ export const createPreviewFixtures = (empty = false, now = new Date()) => {
       createdBy: 'preview-coach', createdByName: 'Equipo Herculito', isPublic: true,
       createdAt: daysAgo(20), updatedAt: daysAgo(1) }
   ];
+  if (!empty && expandedRoutines) {
+    const extraGroups: MuscleGroup[] = ['espalda', 'hombros', 'brazos', 'core'];
+    routines.push(...extraGroups.map((group) => ({
+      ...routines[0], id: `preview-${group}`, name: `Sesión de ${group}`,
+      primaryMuscleGroup: group, exercises: [{ ...exercises[0], muscleGroup: group }]
+    })));
+    routines.push(...['Fuerza de piernas', 'Piernas y estabilidad'].map((name, index) => ({
+      ...routines[1], id: `preview-shared-legs-${index}`, name,
+      createdBy: 'preview-coach', createdByName: 'Equipo Herculito', isPublic: true
+    })));
+  }
   const sessions: WorkoutSession[] = empty ? [] : [1, 3, 5, 8, 10, 13, 16, 20].map((days, index) => {
     const routine = routines[index % 2];
     const completedAt = daysAgo(days);

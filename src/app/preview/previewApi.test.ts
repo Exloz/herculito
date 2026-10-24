@@ -26,6 +26,14 @@ describe('local preview API', () => {
     expect(data.exerciseProgress).toEqual([]);
   });
 
+  it('offers all seven muscle groups and shared routines for mobile overflow review', async () => {
+    const request = createPreviewApi(false, true);
+    const data = decodeDashboardData(await request('/v1/data/dashboard'), PREVIEW_USER.id, PREVIEW_USER.name);
+    expect(new Set(data.dashboardRoutines.map((routine) => routine.primaryMuscleGroup)).size).toBe(7);
+    expect(data.dashboardRoutines.filter((routine) => routine.primaryMuscleGroup === 'piernas')).toHaveLength(3);
+    expect(data.dashboardRoutines.some((routine) => routine.isPublic && routine.createdByName === 'Equipo Herculito')).toBe(true);
+  });
+
   it('creates, edits, hides and deletes routines without contacting a server', async () => {
     const request = createPreviewApi(true);
     const { routine } = await request<{ routine: { id: string } }>('/v1/data/routines', post({

@@ -323,3 +323,27 @@ registrada y el temporizador activo.
 El arranque temprano usa `public/appearance-init.js`, precargado por la PWA y servido
 sin caché HTTP. La ruta nueva evita reutilizar el bootstrap anterior de dos temas
 que algunos clientes conservaban en caché tras el despliegue.
+
+## Selector muscular y tarjetas de Inicio · v2.74.1
+
+El selector identifica cada grupo con icono, nombre y número de rutinas. La selección
+combina superficie elevada, acento del grupo y un pequeño indicador inferior. Cuando
+hay opciones fuera de pantalla aparecen «Desliza para explorar», un borde degradado
+y controles laterales; desaparecen en el extremo correspondiente o cuando todo cabe.
+El desplazamiento táctil sigue siendo nativo y las flechas respetan movimiento reducido.
+La selección y el foco de teclado se revelan horizontalmente sin mover la página;
+un cambio de ancho vuelve a comprobar los límites.
+
+Las tarjetas eliminan el rótulo muscular repetido y dan prioridad al nombre. El grupo
+queda representado por un icono sutil y «Pública» comparte la línea de metadatos.
+La autoría ocupa la zona secundaria junto a la acción de inicio. Espaciado y tipografía
+más contenidos, detalles de 44 px y acción principal de 48 px: en los ejemplos revisados
+las tarjetas miden 134–146 px sin recortar nombres ni ejercicios. Los autores largos
+pueden abreviarse visualmente y conservan el nombre completo para accesibilidad.
+
+La preview local admite `/?scenario=routine-library`: siete grupos y varias rutinas
+públicas en Piernas para reproducir el desbordamiento sin API ni datos reales.
+Verificación en navegador a 320 y 390 px, escritorio, estado vacío, detalles, inicio de
+rutina pública y navegación por Tab. Sin desbordamiento horizontal de la página.
+El texto activo de los siete grupos supera 4.5:1 en las 14 paletas revisadas.
+Validación: 538 pruebas en 68 archivos, ESLint, TypeScript y build con service worker.

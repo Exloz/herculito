@@ -1,5 +1,5 @@
-import React, { useEffect, useId, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Play, Users } from 'lucide-react';
+import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Play, Users } from 'lucide-react';
 import { Routine, MuscleGroup, User } from '../../../shared/types';
 import { MUSCLE_GROUPS, getRoutinesByMuscleGroup } from '../lib/muscleGroups';
 import { vibrateLight } from '../../../shared/lib/mobileFeedback';
@@ -52,31 +52,37 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
 
             return (
               <div key={routine.id} className="routine-training-card">
-                <p className="agenda-routine-label">
-                  <MuscleGroupIcon muscleGroup={muscleGroup} size={13} />
-                  <span>{groupInfo.name}{routine.isPublic ? ' · Pública' : ''}</span>
-                </p>
-                <h3 className="agenda-routine-title">{routine.name}</h3>
-                <div className="routine-meta">
-                  <span>{formatCountLabel(routine.exercises.length, 'ejercicio', 'ejercicios')}</span>
-                  <span>{formatCountLabel(routine.exercises.reduce((total, exercise) => total + exercise.sets, 0), 'serie', 'series')}</span>
-                </div>
-                {routine.createdBy && routine.createdBy !== currentUser.id && (
-                  <div className="mt-2 inline-flex max-w-full items-center gap-1.5 text-xs text-muted">
-                    {routine.createdByAvatarUrl ? (
-                      <img src={routine.createdByAvatarUrl} alt="" className="h-4 w-4 shrink-0 rounded-full object-cover" referrerPolicy="no-referrer" />
-                    ) : <Users size={12} className="shrink-0" aria-hidden="true" />}
-                    <span className="truncate">Por {routine.createdByName || 'Otro usuario'}</span>
+                <div className="agenda-routine-heading">
+                  <div className="min-w-0">
+                    <h3 className="agenda-routine-title">{routine.name}</h3>
+                    <div className="routine-meta">
+                      <span>{formatCountLabel(routine.exercises.length, 'ejercicio', 'ejercicios')}</span>
+                      <span>{formatCountLabel(routine.exercises.reduce((total, exercise) => total + exercise.sets, 0), 'serie', 'series')}</span>
+                      {routine.isPublic && <span>Pública</span>}
+                    </div>
                   </div>
-                )}
+                  <span className="agenda-routine-symbol" aria-hidden="true">
+                    <MuscleGroupIcon muscleGroup={muscleGroup} size={17} />
+                  </span>
+                </div>
                 <div className="agenda-routine-actions">
-                  <button type="button" className="agenda-details" aria-expanded={isExpanded}
-                    aria-label={isExpanded ? 'Ocultar ejercicios' : 'Ver ejercicios'}
-                    aria-controls={`${detailsPrefix}-${routine.id}`}
-                    onClick={() => setExpandedRoutineId((current) => current === routine.id ? null : routine.id)}>
-                    {isExpanded ? 'Ocultar' : 'Ver ejercicios'}
-                    {isExpanded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
-                  </button>
+                  <div className="agenda-routine-secondary">
+                    {routine.createdBy && routine.createdBy !== currentUser.id && (
+                      <div className="agenda-routine-author" title={`Por ${routine.createdByName || 'Otro usuario'}`}>
+                        {routine.createdByAvatarUrl ? (
+                          <img src={routine.createdByAvatarUrl} alt="" referrerPolicy="no-referrer" />
+                        ) : <Users size={13} aria-hidden="true" />}
+                        <span>Por {routine.createdByName || 'Otro usuario'}</span>
+                      </div>
+                    )}
+                    <button type="button" className="agenda-details" aria-expanded={isExpanded}
+                      aria-label={isExpanded ? 'Ocultar ejercicios' : 'Ver ejercicios'}
+                      aria-controls={`${detailsPrefix}-${routine.id}`}
+                      onClick={() => setExpandedRoutineId((current) => current === routine.id ? null : routine.id)}>
+                      {isExpanded ? 'Ocultar' : 'Ver ejercicios'}
+                      {isExpanded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+                    </button>
+                  </div>
                   <button type="button" className="routine-start" disabled={routine.exercises.length === 0}
                     aria-label={`Empezar ${routine.name}`} onClick={() => {
                       vibrateLight();
@@ -134,6 +140,101 @@ const MuscleGroupSection: React.FC<MuscleGroupSectionProps> = ({
   );
 };
 
+interface MuscleGroupFilterProps {
+  availableGroups: MuscleGroup[];
+  routines: Routine[];
+  selectedGroup: MuscleGroup | null;
+  recommendedGroup?: MuscleGroup | null;
+  onSelect: (group: MuscleGroup) => void;
+}
+
+// Keep focus/selection clear of the edge controls without scrolling the whole page.
+const revealMuscleGroup = (rail: HTMLDivElement, button: HTMLButtonElement) => {
+  const inset = rail.scrollWidth > rail.clientWidth + 2 ? 48 : 4;
+  const left = button.offsetLeft;
+  const right = left + button.offsetWidth;
+  if (left < rail.scrollLeft + inset) rail.scrollLeft = Math.max(0, left - inset);
+  else if (right > rail.scrollLeft + rail.clientWidth - inset) rail.scrollLeft = right - rail.clientWidth + inset;
+};
+
+const MuscleGroupFilter = ({ availableGroups, routines, selectedGroup, recommendedGroup, onSelect }: MuscleGroupFilterProps) => {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState({ before: false, after: false });
+  const hintId = useId();
+  const overflowing = edges.before || edges.after;
+
+  const updateEdges = () => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const before = rail.scrollLeft > 2;
+    const after = rail.scrollWidth - rail.clientWidth - rail.scrollLeft > 2;
+    setEdges((current) => current.before === before && current.after === after ? current : { before, after });
+  };
+
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+    const revealSelection = () => {
+      const selected = rail.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+      if (selected) revealMuscleGroup(rail, selected);
+      updateEdges();
+    };
+    revealSelection();
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(revealSelection);
+    observer?.observe(rail);
+    window.addEventListener('resize', revealSelection);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', revealSelection);
+    };
+  }, [selectedGroup, availableGroups]);
+
+  const scrollGroups = (direction: number) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.scrollBy({ left: direction * rail.clientWidth * 0.7,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  };
+
+  return (
+    <div className="muscle-filter">
+      <div className="muscle-filter-caption">
+        <span>Grupo muscular</span>
+        {overflowing && <span id={hintId} className="muscle-filter-hint">Desliza para explorar <ChevronRight size={12} aria-hidden="true" /></span>}
+      </div>
+      <div className="muscle-filter-track" data-before={edges.before} data-after={edges.after}>
+        <div className="routine-selector" ref={railRef} onScroll={updateEdges}
+          role="group" aria-label="Filtrar rutinas por grupo muscular" aria-describedby={overflowing ? hintId : undefined}>
+          {availableGroups.map((muscleGroup) => {
+            const groupInfo = MUSCLE_GROUPS[muscleGroup];
+            const routineCount = getRoutinesByMuscleGroup(routines, muscleGroup).length;
+            return (
+              <button key={muscleGroup} data-muscle-group={muscleGroup} type="button"
+                onClick={() => onSelect(muscleGroup)} aria-pressed={selectedGroup === muscleGroup}
+                onFocus={(event) => {
+                  if (railRef.current && event.currentTarget.matches(':focus-visible')) {
+                    revealMuscleGroup(railRef.current, event.currentTarget);
+                  }
+                  updateEdges();
+                }}>
+                <span aria-hidden="true"><MuscleGroupIcon muscleGroup={muscleGroup} size={15} /></span>
+                <span>{groupInfo.name}</span>
+                <span className="muscle-filter-count" aria-hidden="true">{routineCount}</span>
+                <span className="sr-only">, {formatCountLabel(routineCount, 'rutina', 'rutinas')}</span>
+                {muscleGroup === recommendedGroup && <span className="sr-only">Sugerencia de hoy</span>}
+              </button>
+            );
+          })}
+        </div>
+        {edges.before && <button className="muscle-filter-edge muscle-filter-edge--before" type="button"
+          aria-label="Ver grupos anteriores" onClick={() => scrollGroups(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>}
+        {edges.after && <button className="muscle-filter-edge muscle-filter-edge--after" type="button"
+          aria-label="Ver más grupos musculares" onClick={() => scrollGroups(1)}><ChevronRight size={18} aria-hidden="true" /></button>}
+      </div>
+    </div>
+  );
+};
+
 interface MuscleGroupDashboardProps {
   routines: Routine[];
   currentUser: User;
@@ -184,26 +285,13 @@ export const MuscleGroupDashboard: React.FC<MuscleGroupDashboardProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="routine-selector">
-        {availableGroups.map((muscleGroup) => {
-          const groupInfo = MUSCLE_GROUPS[muscleGroup];
-          const routineCount = getRoutinesByMuscleGroup(routines, muscleGroup).length;
-          const isRecommended = muscleGroup === recommendedGroup;
-
-          return (
-            <button
-              key={muscleGroup}
-              data-muscle-group={muscleGroup}
-              type="button"
-              onClick={() => setSelectedGroup(muscleGroup)}
-              aria-pressed={selectedGroup === muscleGroup}
-            >
-              <span>{groupInfo.name}</span><span className="sr-only">, {formatCountLabel(routineCount, 'rutina', 'rutinas')}</span>
-              {isRecommended && <span className="sr-only">Sugerencia de hoy</span>}
-            </button>
-          );
-        })}
-      </div>
+      <MuscleGroupFilter
+        availableGroups={availableGroups}
+        routines={routines}
+        selectedGroup={selectedGroup}
+        recommendedGroup={recommendedGroup}
+        onSelect={setSelectedGroup}
+      />
 
       {selectedGroup && (
         <MuscleGroupSection

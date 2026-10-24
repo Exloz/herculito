@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import bootstrap from '../../../public/theme-init.js?raw';
+import bootstrap from '../../../public/appearance-init.js?raw';
 import { DEFAULT_THEME, THEMES } from './themes';
 
 function boot(saved: string | null, blocked = false) {

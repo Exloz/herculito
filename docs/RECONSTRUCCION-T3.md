@@ -319,3 +319,7 @@ worker. Navegador: las 14 paletas en Inicio a 390 px; vistas principales a 320 p
 galería a 320 × 320 px y en escritorio; editor con altura reducida; flechas y Escape;
 recarga de preferencia y cambio de tema durante un entrenamiento conservando la serie
 registrada y el temporizador activo.
+
+El arranque temprano usa `public/appearance-init.js`, precargado por la PWA y servido
+sin caché HTTP. La ruta nueva evita reutilizar el bootstrap anterior de dos temas
+que algunos clientes conservaban en caché tras el despliegue.

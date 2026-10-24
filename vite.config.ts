@@ -44,6 +44,7 @@ export default defineConfig({
         globPatterns: [
           'index.html',
           'bootstrap.css',
+          'theme-init.js',
           'assets/**/*.{js,css}',
           'fonts/*.woff2',
           '*.{svg,webmanifest}',

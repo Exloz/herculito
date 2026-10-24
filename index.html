@@ -12,13 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="Herculito">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
   <meta name="theme-color" content="#16151b" />
-  <script>
-    try {
-      document.documentElement.dataset.theme = localStorage.getItem('herculito-theme') || 'dark';
-    } catch {
-      document.documentElement.dataset.theme = 'dark';
-    }
-  </script>
+  <script src="/theme-init.js"></script>
   <meta name="description"
     content="Aplicación de seguimiento de entrenamientos de gimnasio con rutinas organizadas por grupos musculares" />
   <link rel="stylesheet" href="/src/app/theme/palettes.css">

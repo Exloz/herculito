@@ -271,3 +271,6 @@ rutina, registrar una serie, navegar, reanudarla y finalizar con confirmación.
   visibilidad y la configuración, ronda, entrada y finalización de tiro con arco.
 - Validación de la entrega: 500 pruebas en 67 archivos, ESLint, TypeScript y build
   de producción con service worker. La versión se incrementa de 2.72.0 a 2.73.0.
+- Verificación posterior al despliegue: el tema inicial se aplica mediante
+  `public/theme-init.js`, permitido por la CSP de producción, antes de cargar los
+  estilos. Se elimina el script inline bloqueado sin ampliar la política CSP.

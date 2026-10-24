@@ -64,54 +64,40 @@ export const Timer: React.FC<TimerProps> = ({ userId, onClose, initialSeconds })
   };
 
   const timerUi = (
-    <div className="motion-pop-in fixed left-4 right-4 z-[45] mx-auto max-w-sm rounded-[1.3rem] bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)]">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <TimerIcon className="text-mint" size={18} />
-          <span className="text-sm text-white font-medium">Descanso</span>
+    <div className="rest-timer-console motion-pop-in fixed left-4 right-4 z-[45] mx-auto max-w-sm rounded-xl bg-graphite px-3 py-3 shadow-lift bottom-[calc(env(safe-area-inset-bottom)+5.15rem)]">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <TimerIcon className="shrink-0 text-mint" size={20} aria-hidden="true" />
+          <div>
+            <span className="text-xs text-muted">Descanso</span>
+            <div className="font-mono text-2xl font-semibold leading-tight tabular-nums text-content">{formatTime()}</div>
+          </div>
         </div>
-
-        <div className="flex items-center gap-1.5">
-          <div className="text-2xl font-bold text-white font-mono leading-none tabular-nums">{formatTime()}</div>
-          <button
-            onClick={handleClose}
-            className="btn-ghost flex h-11 w-11 shrink-0 items-center justify-center p-0"
-            aria-label="Cerrar temporizador"
-          >
-            <X size={18} />
+        <div className="flex shrink-0 items-center gap-2">
+          <button type="button" onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
+            className="flex h-11 w-11 items-center justify-center rounded-lg bg-mint text-ink hover:bg-mintDeep"
+            aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
+            title={isActive ? 'Pausar' : 'Reanudar'}>
+            {isActive ? <Pause size={19} /> : <Play size={19} />}
+          </button>
+          <button type="button" onClick={handleClose} className="workspace-icon-button" aria-label="Cerrar temporizador">
+            <X size={20} />
           </button>
         </div>
       </div>
-
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <div className="w-full bg-slateDeep rounded-full h-1.5">
-              <div
-                className="bg-mint h-1.5 rounded-full transition-all duration-200"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-          <button
-            onClick={isActive ? pauseTimer : () => startTimer(timeLeft || (initialSeconds || 0))}
-            className="motion-interactive flex min-h-11 min-w-[112px] touch-manipulation items-center justify-center gap-1.5 rounded-lg bg-mint px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-mintDeep"
-            aria-label={isActive ? 'Pausar temporizador' : 'Reanudar temporizador'}
-          >
-          {isActive ? <Pause size={16} /> : <Play size={16} />}
-          <span>{isActive ? 'Pausar' : 'Reanudar'}</span>
-        </button>
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-slateDeep">
+        <div className="h-full rounded-full bg-mint transition-[width] duration-200" style={{ width: `${progress}%` }} />
       </div>
 
       {isLocalPreview() && (
-        <p className="mt-2 text-center text-xs text-slate-400">Descanso local · push no disponible en la preview</p>
+        <p className="mt-2 text-center text-[11px] text-slate-400">Descanso local · push no disponible en la preview</p>
       )}
 
       {!isLocalPreview() && notificationPermission === 'default' && (
         <div className="mt-2 text-center">
           <button
             onClick={handleEnableNotifications}
-            className="text-xs text-mint hover:text-mintDeep underline"
+            className="min-h-11 text-xs text-mint hover:text-mintDeep underline"
           >
             Activar notificaciones
           </button>

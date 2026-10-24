@@ -1,5 +1,8 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-import { Dumbbell, Home, PlayCircle, Ruler, Shield, Target } from 'lucide-react';
+import { Dumbbell, LogOut, PlayCircle, Search } from 'lucide-react';
+import type { AppPage } from '../hooks/usePageNavigation';
+import { DESTINATIONS } from './destinations';
+import { version } from '../../../package.json';
 import { useActivitySync } from '../../features/activity-sync/useActivitySync';
 import { remoteTimerScheduler } from '../../features/workouts/lib/remoteTimerScheduler';
 
@@ -8,20 +11,27 @@ const APP_ACTIVATE_UPDATE_EVENT = 'app-activate-update';
 const APP_UPDATE_READY_KEY = 'app-update-ready';
 
 interface NavigationProps {
-  currentPage: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile';
-  onPageChange: (page: 'dashboard' | 'routines' | 'admin' | 'sports' | 'profile') => void;
+  currentPage: AppPage;
+  onPageChange: (page: AppPage) => void;
   isAdmin: boolean;
   userId: string;
+  userName?: string;
+  onLogout?: () => void;
+  onOpenCommands?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   currentPage,
   onPageChange,
   isAdmin,
-  userId
+  userId,
+  userName = 'Mi espacio',
+  onLogout,
+  onOpenCommands
 }) => {
   const { activitySync, projection } = useActivitySync(userId);
   const hasActiveWorkout = projection.active?.kind === 'workout';
+  const hasActiveSport = projection.active && projection.active.kind !== 'workout';
   const [isHidden, setIsHidden] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(() => {
     try {
@@ -82,7 +92,32 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <div className={`app-bottom-nav fixed bottom-0 left-0 right-0 z-40 flex w-full flex-col items-center justify-center gap-2 pb-[env(safe-area-inset-bottom)] pointer-events-none transition-opacity duration-300 ease-out ${isHidden ? 'opacity-0 invisible' : 'opacity-100'}`}>
+    <div className={`app-bottom-nav workspace-navigation ${isHidden ? 'opacity-0 invisible' : 'opacity-100'}`}>
+      <div className="sidebar-brand">
+        <button type="button" onClick={() => onPageChange('dashboard')} className="sidebar-logo" aria-label="Herculito · Inicio">
+          <span className="brand-mark"><Dumbbell size={21} strokeWidth={2.3} /></span>
+          <span>herculito<span className="brand-dot">.</span></span>
+        </button>
+      </div>
+      {onOpenCommands && <button type="button" className="sidebar-search" onClick={onOpenCommands}>
+        <Search size={16} /><span>Buscar y navegar</span><kbd>⌘ K</kbd>
+      </button>}
+      <nav aria-label="Navegación principal" className="workspace-nav-list">
+        {DESTINATIONS.filter((item) => isAdmin || item.page !== 'admin').map((item, index, items) => {
+          const Icon = item.icon;
+          return <React.Fragment key={item.page}>
+            {(index === 0 || items[index - 1].group !== item.group) && <div className="nav-group-label">{item.group}</div>}
+            <button type="button" onClick={() => onPageChange(item.page)} className="workspace-nav-item"
+              aria-label={item.ariaLabel} aria-current={currentPage === item.page ? 'page' : undefined}>
+              <Icon size={18} aria-hidden="true" /><span>{item.label}</span>
+              {((item.page === 'dashboard' && hasActiveWorkout) || (item.page === 'sports' && hasActiveSport)) && (
+                <span className="nav-active-dot" role="img" aria-label="Sesión activa" title="Sesión en curso" />
+              )}
+            </button>
+          </React.Fragment>;
+        })}
+      </nav>
+      <div className="navigation-notices">
       {updateAvailable && (
         <button
           type="button"
@@ -110,76 +145,19 @@ export const Navigation: React.FC<NavigationProps> = ({
           <PlayCircle size={18} />Continuar entrenamiento
         </button>
       )}
-      <nav className="pointer-events-auto mb-1 w-[calc(100%-2rem)] max-w-md rounded-2xl border border-mist/60 bg-charcoal px-2 py-2 shadow-soft">
-        <div className={`grid ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'} gap-1`}>
-          <button
-            onClick={() => onPageChange('dashboard')}
-            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
-              currentPage === 'dashboard'
-                ? 'bg-mint/15 text-mint'
-                : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
-            }`}
-            aria-label="Ir a Inicio"
-            aria-current={currentPage === 'dashboard' ? 'page' : undefined}
-          >
-            <Home size={22} />
-            <span className="text-xs font-semibold">Inicio</span>
+      {hasActiveSport && currentPage !== 'sports' && <button type="button" className="navigation-resume" onClick={() => onPageChange('sports')}>
+        <PlayCircle size={17} />Continuar sesión deportiva
+      </button>}
+      </div>
+      <div className="sidebar-footer">
+        <div className="sidebar-account">
+          <button type="button" className="sidebar-user" onClick={() => onPageChange('profile')} aria-label="Abrir mis medidas">
+            <span className="user-avatar">{userName.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()}</span>
+            <span><strong>{userName}</strong><small>Mi cuenta · v{version}</small></span>
           </button>
-
-          <button
-            onClick={() => onPageChange('routines')}
-            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
-              currentPage === 'routines'
-                ? 'bg-mint/15 text-mint'
-                : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
-            }`}
-            aria-label="Ir a Rutinas"
-            aria-current={currentPage === 'routines' ? 'page' : undefined}
-          >
-            <Dumbbell size={22} />
-            <span className="text-xs font-semibold">Rutinas</span>
-          </button>
-
-          <button
-            onClick={() => onPageChange('sports')}
-            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
-              currentPage === 'sports'
-                ? 'bg-mint/15 text-mint'
-                : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
-            }`}
-            aria-label="Ir a Deportes"
-            aria-current={currentPage === 'sports' ? 'page' : undefined}
-          >
-            <Target size={22} />
-            <span className="text-xs font-semibold">Deportes</span>
-          </button>
-
-          <button type="button" onClick={() => onPageChange('profile')}
-            className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
-              currentPage === 'profile' ? 'bg-mint/15 text-mint' : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
-            }`}
-            aria-label="Ir a Mis medidas" aria-current={currentPage === 'profile' ? 'page' : undefined}>
-            <Ruler size={22} />
-            <span className="text-xs font-semibold">Medidas</span>
-          </button>
-
-          {isAdmin && (
-            <button
-              onClick={() => onPageChange('admin')}
-              className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-colors touch-target ${
-                currentPage === 'admin'
-                  ? 'bg-mint/15 text-mint'
-                  : 'text-slate-300 hover:text-white hover:bg-slateDeep/60'
-              }`}
-              aria-label="Ir a Admin"
-              aria-current={currentPage === 'admin' ? 'page' : undefined}
-            >
-              <Shield size={22} />
-              <span className="text-xs font-semibold">Admin</span>
-            </button>
-          )}
+          {onLogout && <button type="button" className="workspace-icon-button" onClick={onLogout} aria-label="Cerrar sesión" title="Cerrar sesión"><LogOut size={16} /></button>}
         </div>
-      </nav>
+      </div>
     </div>
   );
 };

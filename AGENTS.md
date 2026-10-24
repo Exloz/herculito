@@ -136,9 +136,16 @@ import { toUserMessage } from '../../../shared/lib/errorMessages';
 ### Styling and UX
 - Use Tailwind utilities plus shared classes from `src/index.css`
 - Prefer design-system classes like `app-shell`, `app-header`, `app-card`, `app-surface`, `btn-primary`, `btn-secondary`, `input`, and `chip`
-- Keep the existing visual language: dark surfaces, `mint` and `amberGlow` accents, `Khand` display font, `Hind` body font
+- Use the selected Agenda direction (proposal C): warm charcoal surfaces in dark mode, paper surfaces in light mode, clay primary actions, and muted lavender accents. Gentle shadows and inset highlights give depth; do not flatten every surface or restrict the palette to the old mint/amber colors. Both themes must remain readable.
+- Prioritize the main activity above summaries, especially on mobile. Use spacing, typography, surface contrast and elevation for grouping; keep borders subtle around cards and distinct around controls, overlays, focus, and meaningful state.
+- Prefer inline metadata over repeated pills and icons. Keep secondary actions discoverable on touch and keyboard.
 - Design mobile first and preserve large tap targets with `touch-target` utilities
-- Avoid introducing a different routing shell or conflicting design system
+- Use 320 px as the minimum mobile layout check. Keep mobile text inputs at 16 px, primary actions at 48 px, and other touch controls at least 44 px. Test dialogs with reduced viewport height and preserve safe-area padding.
+- On mobile, keep activity summaries expandable and account utilities in the account sheet. Workout headers stay compact and stable while scrolling; avoid duplicated progress explanations above the sets.
+- On the dashboard, keep routines compact with explicit details/start buttons, recent activity in a timeline showing three entries with an expansion control, and an empty community ranking as a single disclosure row. Keep populated ranking data visible.
+- Use `WorkspaceShell` for authenticated views and the shared `DESTINATIONS` registry for navigation and command search. `/progress` and `/calendar` are standalone views.
+- Keep the sidebar on desktop and six stable touch destinations on mobile. Do not make navigation depend on an active session.
+- Read `docs/RECONSTRUCCION-T3.md` for the current design decisions; avoid a second shell or conflicting design system.
 
 ### Testing Style
 - Use Vitest imports: `describe`, `it`, `expect`

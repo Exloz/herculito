@@ -1,9 +1,25 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { describe, expect, it } from 'vitest';
 import { CompetitionPanel } from './CompetitionPanel';
 
 describe('CompetitionPanel', () => {
+  it('reduces an empty classification to a disclosure and reveals its explanation on request', () => {
+    const { container } = render(<CompetitionPanel competition={{ weekLeader: null, monthLeader: null,
+      userWeekRank: null, userMonthRank: null }} />);
+    expect(screen.getByText('Aún sin clasificación')).toBeVisible();
+    expect(screen.getByText(/Todavía no hay posiciones disponibles/)).not.toBeVisible();
+    expect(container.querySelector('details')).not.toHaveAttribute('open');
+    fireEvent.click(screen.getByText('Comunidad'));
+    expect(container.querySelector('details')).toHaveAttribute('open');
+    expect(screen.getByText(/Todavía no hay posiciones disponibles/)).toBeVisible();
+  });
+
+  it('distinguishes an unavailable classification from an empty one', () => {
+    render(<CompetitionPanel />);
+    expect(screen.getByText('Clasificación no disponible')).toBeVisible();
+    expect(screen.queryByText('Aún sin clasificación')).toBeNull();
+  });
   it('shows weekly and monthly leaders and the user rank without disclosure controls', () => {
     const { container } = render(<CompetitionPanel competition={{
       weekLeader: { userId: 'other', name: 'María', totalWorkouts: 5, position: 1 },

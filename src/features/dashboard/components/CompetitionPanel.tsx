@@ -1,4 +1,4 @@
-import { Trophy } from 'lucide-react';
+import { ChevronRight, Trophy } from 'lucide-react';
 import type { DashboardCompetition } from '../../../shared/types';
 
 interface CompetitionPanelProps {
@@ -11,14 +11,26 @@ export function CompetitionPanel({ competition }: CompetitionPanelProps) {
     { label: 'Este mes', leader: competition?.monthLeader, rank: competition?.userMonthRank }
   ];
 
+  if (!periods.some(({ leader, rank }) => leader || rank)) {
+    return <details className="community-empty">
+      <summary>
+        <Trophy size={18} aria-hidden="true" />
+        <span><strong>Comunidad</strong><small>{competition ? 'Aún sin clasificación' : 'Clasificación no disponible'}</small></span>
+        <ChevronRight size={16} aria-hidden="true" />
+      </summary>
+      <p>{competition ? 'Todavía no hay posiciones disponibles para esta semana ni para este mes.'
+        : 'La clasificación semanal y mensual no está disponible en este momento.'}</p>
+    </details>;
+  }
+
   return (
-    <section aria-label="Competencia de la comunidad" className="rounded-2xl border border-mist/50 bg-charcoal/50 px-4 py-3">
-      <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-300">
-        <Trophy size={14} className="text-amberGlow" /> Ranking
+    <section aria-label="Competencia de la comunidad" className="competition-panel">
+      <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+        <Trophy size={14} className="text-slate-400" aria-hidden="true" /> Ranking
       </h3>
-      <div className="grid grid-cols-2 divide-x divide-mist/50">
+      <div className="grid grid-cols-2 gap-4">
         {periods.map(({ label, leader, rank }) => (
-          <section key={label} aria-label={`Ranking: ${label}`} className="min-w-0 first:pr-3 last:pl-3 sm:first:pr-4 sm:last:pl-4">
+          <section key={label} aria-label={`Ranking: ${label}`} className="min-w-0">
             <h4 className="mb-1.5 text-xs text-slate-400">{label}</h4>
             {leader ? (
               <div>

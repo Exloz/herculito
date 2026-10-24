@@ -69,7 +69,7 @@ export const AdminSessionsSection: React.FC<AdminSessionsSectionProps> = ({
         )}
 
         {sessions.map((session) => (
-          <details key={session.sessionId} className="group overflow-hidden rounded-xl border border-orange-300/15 bg-[radial-gradient(circle_at_100%_0%,oklch(0.77_0.14_70/0.12),transparent_44%),oklch(0.3_0.02_62/0.45)]">
+          <details key={session.sessionId} className="group overflow-hidden rounded-xl border border-orange-300/15 bg-graphite">
             <summary className="flex cursor-pointer list-none flex-col gap-2 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <div className="text-sm font-semibold text-white sm:text-base">{session.routineName}</div>
@@ -92,7 +92,7 @@ export const AdminSessionsSection: React.FC<AdminSessionsSectionProps> = ({
                 {session.exercises.filter(isExerciseLog).map((exerciseLog) => {
                   const exerciseName = getRoutineExerciseName(routinesById, session.routineId, exerciseLog.exerciseId);
                   return (
-                    <div key={`${session.sessionId}-${exerciseLog.exerciseId}`} className="rounded-xl border border-orange-300/15 bg-[oklch(0.3_0.02_60/0.5)] p-3">
+                    <div key={`${session.sessionId}-${exerciseLog.exerciseId}`} className="rounded-xl border border-orange-300/15 bg-slateDeep/60 p-3">
                       <div className="text-sm font-semibold text-white">{exerciseName}</div>
                       <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                         <div className="rounded-lg border border-mint/20 bg-mint/10 px-2 py-2 text-mint/90">

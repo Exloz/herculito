@@ -91,7 +91,7 @@ export const PresetNumericInput: React.FC<PresetNumericInputProps> = ({
                   onChange(preset);
                 }}
                 aria-pressed={isActive}
-                className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                className={`min-h-11 min-w-11 px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                   isActive
                     ? 'bg-mint text-ink'
                     : 'bg-slateDeep text-slate-300 hover:bg-slateDeep/80'

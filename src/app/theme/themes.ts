@@ -1,6 +1,6 @@
 export const THEMES = [
-  { id: 'dark', label: 'Oscuro', colorScheme: 'dark', browserColor: '#0b0f14' },
-  { id: 'light', label: 'Claro', colorScheme: 'light', browserColor: '#f4f7f6' }
+  { id: 'dark', label: 'Oscuro', colorScheme: 'dark', browserColor: '#16151b' },
+  { id: 'light', label: 'Claro', colorScheme: 'light', browserColor: '#f3f0e9' }
 ] as const;
 
 export type ThemeId = typeof THEMES[number]['id'];

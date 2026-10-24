@@ -183,7 +183,7 @@ export const HiitConfig: React.FC<HiitConfigProps> = ({ onStart, onClose, isStar
         </div>
 
         {/* Summary */}
-         <div className="mx-5 mb-4 rounded-xl bg-[linear-gradient(180deg,rgb(var(--color-accent)/0.08),transparent)] border border-mint/20 p-4">
+         <div className="mx-5 mb-4 rounded-xl bg-graphite border border-mint/20 p-4">
            <p className="mb-3 text-xs text-slate-300">{intervals} intervalos de {workDuration} segundos{restEnabled ? `, con ${restDuration} segundos de descanso entre ellos. No hay descanso al finalizar.` : ', sin descanso entre ellos.'}</p>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>

@@ -1,5 +1,5 @@
-import React, { Suspense, lazy, useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
-import { LogOut, Bell, BarChart3, CalendarRange, Dumbbell } from 'lucide-react';
+import React, { Suspense, lazy, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { ArrowUpRight, Bell } from 'lucide-react';
 import { User, MuscleGroup, ExerciseLog } from '../../../shared/types';
 import { updateRoutine as apiUpdateRoutine } from '../../../shared/api/dataApi';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
@@ -8,28 +8,26 @@ import { DashboardOverview } from '../components/DashboardOverview';
 import { useWeeklyPlan } from '../hooks/useWeeklyPlan';
 import { ActiveWorkout } from '../../workouts/components/ActiveWorkout';
 import { useDashboardData } from '../hooks/useDashboardData';
-import { MUSCLE_GROUPS, getRecommendedMuscleGroup } from '../lib/muscleGroups';
+import { getRecommendedMuscleGroup } from '../lib/muscleGroups';
 import { getCompletedWeightsByExerciseFromLogs } from '../../workouts/lib/workoutSessions';
 import { useUI } from '../../../app/providers/ui-context';
-import { formatDateInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { toUserMessage } from '../../../shared/lib/errorMessages';
 import { formatDateValue } from '../../../shared/lib/intl';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
-import { version as appVersion } from '../../../../package.json';
+import { CompetitionPanel } from '../components/CompetitionPanel';
+import { RecentActivity } from '../components/RecentActivity';
 import { useActivitySync } from '../../activity-sync/useActivitySync';
 import { cancelWorkoutTimer } from '../../workouts/hooks/useTimer';
 
 interface DashboardProps {
   user: User;
-  onLogout: () => void;
+  view?: 'routines' | 'progress' | 'calendar';
   onReadyForBackgroundPreload?: () => void;
-  onNavigateToProfile?: () => void;
   onNavigateToRoutines: () => void;
 }
 
 const IOS_NOTIFICATION_GUIDE_KEY = 'iosNotificationGuideSeen';
 
-const DeferredClerkUserButton = lazy(() => import('../../auth/components/ClerkUserButton'));
 const DeferredWorkoutCalendar = lazy(() => import('../components/WorkoutCalendar').then((module) => ({ default: module.WorkoutCalendar })));
 const DeferredExerciseProgressPanel = lazy(() => import('../components/ExerciseProgressPanel').then((module) => ({ default: module.ExerciseProgressPanel })));
 
@@ -69,12 +67,6 @@ const isExerciseLogCompleted = (sets: ExerciseLog['sets'], expectedSets: number)
   return true;
 };
 
-const getUserInitials = (name: string): string => {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return 'H';
-  return words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? '').join('') || 'H';
-};
-
 const PanelSkeleton = ({ heightClass, title }: { heightClass: string; title: string }) => {
   return (
     <div className="app-card p-4 sm:p-5" aria-hidden="true">
@@ -89,20 +81,7 @@ const PanelSkeleton = ({ heightClass, title }: { heightClass: string; title: str
   );
 };
 
-type HomeTab = 'routines' | 'progress' | 'calendar';
-
-const HOME_TABS: Array<{
-  id: HomeTab;
-  label: string;
-  icon: typeof Dumbbell;
-  tone: string;
-}> = [
-    { id: 'routines', label: 'Entrenar', icon: Dumbbell, tone: 'text-mint' },
-    { id: 'progress', label: 'Progreso', icon: BarChart3, tone: 'text-amberGlow' },
-    { id: 'calendar', label: 'Calendario', icon: CalendarRange, tone: 'text-mint' }
-  ];
-
-export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyForBackgroundPreload, onNavigateToProfile, onNavigateToRoutines }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ user, view = 'routines', onReadyForBackgroundPreload, onNavigateToRoutines }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { activitySync, projection } = useActivitySync(user.id);
   const activeWorkout = projection.active?.kind === 'workout' ? projection.active : null;
@@ -110,6 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
   const [showIosNotificationGuide, setShowIosNotificationGuide] = useState(false);
   const [optimisticLastWeightsByRoutine, setOptimisticLastWeightsByRoutine] = useState<Record<string, Record<string, number[]>>>({});
   const hasTriggeredBackgroundPreload = useRef(false);
+  const routineSelectionRef = useRef<HTMLElement>(null);
   const { showToast, confirm } = useUI();
 
 
@@ -121,14 +101,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       localStorage.removeItem('activeWorkoutForceOpen');
     };
 
-    if (activeWorkout && localStorage.getItem('activeWorkoutForceOpen') === 'true') {
+    if (view === 'routines' && activeWorkout && localStorage.getItem('activeWorkoutForceOpen') === 'true') {
       setShowActiveWorkout(true);
       localStorage.removeItem('activeWorkoutForceOpen');
     }
 
     window.addEventListener('resume-active-workout', handleResumeEvent);
     return () => window.removeEventListener('resume-active-workout', handleResumeEvent);
-  }, [activeWorkout, activitySync]);
+  }, [activeWorkout, activitySync, view]);
 
   useEffect(() => {
     if (!isIOSDevice()) return;
@@ -165,12 +145,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     refresh
   } = useDashboardData(user.id, user.name);
   const showDashboardSkeleton = useDelayedLoading(dashboardLoading, 180);
-  const [activeHomeTab, setActiveHomeTab] = useState<HomeTab>('routines');
-  const [previousHomeTab, setPreviousHomeTab] = useState<HomeTab>('routines');
-  const pendingHomeTabScrollYRef = useRef<number | null>(null);
-  const pendingHomeTabViewportBottomRef = useRef<number | null>(null);
-  const [homeTabBottomSpacerPx, setHomeTabBottomSpacerPx] = useState(0);
-
   const dashboardRoutines = useMemo(() => dashboardData?.dashboardRoutines ?? [], [dashboardData]);
   const recentSessions = useMemo(() => dashboardData?.recentSessions ?? [], [dashboardData]);
   const stats = dashboardData?.summary ?? {
@@ -206,7 +180,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     onReadyForBackgroundPreload?.();
   }, [dashboardData, dashboardLoading, onReadyForBackgroundPreload]);
 
-  const userInitials = useMemo(() => getUserInitials(user.name || 'Usuario'), [user.name]);
   const dashboardStatusMessage = useMemo(() => {
     if (dashboardError && dashboardData) {
       return isOffline
@@ -220,84 +193,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
     return null;
   }, [dashboardData, dashboardError, isOffline]);
-  const recommendedGroupName = recommendedGroup ? MUSCLE_GROUPS[recommendedGroup].name : null;
   const { plan: weeklyPlan, today: plannedDay, assignDay } = useWeeklyPlan(user.id);
   const plannedRoutine = dashboardRoutines.find((routine) => routine.id === weeklyPlan[plannedDay]);
-  const activeTabIndex = HOME_TABS.findIndex((tab) => tab.id === activeHomeTab);
-  const previousTabIndex = HOME_TABS.findIndex((tab) => tab.id === previousHomeTab);
-  const homeTabAnimationClass = activeTabIndex >= previousTabIndex ? 'tab-pane-enter-forward' : 'tab-pane-enter-backward';
-  const handleHomeTabChange = useCallback((tab: HomeTab) => {
-    if (tab === activeHomeTab) return;
-
-    if (typeof window !== 'undefined') {
-      const scrollY = Math.max(
-        0,
-        window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
-      );
-
-      pendingHomeTabScrollYRef.current = scrollY;
-      pendingHomeTabViewportBottomRef.current = scrollY + window.innerHeight;
-    }
-
-    setPreviousHomeTab(activeHomeTab);
-    setActiveHomeTab(tab);
-  }, [activeHomeTab]);
-
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const pendingScrollY = pendingHomeTabScrollYRef.current;
-    if (pendingScrollY === null) return;
-
-    const pendingViewportBottom = pendingHomeTabViewportBottomRef.current ?? (pendingScrollY + window.innerHeight);
-    const documentHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-    const documentHeightWithoutSpacer = Math.max(0, documentHeight - homeTabBottomSpacerPx);
-    const requiredSpacerPx = Math.max(0, Math.ceil(pendingViewportBottom - documentHeightWithoutSpacer));
-
-    if (requiredSpacerPx !== homeTabBottomSpacerPx) {
-      setHomeTabBottomSpacerPx(requiredSpacerPx);
-      return;
-    }
-
-    window.scrollTo({ top: pendingScrollY, left: 0, behavior: 'auto' });
-
-    pendingHomeTabScrollYRef.current = null;
-    pendingHomeTabViewportBottomRef.current = null;
-  }, [activeHomeTab, homeTabBottomSpacerPx]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || homeTabBottomSpacerPx <= 0) return;
-
-    const adjustBottomSpacer = () => {
-      if (pendingHomeTabScrollYRef.current !== null) {
-        return;
-      }
-
-      const scrollY = Math.max(
-        0,
-        window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0
-      );
-      const viewportBottom = scrollY + window.innerHeight;
-      const documentHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
-      const documentHeightWithoutSpacer = Math.max(0, documentHeight - homeTabBottomSpacerPx);
-      const requiredSpacerPx = Math.max(0, Math.ceil(viewportBottom - documentHeightWithoutSpacer));
-      const nextSpacerPx = Math.min(homeTabBottomSpacerPx, requiredSpacerPx);
-
-      if (nextSpacerPx !== homeTabBottomSpacerPx) {
-        setHomeTabBottomSpacerPx(nextSpacerPx);
-      }
-    };
-
-    adjustBottomSpacer();
-    window.addEventListener('scroll', adjustBottomSpacer, { passive: true });
-    window.addEventListener('resize', adjustBottomSpacer);
-
-    return () => {
-      window.removeEventListener('scroll', adjustBottomSpacer);
-      window.removeEventListener('resize', adjustBottomSpacer);
-    };
-  }, [homeTabBottomSpacerPx]);
-
   const handleStartWorkout = useCallback((routineId: string) => {
     const routine = dashboardRoutines.find((entry) => entry.id === routineId);
     if (!routine) {
@@ -327,7 +224,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
 
   const handleBackToDashboard = useCallback(() => {
     setShowActiveWorkout(false);
-    setActiveHomeTab('routines');
     if (typeof window !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
@@ -491,7 +387,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
       <div className="app-shell pb-28">
         <main className="max-w-3xl mx-auto px-4 py-8">
           <div className="app-card p-5 sm:p-6">
-            <h1 className="text-xl font-display text-white mb-2">No pudimos cargar el dashboard</h1>
+            <h1 className="text-xl font-display text-white mb-2">No pudimos cargar tu información</h1>
             <p className="text-sm text-slate-300 mb-4">
               {dashboardError || 'Intenta recargar la información del inicio.'}
             </p>
@@ -504,245 +400,65 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, onLogout, onReadyFor
     );
   }
 
+  const recentActivity = <RecentActivity sessions={recentSessions} onExploreRoutines={onNavigateToRoutines} />;
+
   return (
-    <div className="app-shell pb-28">
-      <header className="app-header px-4 pb-4 pt-[calc(0.25rem+env(safe-area-inset-top))] sm:pb-5 sm:pt-[calc(0.5rem+env(safe-area-inset-top))]">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl shadow-lift ring-1 ring-white/20 sm:h-11 sm:w-11">
-                  <Suspense
-                    fallback={(
-                      <div className="flex h-full w-full items-center justify-center bg-slateDeep text-xs font-semibold text-slate-200">
-                        {userInitials}
-                      </div>
-                    )}
-                  >
-                    <DeferredClerkUserButton onNavigateToProfile={onNavigateToProfile} />
-                  </Suspense>
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate text-[10px] font-semibold uppercase tracking-[0.24em] text-mint/80">{user.name || 'Usuario'}</div>
-                  <h1 className="truncate font-display text-[2rem] leading-none text-white sm:text-[2.35rem]">Herculito</h1>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                onClick={onLogout}
-                className="btn-secondary flex h-11 w-11 items-center justify-center rounded-[1rem] px-0 touch-target"
-                title="Cerrar sesión"
-                aria-label="Cerrar sesión"
-              >
-                <LogOut size={18} />
-              </button>
-            </div>
+    <div className="app-shell pb-28 dashboard-page">
+      <main className="page-container">
+        {dashboardStatusMessage && <div className="connection-banner" role="status">
+          <div><strong>Estado de conexión</strong><p>{dashboardStatusMessage}</p>
+            {usingCachedData && lastUpdatedAt && <small>Última actualización: {formatDateValue(new Date(lastUpdatedAt), { dateStyle: 'medium', timeStyle: 'short' })}</small>}
           </div>
-        </div>
-      </header>
+          <button type="button" className="btn-secondary" disabled={dashboardRefreshing} onClick={() => void refresh()}>{dashboardRefreshing ? 'Actualizando…' : 'Actualizar'}</button>
+        </div>}
 
-      {dashboardStatusMessage && (
-        <div className="px-4 pt-4">
-          <div className="mx-auto flex max-w-7xl flex-col gap-3 rounded-2xl border border-amberGlow/30 bg-amberGlow/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <div className="text-sm font-semibold text-amberGlow">Estado de conexión</div>
-              <p className="mt-1 text-sm text-slate-200">{dashboardStatusMessage}</p>
-              {usingCachedData && lastUpdatedAt && (
-                <div className="mt-1 text-xs text-slate-300">
-                  Última actualización guardada: {formatDateValue(new Date(lastUpdatedAt), {
-                    dateStyle: 'medium',
-                    timeStyle: 'short'
-                  })}
-                </div>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => void refresh()}
-              disabled={dashboardRefreshing}
-              className="btn-secondary shrink-0 disabled:opacity-60"
-            >
-              {dashboardRefreshing ? 'Actualizando...' : 'Actualizar ahora'}
-            </button>
+        {view === 'routines' && <>
+          <DashboardOverview userName={user.name} summary={stats} plannedRoutine={plannedRoutine}
+            routines={dashboardRoutines} weeklyPlan={weeklyPlan} today={plannedDay}
+            onAssignDay={(day, routineId) => {
+              if (!assignDay(day, routineId)) showToast('No se pudo guardar tu semana. El cambio solo durará esta sesión.', 'error');
+            }}
+            activeRoutineName={activeWorkout?.routine.name} onStart={handleStartWorkout}
+            onContinue={() => setShowActiveWorkout(true)} onCancel={handleCancelActiveWorkout} onNavigateToRoutines={onNavigateToRoutines}
+            onChooseRoutine={() => {
+              routineSelectionRef.current?.focus({ preventScroll: true });
+              routineSelectionRef.current?.scrollIntoView({ block: 'start' });
+            }} />
+          <div className="dashboard-columns agenda-layout">
+            <section ref={routineSelectionRef} className="min-w-0 scroll-mt-4" tabIndex={-1} aria-labelledby="ready-routines-title">
+              <div className="agenda-section-heading"><h2 id="ready-routines-title">Tus rutinas</h2>
+                <button type="button" className="agenda-library-link" onClick={onNavigateToRoutines}>Biblioteca<ArrowUpRight size={14} aria-hidden="true" /></button>
+              </div>
+              <MuscleGroupDashboard routines={dashboardRoutines} currentUser={user} onStartWorkout={handleStartWorkout}
+                onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange} recommendedGroup={recommendedGroup} />
+            </section>
+            <aside className="dashboard-aside">{recentActivity}<CompetitionPanel competition={dashboardData.competition} /></aside>
           </div>
-        </div>
-      )}
+        </>}
 
-      <main className="max-w-7xl mx-auto px-4 py-6 sm:py-8">
-        <DashboardOverview
-          userName={user.name}
-          summary={stats}
-          plannedRoutine={plannedRoutine}
-          routines={dashboardRoutines}
-          weeklyPlan={weeklyPlan}
-          today={plannedDay}
-          onAssignDay={(day, routineId) => {
-            if (!assignDay(day, routineId)) {
-              showToast('No se pudo guardar tu semana. El cambio solo durará esta sesión.', 'error');
-            }
-          }}
-          activeRoutineName={activeWorkout?.routine.name}
-          competition={dashboardData.competition}
-          onStart={handleStartWorkout}
-          onContinue={() => setShowActiveWorkout(true)}
-          onCancel={handleCancelActiveWorkout}
-          onNavigateToRoutines={onNavigateToRoutines}
-        />
-
-        <section className="motion-enter motion-enter-delay-1 mb-6 content-fade-in">
-          <div className="rounded-[1.35rem] bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.72),rgb(var(--color-surface)/0.76))] p-1 shadow-lift">
-            <div className="grid grid-cols-3 gap-1">
-              {HOME_TABS.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeHomeTab === tab.id;
-
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => handleHomeTabChange(tab.id)}
-                    aria-pressed={isActive}
-                    className={`motion-interactive flex min-w-0 items-center justify-center gap-2 rounded-[1rem] px-2 py-3 text-[13px] font-medium transition-all duration-300 ${isActive
-                      ? 'bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.98),rgb(var(--color-surface)/0.98))] text-white shadow-lift'
-                      : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
-                      }`}
-                  >
-                    <Icon size={15} className={isActive ? tab.tone : 'text-slate-500'} />
-                    <span className="min-w-0 text-center leading-none">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+        {view === 'progress' && <>
+          <div className="page-heading"><span className="eyebrow">Seguimiento</span><h1>Tu progreso</h1>
+            <p>Lo que registras hoy, te ayuda a avanzar mañana.</p></div>
+          <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
+            <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
+          </Suspense>
+        </>}
+        {view === 'calendar' && <>
+          <div className="page-heading"><span className="eyebrow">Seguimiento</span><h1>Tu calendario</h1>
+            <p>Cada actividad forma parte de tu historia.</p></div>
+          <div className="dashboard-columns calendar-columns">
+            <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
+              <DeferredWorkoutCalendar calendar={dashboardData.calendar} currentMonth={currentMonth} onMonthChange={setCurrentMonth} />
+            </Suspense>
+            {recentActivity}
           </div>
-        </section>
-
-        {showIosNotificationGuide && (
-          <section className="motion-enter motion-enter-delay-2 mb-6">
-            <div className="app-card flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-mint/15 text-mint">
-                  <Bell size={18} />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-white">Notificaciones en iOS</div>
-                  <p className="text-sm text-slate-300">
-                    Instala la app en Pantalla de inicio para recibir alertas de descanso cuando cierres la app o bloquees el teléfono.
-                  </p>
-                </div>
-              </div>
-              <button onClick={handleDismissIosGuide} className="btn-secondary self-start touch-target">
-                Entendido
-              </button>
-            </div>
-          </section>
-        )}
-
-        <section className={`mt-2 ${homeTabAnimationClass}`} key={activeHomeTab}>
-          {activeHomeTab === 'routines' && (
-            <section className="motion-enter motion-enter-delay-3 space-y-4">
-              <div className="mb-4 flex flex-col gap-2 sm:mb-5 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Rutinas</div>
-                  <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">
-                    {recommendedGroupName ? `${recommendedGroupName} al frente` : 'Empieza una rutina'}
-                  </h2>
-                </div>
-              </div>
-
-              <MuscleGroupDashboard
-                routines={dashboardRoutines}
-                currentUser={user}
-                onStartWorkout={handleStartWorkout}
-                onRoutineMuscleGroupChange={handleRoutineMuscleGroupChange}
-                recommendedGroup={recommendedGroup}
-              />
-            </section>
-          )}
-
-          {activeHomeTab === 'progress' && (
-            <section className="motion-enter motion-enter-delay-3">
-              <div className="mb-4">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">Seguimiento</div>
-                <h2 className="mt-1 font-display text-xl text-white sm:text-2xl">Tu progreso está a la vista</h2>
-              </div>
-              <Suspense fallback={<PanelSkeleton title="Historial y progreso" heightClass="h-64" />}>
-                <DeferredExerciseProgressPanel summaries={dashboardData.exerciseProgress} />
-              </Suspense>
-            </section>
-          )}
-
-          {activeHomeTab === 'calendar' && (
-            <section className="motion-enter motion-enter-delay-3">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Calendario</div>
-              <div className="mb-4">
-                <h2 className="font-display text-xl text-white sm:text-2xl">Actividad reciente</h2>
-              </div>
-              <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.82fr)]">
-                <Suspense fallback={<PanelSkeleton title="Calendario" heightClass="h-[22rem]" />}>
-                  <DeferredWorkoutCalendar
-                    calendar={dashboardData.calendar}
-                    currentMonth={currentMonth}
-                    onMonthChange={setCurrentMonth}
-                  />
-                </Suspense>
-
-                <div className="rounded-[1.6rem] bg-graphite p-4 shadow-lift sm:p-5">
-                  <div className="mb-3 flex items-end justify-between gap-3 border-b border-mist/40 pb-3">
-                    <div>
-                      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Últimas sesiones</div>
-                      <h3 className="mt-1 font-display text-lg text-white sm:text-xl">Actividad reciente</h3>
-                    </div>
-                    <div className="text-right text-xs text-slate-400">{recentSessions.length} registradas</div>
-                  </div>
-
-                  {recentSessions.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {recentSessions.slice(0, 3).map((session, index) => (
-                        <div
-                          key={session.id}
-                          className={`rounded-[0.95rem] border px-3 py-2.5 ${index === 0
-                            ? 'border-mint/20 bg-mint/8'
-                            : 'border-white/5 bg-slateDeep/45'
-                            }`}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0">
-                              <div className="truncate text-sm font-semibold text-white">{session.routineName}</div>
-                              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.14em] text-slate-400">
-                                <span>{session.primaryMuscleGroup || 'Sin categoría'}</span>
-                                {session.totalDuration && <span className="text-slate-500">{session.totalDuration} min</span>}
-                              </div>
-                            </div>
-                            {session.completedAt && (
-                              <div className="shrink-0 text-right text-xs font-medium text-slate-400">{formatDateInAppTimeZone(session.completedAt)}</div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-[1.4rem] border border-dashed border-mist/40 bg-slateDeep/45 px-4 py-8 text-center">
-                      <div className="font-display text-lg text-white">Aún no hay actividad</div>
-                      <p className="mt-2 text-sm text-slate-400">Empieza una rutina para llenar tu calendario y registrar tu ritmo.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-          )}
-        </section>
-
-        {homeTabBottomSpacerPx > 0 && (
-          <div aria-hidden="true" style={{ height: `${homeTabBottomSpacerPx}px` }} />
-        )}
+        </>}
+        {showIosNotificationGuide && <section className="app-card mt-6 flex items-start gap-3 p-4">
+          <Bell size={18} className="shrink-0 text-mint" /><div className="flex-1 text-sm"><h2 className="font-semibold text-white">Notificaciones en iOS</h2>
+            <p className="mt-1 text-slate-400">Instala Herculito en Pantalla de inicio para recibir alertas de descanso con el teléfono bloqueado.</p></div>
+          <button type="button" onClick={handleDismissIosGuide} className="btn-ghost text-xs">Entendido</button>
+        </section>}
       </main>
-      <div className="px-4 pb-8">
-        <div className="max-w-7xl mx-auto text-center text-xs text-slate-500">
-          Version {appVersion}
-        </div>
-      </div>
     </div>
   );
 };

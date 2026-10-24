@@ -4,8 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        display: ['"Khand"', 'system-ui', 'sans-serif'],
-        body: ['"Hind"', 'system-ui', 'sans-serif'],
+        display: ['system-ui', 'sans-serif'],
+        body: ['system-ui', 'sans-serif'],
       },
       colors: {
         canvas: 'rgb(var(--color-canvas) / <alpha-value>)',

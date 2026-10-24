@@ -140,7 +140,7 @@ export const ExerciseSelectorForm: React.FC<ExerciseSelectorFormProps> = ({
 
         <div>
           <label htmlFor="custom-exercise-category" className="block text-sm text-slate-300 mb-1">Categoría</label>
-          <div className="space-y-2.5 rounded-[1.1rem] border border-white/[0.06] bg-white/[0.03] p-2.5">
+          <div className="space-y-2.5 rounded-xl border border-white/[0.06] bg-white/[0.03] p-2.5">
             <AppCombobox
               id="custom-exercise-category"
               value={customExercise.category}

@@ -37,7 +37,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
   onReset
 }) => {
   return (
-    <section className="relative overflow-hidden rounded-[1.2rem] border border-amberGlow/20 bg-[radial-gradient(circle_at_100%_0%,oklch(0.76_0.15_72/0.16),transparent_42%),radial-gradient(circle_at_0%_100%,oklch(0.71_0.16_36/0.14),transparent_45%),linear-gradient(180deg,rgb(var(--color-raised)/0.92),rgb(var(--color-canvas)/0.94))] p-3.5 shadow-soft sm:p-4">
+    <section className="relative overflow-hidden rounded-xl border border-amberGlow/20 bg-graphite p-3.5 shadow-soft sm:p-4">
       <div className="relative">
         <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -59,7 +59,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
               value={searchQuery}
               onChange={(event) => onSearchChange(event.target.value)}
               placeholder="Usuario, rutina o ejercicio"
-              className="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm placeholder:text-slate-300/70 sm:h-11"
+              className="input h-10 w-full border-amberGlow/20 bg-slateDeep/60 text-sm placeholder:text-slate-300/70 sm:h-11"
             />
           </label>
 
@@ -73,7 +73,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
                 ...userOptions.map((user) => ({ value: user.value, label: user.label }))
               ]}
               searchPlaceholder="Buscar usuario"
-              triggerClassName="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11"
+              triggerClassName="input h-10 w-full border-amberGlow/20 bg-slateDeep/60 text-sm sm:h-11"
             />
           </label>
 
@@ -87,7 +87,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
                 ...routineOptions.map((routine) => ({ value: routine.value, label: routine.label }))
               ]}
               searchPlaceholder="Buscar rutina"
-              triggerClassName="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11"
+              triggerClassName="input h-10 w-full border-amberGlow/20 bg-slateDeep/60 text-sm sm:h-11"
             />
           </label>
 
@@ -102,7 +102,7 @@ export const AdminControlPanel: React.FC<AdminControlPanelProps> = ({
                 { value: 'all', label: 'Histórico' }
               ]}
               searchable={false}
-              triggerClassName="input h-10 w-full border-amberGlow/20 bg-[oklch(0.3_0.03_70/0.4)] text-sm sm:h-11"
+              triggerClassName="input h-10 w-full border-amberGlow/20 bg-slateDeep/60 text-sm sm:h-11"
             />
           </label>
         </div>

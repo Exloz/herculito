@@ -90,7 +90,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
           return (
             <details
               key={user.userId}
-              className="group overflow-hidden rounded-[1.15rem] border border-[oklch(0.72_0.11_65/0.22)] bg-[radial-gradient(circle_at_100%_0%,oklch(0.78_0.14_72/0.12),transparent_46%),linear-gradient(180deg,rgb(var(--color-card)/0.94),rgb(var(--color-canvas)/0.94))] shadow-soft"
+              className="group overflow-hidden rounded-xl border border-mist/60 bg-graphite shadow-soft"
               open={openUserIds.has(user.userId) || selectedUserId === user.userId}
               onToggle={(event) => onToggleUser(user.userId, event.currentTarget.open)}
             >
@@ -135,7 +135,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                     {activity?.routines.length ? (
                       <div className="space-y-2.5">
                         {activity.routines.map((routine) => (
-                          <details key={`${user.userId}-${routine.routineId ?? routine.routineName}`} className="group/routine overflow-hidden rounded-xl border border-amberGlow/15 bg-[oklch(0.3_0.02_66/0.45)]">
+                          <details key={`${user.userId}-${routine.routineId ?? routine.routineName}`} className="group/routine overflow-hidden rounded-xl border border-amberGlow/15 bg-slateDeep/60">
                             <summary className="flex cursor-pointer list-none flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
                               <div>
                                 <div className="text-sm font-semibold text-white sm:text-base">{routine.routineName}</div>
@@ -160,7 +160,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                             <div className="border-t border-mist/20 p-3">
                               <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                                 {routine.exercises.map((exercise) => (
-                                  <div key={`${user.userId}-${routine.routineName}-${exercise.exerciseId}`} className="rounded-xl border border-orange-200/10 bg-[radial-gradient(circle_at_100%_0%,oklch(0.77_0.12_70/0.08),transparent_40%),linear-gradient(180deg,rgb(var(--color-overlay)/0.03),rgb(var(--color-overlay)/0.01))] p-3">
+                                  <div key={`${user.userId}-${routine.routineName}-${exercise.exerciseId}`} className="rounded-xl border border-orange-200/10 bg-graphite p-3">
                                     <div className="text-sm font-semibold text-white">{exercise.exerciseName}</div>
                                     <div className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-500">Actividad agregada</div>
 
@@ -200,7 +200,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                                       </div>
                                     </div>
 
-                                    <div className="mt-2.5 rounded-lg border border-amberGlow/15 bg-[oklch(0.31_0.02_72/0.45)] px-3 py-2.5">
+                                    <div className="mt-2.5 rounded-lg border border-amberGlow/15 bg-slateDeep/60 px-3 py-2.5">
                                       <div className="text-[11px] uppercase tracking-[0.18em] text-amberGlow/75">Evolucion</div>
                                       <div className="mt-2 flex items-center justify-between gap-3 text-sm">
                                         <div>
@@ -215,7 +215,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                                         </div>
                                       </div>
 
-                                      <div className="mt-2 rounded-lg border border-amberGlow/20 bg-[linear-gradient(180deg,oklch(0.74_0.13_72/0.14),oklch(0.74_0.13_72/0.05))] px-2 py-2">
+                                      <div className="mt-2 rounded-lg border border-amberGlow/20 bg-graphite px-2 py-2">
                                         <Sparkline points={exercise.history} />
                                         <div className="mt-1 flex items-center justify-between px-1 text-[11px] text-slate-400">
                                           <span>{exercise.firstPerformedAt ? new Date(exercise.firstPerformedAt).toLocaleDateString('es-CO') : 'Inicio'}</span>
@@ -240,7 +240,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                   </div>
 
                   <div className="space-y-3">
-                    <div className="rounded-xl border border-amberGlow/20 bg-[oklch(0.31_0.03_70/0.5)] p-3">
+                    <div className="rounded-xl border border-amberGlow/20 bg-slateDeep/60 p-3">
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amberGlow/80 sm:text-sm">Resumen rápido</div>
                       <div className="mt-3 grid grid-cols-2 gap-2">
                         <div className="rounded-lg border border-mint/20 bg-mint/10 px-2.5 py-2.5 text-center">
@@ -254,7 +254,7 @@ export const AdminUsersSection: React.FC<AdminUsersSectionProps> = ({
                       </div>
                     </div>
 
-                    <div className="rounded-xl border border-orange-300/15 bg-[oklch(0.3_0.03_45/0.35)] p-3">
+                    <div className="rounded-xl border border-orange-300/15 bg-slateDeep/60 p-3">
                       <div className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-orange-100/80 sm:text-sm">Rutinas creadas</div>
                       {createdRoutines.length ? (
                         <div className="space-y-2">

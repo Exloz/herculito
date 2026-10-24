@@ -18,21 +18,16 @@ export const Toast: React.FC<ToastProps> = ({ id, type, message, onClose }) => {
     return () => clearTimeout(timer);
   }, [id, onClose]);
 
-  const bgColors = {
-    success: 'bg-mint/10 border-mint/40 text-mint',
-    error: 'bg-crimson/10 border-crimson/40 text-crimson',
-    info: 'bg-blue-500/10 border-blue-500/40 text-blue-400',
-  };
-
   const icons = {
-    success: <CheckCircle size={20} />,
-    error: <AlertCircle size={20} />,
-    info: <Info size={20} />,
+    success: <CheckCircle size={18} />,
+    error: <AlertCircle size={18} />,
+    info: <Info size={18} />,
   };
 
   return (
     <div
-      className={`flex min-w-0 items-center gap-3 rounded-xl border px-4 py-3 shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-300 ${bgColors[type]}`}
+      className="app-toast"
+      data-type={type}
       role={type === 'error' ? 'alert' : 'status'}
       aria-atomic="true"
     >

@@ -52,7 +52,7 @@ export const AdminRoutinesSection: React.FC<AdminRoutinesSectionProps> = ({
         )}
 
         {routines.map((routine) => (
-          <details key={routine.routineId} className="group overflow-hidden rounded-xl border border-amberGlow/20 bg-[radial-gradient(circle_at_100%_0%,oklch(0.78_0.13_72/0.1),transparent_44%),oklch(0.31_0.02_70/0.45)]">
+          <details key={routine.routineId} className="group overflow-hidden rounded-xl border border-amberGlow/20 bg-graphite">
             <summary className="flex cursor-pointer list-none flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <div className="text-sm font-semibold text-white sm:text-base">{routine.name}</div>
@@ -76,7 +76,7 @@ export const AdminRoutinesSection: React.FC<AdminRoutinesSectionProps> = ({
             <div className="border-t border-mist/20 p-3">
               <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                 {routine.exercises.map((exercise) => (
-                  <div key={`${routine.routineId}-${exercise.exerciseId}`} className="rounded-xl border border-amberGlow/15 bg-[oklch(0.3_0.02_65/0.45)] p-3 text-sm">
+                  <div key={`${routine.routineId}-${exercise.exerciseId}`} className="rounded-xl border border-amberGlow/15 bg-slateDeep/60 p-3 text-sm">
                     <div className="text-white">{exercise.name}</div>
                     <div className="mt-1 text-amberGlow/80">{exercise.sets}x{exercise.reps}{exercise.restTime ? ` - ${exercise.restTime}s` : ''}</div>
                   </div>

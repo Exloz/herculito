@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bookmark, Globe2, Plus, Target } from 'lucide-react';
+import { Bookmark, Globe2, Plus, Search, Target } from 'lucide-react';
 import { useRoutines } from '../hooks/useRoutines';
 import { usePublicRoutineVisibility } from '../hooks/usePublicRoutineVisibility';
 import { RoutineCard } from '../components/RoutineCard';
@@ -155,11 +155,11 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
 
   return (
     <div className="app-shell pb-28">
-      <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
-        <section className="motion-enter mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="page-container">
+        <section className="page-heading flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">Biblioteca de entrenamiento</div>
-            <h1 className="mt-1 font-display text-2xl text-white sm:text-3xl">Rutinas</h1>
+            <div className="eyebrow">Biblioteca de entrenamiento</div>
+            <h1>Tu biblioteca</h1>
             <p className="mt-2 max-w-xl text-sm text-slate-300">
               {activeTab === 'my'
                 ? 'Crea, edita y reutiliza tus rutinas en un solo lugar.'
@@ -177,68 +177,25 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
           </button>
         </section>
 
-        <div className="motion-enter motion-enter-delay-2 mb-5 rounded-[1.2rem] bg-graphite/80 p-1.5 shadow-soft" role="tablist" aria-label="Tipos de rutinas">
-          <div className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Vista</div>
-          <div className="grid grid-cols-2 gap-1">
-          <button
-            id="routines-tab-my"
-            role="tab"
-            aria-selected={activeTab === 'my'}
-            aria-controls="routines-panel-my"
-            onClick={() => handleTabChange('my')}
-            className={`motion-interactive rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'my'
-              ? 'bg-mint/12 text-white shadow-soft'
-              : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
-              }`}
-          >
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-current/70">
-              <Bookmark size={13} />
-              <span>Mis rutinas</span>
-            </div>
-            <div className="mt-1 font-display text-xl">{myRoutines.length}</div>
-            <div className="mt-1 text-xs text-current/75">Crea, edita y repite.</div>
+        <div className="library-tabs" role="tablist" aria-label="Tipos de rutinas">
+          <button type="button" id="routines-tab-my" role="tab" aria-selected={activeTab === 'my'}
+            aria-controls="routines-panel-my" className="library-tab" onClick={() => handleTabChange('my')}
+            onKeyDown={(event) => { if (event.key === 'ArrowRight' || event.key === 'End') { event.preventDefault(); handleTabChange('public'); document.getElementById('routines-tab-public')?.focus(); } }}>
+            <Bookmark size={15} />Mis rutinas<small>{myRoutines.length}</small>
           </button>
-          <button
-            id="routines-tab-public"
-            role="tab"
-            aria-selected={activeTab === 'public'}
-            aria-controls="routines-panel-public"
-            onClick={() => handleTabChange('public')}
-            className={`motion-interactive rounded-[0.95rem] px-3 py-3 text-left transition-colors ${activeTab === 'public'
-              ? 'bg-amberGlow/12 text-white shadow-soft'
-              : 'text-slate-300 hover:bg-white/[0.04] hover:text-white'
-              }`}
-          >
-            <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-current/70">
-              <Globe2 size={13} />
-              <span>Públicas</span>
-            </div>
-            <div className="mt-1 font-display text-xl">{publicRoutines.length}</div>
-            <div className="mt-1 text-xs text-current/75">Activa las que si vas a usar.</div>
+          <button type="button" id="routines-tab-public" role="tab" aria-selected={activeTab === 'public'}
+            aria-controls="routines-panel-public" className="library-tab" onClick={() => handleTabChange('public')}
+            onKeyDown={(event) => { if (event.key === 'ArrowLeft' || event.key === 'Home') { event.preventDefault(); handleTabChange('my'); document.getElementById('routines-tab-my')?.focus(); } }}>
+            <Globe2 size={15} />Comunidad<small>{publicRoutines.length}</small>
           </button>
-          </div>
         </div>
-
-        <div className="mb-4">
-          <label htmlFor="routine-search" className="mb-2 block text-sm text-slate-300">Buscar por rutina o ejercicio</label>
-          <input id="routine-search" type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className="input w-full min-h-11" placeholder="Ej. piernas, press de banca…" />
-          <p className="mt-2 text-xs text-slate-400" role="status">{displayedRoutines.length} de {tabRoutines.length} rutinas</p>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <label className="library-search w-full"><Search size={16} className="shrink-0 text-slate-400" aria-hidden="true" />
+            <span className="sr-only">Buscar por rutina o ejercicio</span>
+            <input id="routine-search" type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Buscar rutina o ejercicio…" />
+          </label>
+          <p className="text-xs text-slate-400" role="status">{displayedRoutines.length} de {tabRoutines.length} rutinas</p>
         </div>
-
-        {activeTab === 'my' && routinesMissingVideos > 0 && (
-          <details className="mb-4 rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
-            <summary className="min-h-11 cursor-pointer py-3">Videos de ejercicios · {routinesMissingVideos} pendientes</summary>
-            <p className="mb-2">Puedes completar los videos sin modificar tus series ni pesos.</p>
-            <button
-              type="button"
-              onClick={handleBackfillRoutineVideos}
-              disabled={routineBackfillRunning || routinesMissingVideos === 0}
-              className="btn-ghost text-xs disabled:opacity-60"
-            >
-              {routineBackfillRunning ? 'Actualizando...' : 'Buscar videos automáticamente'}
-            </button>
-          </details>
-        )}
 
         {activeTab === 'public' && publicRoutines.length > 0 && (
           <div className="motion-enter motion-enter-delay-3 mb-4 rounded-[1rem] bg-white/[0.03] px-3 py-2.5 text-xs text-slate-400">
@@ -312,6 +269,21 @@ export const Routines: React.FC<RoutinesProps> = ({ user }) => {
           </div>
 
         </div>
+
+        {activeTab === 'my' && routinesMissingVideos > 0 && (
+          <details className="mt-6 border-t border-mist/25 py-2 text-xs text-slate-400">
+            <summary className="min-h-11 cursor-pointer py-3">Videos de ejercicios · {routinesMissingVideos} pendientes</summary>
+            <p className="mb-2">Puedes completar los videos sin modificar tus series ni pesos.</p>
+            <button
+              type="button"
+              onClick={handleBackfillRoutineVideos}
+              disabled={routineBackfillRunning || routinesMissingVideos === 0}
+              className="btn-ghost text-xs disabled:opacity-60"
+            >
+              {routineBackfillRunning ? 'Actualizando...' : 'Buscar videos automáticamente'}
+            </button>
+          </details>
+        )}
 
         {/* Editor Modal */}
         {showEditor && (

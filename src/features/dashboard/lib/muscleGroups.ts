@@ -2,13 +2,13 @@ import { MuscleGroup, MuscleGroupInfo, Routine, WorkoutSession } from '../../../
 
 // Configuración de grupos musculares
 export const MUSCLE_GROUPS: Record<MuscleGroup, MuscleGroupInfo> = {
-  pecho: { name: 'Pecho', color: '#ef4444' },
-  espalda: { name: 'Espalda', color: '#3b82f6' },
-  piernas: { name: 'Piernas', color: '#10b981' },
-  hombros: { name: 'Hombros', color: '#f59e0b' },
-  brazos: { name: 'Brazos', color: '#8b5cf6' },
-  core: { name: 'Core', color: '#ec4899' },
-  fullbody: { name: 'Full Body', color: '#6b7280' }
+  pecho: { name: 'Pecho', color: 'rgb(var(--color-lilac))' },
+  espalda: { name: 'Espalda', color: 'rgb(var(--color-sky))' },
+  piernas: { name: 'Piernas', color: 'rgb(var(--color-peach))' },
+  hombros: { name: 'Hombros', color: 'rgb(var(--color-lime))' },
+  brazos: { name: 'Brazos', color: 'rgb(var(--color-rose))' },
+  core: { name: 'Core', color: 'rgb(var(--color-aqua))' },
+  fullbody: { name: 'Full Body', color: 'rgb(var(--color-info))' }
 };
 
 // Diccionario de ejercicios comunes y sus grupos musculares

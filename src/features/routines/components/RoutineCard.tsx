@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Edit, Eye, Target, Trash2, User as UserIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, Eye, Trash2, User as UserIcon } from 'lucide-react';
 import type { Routine, User } from '../../../shared/types';
 import { formatDateInAppTimeZone } from '../../../shared/lib/dateUtils';
 import { MUSCLE_GROUPS } from '../../dashboard/lib/muscleGroups';
@@ -30,53 +30,47 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
   onToggleVisibility
 }) => {
   const [expanded, setExpanded] = useState(false);
-  const accentColor = routine.primaryMuscleGroup ? MUSCLE_GROUPS[routine.primaryMuscleGroup].color : '#48e5a3';
   const previewExercises = routine.exercises.slice(0, 2);
 
   return (
-    <div className="deferred-list-item motion-enter overflow-hidden rounded-[1.5rem] bg-graphite shadow-lift content-fade-in">
-      <div className="h-1" style={{ backgroundColor: accentColor }} />
+    <div className="deferred-list-item routine-library-card app-card" data-muscle-group={routine.primaryMuscleGroup || 'fullbody'}>
 
       <div className="p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-              {!routine.isPublic && <span className="rounded-full bg-white/[0.05] px-2.5 py-1 uppercase tracking-[0.16em]">Privada</span>}
-              {routine.createdBy !== user.id && <span className="rounded-full bg-amberGlow/12 px-2.5 py-1 uppercase tracking-[0.16em] text-amberGlow">Comunidad</span>}
+            <div className="routine-meta">
+              {!routine.isPublic && <span className="routine-meta-item">Privada</span>}
+              {routine.createdBy !== user.id && <span className="routine-meta-item">Comunidad</span>}
               {routine.primaryMuscleGroup && (
-                <span className="rounded-full bg-white/[0.05] px-2.5 py-1 uppercase tracking-[0.16em] text-slate-300">
+                <span className="routine-meta-item text-slate-300">
                   {MUSCLE_GROUPS[routine.primaryMuscleGroup].name}
                 </span>
               )}
             </div>
 
-            <h3
+            <h2
               dir="auto"
-              className="mt-2 min-w-0 break-words font-display text-[1.5rem] leading-[0.95] text-white sm:text-[1.9rem]"
+              className="mt-3 min-w-0 break-words text-base font-semibold leading-snug text-white sm:text-lg"
               style={{ overflowWrap: 'anywhere' }}
             >
               {routine.name}
-            </h3>
+            </h2>
 
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1">
-                <Target size={12} />
+            <div className="routine-meta mt-2">
+              <span className="inline-flex items-center gap-1">
                 {routine.exercises.length} ejercicios
               </span>
 
-              {routine.timesUsed && routine.timesUsed > 0 && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1">
+              {(routine.timesUsed ?? 0) > 0 && (
+                <span className="inline-flex items-center gap-1">
                   <Eye size={12} />
                   {routine.timesUsed} usos
                 </span>
               )}
 
-              <span className="rounded-full bg-white/[0.05] px-2.5 py-1">
-                {routine.createdAt ? formatDateInAppTimeZone(routine.createdAt, 'es-CO') : ''}
-              </span>
 
               {routine.createdBy !== user.id && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1">
+                <span className="inline-flex items-center gap-1">
                   {routine.createdByAvatarUrl ? (
                     <img
                       src={routine.createdByAvatarUrl}
@@ -92,7 +86,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
               )}
             </div>
 
-            <div className="mt-3 text-sm text-slate-300">
+            <div className="mt-3 text-xs leading-relaxed text-slate-400">
               {previewExercises.length > 0
                 ? previewExercises.map((exercise) => {
                     const repsDisplay = exercise.repsBySet && exercise.repsBySet.length > 0
@@ -104,12 +98,12 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
             </div>
           </div>
 
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 gap-1">
             {canEditRoutine(routine) && (
               <>
                 <button
                   onClick={() => onEdit(routine)}
-                  className="btn-ghost bg-white/[0.03]"
+                  className="routine-action workspace-icon-button"
                   title="Editar rutina"
                   aria-label={`Editar rutina ${routine.name}`}
                 >
@@ -117,7 +111,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
                 </button>
                 <button
                   onClick={() => onDelete(routine.id)}
-                  className="btn-ghost bg-white/[0.03] text-crimson hover:text-red-400"
+                  className="routine-action workspace-icon-button hover:text-crimson focus-visible:text-crimson"
                   title="Eliminar rutina"
                   aria-label={`Eliminar rutina ${routine.name}`}
                 >
@@ -133,7 +127,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
             <div>
               <p className="text-sm font-semibold text-slate-100">En Inicio</p>
               <p className="text-xs text-slate-400">
-                {isVisibleOnDashboard ? 'Visible en dashboard' : 'Oculta del dashboard'}
+                {isVisibleOnDashboard ? 'Visible en Inicio' : 'Oculta en Inicio'}
               </p>
             </div>
             <button
@@ -144,14 +138,14 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
                 onToggleVisibility(routine.id, !isVisibleOnDashboard);
               }}
               disabled={isRoutineVisibilityLoading || isRoutineVisibilityUpdating(routine.id)}
-              className={`relative inline-flex h-6 w-11 min-h-0 min-w-0 shrink-0 items-center rounded-full p-0.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink disabled:cursor-not-allowed disabled:opacity-60 ${isVisibleOnDashboard ? 'bg-mint' : 'bg-slate-600'}`}
+              className="relative inline-flex h-11 w-11 shrink-0 items-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink disabled:cursor-not-allowed disabled:opacity-60"
               aria-label={isVisibleOnDashboard
                 ? `Ocultar ${routine.name} del inicio`
                 : `Mostrar ${routine.name} en inicio`}
             >
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-[#fff] shadow-sm transition-all ${isVisibleOnDashboard ? 'translate-x-5' : 'translate-x-0'}`}
-              />
+              <span aria-hidden="true" className={`pointer-events-none inline-flex h-6 w-11 items-center rounded-full p-0.5 transition-colors ${isVisibleOnDashboard ? 'bg-mint' : 'bg-slate-600'}`}>
+                <span className={`inline-block h-5 w-5 transform rounded-full bg-[#fff] shadow-sm transition-transform ${isVisibleOnDashboard ? 'translate-x-5' : 'translate-x-0'}`} />
+              </span>
             </button>
           </div>
         )}
@@ -160,7 +154,7 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
           <button
             type="button"
             onClick={() => setExpanded((current) => !current)}
-            className="motion-interactive inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint/85"
+            className="inline-flex min-h-11 items-center gap-1 text-xs font-medium text-slate-400 hover:text-white"
             aria-expanded={expanded}
           >
             <span>{expanded ? 'Ocultar detalles' : 'Ver detalles'}</span>
@@ -169,7 +163,8 @@ export const RoutineCard: React.FC<RoutineCardProps> = ({
         </div>
 
         {expanded && (
-          <div className="mt-3 rounded-[1.1rem] bg-slateDeep/55 px-3 py-3">
+          <div className="mt-3 rounded-xl bg-slateDeep/55 px-3 py-3">
+            {routine.createdAt && <p className="mb-3 text-xs text-slate-400">Creada el {formatDateInAppTimeZone(routine.createdAt, 'es-CO')}</p>}
             {routine.description && (
               <p
                 dir="auto"

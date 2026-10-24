@@ -446,23 +446,23 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
   }, [pointsInRange]);
 
   return (
-    <div className="rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgb(var(--color-warning)/0.12),transparent_24%),linear-gradient(180deg,rgb(var(--color-card)/0.98),rgb(var(--color-canvas)/0.98))] p-4 shadow-lift sm:p-5">
+    <div className="app-card p-4 sm:p-5">
       {selectedSummary ? (
         <div className="space-y-4">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amberGlow/85">
+              <div className="flex items-center gap-2 text-[10px] font-medium text-slate-400">
                 <Activity className="text-mint" size={14} />
                 <span>Historial y progreso</span>
               </div>
-              <div className="mt-2 font-display text-[1.6rem] leading-none text-white sm:text-[2rem]">
+              <div className="mt-2 text-xl font-semibold leading-tight text-white sm:text-2xl">
                 {selectedSummary.exerciseName}
               </div>
               <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-300">
-                <span className="rounded-full bg-white/[0.05] px-2.5 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
-                <span className="rounded-full bg-white/[0.05] px-2.5 py-1">Último: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
+                <span className="rounded-md bg-white/[0.04] px-2 py-1">{formatSessionCount(selectedSummary.totalSessions)}</span>
+                <span className="rounded-md bg-white/[0.04] px-2 py-1">Último: {formatPointDate(selectedSummary.lastCompletedAt.getTime())}</span>
                 {selectedSummaryGroup && (
-                  <span className="rounded-full bg-white/[0.05] px-2.5 py-1">
+                  <span className="rounded-md bg-white/[0.04] px-2 py-1">
                     Grupo: {MUSCLE_GROUPS[selectedSummaryGroup].name}
                   </span>
                 )}
@@ -499,7 +499,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                     id="exercise-progress-combobox-panel"
                     className="absolute right-0 z-30 mt-2 w-full overflow-hidden rounded-[1rem] border border-mist/60 bg-charcoal shadow-lift"
                   >
-                    <div className="border-b border-white/8 p-2.5">
+                    <div className="border-b border-mist/30 p-2.5">
                       <div className="relative">
                         <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500" />
                         <input
@@ -619,7 +619,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">
+            <div className="progress-stat rounded-[1rem] px-3 py-3" data-tone="sky">
               <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{latestPoint ? 'Último del periodo' : 'Último total'}</div>
               <div className="mt-1.5 flex items-center gap-2">
                 <div className="font-display text-lg text-white sm:text-xl">{formatKg(displayedLastWeight)}</div>
@@ -632,13 +632,13 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               </div>
             </div>
 
-            <div className="rounded-[1rem] bg-mint/10 px-3 py-3">
+            <div className="progress-stat rounded-[1rem] px-3 py-3" data-tone="peach">
               <div className="text-[10px] uppercase tracking-[0.16em] text-mint/75">Récord</div>
               <div className="mt-1.5 font-display text-lg text-white sm:text-xl">{formatKg(selectedSummary.personalRecord)}</div>
               <div className="mt-1 text-[11px] leading-tight text-slate-300">Mejor marca total</div>
             </div>
 
-            <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">
+            <div className="progress-stat rounded-[1rem] px-3 py-3" data-tone="lilac">
               <div className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Cambio</div>
               <div className={`mt-1.5 font-display text-lg sm:text-xl ${rangeDelta === null || Math.abs(rangeDelta) < 0.05 ? 'text-slate-100' : rangeDelta > 0 ? 'text-mint' : 'text-crimson'}`}>
                 {rangeDelta !== null ? formatDelta(rangeDelta) : 'Sin datos'}
@@ -657,7 +657,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
           </div>
 
           <div className="grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)]">
-            <div className="min-w-0 rounded-[1.2rem] bg-slateDeep/55 p-3.5">
+            <div className="min-w-0 rounded-xl bg-slateDeep/55 p-3.5">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
@@ -686,12 +686,12 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   >
                     <defs>
                       <linearGradient id="exercise-progress-area" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="rgb(var(--color-accent)/0.34)" />
-                        <stop offset="100%" stopColor="rgb(var(--color-accent)/0.02)" />
+                        <stop offset="0%" stopColor="rgb(var(--color-lilac)/0.24)" />
+                        <stop offset="100%" stopColor="rgb(var(--color-lilac)/0.02)" />
                       </linearGradient>
                       <linearGradient id="exercise-progress-line" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="rgb(var(--color-warning)/0.9)" />
-                        <stop offset="100%" stopColor="rgb(var(--color-accent)/0.95)" />
+                        <stop offset="0%" stopColor="rgb(var(--color-lilac))" />
+                        <stop offset="100%" stopColor="rgb(var(--color-sky))" />
                       </linearGradient>
                     </defs>
 
@@ -781,7 +781,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
               )}
             </div>
 
-            <div className="min-w-0 rounded-[1.2rem] bg-slateDeep/55 p-3.5">
+            <div className="min-w-0 rounded-xl bg-slateDeep/55 p-3.5">
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-slate-400">
@@ -798,7 +798,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
                   {isHistoryCollapsible && (
                     <button
                       type="button"
-                      className="motion-interactive mb-3 flex w-full items-center justify-between rounded-[0.95rem] border border-white/8 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slateDeep"
+                      className="motion-interactive mb-3 flex w-full items-center justify-between rounded-[0.95rem] border border-mist/30 bg-white/[0.03] px-3 py-2 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mint/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slateDeep"
                       onClick={() => setIsHistoryExpanded((current) => !current)}
                       aria-expanded={isHistoryExpanded}
                       aria-controls="exercise-history-list"
@@ -862,7 +862,7 @@ export const ExerciseProgressPanel: React.FC<ExerciseProgressPanelProps> = ({
           </div>
         </div>
       ) : (
-        <div className="rounded-[1.2rem] bg-white/[0.04] px-4 py-10 text-center">
+        <div className="rounded-xl bg-white/[0.04] px-4 py-10 text-center">
           <div className="font-display text-xl text-white">Sin progreso visible todavía</div>
           <p className="mt-2 text-sm text-slate-400">Completa algunas sesiones con peso para desbloquear el historial por ejercicio.</p>
         </div>

@@ -9,7 +9,7 @@ export function PreviewRoot() {
 
   return (
     <>
-      <div className="border-b border-amberGlow/20 bg-amberGlow/10 px-4 py-2 text-amberGlow">
+      <div className="preview-toolbar border-b border-amberGlow/20 bg-amberGlow/10 px-4 py-2 text-amberGlow">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 text-sm">
           <span className="flex items-center gap-2" title="Los cambios se reinician al recargar. No se usa la API real.">
             <FlaskConical size={16} />Preview local · datos de ejemplo

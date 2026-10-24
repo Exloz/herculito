@@ -1,5 +1,6 @@
 @import './mobile-optimizations.css';
 @import './app/theme/palettes.css';
+@import './app/workspace.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,10 +24,10 @@
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px);
     --safe-right: env(safe-area-inset-right, 0px);
-    --motion-instant: 140ms;
-    --motion-fast: 220ms;
-    --motion-base: 320ms;
-    --motion-slow: 460ms;
+    --motion-instant: 80ms;
+    --motion-fast: 120ms;
+    --motion-base: 160ms;
+    --motion-slow: 200ms;
     --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -37,12 +38,11 @@
   }
 
   body {
-    font-family: 'Hind', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
     color: rgb(var(--color-text));
-    background:
-      radial-gradient(1200px circle at 12% -20%, rgb(var(--color-accent) / 0.08), transparent 55%),
-      radial-gradient(900px circle at 100% 0%, rgb(var(--color-warning) / 0.06), transparent 45%),
-      rgb(var(--color-canvas));
+    background: rgb(var(--color-canvas));
   }
 
   html.dashboard-scrollbar-hidden,
@@ -67,20 +67,20 @@
   h3,
   h4,
   .font-display {
-    font-family: 'Khand', system-ui, sans-serif;
-    letter-spacing: 0.2px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    letter-spacing: -0.025em;
+    font-weight: 600;
   }
 
   :focus-visible {
-    outline: 2px solid rgb(var(--color-accent)/0.6);
+    outline: 2px solid rgb(var(--color-accent)/0.8);
     outline-offset: 2px;
   }
 }
 
 @layer components {
   .dashboard-priority-card {
-    @apply rounded-2xl border border-mint/25 bg-graphite;
-    background-image: radial-gradient(ellipse at top right, rgb(var(--color-accent)/0.1), transparent 65%);
+    @apply rounded-2xl border border-transparent bg-graphite;
   }
 
   .app-shell {
@@ -88,23 +88,25 @@
   }
 
   .app-header {
-    @apply bg-charcoal/80 border-b border-mist/60 backdrop-blur;
+    @apply bg-charcoal border-b border-mist/25;
   }
 
   .app-surface {
-    @apply bg-graphite border border-mist/60 rounded-2xl shadow-soft;
+    @apply bg-graphite border border-mist/30 rounded-xl;
+    box-shadow: var(--control-highlight);
   }
 
   .app-surface-muted {
-    @apply bg-slateDeep border border-mist/40 rounded-2xl;
+    @apply bg-slateDeep/50 border border-transparent rounded-lg;
   }
 
   .app-card {
-    @apply bg-graphite border border-mist/60 rounded-2xl shadow-lift;
+    @apply bg-graphite border border-transparent rounded-xl;
+    box-shadow: var(--shadow-card);
   }
 
   .app-card-hover {
-    @apply hover:border-mint/40 hover:shadow-soft transition-colors;
+    @apply hover:bg-slateDeep/60 transition-colors;
     transition-duration: var(--motion-fast);
     transition-timing-function: var(--ease-standard);
     transition-property: border-color, background-color, color;
@@ -116,7 +118,7 @@
     }
 
     .app-card-hover:hover {
-      transform: translateY(-2px);
+      background-color: rgb(var(--color-raised) / 0.6);
     }
   }
 
@@ -126,20 +128,20 @@
   }
 
   .app-divider {
-    @apply border-t border-mist/50;
+    @apply border-t border-mist/25;
   }
 
   .btn-primary {
-    @apply bg-mint text-ink font-semibold rounded-xl px-4 py-2.5 shadow-lift transition-all;
+    @apply bg-mint text-ink font-semibold rounded-xl px-4 py-2.5 transition-colors;
+    min-height: 44px;
+    box-shadow: inset 0 1px rgb(255 255 255 / 0.22), 0 4px 12px -6px rgb(var(--color-accent) / 0.35);
     transition-duration: var(--motion-fast);
     transition-timing-function: var(--ease-standard);
-    transform: translate3d(0, 0, 0);
   }
 
   .btn-primary:hover {
     @apply bg-mintDeep;
-    transform: translate3d(0, -1px, 0) scale(1.01);
-    box-shadow: 0 12px 26px rgb(var(--color-accent)/0.18);
+
   }
 
   .btn-primary:active {
@@ -147,16 +149,17 @@
   }
 
   .btn-secondary {
-    @apply bg-slateDeep text-slate-100 border border-mist/60 rounded-xl px-4 py-2.5 transition-colors;
+    @apply bg-slateDeep/60 text-slate-100 border border-transparent rounded-lg px-4 py-2.5 transition-colors;
+    min-height: 44px;
+    box-shadow: var(--control-highlight), 0 2px 5px rgb(0 0 0 / 0.04);
     transition-duration: var(--motion-fast);
     transition-timing-function: var(--ease-standard);
     transition-property: transform, border-color, background-color, color, box-shadow;
-    transform: translate3d(0, 0, 0);
   }
 
   .btn-secondary:hover {
-    @apply border-mint/40 text-white;
-    transform: translate3d(0, -1px, 0);
+    @apply bg-slateDeep text-white;
+
   }
 
   .btn-secondary:active {
@@ -164,16 +167,16 @@
   }
 
   .btn-ghost {
-    @apply text-slate-200 rounded-xl px-3 py-2 transition-colors;
+    @apply text-slate-200 rounded-lg px-3 py-2 transition-colors;
+    min-height: 40px;
     transition-duration: var(--motion-fast);
     transition-timing-function: var(--ease-standard);
     transition-property: transform, border-color, background-color, color, opacity;
-    transform: translate3d(0, 0, 0);
   }
 
   .btn-ghost:hover {
     @apply bg-slateDeep/70 text-white;
-    transform: translate3d(0, -1px, 0);
+
   }
 
   .btn-ghost:active {
@@ -181,7 +184,8 @@
   }
 
   .btn-danger {
-    @apply bg-crimson text-ink font-semibold rounded-xl px-4 py-2.5 transition-colors;
+    @apply bg-crimson text-ink font-semibold rounded-lg px-4 py-2.5 transition-colors;
+    min-height: 44px;
   }
 
   .btn-danger:hover {
@@ -197,16 +201,12 @@
   }
 
   .input {
-    @apply w-full px-3 py-2.5 bg-slateDeep border border-mist/60 rounded-xl text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-mint/40 focus:border-mint/60;
+    @apply w-full px-3 py-2.5 bg-charcoal border border-mist/60 rounded-lg text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-mint/40 focus:border-mint/60;
     transition-duration: var(--motion-fast);
     transition-timing-function: var(--ease-standard);
     transition-property: transform, border-color, box-shadow, background-color;
-  }
-
-  .input:focus,
-  .input:focus-visible {
-    transform: translate3d(0, -1px, 0);
-    box-shadow: 0 10px 26px rgb(var(--color-accent)/0.08);
+    background-color: rgb(var(--color-canvas) / 0.55);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.08);
   }
 
   .input-sm {
@@ -237,6 +237,18 @@
   .touch-target-sm {
     @apply min-h-[40px] min-w-[40px] touch-manipulation;
   }
+
+  @media (max-width: 767px) {
+    .btn-primary {
+      min-height: 48px;
+    }
+
+    .btn-ghost,
+    .touch-target-sm {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
 }
 
 @keyframes motion-fade-up {
@@ -247,7 +259,6 @@
 
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -298,19 +309,19 @@
 }
 
 .motion-enter-delay-1 {
-  animation-delay: 80ms;
+  animation-delay: 25ms;
 }
 
 .motion-enter-delay-2 {
-  animation-delay: 150ms;
+  animation-delay: 50ms;
 }
 
 .motion-enter-delay-3 {
-  animation-delay: 220ms;
+  animation-delay: 75ms;
 }
 
 .motion-enter-delay-4 {
-  animation-delay: 290ms;
+  animation-delay: 100ms;
 }
 
 .motion-pop-in {
@@ -343,7 +354,7 @@
 }
 
 .motion-interactive:hover {
-  transform: translate3d(0, -2px, 0);
+  filter: brightness(1.03);
 }
 
 .motion-interactive:active {
@@ -358,7 +369,7 @@
 }
 
 .motion-list-item:hover {
-  transform: translate3d(0, -2px, 0);
+  filter: brightness(1.03);
 }
 
 .motion-complete {
@@ -376,7 +387,6 @@
   }
 
   to {
-    transform: translate3d(0, 0, 0);
     opacity: 1;
   }
 }
@@ -400,7 +410,6 @@
   }
 
   to {
-    transform: translate3d(0, 0, 0);
     opacity: 1;
   }
 }
@@ -501,7 +510,6 @@ body.dialog-open .app-bottom-nav * {
 
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -517,7 +525,6 @@ body.dialog-open .app-bottom-nav * {
 
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -529,7 +536,6 @@ body.dialog-open .app-bottom-nav * {
 
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -547,11 +553,11 @@ body.dialog-open .app-bottom-nav * {
 
 /* Sports-specific styles */
 .sport-card {
-  @apply app-card-hover p-5 flex flex-col items-center gap-3 text-center;
+  @apply app-card app-card-hover p-5 flex flex-col items-center gap-3 text-center;
 }
 
 .sport-card.active {
-  @apply bg-mint/10 border-mint/40;
+  border-color: rgb(var(--sport-color, var(--color-accent)) / 0.18);
 }
 
 .sport-card.locked {
@@ -891,6 +897,22 @@ body.dialog-open .app-bottom-nav * {
 
 .end-cancel-btn {
   @apply text-xs text-slate-500 hover:text-slate-300 mt-1;
+}
+
+@media (max-width: 767px) {
+  .end-undo-btn,
+  .end-correct-btn,
+  .end-cancel-btn,
+  .input-toggle-btn,
+  .target-btn-miss,
+  .target-btn-x {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .end-confirm-btn {
+    min-height: 48px;
+  }
 }
 
 /* --- Input Toggle Simple (No Overflow) --- */

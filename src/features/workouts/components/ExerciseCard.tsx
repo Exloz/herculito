@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Clock, Weight, Plus, Minus, Play } from 'lucide-react';
+import { Check, Clock, Plus, Minus, Play } from 'lucide-react';
 import { Exercise, ExerciseLog, WorkoutSet, ExerciseVideo } from '../../../shared/types';
 import { getCurrentDateString } from '../../../shared/lib/dateUtils';
 import { vibrateLight, vibrateSuccess } from '../../../shared/lib/mobileFeedback';
@@ -297,18 +297,19 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
   };
 
   return (
-    <div className={`app-card mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-[linear-gradient(180deg,rgb(var(--color-raised)/0.98),rgb(var(--color-canvas)/0.98))]' : ''}`}>
+    <div className={`app-card workout-exercise-card mb-3 p-3.5 sm:p-4 ${isCompleted ? 'border-mint/35 bg-graphite' : ''}`} data-completed={isCompleted}>
       {/* Header del ejercicio */}
       <div className="mb-3">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-1 flex-wrap items-center gap-3 min-w-0">
+          <div className="flex flex-1 flex-wrap items-center gap-2 min-w-0">
             {exerciseNumber ? (
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border text-sm font-semibold ${isCompleted ? 'border-mint/50 bg-mint/12 text-mint' : 'border-mist/60 bg-white/[0.03] text-slate-200'}`}>
+              <div className={`exercise-number flex h-7 w-6 shrink-0 items-center justify-center text-sm font-medium ${isCompleted ? 'text-mint' : 'text-slate-400'}`}>
                 {isCompleted ? <Check size={18} /> : exerciseNumber}
               </div>
             ) : null}
-            <div className="min-w-0 flex-1 basis-36">
-              <h3 className="break-words text-lg font-semibold leading-tight text-white sm:text-[1.35rem]">{exercise.name}</h3>
+            <div className="min-w-0 flex-1 basis-28">
+              <h3 className="break-words text-base font-semibold leading-snug text-white sm:text-lg">{exercise.name}</h3>
+              <p className="mt-1 text-xs text-muted">{exercise.sets} × {exerciseSummaryReps}</p>
               {isCompleted && (
                 <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-mint">Ejercicio completado</div>
               )}
@@ -317,7 +318,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 <button
                   type="button"
                   onClick={() => setShowVideo((prev) => !prev)}
-                  className={`motion-interactive inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors touch-target-sm ${showVideo
+                  className={`motion-interactive inline-flex min-h-11 items-center gap-2 rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${showVideo
                     ? 'border-mint/70 text-mint bg-mint/10'
                     : 'border-mist/60 text-slate-300 hover:text-white hover:border-mint/50'
                     }`}
@@ -326,10 +327,6 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 <span>{showVideo ? 'Ocultar video' : 'Ver video'}</span>
               </button>
             )}
-          </div>
-          <div className="flex shrink-0 items-center gap-2 text-sm text-slate-400">
-            <Weight size={16} />
-            <span>{exercise.sets} × {exerciseSummaryReps}</span>
           </div>
         </div>
 
@@ -384,17 +381,14 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
 
 
         {/* Barra de progreso */}
-        <div className="w-full bg-slateDeep rounded-full h-2 mb-2">
+        <div className="w-full bg-slateDeep rounded-full h-1 mb-2">
           <div
-            className="bg-mint h-2 rounded-full transition-all duration-300"
+            className="bg-mint h-1 rounded-full transition-all duration-300"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm text-slate-400">
+        <div className="text-xs text-slate-400">
           <span>{completedSets} de {exercise.sets} series completadas</span>
-          {previousWeights && previousWeights.length > 0 && (
-            <span className="text-mint">• Usamos tu último peso registrado como referencia.</span>
-          )}
         </div>
       </div>
 
@@ -410,24 +404,25 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
           return (
             <div
               key={setNumber}
-               className={`motion-list-item grid grid-cols-[2rem_minmax(0,1fr)_2.75rem] items-center gap-2 rounded-xl border p-2 transition-all duration-200 ${isCompleted ? 'motion-complete ' : ''}${isCompleted
-                  ? 'bg-mint/10 border-mint/50'
-                  : 'bg-slateDeep border-mist/60 hover:border-mint/40'
+              data-completed={isCompleted}
+               className={`exercise-set-row motion-list-item grid grid-cols-[2rem_minmax(0,1fr)_2.75rem] items-center gap-2 rounded-xl border p-2 transition-all duration-200 ${isCompleted ? 'motion-complete ' : ''}${isCompleted
+                  ? 'bg-mint/5 border-transparent'
+                  : 'bg-slateDeep/40 border-transparent'
                   }`}
             >
               {/* Numero de serie */}
-               <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${isCompleted ? 'bg-mint text-ink' : 'bg-charcoal text-slate-300'
+               <div className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${isCompleted ? 'text-mint' : 'text-slate-400'
                  }`}>
                 {setNumber}
               </div>
 
               <div className="flex-1 min-w-0">
                  <div className="flex flex-col gap-2">
-                   <div className="flex w-full items-center overflow-hidden rounded-lg border border-mist/60 bg-slateDeep">
+                   <div className="flex w-full items-center overflow-hidden rounded-lg border border-mist/35 bg-charcoal">
                     <button
                       type="button"
                       onClick={() => adjustWeight(setNumber, -2.5)}
-                      className="motion-interactive flex h-11 w-11 shrink-0 items-center justify-center hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-r border-mist/60"
+                      className="motion-interactive flex h-11 w-11 shrink-0 items-center justify-center hover:bg-white/5 text-slate-400 hover:text-white transition-colors"
                       aria-label={`Reducir peso 2.5kg en serie ${setNumber}`}
                     >
                       <Minus size={14} />
@@ -446,16 +441,20 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                         min="0"
                         max={MAX_WEIGHT_KG}
                         aria-label={`Peso para serie ${setNumber}`}
+                        aria-description={previousWeights?.[setNumber - 1] !== undefined
+                          ? `Último peso registrado: ${previousWeights[setNumber - 1]} kg` : undefined}
+                        title={previousWeights?.[setNumber - 1] !== undefined
+                          ? `Último peso registrado: ${previousWeights[setNumber - 1]} kg` : undefined}
                        />
                        <span className="shrink-0 text-[10px] text-slate-400" aria-hidden="true">kg</span>
                       {previousWeights && previousWeights[setNumber - 1] !== undefined && weight === previousWeights[setNumber - 1] && (
-                         <div className="pointer-events-none absolute right-1 top-1 h-2 w-2 rounded-full bg-mint" title="Peso anterior" />
+                         <div className="pointer-events-none absolute right-1 top-1 h-1 w-1 rounded-full bg-slate-400" aria-hidden="true" />
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => adjustWeight(setNumber, 2.5)}
-                      className="motion-interactive flex h-11 w-11 shrink-0 items-center justify-center hover:bg-white/5 text-slate-400 hover:text-white transition-colors border-l border-mist/60"
+                      className="motion-interactive flex h-11 w-11 shrink-0 items-center justify-center hover:bg-white/5 text-slate-400 hover:text-white transition-colors"
                       aria-label={`Aumentar peso 2.5kg en serie ${setNumber}`}
                     >
                       <Plus size={14} />
@@ -488,7 +487,7 @@ export const ExerciseCard: React.FC<ExerciseCardProps> = React.memo(({
                 onClick={() => toggleSetCompleted(setNumber)}
                  className={`motion-interactive flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all duration-200 touch-target ${isCompleted
                     ? 'bg-mint text-ink hover:bg-mintDeep'
-                    : 'bg-charcoal text-slate-300 hover:bg-slateDeep border border-mist/60'
+                    : 'bg-charcoal text-slate-400 hover:text-white hover:bg-slateDeep border border-mist/35'
                     }`}
                 aria-label={isCompleted ? `Marcar serie ${setNumber} como incompleta` : `Completar serie ${setNumber}`}
                 aria-pressed={isCompleted}

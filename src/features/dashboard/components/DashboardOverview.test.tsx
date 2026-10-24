@@ -7,7 +7,7 @@ afterEach(cleanup);
 
 const summary = { totalWorkouts: 8, thisWeekWorkouts: 3, thisMonthWorkouts: 4,
   currentStreak: 0, longestStreak: 1, averageDurationMin: 42 };
-const handlers = () => ({ onStart: vi.fn(), onContinue: vi.fn(), onCancel: vi.fn(), onNavigateToRoutines: vi.fn(), onAssignDay: vi.fn() });
+const handlers = () => ({ onStart: vi.fn(), onContinue: vi.fn(), onCancel: vi.fn(), onNavigateToRoutines: vi.fn(), onChooseRoutine: vi.fn(), onAssignDay: vi.fn() });
 const planProps = { routines: createPreviewFixtures().routines, weeklyPlan: {}, today: 'monday' as const };
 
 describe('dashboard training priority', () => {
@@ -33,6 +33,17 @@ describe('dashboard training priority', () => {
     expect(actions.onStart).toHaveBeenCalledWith(routine.id);
   });
 
+  it('offers to fix an empty planned routine instead of starting an empty workout', () => {
+    const actions = handlers();
+    const routine = { ...createPreviewFixtures().routines[0], exercises: [] };
+    render(<DashboardOverview userName="Alex" summary={summary} {...planProps} plannedRoutine={routine} {...actions} />);
+    expect(screen.getByText('Esta rutina aún no tiene ejercicios. Añádelos en tu biblioteca para empezar.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Empezar entrenamiento' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Revisar rutina' }));
+    expect(actions.onNavigateToRoutines).toHaveBeenCalledOnce();
+    expect(actions.onStart).not.toHaveBeenCalled();
+  });
+
   it('prioritizes continuing an active workout over starting another', () => {
     const actions = handlers();
     render(<DashboardOverview userName="Alex" summary={summary} activeRoutineName="Mi sesión"
@@ -47,9 +58,29 @@ describe('dashboard training priority', () => {
     const actions = handlers();
     render(<DashboardOverview userName="Alex" summary={summary} {...planProps} {...actions} />);
     expect(screen.getByText('Hoy sin plan')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir rutina' }));
+    expect(actions.onChooseRoutine).toHaveBeenCalledOnce();
     fireEvent.click(screen.getByRole('button', { name: 'Planificar semana' }));
     expect(screen.getAllByRole('combobox')).toHaveLength(7);
-    expect(actions.onNavigateToRoutines).not.toHaveBeenCalled();
+  });
+
+  it('offers planning when the library is empty', () => {
+    render(<DashboardOverview userName="Alex" summary={summary} {...planProps} routines={[]} {...handlers()} />);
+    expect(screen.queryByRole('button', { name: 'Elegir rutina' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Planificar semana' }));
+    expect(screen.getAllByRole('combobox')).toHaveLength(7);
+  });
+
+  it('lets mobile users expand and collapse the activity summary', () => {
+    render(<DashboardOverview userName="Alex" summary={summary} {...planProps} {...handlers()} />);
+    const toggle = screen.getByText('Resumen').closest('button')!;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    const metrics = document.getElementById(toggle.getAttribute('aria-controls')!);
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(metrics?.dataset.expanded).toBe('true');
+    fireEvent.click(toggle);
+    expect(metrics?.dataset.expanded).toBe('false');
   });
 
   it('shows explicit rest without suggesting a routine', () => {

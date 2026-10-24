@@ -192,7 +192,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = React.memo(({
   const hasLastWeights = useMemo(() => Object.keys(lastWeights).length > 0, [lastWeights]);
 
   return (
-    <div className="app-shell pb-[calc(6rem+env(safe-area-inset-bottom))]">
+    <div className="app-shell workout-page pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <ActiveWorkoutHeader
         routineName={routine.name}
         workoutStartTime={session.startedAt.getTime()}

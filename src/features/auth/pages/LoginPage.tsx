@@ -1,4 +1,6 @@
 import { Suspense, lazy, useState } from 'react';
+import { ArrowRight, Dumbbell } from 'lucide-react';
+import { ThemePicker } from '../../../app/theme/ThemePicker';
 import { useUI } from '../../../app/providers/ui-context';
 import { useGoogleSignIn } from '../hooks/useGoogleSignIn';
 
@@ -39,130 +41,44 @@ export function Login({ errorMessage }: LoginProps) {
   };
 
   return (
-    <div className="app-shell flex min-h-screen items-center justify-center px-4 py-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:p-5">
-      <main className="w-full max-w-4xl overflow-hidden rounded-[1.75rem] bg-[radial-gradient(circle_at_top_right,rgb(var(--color-accent)/0.14),transparent_24%),radial-gradient(circle_at_bottom_left,rgb(var(--color-warning)/0.12),transparent_28%),linear-gradient(180deg,rgb(var(--color-surface)/0.99),rgb(var(--color-canvas)/0.99))] shadow-lift">
-        <div className="grid lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)]">
-          <section className="motion-enter hidden lg:flex lg:flex-col lg:justify-between lg:p-8">
-            <div>
-              <div className="inline-flex items-center rounded-full bg-white/[0.04] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-mint/85">
-                Gym tracker mobile-first
-              </div>
-
-              <div className="mt-6 flex h-16 w-16 items-center justify-center rounded-[1.3rem] bg-mint text-ink shadow-lift">
-                <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" />
-                </svg>
-              </div>
-
-              <h1 className="mt-5 font-display text-[3.2rem] leading-[0.9] text-white">
-                Entra. Entrena. Repite.
-              </h1>
-              <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-300">
-                Rutinas, progreso y calendario listos para volver al entrenamiento con menos fricción.
-              </p>
-            </div>
-
-            <div className="grid gap-2 text-sm text-slate-300">
-              <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">Empieza una rutina sin buscarla de nuevo.</div>
-              <div className="rounded-[1rem] bg-white/[0.04] px-3 py-3">Revisa progreso y calendario desde el mismo lugar.</div>
-            </div>
-          </section>
-
-          <section className="motion-enter motion-enter-delay-1 p-5 sm:p-6 lg:p-8">
-            <div className="mx-auto max-w-md">
-              <div className="flex items-center gap-3 lg:hidden">
-                <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-mint text-ink shadow-lift">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.57 14.86L22 13.43 20.57 12 17 15.57 8.43 7 12 3.43 10.57 2 9.14 3.43 7.71 2 5.57 4.14 4.14 2.71 2.71 4.14l1.43 1.43L2 7.71l1.43 1.43L2 10.57 3.43 12 7 8.43 15.57 17 12 20.57 13.43 22l1.43-1.43L16.29 22l2.14-2.14 1.43 1.43 1.43-1.43-1.43-1.43L22 16.29l-1.43-1.43z" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="font-display text-3xl leading-none text-white">Herculito</div>
-                  <div className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-400">Rutinas, progreso y calendario</div>
-                </div>
-              </div>
-
-              <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Acceso</div>
-               <h2 className="mt-2 font-display text-[2rem] leading-[0.94] text-white sm:text-[2.3rem]">Vuelve a tu dashboard</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                Inicia sesión para abrir tus rutinas, continuar entrenamientos y revisar tu progreso.
-              </p>
-
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-300 lg:hidden">
-                <span className="rounded-full bg-white/[0.04] px-2.5 py-1">Rutinas listas</span>
-                <span className="rounded-full bg-mint/12 px-2.5 py-1 text-mint/85">Progreso visible</span>
-                <span className="rounded-full bg-amberGlow/12 px-2.5 py-1 text-amberGlow">Calendario</span>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {effectiveErrorMessage && (
-                  <div className="rounded-[1.2rem] bg-crimson/10 px-4 py-3 text-sm text-crimson">
-                    <p className="break-words">{effectiveErrorMessage}</p>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <p className="text-[11px] text-crimson/80">Incluye este mensaje al reportar el problema.</p>
-                      <button
-                        type="button"
-                        onClick={handleCopyError}
-                        className="btn-ghost bg-crimson/10 text-xs text-crimson hover:text-crimson"
-                      >
-                        Copiar error
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-[1.35rem] bg-white/[0.04] p-4 sm:p-5">
-                  <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Acceso principal</div>
-                  <button
-                    onClick={handleGoogleAction}
-                    disabled={loading}
-                    className="btn-primary flex w-full items-center justify-center gap-3 text-base disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {loading ? (
-                      <div className="h-5 w-5 rounded-full border-2 border-ink border-t-transparent animate-spin" />
-                    ) : (
-                      <>
-                        <svg className="h-5 w-5" viewBox="0 0 24 24">
-                          <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                          <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                          <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                          <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                        </svg>
-                        <span>Continuar con Google</span>
-                      </>
-                    )}
-                  </button>
-
-                  <p className="mt-3 text-xs leading-relaxed text-slate-400">
-                    Sincroniza progreso, rutinas y entrenamientos entre dispositivos.
-                  </p>
-                </div>
-
-                {showClerkOptions ? (
-                  <Suspense
-                    fallback={
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-hidden="true">
-                        <div className="skeleton-block h-11 rounded-xl" />
-                        <div className="skeleton-block h-11 rounded-xl" />
-                      </div>
-                    }
-                  >
-                    <ClerkAuthOptions />
-                  </Suspense>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowClerkOptions(true)}
-                    className="btn-secondary w-full text-sm"
-                  >
-                    Ver más opciones de acceso
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
-        </div>
+    <div className="login-page">
+      <header className="login-header">
+        <span className="sidebar-logo"><span className="brand-mark"><Dumbbell size={21} /></span><span>herculito<span className="brand-dot">.</span></span></span>
+        <ThemePicker />
+      </header>
+      <main className="login-layout">
+        <section className="login-intro">
+          <span className="eyebrow">Tu espacio de entrenamiento</span>
+          <h1>Un poco más fuerte.<br /><span className="text-mint">Una sesión a la vez.</span></h1>
+          <p>Planifica tus rutinas, registra cada serie y dale continuidad a tu progreso. Todo en un mismo lugar.</p>
+          <div className="login-example" aria-hidden="true">
+            <div className="flex items-center justify-between text-xs text-slate-400"><span>Tu próxima sesión</span><Dumbbell size={16} /></div>
+            <div className="mt-5 text-xl font-semibold text-white">Hoy toca avanzar.</div>
+            <div className="mt-2 text-xs text-slate-400">Tu rutina. Tus pesos. Tu ritmo.</div>
+            <div className="login-example-series"><span>01 <i /></span><span>02 <i /></span><span>03 <i /></span></div>
+            <span className="mt-5 inline-flex items-center gap-2 text-xs text-mint">Todo listo para tu siguiente serie <ArrowRight size={14} /></span>
+          </div>
+        </section>
+        <section className="login-access">
+          <span className="eyebrow">Bienvenido a Herculito</span>
+          <h2>Vuelve a tu ritmo.</h2>
+          <p>Inicia sesión para continuar donde lo dejaste.</p>
+          {effectiveErrorMessage && <div className="my-5 rounded-lg border border-crimson/30 bg-crimson/5 p-4 text-sm text-crimson" role="alert">
+            <p className="break-words">{effectiveErrorMessage}</p>
+            <button type="button" onClick={handleCopyError} className="btn-ghost mt-2 text-xs text-crimson">Copiar error</button>
+          </div>}
+          <button type="button" onClick={handleGoogleAction} disabled={loading}
+            className="btn-primary mt-8 flex w-full items-center justify-center gap-3">
+            {loading ? <><span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />Conectando…</>
+              : <><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.89-1.74 2.98-4.3 2.98-7.36ZM12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.6A10 10 0 0 0 12 22ZM6.41 13.92a6 6 0 0 1 0-3.84v-2.6H3.06a10 10 0 0 0 0 9.04l3.35-2.6ZM12 5.96c1.47 0 2.8.5 3.84 1.5l2.88-2.88A9.62 9.62 0 0 0 12 2a10 10 0 0 0-8.94 5.48l3.35 2.6A6 6 0 0 1 12 5.96Z" /></svg>Continuar con Google</>}
+          </button>
+          <div className="login-divider"><span />o<span /></div>
+          {showClerkOptions ? <Suspense fallback={<div role="status" className="text-sm text-slate-400">Cargando opciones…</div>}><ClerkAuthOptions /></Suspense>
+            : <button type="button" onClick={() => setShowClerkOptions(true)} className="btn-secondary w-full">Más opciones de acceso</button>}
+          <p className="login-footnote">Tus rutinas y tu progreso, sincronizados entre dispositivos.</p>
+        </section>
       </main>
+      <footer className="login-footer">Cada serie cuenta.</footer>
     </div>
   );
 }

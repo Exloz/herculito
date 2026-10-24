@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Target, Plus, Calendar, Timer, TrendingUp, Flame } from 'lucide-react';
+import { Target, Plus, Timer, TrendingUp, Flame } from 'lucide-react';
 import type { User, ArcheryBowType, HiitConfig, SportSession } from '../../../shared/types';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { useDelayedLoading } from '../../../shared/hooks/useDelayedLoading';
@@ -223,18 +223,18 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
 
   return (
     <div className="app-shell pb-28">
-      <div className="max-w-4xl mx-auto px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:pb-8 sm:pt-[calc(2rem+env(safe-area-inset-top))]">
+      <div className="page-container">
         {/* Header */}
         <section className="motion-enter mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">
-              Control de Rendimiento
+            <div className="eyebrow">
+              Entrenamiento
             </div>
-            <h1 className="mt-1 font-display text-2xl text-white sm:text-3xl">
+            <h1 className="mt-1">
               Deportes
             </h1>
             <p className="mt-2 max-w-xl text-sm text-slate-300">
-              Registra y analiza tus sesiones deportivas.
+              Tiro con arco e HIIT. Elige cómo quieres moverte hoy.
             </p>
           </div>
 
@@ -358,9 +358,10 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 mb-3">
             Selecciona un deporte
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setShowSetup(true)}
+              data-sport="archery"
               className="sport-card active motion-interactive"
             >
               <div className="w-12 h-12 rounded-2xl bg-mint/15 flex items-center justify-center">
@@ -376,6 +377,7 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
 
             <button
               onClick={() => setShowHiitConfig(true)}
+              data-sport="hiit"
               className="sport-card active motion-interactive"
             >
               <div className="w-12 h-12 rounded-2xl bg-amberGlow/15 flex items-center justify-center">
@@ -389,15 +391,6 @@ const Sports: React.FC<SportsProps> = ({ user }) => {
               </div>
             </button>
 
-            <div className="sport-card locked opacity-50">
-              <div className="w-12 h-12 rounded-2xl bg-slateDeep flex items-center justify-center">
-                <Calendar size={24} className="text-slate-500" />
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-slate-400">Más deportes</div>
-                <div className="text-xs text-slate-500 mt-1">En desarrollo</div>
-              </div>
-            </div>
           </div>
         </section>
 

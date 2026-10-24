@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   setOwner: vi.fn(),
   replayPending: vi.fn().mockResolvedValue(undefined),
   projection: {
-    active: null as { kind: 'workout' } | null,
+    active: null as { kind: 'workout' | 'archery' | 'hiit' } | null,
     pendingSyncCount: 0,
     failedSyncCount: 1,
     syncError: 'Ya existe otra actividad activa en el servidor.',
@@ -65,6 +65,15 @@ describe('Navigation synchronization failure action', () => {
     expect(onPageChange).toHaveBeenCalledWith('dashboard');
     fireEvent.click(screen.getByRole('button', { name: 'Ir a Mis medidas' }));
     expect(onPageChange).toHaveBeenCalledWith('profile');
+  });
+
+  it.each(['archery', 'hiit'] as const)('resumes an active %s session from another page', (kind) => {
+    mocks.projection.active = { kind };
+    const onPageChange = vi.fn();
+    render(<Navigation currentPage="calendar" onPageChange={onPageChange} isAdmin={false} userId="user-1" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar sesión deportiva' }));
+    expect(onPageChange).toHaveBeenCalledWith('sports');
+    expect(screen.queryByRole('button', { name: 'Reanudar entrenamiento activo' })).toBeNull();
   });
 
   it('acknowledges an active-activity conflict instead of retrying it', () => {

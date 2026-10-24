@@ -5,7 +5,6 @@ import { useProfileData } from '../hooks/useProfileData';
 import { useUI } from '../../../app/providers/ui-context';
 import { PageSkeleton } from '../../../shared/ui/PageSkeleton';
 import { formatDateValue } from '../../../shared/lib/intl';
-import { ThemePicker } from '../../../app/theme/ThemePicker';
 import {
   buildMeasurementMutation,
   type MeasurementFormValues
@@ -135,29 +134,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
 
   return (
     <div className="app-shell pb-28">
-      {/* Header */}
-      <header className="app-header px-4 pb-4 pt-[calc(0.25rem+env(safe-area-inset-top))] sm:pb-5 sm:pt-[calc(0.5rem+env(safe-area-inset-top))]">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleBack}
-              className="btn-secondary flex h-11 w-11 items-center justify-center rounded-[1rem] px-0 touch-target"
-              aria-label="Volver"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-mint/80">Perfil</div>
-              <h1 className="font-display text-[1.75rem] leading-none text-white sm:text-[2rem]">Mis Medidas</h1>
-            </div>
-            <ThemePicker />
-          </div>
+      <main className="page-container">
+        <div className="page-heading flex items-start justify-between gap-4">
+          <div><span className="eyebrow">Seguimiento</span><h1>Mis medidas</h1>
+            <p>Un registro de tu cuerpo, a lo largo del tiempo.</p></div>
+          <button type="button" className="btn-ghost flex items-center gap-2 text-xs" onClick={handleBack} aria-label="Volver"><ArrowLeft size={16} />Inicio</button>
         </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 py-6 sm:py-8">
         {error && (
-          <div className="motion-enter mb-4 rounded-[1.2rem] border border-crimson/45 bg-crimson/10 px-4 py-3 text-sm text-red-200">
+          <div className="motion-enter mb-4 rounded-xl border border-crimson/45 bg-crimson/10 px-4 py-3 text-sm text-red-200">
             {error}
             <button
               onClick={() => void refresh()}
@@ -171,33 +155,33 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
 
         {/* Summary Card */}
         {latestMeasurement && !showForm && (
-          <section className="motion-enter mb-6 overflow-hidden rounded-[1.45rem] border border-mint/20 bg-gradient-to-br from-mint/10 to-transparent px-4 py-4 shadow-lift sm:px-5">
+          <section className="motion-enter mb-6 overflow-hidden rounded-xl border border-mist/60 bg-graphite px-4 py-4 shadow-lift sm:px-5">
             <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-mint/85">
               <Scale size={14} />
               <span>Última medición</span>
             </div>
             <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {latestMeasurement.weightKg && (
-                <div className="rounded-[0.95rem] bg-black/20 px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Peso</div>
+                <div className="px-1 py-2.5">
+                  <div className="text-xs text-slate-400">Peso</div>
                   <div className="mt-1 text-lg font-semibold text-white">{latestMeasurement.weightKg} kg</div>
                 </div>
               )}
               {latestMeasurement.heightCm && (
-                <div className="rounded-[0.95rem] bg-black/20 px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Altura</div>
+                <div className="px-1 py-2.5">
+                  <div className="text-xs text-slate-400">Altura</div>
                   <div className="mt-1 text-lg font-semibold text-white">{latestMeasurement.heightCm} cm</div>
                 </div>
               )}
               {latestMeasurement.bodyFatPercentage && (
-                <div className="rounded-[0.95rem] bg-black/20 px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">% Grasa</div>
+                <div className="px-1 py-2.5">
+                  <div className="text-xs text-slate-400">% Grasa</div>
                   <div className="mt-1 text-lg font-semibold text-white">{latestMeasurement.bodyFatPercentage}%</div>
                 </div>
               )}
               {latestMeasurement.waistCm && (
-                <div className="rounded-[0.95rem] bg-black/20 px-3 py-2.5">
-                  <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">Cintura</div>
+                <div className="px-1 py-2.5">
+                  <div className="text-xs text-slate-400">Cintura</div>
                   <div className="mt-1 text-lg font-semibold text-white">{latestMeasurement.waistCm} cm</div>
                 </div>
               )}
@@ -223,7 +207,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
 
         {/* Form */}
         {showForm && (
-          <section className="motion-dialog-panel mb-6 rounded-[1.45rem] border border-mist/60 bg-charcoal p-4 shadow-lift sm:p-5">
+          <section className="motion-dialog-panel mb-6 rounded-xl border border-mist/60 bg-charcoal p-4 shadow-lift sm:p-5">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-display text-xl text-white">
                 {editingMeasurement ? 'Editar medición' : 'Nueva medición'}
@@ -431,7 +415,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
               {measurements.map((measurement, index) => (
                 <div
                   key={measurement.id}
-                  className="deferred-list-item motion-interactive app-card app-card-hover rounded-[1.2rem] p-4 sm:p-5"
+                  className="deferred-list-item motion-interactive app-card app-card-hover rounded-xl p-4 sm:p-5"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -532,7 +516,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ user, onBack }) => {
 
         {/* Empty State */}
         {!showForm && measurements.length === 0 && !loading && (
-          <section className="motion-enter motion-enter-delay-2 flex flex-col items-center justify-center rounded-[1.45rem] border border-dashed border-mist/40 bg-graphite/50 px-6 py-12 text-center">
+          <section className="motion-enter motion-enter-delay-2 flex flex-col items-center justify-center rounded-xl border border-dashed border-mist/40 bg-graphite/50 px-6 py-12 text-center">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-mint/10">
               <Ruler size={28} className="text-mint" />
             </div>

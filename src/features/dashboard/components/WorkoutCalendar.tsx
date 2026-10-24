@@ -115,17 +115,17 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
   }, 0);
 
   return (
-    <div className="overflow-hidden rounded-[1.6rem] bg-[linear-gradient(180deg,rgb(var(--color-card)/0.98),rgb(var(--color-canvas)/0.98))] p-3 shadow-lift sm:p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-white/8 pb-3">
-        <h3 className="min-w-0 text-[1.75rem] font-display leading-none text-white sm:text-2xl">
+    <div className="app-card p-4 sm:p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-mist/30 pb-3">
+        <h3 className="min-w-0 text-lg font-semibold leading-tight text-white sm:text-xl">
           {monthNames[month]} {year}
         </h3>
 
         <div className="flex shrink-0 items-center gap-2">
-          <div className="rounded-full bg-amberGlow/10 px-3 py-1.5 text-xs font-semibold text-amberGlow/90">
+          <div className="text-xs tabular-nums text-slate-400">
             {workoutsThisMonth} {workoutsThisMonth === 1 ? 'sesión' : 'sesiones'}
           </div>
-          <div className="inline-flex shrink-0 items-center gap-1 rounded-[1rem] bg-white/[0.04] p-1">
+          <div className="inline-flex shrink-0 items-center gap-1">
             <button
               onClick={() => navigateMonth('prev')}
               className="motion-interactive flex h-11 w-11 items-center justify-center rounded-[0.8rem] bg-transparent text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
@@ -171,18 +171,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
               aria-pressed={selectedDate === day.date}
                aria-label={`${dayNumber} de ${monthNames[new Date(day.date + 'T12:00:00').getMonth()]} de ${new Date(day.date + 'T12:00:00').getFullYear()}${hasWorkout ? `, ${day.workouts.length} ${day.workouts.length === 1 ? 'sesión' : 'sesiones'}` : ', sin sesiones'}${isCurrentDay ? ', hoy' : ''}`}
                aria-current={isCurrentDay ? 'date' : undefined}
-              className={`motion-interactive 
-                relative min-w-0 w-full rounded-[0.9rem] p-0.5 sm:aspect-square sm:p-1 cursor-pointer transition-colors touch-manipulation
-                min-h-[44px]
-                ${isCurrentDay
-                  ? 'bg-mint text-ink shadow-[0_8px_24px_rgb(var(--color-accent)/0.28)]'
-                  : isInCurrentMonth
-                    ? 'bg-slateDeep/55 text-slate-200 hover:bg-slateDeep'
-                    : 'text-slate-600 hover:bg-charcoal'
-                }
-                ${hasWorkout ? 'ring-1 sm:ring-2 ring-mint/45' : 'border border-transparent'}
-                ${selectedDate === day.date ? 'outline outline-2 outline-offset-1 outline-amberGlow' : ''}
-              `}
+              className="calendar-day"
             >
               <div className="text-center text-xs font-semibold leading-tight sm:text-sm">
                 {dayNumber}
@@ -194,7 +183,7 @@ export const WorkoutCalendar: React.FC<WorkoutCalendarProps> = ({
                     {day.workouts.slice(0, 3).map((workout) => {
                       const muscleGroup = workout.muscleGroup
                         ? MUSCLE_GROUPS[workout.muscleGroup]
-                        : { name: workout.routineName, color: workout.sportType === 'archery' ? '#f59e0b' : '#38bdf8' };
+                        : { name: workout.routineName, color: workout.sportType === 'archery' ? 'rgb(var(--color-sky))' : 'rgb(var(--color-peach))' };
                       return (
                         <div
                           key={workout.sessionId}

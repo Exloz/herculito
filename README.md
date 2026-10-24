@@ -10,7 +10,9 @@ App web para seguimiento de entrenamientos en gimnasio. Esta version es el front
 - Dashboard con historial, calendario y paneles de progreso.
 - Panel de administracion para revisar usuarios, rutinas y sesiones.
 - Soporte PWA en produccion con service worker (`vite-plugin-pwa`).
-- UI mobile-first con Tailwind CSS y sistema visual propio (`app-*`, `btn-*`, `input`, `chip`).
+- UI adaptable: navegación lateral en escritorio, barra inferior en móvil y búsqueda con Ctrl/Cmd+K.
+- Progreso y calendario accesibles directamente en `/progress` y `/calendar`.
+- Sistema visual semántico claro/oscuro con Tailwind CSS (`app-*`, `btn-*`, `input`, `chip`).
 
 ## Stack
 
@@ -138,6 +140,8 @@ public/       # assets estaticos e iconos PWA
 - Si persiste: `pnpm dev -- --force`.
 
 ## Documentacion relacionada
+
+- [Reconstrucción basada en T3 Code](docs/RECONSTRUCCION-T3.md): análisis, fuentes, decisiones y validación.
 
 - `AGENTS.md`: guia tecnica de trabajo en este repo.
 - `.github/copilot-instructions.md`: convenciones adicionales del proyecto.

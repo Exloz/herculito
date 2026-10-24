@@ -8,7 +8,7 @@ import {
   type ReactNode
 } from 'react';
 import { AuthenticateWithRedirectCallback } from '@clerk/react';
-import { Navigation } from './navigation/Navigation';
+import { WorkspaceShell } from './navigation/WorkspaceShell';
 import { useClerkAuthState } from '../features/auth/hooks/useAuth';
 import { AuthContext, type AuthState } from '../features/auth/hooks/auth-context';
 import { ScrollToTop } from './navigation/ScrollToTop';
@@ -200,13 +200,12 @@ function AppContent({ auth }: { auth: AuthState }) {
   }
 
   const renderPage = (page: AppPage) => {
-    if (page === 'dashboard') {
+    if (page === 'dashboard' || page === 'progress' || page === 'calendar') {
       return (
         <Dashboard
           user={user}
-          onLogout={logout}
+          view={page === 'dashboard' ? 'routines' : page}
           onReadyForBackgroundPreload={() => setCanPreloadRoutines(true)}
-          onNavigateToProfile={() => handlePageChange('profile')}
           onNavigateToRoutines={() => handlePageChange('routines')}
         />
       );
@@ -230,7 +229,7 @@ function AppContent({ auth }: { auth: AuthState }) {
   return (
     <>
       <AuthErrorToast message={error} />
-      <div className="app-shell">
+      <WorkspaceShell currentPage={currentPage} onPageChange={handlePageChange} user={user} isAdmin={isAdmin} onLogout={logout}>
         <LazyLoadErrorBoundary resetKey={currentPage}>
           <Suspense
             fallback={<PageSkeleton page={currentPage} compact className="content-fade-in" />}
@@ -247,8 +246,7 @@ function AppContent({ auth }: { auth: AuthState }) {
             </div>
           </Suspense>
         </LazyLoadErrorBoundary>
-        <Navigation currentPage={currentPage} onPageChange={handlePageChange} isAdmin={isAdmin} userId={user.id} />
-      </div>
+      </WorkspaceShell>
       {import.meta.env.DEV && isAdmin && typeof window !== 'undefined' && (
         <AgentationErrorBoundary>
           <DevAgentation enabled={isAdmin} />

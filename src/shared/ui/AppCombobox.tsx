@@ -430,7 +430,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
   ].join(' ').trim();
 
   const panelClasses = [
-    'overflow-hidden border border-white/[0.07] bg-[radial-gradient(circle_at_top_right,rgb(var(--color-accent)/0.08),transparent_24%),linear-gradient(180deg,rgb(var(--color-surface)/0.985),rgb(var(--color-canvas)/0.985))] shadow-soft backdrop-blur-xl',
+    'overflow-hidden border border-white/[0.07] bg-graphite shadow-soft backdrop-blur-xl',
     panelClassName ?? ''
   ].join(' ').trim();
 
@@ -524,7 +524,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
     <div
       ref={panelRef}
       tabIndex={-1}
-      className={`motion-pop-in rounded-[1.25rem] ${panelClasses}`}
+      className={`motion-pop-in rounded-xl ${panelClasses}`}
       style={panelStyle}
       onKeyDown={handleInteractionKeyDown}
     >
@@ -560,7 +560,7 @@ export const AppCombobox: React.FC<AppComboboxProps> = ({
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={`motion-dialog-panel relative z-[81] flex w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] ${panelClasses}`}
+        className={`motion-dialog-panel relative z-[81] flex w-full max-w-lg flex-col overflow-hidden rounded-xl ${panelClasses}`}
         style={{ maxHeight: `${mobilePanelMaxHeight}px` }}
         onKeyDown={handleInteractionKeyDown}
       >

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Activity, CalendarDays, ChevronDown, Clock3, Dumbbell, Play } from 'lucide-react';
 import type { DashboardCompetition, DashboardSummary, Routine } from '../../../shared/types';
-import { formatDateValue } from '../../../shared/lib/intl';
+import { formatCountLabel, formatDateValue, formatNumber } from '../../../shared/lib/intl';
 import { APP_TIME_ZONE } from '../../../shared/lib/dateUtils';
 import { WeeklyPlanEditor } from './WeeklyPlanEditor';
 import { WEEK_DAYS } from '../lib/weeklyPlan';
@@ -118,21 +118,36 @@ export function DashboardOverview({ userName, summary, plannedRoutine, routines,
       </div>
       {editingWeek && <div className="app-card p-4"><WeeklyPlanEditor routines={routines} plan={weeklyPlan} today={today}
         onAssign={onAssignDay} onManageRoutines={onNavigateToRoutines} /></div>}
-      <button type="button" className="overview-summary" aria-expanded={metricsExpanded} aria-controls="overview-metrics"
-        onClick={() => setMetricsExpanded((expanded) => !expanded)}>
-        <span className="overview-summary-label"><Activity size={17} aria-hidden="true" /><span><strong>{summary.thisWeekWorkouts} sesiones</strong> esta semana</span></span>
-        <span className="flex items-center gap-2">Resumen<ChevronDown size={16} className={metricsExpanded ? 'rotate-180' : ''} /></span>
-      </button>
-      <dl id="overview-metrics" className="overview-metrics" data-expanded={metricsExpanded} aria-label="Resumen de actividad">
-        {[
-          { label: 'Esta semana', value: summary.thisWeekWorkouts, unit: 'sesiones' },
-          { label: 'Este mes', value: summary.thisMonthWorkouts, unit: `${summary.totalWorkouts} en total` },
-          { label: 'Tu racha', value: summary.currentStreak, unit: `días · mejor: ${summary.longestStreak}` },
-          { label: 'Duración media', value: summary.averageDurationMin, unit: 'min / sesión' }
-        ].map(({ label, value, unit }) => <div key={label} className="metric-card">
-          <dt>{label}</dt><dd className="metric-value">{value}</dd><dd className="metric-unit">{unit}</dd>
-        </div>)}
-      </dl>
+      <div className="activity-overview">
+        <button type="button" className="overview-summary"
+          aria-label={`Resumen de actividad${metricsExpanded ? '' : `: ${formatCountLabel(summary.thisWeekWorkouts, 'sesión', 'sesiones')} esta semana`}`}
+          aria-expanded={metricsExpanded} aria-controls="overview-metrics"
+          onClick={() => setMetricsExpanded((expanded) => !expanded)}>
+          <span className="overview-summary-label"><Activity size={17} aria-hidden="true" />
+            {metricsExpanded ? <strong>Tu actividad</strong>
+              : <span><strong>{formatCountLabel(summary.thisWeekWorkouts, 'sesión', 'sesiones')}</strong> esta semana</span>}
+          </span>
+          <span className="overview-summary-action">{metricsExpanded ? 'Ocultar' : 'Resumen'}
+            <ChevronDown size={16} aria-hidden="true" className={metricsExpanded ? 'rotate-180' : ''} />
+          </span>
+        </button>
+        <dl id="overview-metrics" className="overview-metrics" data-expanded={metricsExpanded} aria-label="Resumen de actividad">
+          {[
+            { label: 'Esta semana', value: summary.thisWeekWorkouts, unit: summary.thisWeekWorkouts === 1 ? 'sesión' : 'sesiones' },
+            { label: 'Este mes', value: summary.thisMonthWorkouts, unit: summary.thisMonthWorkouts === 1 ? 'sesión' : 'sesiones',
+              note: `${formatCountLabel(summary.totalWorkouts, 'sesión', 'sesiones')} en total` },
+            { label: 'Tu racha', value: summary.currentStreak, unit: summary.currentStreak === 1 ? 'día' : 'días',
+              note: `Mejor: ${formatCountLabel(summary.longestStreak, 'día', 'días')}` },
+            { label: 'Duración media', value: summary.averageDurationMin, unit: 'min', note: 'Por sesión' }
+          ].map(({ label, value, unit, note }) => <div key={label} className="metric-card">
+            <dt>{label}</dt>
+            <dd className="metric-value"><span className="metric-number">{formatNumber(value)}</span>{' '}
+              <span className="metric-value-unit">{unit}</span>
+            </dd>
+            {note && <dd className="metric-note">{note}</dd>}
+          </div>)}
+        </dl>
+      </div>
     </section>
   );
 }

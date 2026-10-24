@@ -73,14 +73,35 @@ describe('dashboard training priority', () => {
 
   it('lets mobile users expand and collapse the activity summary', () => {
     render(<DashboardOverview userName="Alex" summary={summary} {...planProps} {...handlers()} />);
-    const toggle = screen.getByText('Resumen').closest('button')!;
+    const toggle = screen.getByRole('button', { name: /^Resumen de actividad/ });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     const metrics = document.getElementById(toggle.getAttribute('aria-controls')!);
     fireEvent.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(metrics?.dataset.expanded).toBe('true');
+    expect(within(toggle).getByText('Tu actividad')).toBeTruthy();
+    expect(within(toggle).queryByText('esta semana')).toBeNull();
     fireEvent.click(toggle);
     expect(metrics?.dataset.expanded).toBe('false');
+  });
+
+  it.each([0, 1, 2])('uses the correct session and day units for %s', (count) => {
+    const unit = count === 1 ? 'sesión' : 'sesiones';
+    const dayUnit = count === 1 ? 'día' : 'días';
+    render(<DashboardOverview userName="Alex" {...planProps} {...handlers()}
+      summary={{ ...summary, thisWeekWorkouts: count, thisMonthWorkouts: count,
+        totalWorkouts: count, currentStreak: count, longestStreak: count }} />);
+    const toggle = screen.getByRole('button', { name: /^Resumen de actividad/ });
+    expect(within(toggle).getByText(`${count} ${unit}`)).toBeTruthy();
+    fireEvent.click(toggle);
+    const metrics = document.getElementById(toggle.getAttribute('aria-controls')!)!;
+    for (const label of ['Esta semana', 'Este mes']) {
+      const metric = within(metrics).getByText(label).parentElement!;
+      expect(within(metric).getByText(unit, { exact: true })).toBeTruthy();
+    }
+    expect(within(metrics).getByText(dayUnit, { exact: true })).toBeTruthy();
+    expect(within(metrics).getByText(`Mejor: ${count} ${dayUnit}`)).toBeTruthy();
+    expect(within(metrics).getByText(`${count} ${unit} en total`)).toBeTruthy();
   });
 
   it('shows explicit rest without suggesting a routine', () => {

@@ -274,3 +274,18 @@ rutina, registrar una serie, navegar, reanudarla y finalizar con confirmación.
 - Verificación posterior al despliegue: el tema inicial se aplica mediante
   `public/theme-init.js`, permitido por la CSP de producción, antes de cargar los
   estilos. Se elimina el script inline bloqueado sin ampliar la política CSP.
+
+## Resumen de actividad · v2.73.1
+
+El resumen móvil integra cabecera y métricas en una única superficie con profundidad
+suave. Al expandirse, «Tu actividad» sustituye el contador de la cabecera para no
+repetir la cifra semanal. La semana recibe el énfasis principal; las demás cifras
+mantienen texto neutro, unidades junto al valor y contexto secundario debajo.
+Se eliminan las barras verticales, los cuatro colores simultáneos y el espacio
+excesivo entre la cabecera y las métricas. Sesiones y días respetan el singular.
+El contador semanal sigue disponible para lectores de pantalla con el bloque cerrado.
+
+La información real, el despliegue por teclado y la vista de cuatro columnas en
+escritorio se conservan. Verificación visual en claro/oscuro a 320 y 390 px, con
+controles de 52 px y sin desbordamiento horizontal.
+Validación: 503 pruebas en 67 archivos, ESLint, TypeScript y compilación con service worker.

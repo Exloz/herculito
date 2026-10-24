@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useState } from 'react';
 import { ThemeProvider } from '../theme/ThemeProvider';
 import { CommandMenu } from './CommandMenu';
+import { THEMES } from '../theme/themes';
 
 beforeEach(() => {
   window.localStorage.clear();
@@ -30,10 +31,20 @@ describe('command navigation', () => {
   it('wraps keyboard selection and runs the selected theme action', () => {
     const { input, onNavigate } = setup();
     fireEvent.keyDown(input, { key: 'ArrowUp' });
-    expect(input.getAttribute('aria-activedescendant')).toBe('command-theme');
+    const lastTheme = THEMES[THEMES.length - 1];
+    expect(input.getAttribute('aria-activedescendant')).toBe(`command-theme-${lastTheme.id}`);
     fireEvent.keyDown(input, { key: 'Enter' });
-    expect(document.documentElement.dataset.theme).toBe('light');
-    expect(window.localStorage.getItem('herculito-theme')).toBe('light');
+    expect(document.documentElement.dataset.theme).toBe(lastTheme.id);
+    expect(window.localStorage.getItem('herculito-theme')).toBe(lastTheme.id);
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it('finds and applies a named theme without changing destination', () => {
+    const { input, onNavigate } = setup();
+    fireEvent.change(input, { target: { value: 'bosque' } });
+    expect(screen.getAllByRole('option')).toHaveLength(1);
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(document.documentElement.dataset.theme).toBe('forest');
     expect(onNavigate).not.toHaveBeenCalled();
   });
 

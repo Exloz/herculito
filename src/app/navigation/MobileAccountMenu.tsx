@@ -40,7 +40,7 @@ export function MobileAccountMenu({ userName, isAdmin, onNavigate, onLogout, onC
         </div>
         <button type="button" className="account-sheet-row" onClick={() => navigate('profile')}><Ruler size={19} />Mis medidas</button>
         {isAdmin && <button type="button" className="account-sheet-row" onClick={() => navigate('admin')}><Shield size={19} />Administración</button>}
-        <div className="account-sheet-row justify-between"><span>Apariencia</span><ThemePicker /></div>
+        <div className="account-sheet-row justify-between"><span>Apariencia</span><ThemePicker showLabel /></div>
         <button type="button" className="account-sheet-row text-muted" onClick={() => { onClose(); onLogout(); }}><LogOut size={19} />Cerrar sesión</button>
         <p className="pt-3 text-center text-xs text-muted">Herculito · v{version}</p>
       </div>

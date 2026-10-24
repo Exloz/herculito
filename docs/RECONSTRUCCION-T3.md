@@ -289,3 +289,33 @@ La información real, el despliegue por teclado y la vista de cuatro columnas en
 escritorio se conservan. Verificación visual en claro/oscuro a 320 y 390 px, con
 controles de 52 px y sin desbordamiento horizontal.
 Validación: 503 pruebas en 67 archivos, ESLint, TypeScript y compilación con service worker.
+
+## Colección de temas · v2.74.0
+
+La galería de Apariencia ofrece 14 paletas: Oscuro, Medianoche, Bosque, Amatista,
+Cacao, Carbón y Aurora; Claro, Océano, Salvia, Lavanda, Arena, Rosa y Nieve.
+Cada muestra representa fondo, superficie y acento. La selección se aplica al
+instante y se conserva al cerrar, recargar o sincronizar la preferencia entre
+pestañas del mismo navegador. La preferencia sigue siendo del dispositivo.
+
+Se mantiene la estructura Agenda: elevación, campos, texto, acciones, estados y
+sesión principal usan tokens semánticos. Las nuevas paletas adaptan también la
+iluminación de la tarjeta principal y el color del navegador. El bootstrap externo
+restaura los 14 temas antes de React y sigue siendo compatible con la CSP y el
+precaché de la PWA. Las preferencias Oscuro/Claro anteriores siguen funcionando.
+
+La galería admite selección por radio, teclado, Escape y retorno de foco. Su
+cabecera y «Listo» permanecen visibles mientras se desplazan las muestras. Si se
+abre desde Cuenta, solo la galería es modal; cerrarla conserva el menú y su bloqueo
+de scroll. Los temas también aparecen como acciones buscables por nombre.
+
+Verificación de contraste en navegador: texto principal, secundario, tenue y acento
+sobre fondo/superficie/tarjeta/elevación; texto de botones y tarjeta principal
+iluminada. Los pares revisados superan 4.5:1 en las 14 paletas. La comprobación no
+sustituye una auditoría completa de accesibilidad de todas las combinaciones de la app.
+
+Validación: 534 pruebas en 68 archivos, ESLint, TypeScript y compilación con service
+worker. Navegador: las 14 paletas en Inicio a 390 px; vistas principales a 320 px;
+galería a 320 × 320 px y en escritorio; editor con altura reducida; flechas y Escape;
+recarga de preferencia y cambio de tema durante un entrenamiento conservando la serie
+registrada y el temporizador activo.

@@ -137,6 +137,7 @@ import { toUserMessage } from '../../../shared/lib/errorMessages';
 - Use Tailwind utilities plus shared classes from `src/index.css`
 - Prefer design-system classes like `app-shell`, `app-header`, `app-card`, `app-surface`, `btn-primary`, `btn-secondary`, `input`, and `chip`
 - Use the selected Agenda direction (proposal C): warm charcoal surfaces in dark mode, paper surfaces in light mode, clay primary actions, and muted lavender accents. Gentle shadows and inset highlights give depth; do not flatten every surface or restrict the palette to the old mint/amber colors. Both themes must remain readable.
+- Appearance includes 14 palettes (7 dark and 7 light) selected from a visual gallery. Keep the theme registry, CSS palettes, prepaint bootstrap and browser colors consistent. Preserve the Agenda hierarchy across palettes; theme names must remain searchable in command navigation.
 - Prioritize the main activity above summaries, especially on mobile. Use spacing, typography, surface contrast and elevation for grouping; keep borders subtle around cards and distinct around controls, overlays, focus, and meaningful state.
 - Prefer inline metadata over repeated pills and icons. Keep secondary actions discoverable on touch and keyboard.
 - Design mobile first and preserve large tap targets with `touch-target` utilities

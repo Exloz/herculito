@@ -13,6 +13,7 @@ App web para seguimiento de entrenamientos en gimnasio. Esta version es el front
 - UI adaptable: navegación lateral en escritorio, barra inferior en móvil y búsqueda con Ctrl/Cmd+K.
 - Progreso y calendario accesibles directamente en `/progress` y `/calendar`.
 - Sistema visual semántico claro/oscuro con Tailwind CSS (`app-*`, `btn-*`, `input`, `chip`).
+- 14 temas con galería visual, vista previa inmediata y preferencia guardada en el dispositivo: Cuenta → Apariencia.
 
 ## Stack
 

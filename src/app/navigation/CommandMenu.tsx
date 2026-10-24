@@ -5,6 +5,7 @@ import { useTheme } from '../theme/theme-context';
 import { DialogPortal } from '../../shared/ui/DialogPortal';
 import { useDialogA11y } from '../../shared/hooks/useDialogA11y';
 import { DESTINATIONS, normalizeCommandSearch } from './destinations';
+import { THEMES } from '../theme/themes';
 
 interface CommandMenuProps {
   isAdmin: boolean;
@@ -25,9 +26,9 @@ export function CommandMenu({ isAdmin, onNavigate, onClose }: CommandMenuProps) 
       id: item.page, label: item.label, description: item.description, icon: item.icon,
       run: () => onNavigate(item.page)
     })),
-    { id: 'theme', label: theme === 'dark' ? 'Usar tema claro' : 'Usar tema oscuro',
-      description: 'Cambiar apariencia', icon: theme === 'dark' ? Sun : Moon,
-      run: () => setTheme(theme === 'dark' ? 'light' : 'dark') }
+    ...THEMES.map((option) => ({ id: `theme-${option.id}`, label: `Tema ${option.label}`,
+      description: `${option.colorScheme === 'dark' ? 'Oscuro' : 'Claro'} · ${option.description}${theme === option.id ? ' · Actual' : ''}`,
+      icon: option.colorScheme === 'dark' ? Moon : Sun, run: () => setTheme(option.id) }))
   ].filter((item) => normalizeCommandSearch(`${item.label} ${item.description}`).includes(normalizeCommandSearch(query)));
 
   useEffect(() => {

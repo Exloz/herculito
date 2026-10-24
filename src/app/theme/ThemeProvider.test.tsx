@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from './ThemeProvider';
@@ -16,6 +16,7 @@ beforeEach(() => {
   document.documentElement.removeAttribute('data-theme');
 });
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -32,8 +33,10 @@ describe('theme selection', () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light');
     render(<ThemeProvider><ThemePicker /></ThemeProvider>);
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(screen.getByRole('combobox', { name: 'Apariencia' })).toHaveValue('light');
-    fireEvent.change(screen.getByRole('combobox', { name: 'Apariencia' }), { target: { value: 'dark' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir tema: Claro' }));
+    expect(screen.getAllByRole('radio')).toHaveLength(THEMES.length);
+    expect(screen.getByRole('radio', { name: 'Claro' })).toBeChecked();
+    fireEvent.click(screen.getByRole('radio', { name: 'Oscuro' }));
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(document.documentElement.style.colorScheme).toBe('dark');
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
@@ -43,15 +46,42 @@ describe('theme selection', () => {
     vi.mocked(window.localStorage.getItem).mockImplementation(() => { throw new Error('blocked'); });
     vi.mocked(window.localStorage.setItem).mockImplementation(() => { throw new Error('blocked'); });
     render(<ThemeProvider><ThemePicker /></ThemeProvider>);
-    fireEvent.change(screen.getByRole('combobox', { name: 'Apariencia' }), { target: { value: 'light' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir tema: Oscuro' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Claro' }));
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 
   it('synchronizes changes and resets from another tab', () => {
     render(<ThemeProvider><ThemePicker /></ThemeProvider>);
-    fireEvent(window, new StorageEvent('storage', { key: THEME_STORAGE_KEY, newValue: 'light' }));
-    expect(document.documentElement.dataset.theme).toBe('light');
+    fireEvent(window, new StorageEvent('storage', { key: THEME_STORAGE_KEY, newValue: 'forest' }));
+    expect(document.documentElement.dataset.theme).toBe('forest');
     fireEvent(window, new StorageEvent('storage', { key: THEME_STORAGE_KEY, newValue: null }));
     expect(document.documentElement.dataset.theme).toBe(DEFAULT_THEME);
+  });
+
+  it.each(THEMES)('restores $label with its correct native color scheme and browser color', (theme) => {
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    document.head.append(meta);
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme.id);
+    render(<ThemeProvider><ThemePicker /></ThemeProvider>);
+    expect(document.documentElement.dataset.theme).toBe(theme.id);
+    expect(document.documentElement.style.colorScheme).toBe(theme.colorScheme);
+    expect(meta.content).toBe(theme.browserColor);
+    meta.remove();
+  });
+
+  it('keeps a chosen theme when closing and restores focus to its trigger', () => {
+    render(<ThemeProvider><ThemePicker /></ThemeProvider>);
+    const trigger = screen.getByRole('button', { name: 'Elegir tema: Oscuro' });
+    trigger.focus();
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('radio', { name: 'Bosque' }));
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('forest');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Elige tu tema' })).toBeNull();
+    expect(document.activeElement).toBe(trigger);
+    expect(document.body.classList.contains('dialog-open')).toBe(false);
+    expect(trigger).toHaveAccessibleName('Elegir tema: Bosque');
   });
 });

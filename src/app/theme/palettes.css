@@ -32,13 +32,14 @@
   --color-on-hero-action: 53 33 24;
   --color-hero-text: 247 248 241;
   --color-hero-muted: 195 204 225;
+  --color-hero-glow: 184 174 245;
   --shadow-card: 0 8px 24px -16px rgb(0 0 0 / 0.65), inset 0 1px rgb(255 255 255 / 0.035);
   --shadow-soft: 0 16px 40px -12px rgb(0 0 0 / 0.48), 0 2px 6px rgb(0 0 0 / 0.16);
   --shadow-lift: 0 18px 36px -20px rgb(0 0 0 / 0.65), inset 0 1px rgb(255 255 255 / 0.06);
   --control-highlight: inset 0 1px rgb(255 255 255 / 0.08);
 }
 
-:root[data-theme='light'] {
+:root:is([data-theme='light'], [data-theme='ocean'], [data-theme='sage'], [data-theme='lavender'], [data-theme='sand'], [data-theme='rose'], [data-theme='snow']) {
   color-scheme: light;
   --color-canvas: 243 240 233;
   --color-surface: 250 248 242;
@@ -49,7 +50,7 @@
   --color-text: 41 43 56;
   --color-text-secondary: 82 81 96;
   --color-text-muted: 93 95 108;
-  --color-text-subtle: 100 101 114;
+  --color-text-subtle: 95 96 108;
   --color-overlay: 30 34 45;
   --color-accent: 155 77 50;
   --color-accent-hover: 137 65 41;
@@ -74,4 +75,218 @@
   --shadow-soft: 0 16px 40px -12px rgb(47 49 64 / 0.2), 0 2px 6px rgb(47 49 64 / 0.04);
   --shadow-lift: 0 18px 36px -20px rgb(47 49 64 / 0.3), inset 0 1px rgb(255 255 255 / 0.8);
   --control-highlight: inset 0 1px rgb(255 255 255 / 0.9);
+}
+
+:root:is([data-theme='midnight'], [data-theme='forest'], [data-theme='amethyst'], [data-theme='cocoa'], [data-theme='carbon'], [data-theme='aurora']) {
+  --color-text-subtle: 173 164 180;
+}
+
+:root[data-theme='midnight'] {
+  --color-canvas: 16 24 39;
+  --color-surface: 23 33 50;
+  --color-card: 32 46 68;
+  --color-raised: 41 56 78;
+  --color-border: 78 98 124;
+  --color-accent: 146 197 248;
+  --color-accent-hover: 173 213 252;
+  --color-on-accent: 16 35 57;
+  --color-lilac: 174 193 231;
+  --color-hero-start: 34 57 87;
+  --color-hero-end: 22 34 55;
+  --color-hero-action: 146 197 248;
+  --color-hero-action-hover: 173 213 252;
+  --color-on-hero-action: 16 35 57;
+  --color-hero-glow: 146 197 248;
+}
+
+:root[data-theme='forest'] {
+  --color-canvas: 18 28 24;
+  --color-surface: 26 38 32;
+  --color-card: 36 55 45;
+  --color-raised: 43 61 51;
+  --color-border: 81 108 91;
+  --color-accent: 164 212 173;
+  --color-accent-hover: 188 229 195;
+  --color-on-accent: 21 46 30;
+  --color-lilac: 180 203 180;
+  --color-hero-start: 39 66 49;
+  --color-hero-end: 24 42 34;
+  --color-hero-action: 164 212 173;
+  --color-hero-action-hover: 188 229 195;
+  --color-on-hero-action: 21 46 30;
+  --color-hero-glow: 164 212 173;
+}
+
+:root[data-theme='amethyst'] {
+  --color-canvas: 28 21 37;
+  --color-surface: 38 28 48;
+  --color-card: 52 38 63;
+  --color-raised: 61 44 73;
+  --color-border: 111 83 127;
+  --color-accent: 210 181 239;
+  --color-accent-hover: 227 203 250;
+  --color-on-accent: 47 26 64;
+  --color-lilac: 215 187 235;
+  --color-hero-start: 70 46 86;
+  --color-hero-end: 39 29 54;
+  --color-hero-action: 210 181 239;
+  --color-hero-action-hover: 227 203 250;
+  --color-on-hero-action: 47 26 64;
+  --color-hero-glow: 210 181 239;
+}
+
+:root[data-theme='cocoa'] {
+  --color-canvas: 32 25 20;
+  --color-surface: 43 33 27;
+  --color-card: 58 45 37;
+  --color-raised: 65 51 42;
+  --color-border: 116 92 73;
+  --color-accent: 230 187 135;
+  --color-accent-hover: 244 207 163;
+  --color-on-accent: 53 34 19;
+  --color-lilac: 215 190 164;
+  --color-hero-start: 77 55 37;
+  --color-hero-end: 43 34 28;
+  --color-hero-action: 230 187 135;
+  --color-hero-action-hover: 244 207 163;
+  --color-on-hero-action: 53 34 19;
+  --color-hero-glow: 230 187 135;
+}
+
+:root[data-theme='carbon'] {
+  --color-canvas: 12 13 16;
+  --color-surface: 24 25 29;
+  --color-card: 34 36 40;
+  --color-raised: 44 46 51;
+  --color-border: 86 90 98;
+  --color-accent: 224 227 232;
+  --color-accent-hover: 245 246 248;
+  --color-on-accent: 25 27 32;
+  --color-lilac: 184 193 209;
+  --color-hero-start: 49 52 60;
+  --color-hero-end: 26 28 33;
+  --color-hero-action: 224 227 232;
+  --color-hero-action-hover: 245 246 248;
+  --color-on-hero-action: 25 27 32;
+  --color-hero-glow: 184 193 209;
+}
+
+:root[data-theme='aurora'] {
+  --color-canvas: 16 30 34;
+  --color-surface: 23 42 47;
+  --color-card: 33 55 62;
+  --color-raised: 38 61 68;
+  --color-border: 73 111 119;
+  --color-accent: 135 216 204;
+  --color-accent-hover: 166 233 223;
+  --color-on-accent: 17 45 44;
+  --color-lilac: 166 207 212;
+  --color-hero-start: 30 69 75;
+  --color-hero-end: 20 39 48;
+  --color-hero-action: 135 216 204;
+  --color-hero-action-hover: 166 233 223;
+  --color-on-hero-action: 17 45 44;
+  --color-hero-glow: 135 216 204;
+}
+
+:root[data-theme='ocean'] {
+  --color-canvas: 237 243 248;
+  --color-surface: 246 250 253;
+  --color-card: 250 252 255;
+  --color-raised: 222 233 243;
+  --color-border: 162 185 204;
+  --color-accent: 40 95 150;
+  --color-accent-hover: 31 77 125;
+  --color-lilac: 71 100 152;
+  --color-hero-start: 35 61 88;
+  --color-hero-end: 24 40 61;
+  --color-hero-action: 169 211 248;
+  --color-hero-action-hover: 195 226 252;
+  --color-on-hero-action: 19 43 66;
+  --color-hero-glow: 169 211 248;
+}
+
+:root[data-theme='sage'] {
+  --color-canvas: 239 243 236;
+  --color-surface: 247 250 243;
+  --color-card: 251 253 248;
+  --color-raised: 222 232 216;
+  --color-border: 168 188 164;
+  --color-accent: 56 100 72;
+  --color-accent-hover: 41 80 55;
+  --color-lilac: 77 103 75;
+  --color-hero-start: 47 68 48;
+  --color-hero-end: 31 47 38;
+  --color-hero-action: 189 217 168;
+  --color-hero-action-hover: 211 234 193;
+  --color-on-hero-action: 33 54 26;
+  --color-hero-glow: 189 217 168;
+}
+
+:root[data-theme='lavender'] {
+  --color-canvas: 242 239 248;
+  --color-surface: 249 246 253;
+  --color-card: 253 251 255;
+  --color-raised: 231 224 242;
+  --color-border: 187 172 206;
+  --color-accent: 112 82 158;
+  --color-accent-hover: 91 62 135;
+  --color-lilac: 112 82 158;
+  --color-hero-start: 66 46 88;
+  --color-hero-end: 38 31 56;
+  --color-hero-action: 219 194 246;
+  --color-hero-action-hover: 235 217 254;
+  --color-on-hero-action: 50 31 71;
+  --color-hero-glow: 219 194 246;
+}
+
+:root[data-theme='sand'] {
+  --color-canvas: 245 238 226;
+  --color-surface: 251 245 233;
+  --color-card: 255 250 240;
+  --color-raised: 234 223 205;
+  --color-border: 196 174 145;
+  --color-accent: 143 78 37;
+  --color-accent-hover: 125 65 28;
+  --color-lilac: 126 94 69;
+  --color-hero-start: 78 57 39;
+  --color-hero-end: 45 36 30;
+  --color-hero-action: 235 201 147;
+  --color-hero-action-hover: 248 220 177;
+  --color-on-hero-action: 57 39 20;
+  --color-hero-glow: 235 201 147;
+}
+
+:root[data-theme='rose'] {
+  --color-canvas: 248 239 241;
+  --color-surface: 253 246 248;
+  --color-card: 255 250 252;
+  --color-raised: 241 222 229;
+  --color-border: 205 169 183;
+  --color-accent: 160 70 103;
+  --color-accent-hover: 138 53 84;
+  --color-lilac: 138 77 120;
+  --color-hero-start: 80 43 63;
+  --color-hero-end: 46 29 44;
+  --color-hero-action: 241 184 208;
+  --color-hero-action-hover: 251 208 226;
+  --color-on-hero-action: 70 29 47;
+  --color-hero-glow: 241 184 208;
+}
+
+:root[data-theme='snow'] {
+  --color-canvas: 245 247 250;
+  --color-surface: 252 253 255;
+  --color-card: 255 255 255;
+  --color-raised: 232 237 245;
+  --color-border: 178 190 207;
+  --color-accent: 56 87 160;
+  --color-accent-hover: 40 66 130;
+  --color-lilac: 82 96 142;
+  --color-hero-start: 44 55 81;
+  --color-hero-end: 27 34 51;
+  --color-hero-action: 194 210 246;
+  --color-hero-action-hover: 217 228 252;
+  --color-on-hero-action: 30 44 78;
+  --color-hero-glow: 194 210 246;
 }

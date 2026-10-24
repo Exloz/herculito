@@ -53,10 +53,17 @@ describe('mobile account sheet', () => {
 
   it('changes appearance without signing out and signs out only on request', () => {
     const { onLogout } = setup();
-    fireEvent.change(screen.getByRole('combobox', { name: 'Apariencia' }), { target: { value: 'light' } });
-    expect(document.documentElement.dataset.theme).toBe('light');
+    const trigger = screen.getByRole('button', { name: /^Elegir tema:/ });
+    trigger.focus();
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('radio', { name: 'Salvia' }));
+    expect(document.documentElement.dataset.theme).toBe('sage');
     expect(onLogout).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog')).toBeTruthy();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Elige tu tema' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Tu cuenta' }).getAttribute('aria-modal')).toBe('true');
+    expect(document.activeElement).toBe(trigger);
+    expect(document.body.classList.contains('dialog-open')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
     expect(onLogout).toHaveBeenCalledOnce();
     expect(screen.queryByRole('dialog')).toBeNull();

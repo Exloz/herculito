@@ -28,6 +28,7 @@
   .account-sheet-row > svg { color: rgb(var(--color-text-muted)); }
   .preview-toolbar { margin-left: 224px; font-size: 11px; }
   .preview-toolbar > div { font-size: 11px; }
+  .workspace-navigation-viewport { display: contents; }
   .workspace-navigation { position: fixed; inset: 0 auto 0 0; z-index: 40; width: var(--sidebar-width, 224px); display: flex; flex-direction: column; background: rgb(var(--color-surface)); border-right: 1px solid var(--border-subtle); padding: 24px 12px 12px; overflow-y: auto; }
   .sidebar-brand { padding: 0 10px 24px; }
   .sidebar-logo { display: flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 700; letter-spacing: -1.2px; }
@@ -315,7 +316,10 @@
     .workspace-breadcrumb { gap: 8px; }
     .workspace-breadcrumb-brand, .workspace-search span, .workspace-search kbd { display: none; }
     .workspace-search { width: 44px; height: 44px; justify-content: center; padding: 0; }
-    .workspace-navigation { inset: auto 0 0; width: 100%; padding: 0 max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); background: rgb(var(--color-surface) / 0.94); border-right: 0; border-top: 1px solid rgb(var(--color-border) / 0.5); border-radius: 20px 20px 0 0; box-shadow: 0 -10px 32px -16px rgb(0 0 0 / 0.3), var(--control-highlight); backdrop-filter: blur(16px); overflow: visible; }
+    /* A top-anchored viewport avoids iOS retaining a stale bottom: 0 position
+       after keyboard dismissal/rotation. Keep blur on the inner surface only. */
+    .workspace-navigation-viewport { position: fixed; top: 0; left: 0; width: 100%; height: 100%; height: 100dvh; z-index: 40; display: flex; flex-direction: column; justify-content: flex-end; pointer-events: none; }
+    .workspace-navigation { position: relative; inset: auto; flex: 0 0 auto; pointer-events: auto; width: 100%; padding: 0 max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); background: rgb(var(--color-surface) / 0.94); border-right: 0; border-top: 1px solid rgb(var(--color-border) / 0.5); border-radius: 20px 20px 0 0; box-shadow: 0 -10px 32px -16px rgb(0 0 0 / 0.3), var(--control-highlight); backdrop-filter: blur(16px); overflow: visible; }
     .sidebar-brand, .sidebar-search, .sidebar-footer, .nav-group-label { display: none; }
     .workspace-nav-list { flex-direction: row; gap: 1px; padding: 5px 0; }
     .workspace-nav-item { flex: 1; flex-direction: column; justify-content: center; gap: 5px; min-width: 0; min-height: 54px; padding: 7px 1px; font-size: 10px; border-radius: 5px; position: relative; }

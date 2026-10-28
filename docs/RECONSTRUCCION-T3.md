@@ -347,3 +347,28 @@ Verificación en navegador a 320 y 390 px, escritorio, estado vacío, detalles, 
 rutina pública y navegación por Tab. Sin desbordamiento horizontal de la página.
 El texto activo de los siete grupos supera 4.5:1 en las 14 paletas revisadas.
 Validación: 538 pruebas en 68 archivos, ESLint, TypeScript y build con service worker.
+
+
+## Anclaje de navegación en iPhone · v2.74.2
+
+Se sustituye el anclaje móvil directo de la barra mediante `fixed; bottom: 0` por
+una capa fija desde `top: 0`, con altura `100dvh` y alineación flex al final. La
+barra pasa a ser una superficie relativa dentro de esa capa; el desenfoque queda
+en la superficie interior. Así, la posición inferior se obtiene de la altura
+dinámica y no de un borde inferior fijo que WebKit puede conservar desplazado.
+
+La capa transparente no captura los gestos ni clics del contenido; solo la barra
+recibe interacción. Se mantienen el área segura inferior, los seis destinos, los
+avisos encima de la barra y la ocultación durante diálogos. En escritorio la capa
+usa `display: contents` y la navegación sigue siendo la barra lateral fija.
+
+El síntoma de las capturas es compatible con los problemas de viewport de WebKit
+(https://bugs.webkit.org/show_bug.cgi?id=218983 y
+https://bugs.webkit.org/show_bug.cgi?id=297779). No se dispone del iPhone afectado
+para confirmar la secuencia exacta ni reproducir el compositor de iOS. Queda
+pendiente verificar allí scroll en ambos sentidos, apertura/cierre del teclado,
+rotación y reanudación de la PWA. Las pruebas DOM no sustituyen esa verificación.
+
+Validación de la entrega: 538 pruebas en 68 archivos, ESLint, TypeScript y build
+con service worker. Las pruebas existentes de navegación y diálogos conservan
+la visibilidad, los destinos y las acciones de sincronización.

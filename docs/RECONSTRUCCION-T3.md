@@ -372,3 +372,30 @@ rotación y reanudación de la PWA. Las pruebas DOM no sustituyen esa verificaci
 Validación de la entrega: 538 pruebas en 68 archivos, ESLint, TypeScript y build
 con service worker. Las pruebas existentes de navegación y diálogos conservan
 la visibilidad, los destinos y las acciones de sincronización.
+
+## Semana compacta con detalle · v2.74.3
+
+Se aplica la propuesta A en `WeeklyPlanSummary`: siete días con fecha y un icono
+de estado, seguidos del nombre completo y los recuentos reales de la rutina del
+día seleccionado. La fila ya no intenta mostrar siete nombres truncados.
+«Hoy» permanece identificado aunque se consulte otro día; la selección tiene su
+propio relieve y acento. La leyenda distingue Rutina, Descanso y Sin plan.
+Una asignación cuya rutina ya no está disponible conserva un estado explícito.
+
+Consultar un día no modifica el plan ni el entrenamiento principal de hoy. Se
+retira el acceso duplicado «Mi semana» de la tarjeta principal y se incorpora
+«Editar semana» en la cabecera del nuevo bloque, con su propio estado expandido.
+La edición conserva el editor existente y la persistencia local del plan.
+
+Las fechas respetan America/Bogota y la semana de lunes a domingo. Cambiar de día
+o de semana restablece la consulta en Hoy; actualizar el plan o las rutinas
+actualiza el detalle sin perder la consulta elegida. La fila admite Tab, flechas,
+Inicio y Fin, con etiquetas completas para lectores de pantalla y detalle anunciado.
+Los días tienen al menos 44 px de ancho; cuando no caben se permite deslizar y
+aparece un aviso. Se revela horizontalmente la selección o el foco sin desplazar
+la página. Las superficies y textos utilizan los tokens de las 14 paletas.
+
+Validación: 547 pruebas en 69 archivos, ESLint, TypeScript y build con service
+worker. Las pruebas cubren consulta sin editar/iniciar, nombres completos y
+singulares, estados del plan, cambios de biblioteca, teclado y transiciones de
+semana en la zona horaria de la aplicación.

@@ -4,7 +4,7 @@ import type { DashboardCompetition, DashboardSummary, Routine } from '../../../s
 import { formatCountLabel, formatDateValue, formatNumber } from '../../../shared/lib/intl';
 import { APP_TIME_ZONE } from '../../../shared/lib/dateUtils';
 import { WeeklyPlanEditor } from './WeeklyPlanEditor';
-import { WEEK_DAYS } from '../lib/weeklyPlan';
+import { WeeklyPlanSummary } from './WeeklyPlanSummary';
 import type { WeekDay, WeeklyPlan } from '../lib/weeklyPlan';
 
 interface DashboardOverviewProps {
@@ -92,30 +92,10 @@ export function DashboardOverview({ userName, summary, plannedRoutine, routines,
               Cancelar sesión
             </button>
           )}
-          {!isActive && !plannedRoutine && routines.length > 0 && !isRestDay && !editingWeek && (
-            <button type="button" className="btn-ghost min-h-11 text-sm" onClick={() => setEditingWeek(true)}>Planificar semana</button>
-          )}
-          {(isActive || plannedRoutine || editingWeek) && <button type="button" onClick={() => setEditingWeek((open) => !open)}
-            aria-expanded={editingWeek} aria-controls="weekly-plan-editor"
-            className="btn-ghost flex min-h-11 items-center justify-center gap-2 text-sm">
-            <CalendarDays size={16} aria-hidden="true" className="hidden sm:block" />Mi semana
-            <ChevronDown size={16} aria-hidden="true" className={`transition-transform ${editingWeek ? 'rotate-180' : ''}`} />
-          </button>}
         </div>
       </div>
-      <div className="week-strip" aria-label="Plan semanal">
-        {WEEK_DAYS.map(({ id, label }) => {
-          const routine = routines.find((item) => item.id === weeklyPlan[id]);
-          const assignment = routine?.name ?? (weeklyPlan[id] === null ? 'Descanso'
-            : typeof weeklyPlan[id] === 'string' ? 'Rutina no disponible' : 'Sin plan');
-          return <button key={id} type="button" className="week-day" aria-current={today === id ? 'date' : undefined}
-            aria-label={`${label}: ${assignment}. Editar semana`} title={`${label} · ${assignment}`}
-            onClick={() => setEditingWeek(true)}>
-            <span>{label.slice(0, 3)}</span><i className={routine ? 'week-day-planned' : ''} aria-hidden="true">{weeklyPlan[id] === null ? '—' : routine ? '•' : '·'}</i>
-            <small>{routine?.name ?? (weeklyPlan[id] === null ? 'Descanso' : typeof weeklyPlan[id] === 'string' ? 'No disponible' : today === id ? 'Hoy' : '')}</small>
-          </button>;
-        })}
-      </div>
+      <WeeklyPlanSummary routines={routines} plan={weeklyPlan} today={today} editing={editingWeek}
+        onEdit={() => setEditingWeek((open) => !open)} />
       {editingWeek && <div className="app-card p-4"><WeeklyPlanEditor routines={routines} plan={weeklyPlan} today={today}
         onAssign={onAssignDay} onManageRoutines={onNavigateToRoutines} /></div>}
       <div className="activity-overview">

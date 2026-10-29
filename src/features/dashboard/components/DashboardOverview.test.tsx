@@ -14,10 +14,10 @@ describe('dashboard training priority', () => {
   it('keeps the weekly disclosure label while expanding and collapsing', () => {
     render(<DashboardOverview userName="Alex" summary={summary} {...planProps}
       plannedRoutine={planProps.routines[0]} {...handlers()} />);
-    const toggle = screen.getByRole('button', { name: 'Mi semana' });
+    const toggle = screen.getByRole('button', { name: 'Editar semana' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(toggle);
-    expect(screen.getByRole('button', { name: 'Mi semana' })).toBe(toggle);
+    expect(screen.getByRole('button', { name: 'Editar semana' })).toBe(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(screen.getAllByRole('combobox')).toHaveLength(7);
     fireEvent.click(toggle);
@@ -31,6 +31,20 @@ describe('dashboard training priority', () => {
     render(<DashboardOverview userName="Alex López" summary={summary} {...planProps} plannedRoutine={routine} {...actions} />);
     fireEvent.click(screen.getByRole('button', { name: 'Empezar entrenamiento' }));
     expect(actions.onStart).toHaveBeenCalledWith(routine.id);
+  });
+
+  it('consults another day without changing the primary workout or editing the plan', () => {
+    const actions = handlers();
+    const { routines } = createPreviewFixtures();
+    render(<DashboardOverview userName="Alex" summary={summary} {...planProps} plannedRoutine={routines[0]}
+      weeklyPlan={{ monday: routines[0].id, tuesday: routines[1].id }} {...actions} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Martes,/ }));
+    expect(within(screen.getByRole('status')).getByText('Día de piernas')).toBeTruthy();
+    expect(screen.queryByRole('combobox')).toBeNull();
+    expect(actions.onAssignDay).not.toHaveBeenCalled();
+    expect(actions.onStart).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar entrenamiento' }));
+    expect(actions.onStart).toHaveBeenCalledWith(routines[0].id);
   });
 
   it('offers to fix an empty planned routine instead of starting an empty workout', () => {
@@ -60,7 +74,7 @@ describe('dashboard training priority', () => {
     expect(screen.getByText('Hoy sin plan')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Elegir rutina' }));
     expect(actions.onChooseRoutine).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('button', { name: 'Planificar semana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Editar semana' }));
     expect(screen.getAllByRole('combobox')).toHaveLength(7);
   });
 
@@ -114,7 +128,7 @@ describe('dashboard training priority', () => {
     const actions = handlers();
     render(<DashboardOverview userName="Alex" summary={summary} {...planProps} weeklyPlan={{ monday: 'removed' }} {...actions} />);
     expect(screen.getByRole('heading', { name: 'Rutina no disponible' })).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Planificar semana' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Editar semana' }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Lunes Hoy' }), { target: { value: planProps.routines[0].id } });
     expect(actions.onAssignDay).toHaveBeenCalledWith('monday', planProps.routines[0].id);
     fireEvent.change(screen.getByRole('combobox', { name: 'Martes' }), { target: { value: '__rest__' } });
